@@ -26,7 +26,8 @@ DRY_RUN=false
 PROTECT_FINDER_METADATA=false
 IS_M_SERIES=$([[ "$(uname -m)" == "arm64" ]] && echo "true" || echo "false")
 
-EXPORT_LIST_FILE="$HOME/.config/mole/clean-list.txt"
+EXPORT_LIST_FILE="${MOLE_EXPORT_LIST_FILE:-$MOLE_STATE_DIR/clean-list.txt}"
+DETAILED_EXPORT_FILE="${MOLE_DETAILED_EXPORT_FILE:-}"
 CURRENT_SECTION=""
 readonly PROTECTED_SW_DOMAINS=(
     "capcut.com"
@@ -652,6 +653,9 @@ safe_clean() {
                     }
 
                     echo "$(dirname "$path")|$size|$path" >> "$paths_temp"
+                    if [[ -n "$DETAILED_EXPORT_FILE" ]]; then
+                        printf "%s\t%s\t%s\n" "$CURRENT_SECTION" "$path" "$size" >> "$DETAILED_EXPORT_FILE"
+                    fi
                     idx=$((idx + 1))
                 done
             fi
@@ -722,6 +726,10 @@ start_cleanup() {
         echo ""
 
         ensure_user_file "$EXPORT_LIST_FILE"
+        if [[ -n "$DETAILED_EXPORT_FILE" ]]; then
+            mkdir -p "$(dirname "$DETAILED_EXPORT_FILE")"
+            : > "$DETAILED_EXPORT_FILE"
+        fi
         cat > "$EXPORT_LIST_FILE" << EOF
 # Mole Cleanup Preview - $(date '+%Y-%m-%d %H:%M:%S')
 #
