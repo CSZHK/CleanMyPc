@@ -68,7 +68,7 @@ public struct AboutFeatureView: View {
                     systemImage: "chevron.left.forwardslash.chevron.right"
                 )
 
-                Link(destination: URL(string: "https://github.com/CSZHK/mole-installer")!) {
+                Link(destination: URL(string: "https://github.com/CSZHK/CleanMyPc")!) {
                     Text(AtlasL10n.string("about.opensource.visit"))
                         .frame(maxWidth: .infinity)
                 }
