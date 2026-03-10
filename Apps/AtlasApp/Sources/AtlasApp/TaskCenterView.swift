@@ -43,10 +43,10 @@ struct TaskCenterView: View {
                             title: taskRun.kind.title,
                             subtitle: taskRun.summary,
                             footnote: timelineFootnote(for: taskRun),
-                            systemImage: icon(for: taskRun.kind),
-                            tone: taskRun.status.tintTone
+                            systemImage: taskRun.kind.atlasSystemImage,
+                            tone: taskRun.status.atlasTone
                         ) {
-                            AtlasStatusChip(taskRun.status.title, tone: taskRun.status.tintTone)
+                            AtlasStatusChip(taskRun.status.title, tone: taskRun.status.atlasTone)
                         }
                     }
                 }
@@ -55,8 +55,7 @@ struct TaskCenterView: View {
             Button(action: onOpenHistory) {
                 Label(AtlasL10n.string("taskcenter.openHistory"), systemImage: "arrow.right.circle.fill")
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(.atlasPrimary)
             .keyboardShortcut(.defaultAction)
             .accessibilityIdentifier("taskcenter.openHistory")
             .accessibilityHint(AtlasL10n.string("taskcenter.openHistory.hint"))
@@ -74,33 +73,4 @@ struct TaskCenterView: View {
         return AtlasL10n.string("taskcenter.timeline.running", start)
     }
 
-    private func icon(for kind: TaskKind) -> String {
-        switch kind {
-        case .scan:
-            return "sparkles"
-        case .executePlan:
-            return "play.circle"
-        case .uninstallApp:
-            return "trash"
-        case .restore:
-            return "arrow.uturn.backward.circle"
-        case .inspectPermissions:
-            return "lock.shield"
-        }
-    }
-}
-
-private extension TaskStatus {
-    var tintTone: AtlasTone {
-        switch self {
-        case .queued:
-            return .neutral
-        case .running:
-            return .warning
-        case .completed:
-            return .success
-        case .failed, .cancelled:
-            return .danger
-        }
-    }
 }

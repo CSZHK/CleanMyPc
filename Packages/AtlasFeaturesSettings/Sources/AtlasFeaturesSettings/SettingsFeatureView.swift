@@ -129,6 +129,7 @@ public struct SettingsFeatureView: View {
                         .font(AtlasTypography.body.weight(.medium))
                 }
                 .toggleStyle(.switch)
+                .tint(AtlasColor.brand)
                 .accessibilityIdentifier("settings.notifications")
                 .accessibilityHint(AtlasL10n.string("settings.notifications.hint"))
             }
@@ -162,6 +163,7 @@ public struct SettingsFeatureView: View {
                     Text(AtlasL10n.string("settings.retention.adjust"))
                         .font(AtlasTypography.body.weight(.medium))
                 }
+                .tint(AtlasColor.brand)
                 .accessibilityIdentifier("settings.recoveryRetention")
                 .accessibilityHint(AtlasL10n.string("settings.retention.hint"))
             }
