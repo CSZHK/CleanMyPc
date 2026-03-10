@@ -40,22 +40,24 @@ public struct SettingsFeatureView: View {
                 subtitle: AtlasL10n.string("settings.panel.subtitle")
             ) {
                 VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-                    HStack(spacing: AtlasSpacing.sm) {
-                        ForEach(SettingsPanel.allCases) { panel in
-                            Group {
-                                if selectedPanel == panel {
-                                    Button(panel.title) {
-                                        selectedPanel = panel
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: AtlasSpacing.sm) {
+                            ForEach(SettingsPanel.allCases) { panel in
+                                Group {
+                                    if selectedPanel == panel {
+                                        Button(panel.title) {
+                                            selectedPanel = panel
+                                        }
+                                        .buttonStyle(.atlasSecondary)
+                                    } else {
+                                        Button(panel.title) {
+                                            selectedPanel = panel
+                                        }
+                                        .buttonStyle(.atlasGhost)
                                     }
-                                    .buttonStyle(.atlasSecondary)
-                                } else {
-                                    Button(panel.title) {
-                                        selectedPanel = panel
-                                    }
-                                    .buttonStyle(.atlasGhost)
                                 }
+                                .accessibilityIdentifier("settings.panel.\(panel.id)")
                             }
-                            .accessibilityIdentifier("settings.panel.\(panel.id)")
                         }
                     }
 
@@ -237,20 +239,31 @@ public struct SettingsFeatureView: View {
                     .font(AtlasTypography.body)
                     .foregroundStyle(.secondary)
 
-                HStack(alignment: .center, spacing: AtlasSpacing.md) {
-                    Button(AtlasL10n.string("settings.trust.documents.ack")) {
-                        presentedDocument = .acknowledgement(settings.acknowledgementText)
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .center, spacing: AtlasSpacing.md) {
+                        trustDocumentButtons
                     }
-                    .buttonStyle(.atlasSecondary)
 
-                    Button(AtlasL10n.string("settings.trust.documents.notices")) {
-                        presentedDocument = .notices(settings.thirdPartyNoticesText)
+                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                        trustDocumentButtons
                     }
-                    .buttonStyle(.atlasSecondary)
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var trustDocumentButtons: some View {
+        Button(AtlasL10n.string("settings.trust.documents.ack")) {
+            presentedDocument = .acknowledgement(settings.acknowledgementText)
+        }
+        .buttonStyle(.atlasSecondary)
+
+        Button(AtlasL10n.string("settings.trust.documents.notices")) {
+            presentedDocument = .notices(settings.thirdPartyNoticesText)
+        }
+        .buttonStyle(.atlasSecondary)
     }
 }
 

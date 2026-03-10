@@ -76,35 +76,50 @@ public struct AtlasScreen<Content: View>: View {
     }
 
     public var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [AtlasColor.canvasTop, AtlasColor.canvasBottom],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+        GeometryReader { proxy in
+            let horizontalPadding = resolvedHorizontalPadding(for: proxy.size.width)
 
-            Group {
-                if useScrollView {
-                    ScrollView {
-                        contentStack
+            ZStack {
+                LinearGradient(
+                    colors: [AtlasColor.canvasTop, AtlasColor.canvasBottom],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                Group {
+                    if useScrollView {
+                        ScrollView {
+                            contentStack(horizontalPadding: horizontalPadding)
+                        }
+                    } else {
+                        contentStack(horizontalPadding: horizontalPadding)
                     }
-                } else {
-                    contentStack
                 }
             }
         }
     }
 
-    private var contentStack: some View {
+    private func contentStack(horizontalPadding: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.xxl) {
             header
             content
         }
         .frame(maxWidth: AtlasLayout.maxReadingWidth, maxHeight: .infinity, alignment: .topLeading)
-        .padding(.horizontal, AtlasSpacing.screenH)
+        .padding(.horizontal, horizontalPadding)
         .padding(.vertical, AtlasSpacing.xxl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func resolvedHorizontalPadding(for width: CGFloat) -> CGFloat {
+        switch width {
+        case ..<820:
+            return 16
+        case ..<980:
+            return 20
+        default:
+            return AtlasSpacing.screenH
+        }
     }
 
     private var header: some View {

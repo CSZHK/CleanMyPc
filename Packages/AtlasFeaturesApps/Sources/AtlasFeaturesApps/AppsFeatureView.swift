@@ -105,8 +105,8 @@ public struct AppsFeatureView: View {
                 tone: selectedAppMatchingPreview == nil ? .neutral : .warning
             ) {
                 GeometryReader { proxy in
-                    let isWide = proxy.size.width >= 760
-                    let sidebarWidth = min(max(proxy.size.width * 0.32, 260), 300)
+                    let isWide = proxy.size.width >= 680
+                    let sidebarWidth = min(max(proxy.size.width * 0.3, 220), 280)
 
                     Group {
                         if isWide {
@@ -455,34 +455,48 @@ private struct AppDetailView: View {
                 }
             }
 
-            HStack(alignment: .center, spacing: AtlasSpacing.md) {
-                Group {
-                    if previewPlan == nil {
-                        Button(isBuildingPreview ? AtlasL10n.string("apps.preview.running") : AtlasL10n.string("apps.preview.action")) {
-                            onPreview()
-                        }
-                        .buttonStyle(.atlasPrimary)
-                    } else {
-                        Button(isBuildingPreview ? AtlasL10n.string("apps.preview.running") : AtlasL10n.string("apps.preview.action")) {
-                            onPreview()
-                        }
-                        .buttonStyle(.atlasSecondary)
-                    }
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: AtlasSpacing.md) {
+                    previewButton
+                    uninstallButton
                 }
-                .disabled(isBusy)
-                .accessibilityIdentifier("apps.preview.\(app.id.uuidString)")
-                .accessibilityHint(AtlasL10n.string("apps.preview.hint"))
 
-                Button(isUninstalling ? AtlasL10n.string("apps.uninstall.running") : AtlasL10n.string("apps.uninstall.action")) {
-                    onUninstall()
+                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                    previewButton
+                    uninstallButton
                 }
-                .buttonStyle(.atlasPrimary)
-                .disabled(isBusy || previewPlan == nil)
-                .accessibilityIdentifier("apps.uninstall.\(app.id.uuidString)")
-                .accessibilityHint(AtlasL10n.string("apps.uninstall.hint"))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var previewButton: some View {
+        Group {
+            if previewPlan == nil {
+                Button(isBuildingPreview ? AtlasL10n.string("apps.preview.running") : AtlasL10n.string("apps.preview.action")) {
+                    onPreview()
+                }
+                .buttonStyle(.atlasPrimary)
+            } else {
+                Button(isBuildingPreview ? AtlasL10n.string("apps.preview.running") : AtlasL10n.string("apps.preview.action")) {
+                    onPreview()
+                }
+                .buttonStyle(.atlasSecondary)
+            }
+        }
+        .disabled(isBusy)
+        .accessibilityIdentifier("apps.preview.\(app.id.uuidString)")
+        .accessibilityHint(AtlasL10n.string("apps.preview.hint"))
+    }
+
+    private var uninstallButton: some View {
+        Button(isUninstalling ? AtlasL10n.string("apps.uninstall.running") : AtlasL10n.string("apps.uninstall.action")) {
+            onUninstall()
+        }
+        .buttonStyle(.atlasPrimary)
+        .disabled(isBusy || previewPlan == nil)
+        .accessibilityIdentifier("apps.uninstall.\(app.id.uuidString)")
+        .accessibilityHint(AtlasL10n.string("apps.uninstall.hint"))
     }
 
     private func icon(for kind: ActionItem.Kind) -> String {

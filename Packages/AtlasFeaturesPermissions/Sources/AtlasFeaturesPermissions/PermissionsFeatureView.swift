@@ -82,20 +82,15 @@ public struct PermissionsFeatureView: View {
                             )
                         }
 
-                        HStack(alignment: .center, spacing: AtlasSpacing.md) {
-                            if let nextActionKind {
-                                Button(buttonTitle(for: nextActionKind)) {
-                                    performAction(for: nextActionKind)
-                                }
-                                .buttonStyle(.atlasPrimary)
+                        ViewThatFits(in: .horizontal) {
+                            HStack(alignment: .center, spacing: AtlasSpacing.md) {
+                                nextStepButtons
+                                Spacer(minLength: 0)
                             }
 
-                            Button(action: onRefresh) {
-                                Label(AtlasL10n.string("permissions.refresh"), systemImage: "arrow.clockwise")
+                            VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                                nextStepButtons
                             }
-                            .buttonStyle(.atlasSecondary)
-                            .accessibilityIdentifier("permissions.refresh")
-                            .accessibilityHint(AtlasL10n.string("permissions.refresh.hint"))
                         }
                     }
                 }
@@ -222,6 +217,23 @@ public struct PermissionsFeatureView: View {
             return "checkmark.circle.fill"
         }
         return nextActionKind.systemImage
+    }
+
+    @ViewBuilder
+    private var nextStepButtons: some View {
+        if let nextActionKind {
+            Button(buttonTitle(for: nextActionKind)) {
+                performAction(for: nextActionKind)
+            }
+            .buttonStyle(.atlasPrimary)
+        }
+
+        Button(action: onRefresh) {
+            Label(AtlasL10n.string("permissions.refresh"), systemImage: "arrow.clockwise")
+        }
+        .buttonStyle(.atlasSecondary)
+        .accessibilityIdentifier("permissions.refresh")
+        .accessibilityHint(AtlasL10n.string("permissions.refresh.hint"))
     }
 
     @ViewBuilder

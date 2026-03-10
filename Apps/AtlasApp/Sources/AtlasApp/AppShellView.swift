@@ -231,7 +231,8 @@ private struct SidebarRouteRow: View {
                 Text(route.subtitle)
                     .font(AtlasTypography.captionSmall)
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
         } icon: {
             ZStack {

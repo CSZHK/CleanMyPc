@@ -80,6 +80,7 @@ final class AtlasAppUITests: XCTestCase {
         let app = XCUIApplication()
         let stateFile = NSTemporaryDirectory() + UUID().uuidString + "/workspace-state.json"
         app.launchEnvironment["ATLAS_STATE_FILE"] = stateFile
+        app.launchArguments += ["-ApplePersistenceIgnoreState", "YES"]
         return app
     }
 }

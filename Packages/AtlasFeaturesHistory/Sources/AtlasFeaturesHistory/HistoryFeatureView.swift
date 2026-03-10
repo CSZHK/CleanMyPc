@@ -96,8 +96,8 @@ public struct HistoryFeatureView: View {
                     }
 
                     GeometryReader { proxy in
-                        let isWide = proxy.size.width >= 760
-                        let sidebarWidth = min(max(proxy.size.width * 0.32, 250), 290)
+                        let isWide = proxy.size.width >= 680
+                        let sidebarWidth = min(max(proxy.size.width * 0.3, 210), 270)
 
                         Group {
                             if isWide {

@@ -135,7 +135,7 @@ public enum AtlasSpacing {
     /// 24pt — screen-level vertical rhythm.
     public static let xxl: CGFloat = 24
     /// 28pt — screen horizontal margin.
-    public static let screenH: CGFloat = 28
+    public static let screenH: CGFloat = 24
     /// 32pt — large section separation.
     public static let section: CGFloat = 32
 }
@@ -227,21 +227,21 @@ public enum AtlasMotion {
 /// Shared layout constants.
 public enum AtlasLayout {
     /// Maximum content reading width — prevents overly long text lines.
-    public static let maxReadingWidth: CGFloat = 960
+    public static let maxReadingWidth: CGFloat = 920
     /// Standard 3-column metric grid definition.
     public static let metricColumns: [GridItem] = [
-        GridItem(.flexible(minimum: 220), spacing: AtlasSpacing.lg),
-        GridItem(.flexible(minimum: 220), spacing: AtlasSpacing.lg),
-        GridItem(.flexible(minimum: 220), spacing: AtlasSpacing.lg),
+        GridItem(.flexible(minimum: 180), spacing: AtlasSpacing.lg),
+        GridItem(.flexible(minimum: 180), spacing: AtlasSpacing.lg),
+        GridItem(.flexible(minimum: 180), spacing: AtlasSpacing.lg),
     ]
     /// 2-column grid for wider cards.
     public static let wideColumns: [GridItem] = [
-        GridItem(.flexible(minimum: 300), spacing: AtlasSpacing.lg),
-        GridItem(.flexible(minimum: 300), spacing: AtlasSpacing.lg),
+        GridItem(.flexible(minimum: 220), spacing: AtlasSpacing.lg),
+        GridItem(.flexible(minimum: 220), spacing: AtlasSpacing.lg),
     ]
     /// Sidebar width range.
-    public static let sidebarMinWidth: CGFloat = 230
-    public static let sidebarIdealWidth: CGFloat = 260
+    public static let sidebarMinWidth: CGFloat = 180
+    public static let sidebarIdealWidth: CGFloat = 220
     /// Sidebar icon container size (pill-style like System Settings).
     public static let sidebarIconSize: CGFloat = 32
 }

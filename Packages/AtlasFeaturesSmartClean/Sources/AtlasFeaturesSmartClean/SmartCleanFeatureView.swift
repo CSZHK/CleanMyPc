@@ -86,38 +86,20 @@ public struct SmartCleanFeatureView: View {
                             systemImage: primaryAction.systemImage
                         )
 
-                        HStack(alignment: .center, spacing: AtlasSpacing.md) {
-                            Button(action: primaryAction.handler(startScan: onStartScan, refreshPreview: onRefreshPreview, executePlan: onExecutePlan)) {
-                                Label(primaryAction.buttonTitle, systemImage: primaryAction.buttonSystemImage)
+                        ViewThatFits(in: .horizontal) {
+                            HStack(alignment: .center, spacing: AtlasSpacing.md) {
+                                primaryActionButton
+                                supportingActionButtons
+                                Spacer(minLength: 0)
                             }
-                            .buttonStyle(.atlasPrimary)
-                            .keyboardShortcut(.defaultAction)
-                            .disabled(primaryAction.isDisabled(canExecutePlan: canExecutePlan))
-                            .accessibilityIdentifier(primaryAction.accessibilityIdentifier)
-                            .accessibilityHint(primaryAction.accessibilityHint)
 
-                            if primaryAction != .scan {
-                                Button(action: onStartScan) {
-                                    Label(AtlasL10n.string("smartclean.action.runScan"), systemImage: "sparkles")
+                            VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                                primaryActionButton
+                                HStack(alignment: .center, spacing: AtlasSpacing.md) {
+                                    supportingActionButtons
+                                    Spacer(minLength: 0)
                                 }
-                                .buttonStyle(.atlasSecondary)
-                                .keyboardShortcut("s", modifiers: [.command, .option])
-                                .disabled(isScanning || isExecutingPlan)
-                                .accessibilityIdentifier("smartclean.runScan")
-                                .accessibilityHint(AtlasL10n.string("smartclean.action.runScan.hint"))
                             }
-
-                            if primaryAction != .refresh, !findings.isEmpty {
-                                Button(action: onRefreshPreview) {
-                                    Label(AtlasL10n.string("smartclean.action.refreshPreview"), systemImage: "arrow.clockwise")
-                                }
-                                .buttonStyle(.atlasGhost)
-                                .disabled(isScanning || isExecutingPlan)
-                                .accessibilityIdentifier("smartclean.refreshPreview")
-                                .accessibilityHint(AtlasL10n.string("smartclean.action.refreshPreview.hint"))
-                            }
-
-                            Spacer(minLength: 0)
                         }
                     }
                 }
@@ -397,6 +379,41 @@ public struct SmartCleanFeatureView: View {
             return .execute
         }
         return .refresh
+    }
+
+    private var primaryActionButton: some View {
+        Button(action: primaryAction.handler(startScan: onStartScan, refreshPreview: onRefreshPreview, executePlan: onExecutePlan)) {
+            Label(primaryAction.buttonTitle, systemImage: primaryAction.buttonSystemImage)
+        }
+        .buttonStyle(.atlasPrimary)
+        .keyboardShortcut(.defaultAction)
+        .disabled(primaryAction.isDisabled(canExecutePlan: canExecutePlan))
+        .accessibilityIdentifier(primaryAction.accessibilityIdentifier)
+        .accessibilityHint(primaryAction.accessibilityHint)
+    }
+
+    @ViewBuilder
+    private var supportingActionButtons: some View {
+        if primaryAction != .scan {
+            Button(action: onStartScan) {
+                Label(AtlasL10n.string("smartclean.action.runScan"), systemImage: "sparkles")
+            }
+            .buttonStyle(.atlasSecondary)
+            .keyboardShortcut("s", modifiers: [.command, .option])
+            .disabled(isScanning || isExecutingPlan)
+            .accessibilityIdentifier("smartclean.runScan")
+            .accessibilityHint(AtlasL10n.string("smartclean.action.runScan.hint"))
+        }
+
+        if primaryAction != .refresh, !findings.isEmpty {
+            Button(action: onRefreshPreview) {
+                Label(AtlasL10n.string("smartclean.action.refreshPreview"), systemImage: "arrow.clockwise")
+            }
+            .buttonStyle(.atlasGhost)
+            .disabled(isScanning || isExecutingPlan)
+            .accessibilityIdentifier("smartclean.refreshPreview")
+            .accessibilityHint(AtlasL10n.string("smartclean.action.refreshPreview.hint"))
+        }
     }
 
     private func supportText(for kind: ActionItem.Kind) -> String {

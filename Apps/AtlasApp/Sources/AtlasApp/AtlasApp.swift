@@ -9,7 +9,7 @@ struct AtlasApp: App {
         WindowGroup(AtlasL10n.string("app.name")) {
             AppShellView(model: model)
                 .environment(\.locale, model.appLanguage.locale)
-                .frame(minWidth: 1120, minHeight: 720)
+                .frame(minWidth: 940, minHeight: 640)
         }
         .commands {
             AtlasAppCommands(model: model)
