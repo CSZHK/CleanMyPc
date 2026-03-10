@@ -82,6 +82,8 @@ private extension AtlasRoute {
             return "5"
         case .settings:
             return "6"
+        case .about:
+            return "7"
         }
     }
 }

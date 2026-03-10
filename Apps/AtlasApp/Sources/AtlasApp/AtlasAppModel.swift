@@ -482,6 +482,8 @@ final class AtlasAppModel: ObservableObject {
             await inspectPermissions()
         case .settings:
             break
+        case .about:
+            break
         }
     }
 
