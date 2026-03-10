@@ -135,7 +135,7 @@ public enum AtlasSpacing {
     /// 24pt — screen-level vertical rhythm.
     public static let xxl: CGFloat = 24
     /// 28pt — screen horizontal margin.
-    public static let screenH: CGFloat = 24
+    public static let screenH: CGFloat = 28
     /// 32pt — large section separation.
     public static let section: CGFloat = 32
 }
@@ -244,6 +244,45 @@ public enum AtlasLayout {
     public static let sidebarIdealWidth: CGFloat = 220
     /// Sidebar icon container size (pill-style like System Settings).
     public static let sidebarIconSize: CGFloat = 32
+
+    /// Returns an adaptive column layout based on available width.
+    /// - 3 columns for widths >= 640
+    /// - 2 columns for widths >= 420
+    /// - 1 column for narrower widths
+    public static func adaptiveMetricColumns(for width: CGFloat) -> [GridItem] {
+        let spacing = AtlasSpacing.lg
+        switch width {
+        case 640...:
+            return [
+                GridItem(.flexible(minimum: 180), spacing: spacing),
+                GridItem(.flexible(minimum: 180), spacing: spacing),
+                GridItem(.flexible(minimum: 180), spacing: spacing),
+            ]
+        case 420...:
+            return [
+                GridItem(.flexible(minimum: 180), spacing: spacing),
+                GridItem(.flexible(minimum: 180), spacing: spacing),
+            ]
+        default:
+            return [
+                GridItem(.flexible(minimum: 180), spacing: spacing),
+            ]
+        }
+    }
+}
+
+// MARK: - Content Width Environment Key
+
+private struct AtlasContentWidthKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 920
+}
+
+public extension EnvironmentValues {
+    /// The actual content width injected by `AtlasScreen`.
+    var atlasContentWidth: CGFloat {
+        get { self[AtlasContentWidthKey.self] }
+        set { self[AtlasContentWidthKey.self] = newValue }
+    }
 }
 
 // MARK: - Icon Tokens

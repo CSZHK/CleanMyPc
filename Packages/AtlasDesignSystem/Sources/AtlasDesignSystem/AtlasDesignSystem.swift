@@ -90,18 +90,20 @@ public struct AtlasScreen<Content: View>: View {
                 Group {
                     if useScrollView {
                         ScrollView {
-                            contentStack(horizontalPadding: horizontalPadding)
+                            contentStack(horizontalPadding: horizontalPadding, containerWidth: proxy.size.width)
                         }
                     } else {
-                        contentStack(horizontalPadding: horizontalPadding)
+                        contentStack(horizontalPadding: horizontalPadding, containerWidth: proxy.size.width)
                     }
                 }
             }
         }
     }
 
-    private func contentStack(horizontalPadding: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: AtlasSpacing.xxl) {
+    private func contentStack(horizontalPadding: CGFloat, containerWidth: CGFloat) -> some View {
+        let contentWidth = min(AtlasLayout.maxReadingWidth, containerWidth - horizontalPadding * 2)
+
+        return VStack(alignment: .leading, spacing: AtlasSpacing.xxl) {
             header
             content
         }
@@ -109,6 +111,7 @@ public struct AtlasScreen<Content: View>: View {
         .padding(.horizontal, horizontalPadding)
         .padding(.vertical, AtlasSpacing.xxl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .environment(\.atlasContentWidth, max(0, contentWidth))
     }
 
     private func resolvedHorizontalPadding(for width: CGFloat) -> CGFloat {
@@ -468,12 +471,16 @@ public struct AtlasEmptyState: View {
     private let detail: String
     private let systemImage: String
     private let tone: AtlasTone
+    private let actionTitle: String?
+    private let onAction: (() -> Void)?
 
-    public init(title: String, detail: String, systemImage: String, tone: AtlasTone = .neutral) {
+    public init(title: String, detail: String, systemImage: String, tone: AtlasTone = .neutral, actionTitle: String? = nil, onAction: (() -> Void)? = nil) {
         self.title = title
         self.detail = detail
         self.systemImage = systemImage
         self.tone = tone
+        self.actionTitle = actionTitle
+        self.onAction = onAction
     }
 
     public var body: some View {
@@ -509,6 +516,13 @@ public struct AtlasEmptyState: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            if let actionTitle, let onAction {
+                Button(actionTitle) {
+                    onAction()
+                }
+                .buttonStyle(.atlasSecondary)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(AtlasSpacing.section)
@@ -520,7 +534,7 @@ public struct AtlasEmptyState: View {
             RoundedRectangle(cornerRadius: AtlasRadius.xl, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
         )
-        .accessibilityElement(children: .ignore)
+        .accessibilityElement(children: onAction != nil ? .contain : .ignore)
         .accessibilityLabel(Text(title))
         .accessibilityValue(Text(detail))
     }
@@ -543,6 +557,7 @@ public struct AtlasLoadingState: View {
             HStack(spacing: AtlasSpacing.md) {
                 ProgressView()
                     .controlSize(.small)
+                    .tint(AtlasColor.brand)
                     .accessibilityHidden(true)
 
                 Text(title)
@@ -557,6 +572,7 @@ public struct AtlasLoadingState: View {
             if let progress {
                 ProgressView(value: progress, total: 1)
                     .controlSize(.large)
+                    .tint(AtlasColor.brand)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
