@@ -1,0 +1,49 @@
+name: XCUITestRepro
+options:
+  createIntermediateGroups: true
+  developmentLanguage: en
+  deploymentTarget:
+    macOS: "14.0"
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+schemes:
+  XCUITestRepro:
+    build:
+      targets:
+        XCUITestRepro: all
+    test:
+      config: Debug
+      gatherCoverageData: false
+      targets:
+        - name: XCUITestReproUITests
+targets:
+  XCUITestRepro:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: App
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.atlasformac.xcuitestrepro
+        PRODUCT_NAME: XCUITestRepro
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: XCUITestRepro
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
+        AD_HOC_CODE_SIGNING_ALLOWED: YES
+  XCUITestReproUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: UITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.atlasformac.xcuitestrepro.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: XCUITestRepro
+        AD_HOC_CODE_SIGNING_ALLOWED: YES
+    dependencies:
+      - target: XCUITestRepro

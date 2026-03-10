@@ -1,0 +1,23 @@
+name: Atlas Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Apps/**'
+      - 'Packages/**'
+      - 'Helpers/**'
+      - 'XPC/**'
+      - 'Testing/**'
+      - 'scripts/atlas/**'
+      - 'Docs/Execution/MVP-Acceptance-Matrix.md'
+      - '.github/workflows/atlas-acceptance.yml'
+
+jobs:
+  acceptance:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Atlas acceptance pipeline
+        run: ./scripts/atlas/full-acceptance.sh

@@ -1,0 +1,105 @@
+name: Atlas
+options:
+  createIntermediateGroups: true
+  developmentLanguage: zh-Hans
+  deploymentTarget:
+    macOS: "14.0"
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+packages:
+  Packages:
+    path: Packages
+schemes:
+  AtlasApp:
+    build:
+      targets:
+        AtlasWorkerXPC: [running]
+        AtlasApp: all
+    test:
+      config: Debug
+      gatherCoverageData: false
+      targets:
+        - name: AtlasAppUITests
+    run:
+      config: Debug
+    archive:
+      config: Release
+targets:
+  AtlasWorkerXPC:
+    type: xpc-service
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: XPC/AtlasWorkerXPC/Sources/AtlasWorkerXPC
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.atlasformac.app.worker
+        PRODUCT_NAME: AtlasWorkerXPC
+        GENERATE_INFOPLIST_FILE: YES
+        AD_HOC_CODE_SIGNING_ALLOWED: YES
+    dependencies:
+      - package: Packages
+        product: AtlasApplication
+      - package: Packages
+        product: AtlasCoreAdapters
+      - package: Packages
+        product: AtlasInfrastructure
+      - package: Packages
+        product: AtlasProtocol
+  AtlasApp:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Apps/AtlasApp/Sources/AtlasApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.atlasformac.app
+        PRODUCT_NAME: Atlas for Mac
+        GENERATE_INFOPLIST_FILE: YES
+        AD_HOC_CODE_SIGNING_ALLOWED: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Atlas for Mac
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
+    dependencies:
+      - target: AtlasWorkerXPC
+        embed: true
+        codeSign: false
+      - package: Packages
+        product: AtlasApplication
+      - package: Packages
+        product: AtlasCoreAdapters
+      - package: Packages
+        product: AtlasDesignSystem
+      - package: Packages
+        product: AtlasDomain
+      - package: Packages
+        product: AtlasFeaturesApps
+      - package: Packages
+        product: AtlasFeaturesHistory
+      - package: Packages
+        product: AtlasFeaturesOverview
+      - package: Packages
+        product: AtlasFeaturesPermissions
+      - package: Packages
+        product: AtlasFeaturesSettings
+      - package: Packages
+        product: AtlasFeaturesSmartClean
+      - package: Packages
+        product: AtlasInfrastructure
+  AtlasAppUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Apps/AtlasAppUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.atlasformac.app.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: AtlasApp
+        AD_HOC_CODE_SIGNING_ALLOWED: YES
+    dependencies:
+      - target: AtlasApp

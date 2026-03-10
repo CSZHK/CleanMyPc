@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Brand gradient: darker premium teal to deep emerald -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#031B1A"/>
+      <stop offset="50%" stop-color="#0A5C56"/>
+      <stop offset="100%" stop-color="#073936"/>
+    </linearGradient>
+
+    <!-- Inner glow from top-left -->
+    <radialGradient id="innerGlow" cx="0.3" cy="0.25" r="0.7">
+      <stop offset="0%" stop-color="#D1FAE5" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Globe gradient -->
+    <radialGradient id="globeGrad" cx="0.4" cy="0.35" r="0.55">
+      <stop offset="0%" stop-color="#A7F3D0" stop-opacity="0.38"/>
+      <stop offset="60%" stop-color="#5EEAD4" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#0A5C56" stop-opacity="0.10"/>
+    </radialGradient>
+
+    <!-- Mint accent gradient -->
+    <linearGradient id="mintGrad" x1="0" y1="0" x2="1" y2="0.5">
+      <stop offset="0%" stop-color="#D1FAE5" stop-opacity="0.98"/>
+      <stop offset="100%" stop-color="#6EE7B7" stop-opacity="0.82"/>
+    </linearGradient>
+
+    <!-- Clip to rounded square -->
+    <clipPath id="roundClip">
+      <rect x="0" y="0" width="1024" height="1024" rx="225" ry="225"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#roundClip)">
+    <!-- Background -->
+    <rect width="1024" height="1024" fill="url(#bgGrad)"/>
+    <rect width="1024" height="1024" fill="url(#innerGlow)"/>
+
+    <!-- Globe circle -->
+    <circle cx="512" cy="512" r="327"
+            fill="url(#globeGrad)" stroke="#CCFBF1" stroke-width="4" stroke-opacity="0.24"/>
+
+    <!-- Meridian lines (longitude) -->
+    <g fill="none" stroke="#CCFBF1" stroke-width="2" stroke-opacity="0.24">
+      <!-- Vertical center line -->
+      <line x1="512" y1="184" x2="512" y2="839"/>
+      <!-- Elliptical meridians -->
+      <ellipse cx="512" cy="512" rx="122" ry="327"/>
+      <ellipse cx="512" cy="512" rx="245" ry="327"/>
+    </g>
+
+    <!-- Latitude lines (horizontal) -->
+    <g fill="none" stroke="#CCFBF1" stroke-width="2" stroke-opacity="0.18">
+      <line x1="184" y1="512" x2="839" y2="512"/>
+      <ellipse cx="512" cy="512" rx="327" ry="122"/>
+      <ellipse cx="512" cy="512" rx="327" ry="225"/>
+    </g>
+
+    <!-- Mint accent arc — the "mapping" highlight -->
+    <path d="M 286 593
+             Q 512 358, 737 430"
+          fill="none" stroke="url(#mintGrad)" stroke-width="18"
+          stroke-linecap="round" stroke-opacity="0.92"/>
+
+    <!-- Small mint dot at arc start -->
+    <circle cx="286" cy="593" r="9"
+            fill="#A7F3D0" opacity="0.95"/>
+
+    <!-- Small mint dot at arc end -->
+    <circle cx="737" cy="430" r="9"
+            fill="#A7F3D0" opacity="0.95"/>
+
+    <!-- Subtle sparkle at top-right of globe -->
+    <g transform="translate(634, 286)" opacity="0.5">
+      <line x1="0" y1="-20" x2="0" y2="20"
+            stroke="white" stroke-width="2" stroke-linecap="round"/>
+      <line x1="-20" y1="0" x2="20" y2="0"
+            stroke="white" stroke-width="2" stroke-linecap="round"/>
+    </g>
+
+    <!-- Bottom subtle reflection -->
+    <rect x="0" y="768" width="1024" height="256"
+          fill="url(#bgGrad)" opacity="0.3"/>
+  </g>
+</svg>

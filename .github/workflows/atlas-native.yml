@@ -1,0 +1,31 @@
+name: Atlas Native
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Apps/**'
+      - 'Packages/**'
+      - 'XPC/**'
+      - 'Helpers/**'
+      - 'project.yml'
+      - 'scripts/atlas/**'
+      - '.github/workflows/atlas-native.yml'
+
+jobs:
+  build-native:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and package Atlas native app
+        run: ./scripts/atlas/package-native.sh
+
+      - name: Verify DMG can install to the user Applications folder
+        run: ./scripts/atlas/verify-dmg-install.sh
+
+      - name: Upload native app and installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-native-app
+          path: dist/native/*
