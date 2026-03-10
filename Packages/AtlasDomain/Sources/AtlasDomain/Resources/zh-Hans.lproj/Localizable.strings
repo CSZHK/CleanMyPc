@@ -14,6 +14,8 @@
 "route.permissions.subtitle" = "先解释原因，再请求访问。";
 "route.settings.title" = "设置";
 "route.settings.subtitle" = "偏好、排除项、致谢和通知。";
+"route.about.title" = "关于";
+"route.about.subtitle" = "了解作者，探索更多产品。";
 
 "risk.safe" = "安全";
 "risk.review" = "复核";
@@ -244,6 +246,14 @@
 "overview.risk.safe" = "低风险清理";
 "overview.risk.review" = "建议删除前先复核";
 "overview.risk.advanced" = "建议高级检查";
+"overview.actions.viewAll" = "查看全部 %d 项发现";
+"overview.activity.viewAll" = "查看全部活动";
+"overview.snapshot.viewAllOptimizations" = "展开全部 %d 条建议";
+"overview.snapshot.collapseOptimizations" = "收起建议";
+"overview.action.smartClean" = "运行智能清理";
+"overview.action.smartClean.hint" = "前往智能清理并开始扫描。";
+"overview.action.permissions" = "修复权限";
+"overview.action.permissions.hint" = "前往权限页面检查并授权。";
 
 "smartclean.screen.title" = "智能清理";
 "smartclean.screen.subtitle" = "先把扫描结果变成清晰的清理计划，再决定是否执行任何具有破坏性的操作。";
@@ -559,3 +569,33 @@
 "settings.acknowledgement.subtitle" = "用户无需离开产品，就能查看应用内致谢文本。";
 "settings.notices.title" = "第三方说明";
 "settings.notices.subtitle" = "用于展示随产品一起分发的第三方说明信息。";
+
+"confirm.title" = "确认";
+"confirm.cancel" = "取消";
+"smartclean.confirm.execute.title" = "执行这份清理计划？";
+"smartclean.confirm.execute.message" = "将按复核后的计划执行清理。标记为可恢复的项目可以在历史中找回。";
+"apps.confirm.uninstall.title" = "卸载这个应用？";
+"apps.confirm.uninstall.message" = "将移除 %@ 及其残留文件。可恢复的项目可以在历史中找回。";
+"emptystate.action.scan" = "运行智能清理";
+"emptystate.action.refresh" = "刷新应用";
+"emptystate.action.viewHistory" = "查看历史";
+"emptystate.action.startScan" = "开始扫描";
+"about.screen.title" = "关于";
+"about.screen.subtitle" = "Atlas for Mac 背后的开发者与愿景。";
+"about.author.title" = "关于作者";
+"about.author.name" = "Lizi KK";
+"about.author.role" = "前百度 & 阿里技术负责人 · AI 全栈独立开发";
+"about.author.bio" = "从 0 到 1 独立构建 Atlas。每一行代码都由 AI 辅助，但都经过了人的决策、审美和架构判断。";
+"about.author.quote" = "AI 是极其强大的手和脚，但你必须做那个头脑清醒的大脑。";
+"about.product.title" = "作者的其他产品";
+"about.product.name" = "AtomStorm Studio";
+"about.product.detail" = "AI Agent 驱动的设计创作平台——从想法到演示文稿、落地页和海报，几分钟搞定。";
+"about.product.visit" = "访问 AtomStorm Studio";
+"about.opensource.title" = "开源项目";
+"about.opensource.name" = "Atlas for Mac (Mole Installer)";
+"about.opensource.detail" = "本项目已开源。欢迎在 GitHub 上 Star、Fork 或参与贡献。";
+"about.opensource.visit" = "在 GitHub 上查看";
+"about.social.title" = "关注作者";
+"about.social.detail" = "微信公众号 & 小红书";
+
+"smartclean.preview.callout.review.title" = "这份计划中仍有步骤需要复核";

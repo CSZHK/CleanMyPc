@@ -7,6 +7,7 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
     case history
     case permissions
     case settings
+    case about
 
     public var id: String { rawValue }
 
@@ -24,6 +25,8 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
             return AtlasL10n.string("route.permissions.title")
         case .settings:
             return AtlasL10n.string("route.settings.title")
+        case .about:
+            return AtlasL10n.string("route.about.title")
         }
     }
 
@@ -41,6 +44,8 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
             return AtlasL10n.string("route.permissions.subtitle")
         case .settings:
             return AtlasL10n.string("route.settings.subtitle")
+        case .about:
+            return AtlasL10n.string("route.about.subtitle")
         }
     }
 
@@ -58,6 +63,8 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
             return "lock.shield"
         case .settings:
             return "gearshape"
+        case .about:
+            return "person.crop.circle"
         }
     }
 }

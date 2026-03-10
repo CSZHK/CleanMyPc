@@ -14,6 +14,7 @@ let package = Package(
         .library(name: "AtlasFeaturesHistory", targets: ["AtlasFeaturesHistory"]),
         .library(name: "AtlasFeaturesOverview", targets: ["AtlasFeaturesOverview"]),
         .library(name: "AtlasFeaturesPermissions", targets: ["AtlasFeaturesPermissions"]),
+        .library(name: "AtlasFeaturesAbout", targets: ["AtlasFeaturesAbout"]),
         .library(name: "AtlasFeaturesSettings", targets: ["AtlasFeaturesSettings"]),
         .library(name: "AtlasFeaturesSmartClean", targets: ["AtlasFeaturesSmartClean"]),
         .library(name: "AtlasFeaturesStorage", targets: ["AtlasFeaturesStorage"]),
@@ -23,6 +24,7 @@ let package = Package(
     targets: [
         .target(
             name: "AtlasDesignSystem",
+            dependencies: ["AtlasDomain"],
             path: "AtlasDesignSystem/Sources/AtlasDesignSystem",
             resources: [.process("Resources")]
         ),
@@ -61,6 +63,11 @@ let package = Package(
             name: "AtlasFeaturesSmartClean",
             dependencies: ["AtlasApplication", "AtlasDesignSystem", "AtlasDomain"],
             path: "AtlasFeaturesSmartClean/Sources/AtlasFeaturesSmartClean"
+        ),
+        .target(
+            name: "AtlasFeaturesAbout",
+            dependencies: ["AtlasDesignSystem", "AtlasDomain"],
+            path: "AtlasFeaturesAbout/Sources/AtlasFeaturesAbout"
         ),
         .target(
             name: "AtlasFeaturesApps",

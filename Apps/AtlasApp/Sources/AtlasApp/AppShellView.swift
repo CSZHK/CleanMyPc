@@ -1,5 +1,6 @@
 import AtlasDesignSystem
 import AtlasDomain
+import AtlasFeaturesAbout
 import AtlasFeaturesApps
 import AtlasFeaturesHistory
 import AtlasFeaturesOverview
@@ -133,7 +134,21 @@ struct AppShellView: View {
         case .overview:
             OverviewFeatureView(
                 snapshot: model.filteredSnapshot,
-                isRefreshingHealthSnapshot: model.isHealthSnapshotRefreshing
+                isRefreshingHealthSnapshot: model.isHealthSnapshotRefreshing,
+                onStartSmartClean: {
+                    model.navigate(to: .smartClean)
+                    Task { await model.runSmartCleanScan() }
+                },
+                onNavigateToSmartClean: {
+                    model.navigate(to: .smartClean)
+                },
+                onNavigateToHistory: {
+                    model.navigate(to: .history)
+                },
+                onNavigateToPermissions: {
+                    model.navigate(to: .permissions)
+                    Task { await model.inspectPermissions() }
+                }
             )
         case .smartClean:
             SmartCleanFeatureView(
@@ -209,6 +224,8 @@ struct AppShellView: View {
                     Task { await model.setNotificationsEnabled(isEnabled) }
                 }
             )
+        case .about:
+            AboutFeatureView()
         }
     }
 
@@ -223,18 +240,7 @@ private struct SidebarRouteRow: View {
     let route: AtlasRoute
 
     var body: some View {
-        Label {
-            VStack(alignment: .leading, spacing: AtlasSpacing.xxs) {
-                Text(route.title)
-                    .font(AtlasTypography.rowTitle)
-
-                Text(route.subtitle)
-                    .font(AtlasTypography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
-        } icon: {
+        HStack(alignment: .center, spacing: AtlasSpacing.md) {
             ZStack {
                 RoundedRectangle(cornerRadius: AtlasRadius.sm, style: .continuous)
                     .fill(AtlasColor.brand.opacity(0.1))
@@ -244,6 +250,17 @@ private struct SidebarRouteRow: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(AtlasColor.brand)
                     .accessibilityHidden(true)
+            }
+
+            VStack(alignment: .leading, spacing: AtlasSpacing.xxs) {
+                Text(route.title)
+                    .font(AtlasTypography.rowTitle)
+
+                Text(route.subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
         }
         .padding(.vertical, AtlasSpacing.sm)
@@ -275,6 +292,8 @@ private extension AtlasRoute {
             return "5"
         case .settings:
             return "6"
+        case .about:
+            return "7"
         }
     }
 }

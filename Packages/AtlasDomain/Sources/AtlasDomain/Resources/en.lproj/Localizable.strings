@@ -14,6 +14,8 @@
 "route.permissions.subtitle" = "Explain why access is needed before asking for it.";
 "route.settings.title" = "Settings";
 "route.settings.subtitle" = "Preferences, exclusions, acknowledgement, and notices.";
+"route.about.title" = "About";
+"route.about.subtitle" = "Meet the developer and explore more products.";
 
 "risk.safe" = "Safe";
 "risk.review" = "Review";
@@ -244,6 +246,14 @@
 "overview.risk.safe" = "Low-risk cleanup";
 "overview.risk.review" = "Review before removing";
 "overview.risk.advanced" = "Advanced inspection recommended";
+"overview.actions.viewAll" = "View all %d findings";
+"overview.activity.viewAll" = "View all activity";
+"overview.snapshot.viewAllOptimizations" = "Show all %d suggestions";
+"overview.snapshot.collapseOptimizations" = "Collapse suggestions";
+"overview.action.smartClean" = "Run Smart Clean";
+"overview.action.smartClean.hint" = "Navigate to Smart Clean and start a scan.";
+"overview.action.permissions" = "Fix Permissions";
+"overview.action.permissions.hint" = "Navigate to Permissions to check and grant access.";
 
 "smartclean.screen.title" = "Smart Clean";
 "smartclean.screen.subtitle" = "Turn scan results into a clear cleanup plan before you decide to run anything destructive.";
@@ -559,3 +569,33 @@
 "settings.acknowledgement.subtitle" = "The in-app attribution text users can read without leaving the product.";
 "settings.notices.title" = "Third-Party Notices";
 "settings.notices.subtitle" = "A concise notice surface for shipped third-party attributions.";
+
+"confirm.title" = "Confirm";
+"confirm.cancel" = "Cancel";
+"smartclean.confirm.execute.title" = "Run this cleanup plan?";
+"smartclean.confirm.execute.message" = "This will process the reviewed plan. Items marked recoverable can be restored from History.";
+"apps.confirm.uninstall.title" = "Uninstall this app?";
+"apps.confirm.uninstall.message" = "This will remove %@ and its leftovers. Recoverable items can be restored from History.";
+"emptystate.action.scan" = "Run Smart Clean";
+"emptystate.action.refresh" = "Refresh Apps";
+"emptystate.action.viewHistory" = "View History";
+"emptystate.action.startScan" = "Start Scan";
+"about.screen.title" = "About";
+"about.screen.subtitle" = "The person and vision behind Atlas for Mac.";
+"about.author.title" = "Developer";
+"about.author.name" = "Lizi KK";
+"about.author.role" = "Ex-Baidu & Alibaba Tech Lead · Hands On AI Coding";
+"about.author.bio" = "Built Atlas from 0 to 1 solo. Every line is AI-assisted, but passed through human decision-making, taste, and architectural judgment.";
+"about.author.quote" = "AI is incredibly powerful hands and feet, but you must be the clear-headed brain.";
+"about.product.title" = "Also by the Developer";
+"about.product.name" = "AtomStorm Studio";
+"about.product.detail" = "AI Agent-powered design platform — from idea to presentations, landing pages, and posters in minutes.";
+"about.product.visit" = "Visit AtomStorm Studio";
+"about.opensource.title" = "Open Source";
+"about.opensource.name" = "Atlas for Mac (Mole Installer)";
+"about.opensource.detail" = "This project is open source. Star, fork, or contribute on GitHub.";
+"about.opensource.visit" = "View on GitHub";
+"about.social.title" = "Follow Me";
+"about.social.detail" = "WeChat Official Account & Xiaohongshu";
+
+"smartclean.preview.callout.review.title" = "Some steps in this plan need a closer review";
