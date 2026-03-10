@@ -80,3 +80,12 @@ run_tests.ps1
 AGENTS.md
 mole_guidelines.md
 CLAUDE.md
+# Swift / Xcode
+.build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.swiftpm/
+
+dist/
+.build/atlas-native/
