@@ -119,7 +119,7 @@ public struct HistoryFeatureView: View {
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     }
-                    .frame(height: 560)
+                    .frame(minHeight: 400, maxHeight: .infinity)
                 }
             }
         }
@@ -713,7 +713,7 @@ private struct HistoryTaskSidebarRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
             HStack(alignment: .center, spacing: AtlasSpacing.sm) {
-                Image(systemName: taskRun.kind.historySystemImage)
+                Image(systemName: taskRun.kind.atlasSystemImage)
                     .font(AtlasTypography.caption)
                     .foregroundStyle(taskRun.status.atlasTone.tint)
                     .accessibilityHidden(true)
@@ -1049,37 +1049,7 @@ private enum HistoryRecoveryCategory: String, CaseIterable {
     }
 }
 
-private extension TaskKind {
-    var historySystemImage: String {
-        switch self {
-        case .scan:
-            return "sparkles"
-        case .executePlan:
-            return "play.circle"
-        case .uninstallApp:
-            return "trash"
-        case .restore:
-            return "arrow.uturn.backward.circle"
-        case .inspectPermissions:
-            return "lock.shield"
-        }
-    }
-}
-
 private extension TaskStatus {
-    var atlasTone: AtlasTone {
-        switch self {
-        case .queued:
-            return .neutral
-        case .running:
-            return .warning
-        case .completed:
-            return .success
-        case .failed, .cancelled:
-            return .danger
-        }
-    }
-
     var historyCalloutTitle: String {
         switch self {
         case .queued:

@@ -130,7 +130,7 @@ public struct AppsFeatureView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(height: 560)
+                .frame(minHeight: 400, maxHeight: .infinity)
             }
         }
         .onAppear(perform: syncSelection)
@@ -186,7 +186,9 @@ public struct AppsFeatureView: View {
                     title: AtlasL10n.string("apps.list.empty.title"),
                     detail: AtlasL10n.string("apps.list.empty.detail"),
                     systemImage: "square.stack.3d.up.slash",
-                    tone: .neutral
+                    tone: .neutral,
+                    actionTitle: AtlasL10n.string("emptystate.action.refresh"),
+                    onAction: onRefreshApps
                 )
             } else {
                 List(selection: $selectedAppID) {
@@ -351,6 +353,8 @@ private struct AppDetailView: View {
     let onPreview: () -> Void
     let onUninstall: () -> Void
 
+    @State private var showUninstallConfirmation = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
             HStack(alignment: .top, spacing: AtlasSpacing.lg) {
@@ -442,7 +446,7 @@ private struct AppDetailView: View {
                                 title: item.title,
                                 subtitle: item.detail,
                                 footnote: item.recoverable ? AtlasL10n.string("apps.preview.row.recoverable") : AtlasL10n.string("apps.preview.row.review"),
-                                systemImage: icon(for: item.kind),
+                                systemImage: item.kind.atlasSystemImage,
                                 tone: item.recoverable ? .success : .warning
                             ) {
                                 AtlasStatusChip(
@@ -491,26 +495,26 @@ private struct AppDetailView: View {
 
     private var uninstallButton: some View {
         Button(isUninstalling ? AtlasL10n.string("apps.uninstall.running") : AtlasL10n.string("apps.uninstall.action")) {
-            onUninstall()
+            showUninstallConfirmation = true
         }
         .buttonStyle(.atlasPrimary)
         .disabled(isBusy || previewPlan == nil)
         .accessibilityIdentifier("apps.uninstall.\(app.id.uuidString)")
         .accessibilityHint(AtlasL10n.string("apps.uninstall.hint"))
-    }
-
-    private func icon(for kind: ActionItem.Kind) -> String {
-        switch kind {
-        case .removeCache:
-            return "trash"
-        case .removeApp:
-            return "app.badge.minus"
-        case .archiveFile:
-            return "archivebox"
-        case .inspectPermission:
-            return "lock.shield"
+        .confirmationDialog(
+            AtlasL10n.string("apps.confirm.uninstall.title"),
+            isPresented: $showUninstallConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(AtlasL10n.string("apps.uninstall.action"), role: .destructive) {
+                onUninstall()
+            }
+            Button(AtlasL10n.string("confirm.cancel"), role: .cancel) {}
+        } message: {
+            Text(AtlasL10n.string("apps.confirm.uninstall.message", app.name))
         }
     }
+
 }
 
 private struct AppGroup: Identifiable {

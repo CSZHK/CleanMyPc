@@ -6,13 +6,28 @@ import SwiftUI
 public struct OverviewFeatureView: View {
     private let snapshot: AtlasWorkspaceSnapshot
     private let isRefreshingHealthSnapshot: Bool
+    private let onStartSmartClean: (() -> Void)?
+    private let onNavigateToSmartClean: (() -> Void)?
+    private let onNavigateToHistory: (() -> Void)?
+    private let onNavigateToPermissions: (() -> Void)?
+
+    @Environment(\.atlasContentWidth) private var contentWidth
+    @State private var showAllOptimizations = false
 
     public init(
         snapshot: AtlasWorkspaceSnapshot = AtlasScaffoldWorkspace.snapshot(),
-        isRefreshingHealthSnapshot: Bool = false
+        isRefreshingHealthSnapshot: Bool = false,
+        onStartSmartClean: (() -> Void)? = nil,
+        onNavigateToSmartClean: (() -> Void)? = nil,
+        onNavigateToHistory: (() -> Void)? = nil,
+        onNavigateToPermissions: (() -> Void)? = nil
     ) {
         self.snapshot = snapshot
         self.isRefreshingHealthSnapshot = isRefreshingHealthSnapshot
+        self.onStartSmartClean = onStartSmartClean
+        self.onNavigateToSmartClean = onNavigateToSmartClean
+        self.onNavigateToHistory = onNavigateToHistory
+        self.onNavigateToPermissions = onNavigateToPermissions
     }
 
     public var body: some View {
@@ -27,15 +42,18 @@ public struct OverviewFeatureView: View {
                 systemImage: overviewCalloutTone.symbol
             )
 
-            LazyVGrid(columns: AtlasLayout.metricColumns, spacing: AtlasSpacing.lg) {
-                AtlasMetricCard(
-                    title: AtlasL10n.string("overview.metric.reclaimable.title"),
-                    value: AtlasFormatters.byteCount(snapshot.reclaimableSpaceBytes),
-                    detail: AtlasL10n.string("overview.metric.reclaimable.detail"),
-                    tone: .success,
-                    systemImage: "sparkles",
-                    elevation: .prominent
-                )
+            // MARK: - Hero metric — full width
+            AtlasMetricCard(
+                title: AtlasL10n.string("overview.metric.reclaimable.title"),
+                value: AtlasFormatters.byteCount(snapshot.reclaimableSpaceBytes),
+                detail: AtlasL10n.string("overview.metric.reclaimable.detail"),
+                tone: .success,
+                systemImage: "sparkles",
+                elevation: .prominent
+            )
+
+            // MARK: - Secondary metrics — adaptive 2/1 columns
+            LazyVGrid(columns: secondaryColumns, spacing: AtlasSpacing.lg) {
                 AtlasMetricCard(
                     title: AtlasL10n.string("overview.metric.findings.title"),
                     value: "\(snapshot.findings.count)",
@@ -54,72 +72,13 @@ public struct OverviewFeatureView: View {
                 )
             }
 
-            AtlasInfoCard(
-                title: AtlasL10n.string("overview.snapshot.title"),
-                subtitle: AtlasL10n.string("overview.snapshot.subtitle")
-            ) {
-                if isRefreshingHealthSnapshot, snapshot.healthSnapshot == nil {
-                    AtlasLoadingState(
-                        title: AtlasL10n.string("overview.snapshot.loading.title"),
-                        detail: AtlasL10n.string("overview.snapshot.loading.detail")
-                    )
-                } else if let healthSnapshot = snapshot.healthSnapshot {
-                    LazyVGrid(columns: AtlasLayout.metricColumns, spacing: AtlasSpacing.lg) {
-                        AtlasMetricCard(
-                            title: AtlasL10n.string("overview.snapshot.memory.title"),
-                            value: "\(formatted(healthSnapshot.memoryUsedGB))/\(formatted(healthSnapshot.memoryTotalGB)) GB",
-                            detail: AtlasL10n.string("overview.snapshot.memory.detail"),
-                            tone: healthSnapshot.memoryUsedGB / max(healthSnapshot.memoryTotalGB, 1) > 0.75 ? .warning : .neutral,
-                            systemImage: "memorychip"
-                        )
-                        AtlasMetricCard(
-                            title: AtlasL10n.string("overview.snapshot.disk.title"),
-                            value: "\(formatted(healthSnapshot.diskUsedPercent))%",
-                            detail: AtlasL10n.string("overview.snapshot.disk.detail", formatted(healthSnapshot.diskUsedGB), formatted(healthSnapshot.diskTotalGB)),
-                            tone: healthSnapshot.diskUsedPercent > 80 ? .warning : .success,
-                            systemImage: "internaldrive"
-                        )
-                        AtlasMetricCard(
-                            title: AtlasL10n.string("overview.snapshot.uptime.title"),
-                            value: "\(formatted(healthSnapshot.uptimeDays)) \(AtlasL10n.string("common.days"))",
-                            detail: AtlasL10n.string("overview.snapshot.uptime.detail"),
-                            tone: .neutral,
-                            systemImage: "clock"
-                        )
-                    }
+            // MARK: - Quick actions bar
+            quickActionsBar
 
-                    AtlasCallout(
-                        title: healthSnapshot.diskUsedPercent > 80 ? AtlasL10n.string("overview.snapshot.callout.warning.title") : AtlasL10n.string("overview.snapshot.callout.ok.title"),
-                        detail: healthSnapshot.diskUsedPercent > 80
-                            ? AtlasL10n.string("overview.snapshot.callout.warning.detail")
-                            : AtlasL10n.string("overview.snapshot.callout.ok.detail"),
-                        tone: healthSnapshot.diskUsedPercent > 80 ? .warning : .success,
-                        systemImage: healthSnapshot.diskUsedPercent > 80 ? "exclamationmark.triangle.fill" : "checkmark.circle.fill"
-                    )
+            // MARK: - System Snapshot (flattened — no InfoCard wrapper)
+            systemSnapshotSection
 
-                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                        ForEach(Array(healthSnapshot.optimizations.prefix(4))) { optimization in
-                            AtlasDetailRow(
-                                title: optimization.name,
-                                subtitle: optimization.detail,
-                                footnote: AtlasL10n.localizedCategory(optimization.category).capitalized,
-                                systemImage: optimization.isSafe ? "checkmark.shield" : "slider.horizontal.3",
-                                tone: optimization.isSafe ? .success : .warning
-                            ) {
-                                AtlasStatusChip(optimization.isSafe ? AtlasL10n.string("risk.safe") : AtlasL10n.string("risk.review"), tone: optimization.isSafe ? .success : .warning)
-                            }
-                        }
-                    }
-                } else {
-                    AtlasEmptyState(
-                        title: AtlasL10n.string("overview.snapshot.empty.title"),
-                        detail: AtlasL10n.string("overview.snapshot.empty.detail"),
-                        systemImage: "waveform.path.ecg",
-                        tone: .warning
-                    )
-                }
-            }
-
+            // MARK: - Recommended Actions
             AtlasInfoCard(
                 title: AtlasL10n.string("overview.actions.title"),
                 subtitle: AtlasL10n.string("overview.actions.subtitle")
@@ -138,7 +97,7 @@ public struct OverviewFeatureView: View {
                                 title: finding.title,
                                 subtitle: finding.detail,
                                 footnote: "\(AtlasL10n.localizedCategory(finding.category)) • \(riskSupport(for: finding.risk))",
-                                systemImage: icon(for: finding.category),
+                                systemImage: AtlasCategoryIcon.systemImage(for: finding.category),
                                 tone: finding.risk.atlasTone
                             ) {
                                 VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
@@ -149,10 +108,24 @@ public struct OverviewFeatureView: View {
                                 }
                             }
                         }
+
+                        if snapshot.findings.count > 4, let onNavigateToSmartClean {
+                            Button {
+                                onNavigateToSmartClean()
+                            } label: {
+                                Label(
+                                    AtlasL10n.string("overview.actions.viewAll", snapshot.findings.count),
+                                    systemImage: "arrow.right.circle"
+                                )
+                            }
+                            .buttonStyle(.atlasGhost)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        }
                     }
                 }
             }
 
+            // MARK: - Recent Activity
             AtlasInfoCard(
                 title: AtlasL10n.string("overview.activity.title"),
                 subtitle: AtlasL10n.string("overview.activity.subtitle")
@@ -171,17 +144,192 @@ public struct OverviewFeatureView: View {
                                 title: taskRun.kind.title,
                                 subtitle: taskRun.summary,
                                 footnote: timelineFootnote(for: taskRun),
-                                systemImage: icon(for: taskRun.kind),
+                                systemImage: taskRun.kind.atlasSystemImage,
                                 tone: taskRun.status.atlasTone
                             ) {
                                 AtlasStatusChip(taskRun.status.title, tone: taskRun.status.atlasTone)
                             }
+                        }
+
+                        if snapshot.taskRuns.count > 3, let onNavigateToHistory {
+                            Button {
+                                onNavigateToHistory()
+                            } label: {
+                                Label(
+                                    AtlasL10n.string("overview.activity.viewAll"),
+                                    systemImage: "arrow.right.circle"
+                                )
+                            }
+                            .buttonStyle(.atlasGhost)
+                            .frame(maxWidth: .infinity, alignment: .center)
                         }
                     }
                 }
             }
         }
     }
+
+    // MARK: - Quick Actions Bar
+
+    @ViewBuilder
+    private var quickActionsBar: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: AtlasSpacing.lg) {
+                quickActionButtons
+            }
+
+            VStack(spacing: AtlasSpacing.md) {
+                quickActionButtons
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var quickActionButtons: some View {
+        if let onStartSmartClean {
+            Button {
+                onStartSmartClean()
+            } label: {
+                Label(
+                    AtlasL10n.string("overview.action.smartClean"),
+                    systemImage: AtlasIcon.smartClean
+                )
+            }
+            .buttonStyle(.atlasPrimary)
+            .accessibilityHint(AtlasL10n.string("overview.action.smartClean.hint"))
+        }
+
+        if !requiredPermissionsReady, let onNavigateToPermissions {
+            Button {
+                onNavigateToPermissions()
+            } label: {
+                Label(
+                    AtlasL10n.string("overview.action.permissions"),
+                    systemImage: AtlasIcon.permissions
+                )
+            }
+            .buttonStyle(.atlasSecondary)
+            .accessibilityHint(AtlasL10n.string("overview.action.permissions.hint"))
+        }
+    }
+
+    // MARK: - System Snapshot Section (flattened)
+
+    @ViewBuilder
+    private var systemSnapshotSection: some View {
+        VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
+            // Section header
+            VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
+                Text(AtlasL10n.string("overview.snapshot.title"))
+                    .font(AtlasTypography.sectionTitle)
+
+                Text(AtlasL10n.string("overview.snapshot.subtitle"))
+                    .font(AtlasTypography.body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if isRefreshingHealthSnapshot, snapshot.healthSnapshot == nil {
+                AtlasLoadingState(
+                    title: AtlasL10n.string("overview.snapshot.loading.title"),
+                    detail: AtlasL10n.string("overview.snapshot.loading.detail")
+                )
+            } else if let healthSnapshot = snapshot.healthSnapshot {
+                LazyVGrid(columns: adaptiveColumns, spacing: AtlasSpacing.lg) {
+                    AtlasMetricCard(
+                        title: AtlasL10n.string("overview.snapshot.memory.title"),
+                        value: "\(formatted(healthSnapshot.memoryUsedGB))/\(formatted(healthSnapshot.memoryTotalGB)) GB",
+                        detail: AtlasL10n.string("overview.snapshot.memory.detail"),
+                        tone: healthSnapshot.memoryUsedGB / max(healthSnapshot.memoryTotalGB, 1) > 0.75 ? .warning : .neutral,
+                        systemImage: "memorychip"
+                    )
+                    AtlasMetricCard(
+                        title: AtlasL10n.string("overview.snapshot.disk.title"),
+                        value: "\(formatted(healthSnapshot.diskUsedPercent))%",
+                        detail: AtlasL10n.string("overview.snapshot.disk.detail", formatted(healthSnapshot.diskUsedGB), formatted(healthSnapshot.diskTotalGB)),
+                        tone: healthSnapshot.diskUsedPercent > 80 ? .warning : .success,
+                        systemImage: "internaldrive"
+                    )
+                    AtlasMetricCard(
+                        title: AtlasL10n.string("overview.snapshot.uptime.title"),
+                        value: "\(formatted(healthSnapshot.uptimeDays)) \(AtlasL10n.string("common.days"))",
+                        detail: AtlasL10n.string("overview.snapshot.uptime.detail"),
+                        tone: .neutral,
+                        systemImage: "clock"
+                    )
+                }
+
+                AtlasCallout(
+                    title: healthSnapshot.diskUsedPercent > 80 ? AtlasL10n.string("overview.snapshot.callout.warning.title") : AtlasL10n.string("overview.snapshot.callout.ok.title"),
+                    detail: healthSnapshot.diskUsedPercent > 80
+                        ? AtlasL10n.string("overview.snapshot.callout.warning.detail")
+                        : AtlasL10n.string("overview.snapshot.callout.ok.detail"),
+                    tone: healthSnapshot.diskUsedPercent > 80 ? .warning : .success,
+                    systemImage: healthSnapshot.diskUsedPercent > 80 ? "exclamationmark.triangle.fill" : "checkmark.circle.fill"
+                )
+
+                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                    let optimizations = healthSnapshot.optimizations
+                    let visibleOptimizations = showAllOptimizations ? optimizations : Array(optimizations.prefix(4))
+
+                    ForEach(Array(visibleOptimizations)) { optimization in
+                        AtlasDetailRow(
+                            title: optimization.name,
+                            subtitle: optimization.detail,
+                            footnote: AtlasL10n.localizedCategory(optimization.category).capitalized,
+                            systemImage: optimization.isSafe ? "checkmark.shield" : "slider.horizontal.3",
+                            tone: optimization.isSafe ? .success : .warning
+                        ) {
+                            AtlasStatusChip(optimization.isSafe ? AtlasL10n.string("risk.safe") : AtlasL10n.string("risk.review"), tone: optimization.isSafe ? .success : .warning)
+                        }
+                    }
+
+                    if optimizations.count > 4 {
+                        Button {
+                            withAnimation(AtlasMotion.standard) {
+                                showAllOptimizations.toggle()
+                            }
+                        } label: {
+                            Label(
+                                showAllOptimizations
+                                    ? AtlasL10n.string("overview.snapshot.collapseOptimizations")
+                                    : AtlasL10n.string("overview.snapshot.viewAllOptimizations", optimizations.count),
+                                systemImage: showAllOptimizations ? "chevron.up" : "chevron.down"
+                            )
+                        }
+                        .buttonStyle(.atlasGhost)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                }
+            } else {
+                AtlasEmptyState(
+                    title: AtlasL10n.string("overview.snapshot.empty.title"),
+                    detail: AtlasL10n.string("overview.snapshot.empty.detail"),
+                    systemImage: "waveform.path.ecg",
+                    tone: .warning
+                )
+            }
+        }
+    }
+
+    // MARK: - Adaptive Columns
+
+    private var adaptiveColumns: [GridItem] {
+        AtlasLayout.adaptiveMetricColumns(for: contentWidth)
+    }
+
+    private var secondaryColumns: [GridItem] {
+        contentWidth >= 420
+            ? [
+                GridItem(.flexible(minimum: 180), spacing: AtlasSpacing.lg),
+                GridItem(.flexible(minimum: 180), spacing: AtlasSpacing.lg),
+              ]
+            : [
+                GridItem(.flexible(minimum: 180), spacing: AtlasSpacing.lg),
+              ]
+    }
+
+    // MARK: - Computed Properties
 
     private var requiredPermissionStates: [PermissionState] {
         snapshot.permissions.filter { $0.kind.isRequiredForCurrentWorkflows }
@@ -238,61 +386,4 @@ public struct OverviewFeatureView: View {
         return AtlasL10n.string("overview.activity.timeline.running", start)
     }
 
-    private func icon(for category: String) -> String {
-        switch category.lowercased() {
-        case "developer":
-            return "hammer"
-        case "system":
-            return "gearshape.2"
-        case "apps":
-            return "square.stack.3d.up"
-        case "browsers":
-            return "globe"
-        default:
-            return "sparkles"
-        }
-    }
-
-    private func icon(for kind: TaskKind) -> String {
-        switch kind {
-        case .scan:
-            return "sparkles"
-        case .executePlan:
-            return "play.circle"
-        case .uninstallApp:
-            return "trash"
-        case .restore:
-            return "arrow.uturn.backward.circle"
-        case .inspectPermissions:
-            return "lock.shield"
-        }
-    }
-}
-
-private extension RiskLevel {
-    var atlasTone: AtlasTone {
-        switch self {
-        case .safe:
-            return .success
-        case .review:
-            return .warning
-        case .advanced:
-            return .danger
-        }
-    }
-}
-
-private extension TaskStatus {
-    var atlasTone: AtlasTone {
-        switch self {
-        case .queued:
-            return .neutral
-        case .running:
-            return .warning
-        case .completed:
-            return .success
-        case .failed, .cancelled:
-            return .danger
-        }
-    }
 }

@@ -16,6 +16,8 @@ public struct SmartCleanFeatureView: View {
     private let onRefreshPreview: () -> Void
     private let onExecutePlan: () -> Void
 
+    @State private var showExecuteConfirmation = false
+
     public init(
         findings: [Finding] = AtlasScaffoldFixtures.findings,
         plan: ActionPlan = AtlasScaffoldFixtures.actionPlan,
@@ -77,14 +79,13 @@ public struct SmartCleanFeatureView: View {
                         if scanProgress > 0 {
                             ProgressView(value: max(scanProgress, 0), total: 1)
                                 .controlSize(.large)
+                                .tint(AtlasColor.brand)
                         }
 
-                        AtlasCallout(
-                            title: primaryAction.title,
-                            detail: primaryAction.detail,
-                            tone: primaryAction.tone,
-                            systemImage: primaryAction.systemImage
-                        )
+                        Text(primaryAction.detail)
+                            .font(AtlasTypography.body)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
 
                         ViewThatFits(in: .horizontal) {
                             HStack(alignment: .center, spacing: AtlasSpacing.md) {
@@ -159,21 +160,25 @@ public struct SmartCleanFeatureView: View {
                     )
                 }
 
-                AtlasCallout(
-                    title: manualReviewCount == 0 ? AtlasL10n.string("smartclean.preview.callout.safe.title") : AtlasL10n.string("smartclean.preview.callout.review.title"),
-                    detail: manualReviewCount == 0
-                        ? AtlasL10n.string("smartclean.preview.callout.safe.detail")
-                        : AtlasL10n.string("smartclean.preview.callout.review.detail"),
-                    tone: manualReviewCount == 0 ? .success : .warning,
-                    systemImage: manualReviewCount == 0 ? "checkmark.shield.fill" : "exclamationmark.triangle.fill"
-                )
+                if plan.items.isEmpty || manualReviewCount > 0 {
+                    AtlasCallout(
+                        title: manualReviewCount == 0 ? AtlasL10n.string("smartclean.preview.callout.safe.title") : AtlasL10n.string("smartclean.preview.callout.review.title"),
+                        detail: manualReviewCount == 0
+                            ? AtlasL10n.string("smartclean.preview.callout.safe.detail")
+                            : AtlasL10n.string("smartclean.preview.callout.review.detail"),
+                        tone: manualReviewCount == 0 ? .success : .warning,
+                        systemImage: manualReviewCount == 0 ? "checkmark.shield.fill" : "exclamationmark.triangle.fill"
+                    )
+                }
 
                 if plan.items.isEmpty {
                     AtlasEmptyState(
                         title: AtlasL10n.string("smartclean.preview.empty.title"),
                         detail: AtlasL10n.string("smartclean.preview.empty.detail"),
                         systemImage: "list.bullet.clipboard",
-                        tone: .neutral
+                        tone: .neutral,
+                        actionTitle: AtlasL10n.string("emptystate.action.startScan"),
+                        onAction: onStartScan
                     )
                 } else {
                     VStack(alignment: .leading, spacing: AtlasSpacing.md) {
@@ -182,7 +187,7 @@ public struct SmartCleanFeatureView: View {
                                 title: item.title,
                                 subtitle: item.detail,
                                 footnote: supportText(for: item.kind),
-                                systemImage: icon(for: item.kind),
+                                systemImage: item.kind.atlasSystemImage,
                                 tone: item.recoverable ? .success : .warning
                             ) {
                                 VStack(alignment: .trailing, spacing: AtlasSpacing.xs) {
@@ -205,7 +210,9 @@ public struct SmartCleanFeatureView: View {
                     title: AtlasL10n.string("smartclean.empty.title"),
                     detail: AtlasL10n.string("smartclean.empty.detail"),
                     systemImage: "sparkles.tv",
-                    tone: .neutral
+                    tone: .neutral,
+                    actionTitle: AtlasL10n.string("emptystate.action.startScan"),
+                    onAction: onStartScan
                 )
             } else {
                 ForEach(RiskLevel.allCases, id: \.self) { risk in
@@ -231,7 +238,7 @@ public struct SmartCleanFeatureView: View {
                                 title: finding.title,
                             subtitle: finding.detail,
                             footnote: "\(AtlasL10n.localizedCategory(finding.category)) • \(actionExpectation(for: finding.risk))",
-                            systemImage: icon(for: finding.category),
+                            systemImage: AtlasCategoryIcon.systemImage(for: finding.category),
                             tone: risk.atlasTone
                         ) {
                             VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
@@ -381,8 +388,16 @@ public struct SmartCleanFeatureView: View {
         return .refresh
     }
 
+    private func primaryActionTapped() {
+        if primaryAction == .execute {
+            showExecuteConfirmation = true
+        } else {
+            primaryAction.handler(startScan: onStartScan, refreshPreview: onRefreshPreview, executePlan: onExecutePlan)()
+        }
+    }
+
     private var primaryActionButton: some View {
-        Button(action: primaryAction.handler(startScan: onStartScan, refreshPreview: onRefreshPreview, executePlan: onExecutePlan)) {
+        Button(action: primaryActionTapped) {
             Label(primaryAction.buttonTitle, systemImage: primaryAction.buttonSystemImage)
         }
         .buttonStyle(.atlasPrimary)
@@ -390,6 +405,18 @@ public struct SmartCleanFeatureView: View {
         .disabled(primaryAction.isDisabled(canExecutePlan: canExecutePlan))
         .accessibilityIdentifier(primaryAction.accessibilityIdentifier)
         .accessibilityHint(primaryAction.accessibilityHint)
+        .confirmationDialog(
+            AtlasL10n.string("smartclean.confirm.execute.title"),
+            isPresented: $showExecuteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(AtlasL10n.string("smartclean.action.execute"), role: .destructive) {
+                onExecutePlan()
+            }
+            Button(AtlasL10n.string("confirm.cancel"), role: .cancel) {}
+        } message: {
+            Text(AtlasL10n.string("smartclean.confirm.execute.message"))
+        }
     }
 
     @ViewBuilder
@@ -451,33 +478,6 @@ public struct SmartCleanFeatureView: View {
         }
     }
 
-    private func icon(for kind: ActionItem.Kind) -> String {
-        switch kind {
-        case .removeCache:
-            return "trash"
-        case .removeApp:
-            return "app.badge.minus"
-        case .archiveFile:
-            return "archivebox"
-        case .inspectPermission:
-            return "lock.shield"
-        }
-    }
-
-    private func icon(for category: String) -> String {
-        switch category.lowercased() {
-        case "developer":
-            return "hammer"
-        case "system":
-            return "gearshape.2"
-        case "apps":
-            return "square.stack.3d.up"
-        case "browsers":
-            return "globe"
-        default:
-            return "sparkles"
-        }
-    }
 }
 
 private enum SmartCleanPrimaryAction: Equatable {
@@ -596,15 +596,3 @@ private enum SmartCleanPrimaryAction: Equatable {
     }
 }
 
-private extension RiskLevel {
-    var atlasTone: AtlasTone {
-        switch self {
-        case .safe:
-            return .success
-        case .review:
-            return .warning
-        case .advanced:
-            return .danger
-        }
-    }
-}
