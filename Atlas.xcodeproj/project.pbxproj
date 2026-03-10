@@ -8,15 +8,16 @@
 
 /* Begin PBXBuildFile section */
 		00FF4F36C92195A962A9F59B /* TaskCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31527C6248CC4F0D354F6593 /* TaskCenterView.swift */; };
-		017840491908148F704A4D6C /* AtlasFeaturesHistory in Frameworks */ = {isa = PBXBuildFile; productRef = D2ACE8BE6E790F13FAE97F90 /* AtlasFeaturesHistory */; };
+		017840491908148F704A4D6C /* AtlasFeaturesApps in Frameworks */ = {isa = PBXBuildFile; productRef = E010799E86FC790C1EF4C411 /* AtlasFeaturesApps */; };
+		0F5F7A6D0F43DA152DAF0BFF /* AtlasInfrastructure in Frameworks */ = {isa = PBXBuildFile; productRef = 45024873B6BFA049536C71E1 /* AtlasInfrastructure */; };
 		10289D654617F349037539C6 /* AtlasCoreAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 95BB6838D0184A8A534E383B /* AtlasCoreAdapters */; };
-		18248DDA2E6242D30B2FF84B /* AtlasFeaturesSmartClean in Frameworks */ = {isa = PBXBuildFile; productRef = 131D4ECF6E36F9531FA65AC8 /* AtlasFeaturesSmartClean */; };
+		18248DDA2E6242D30B2FF84B /* AtlasFeaturesSettings in Frameworks */ = {isa = PBXBuildFile; productRef = FE51513F5C3746B2C3DA5E9A /* AtlasFeaturesSettings */; };
 		18361B20FDB815F8F80A8D89 /* AtlasCoreAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = A110B5FE410BD691B10F4338 /* AtlasCoreAdapters */; };
 		1FD68E8A5DFA42F86C474290 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10ECA6F0B2C093A4FDBA60A5 /* main.swift */; };
 		568260A734C660E1C1E29EEF /* AtlasApplication in Frameworks */ = {isa = PBXBuildFile; productRef = 07F92560DDAA3271466226A0 /* AtlasApplication */; };
 		5E17D3D1A8B2B6844C11E4A0 /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6F7E5AF1DB77BD9455C253 /* AppShellView.swift */; };
 		69A95E0759F67A6749B13268 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7514A7238A2A0C3B19F6D967 /* Assets.xcassets */; };
-		6BD148B117B161893E57FF2C /* AtlasInfrastructure in Frameworks */ = {isa = PBXBuildFile; productRef = 45024873B6BFA049536C71E1 /* AtlasInfrastructure */; };
+		6BD148B117B161893E57FF2C /* AtlasFeaturesSmartClean in Frameworks */ = {isa = PBXBuildFile; productRef = 131D4ECF6E36F9531FA65AC8 /* AtlasFeaturesSmartClean */; };
 		74A5A06AD14DA376F908F6C9 /* AtlasAppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D49DD35B2A03E408EDF80E69 /* AtlasAppModel.swift */; };
 		873FAE29F09E2720B2DF59FB /* AtlasWorkerXPC.xpc in CopyFiles */ = {isa = PBXBuildFile; fileRef = 97A2723BA50C375AFC3C9321 /* AtlasWorkerXPC.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		921EC8AC0282E18F50EE5B2C /* AtlasDesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = F700399094224F65B9B2FCB1 /* AtlasDesignSystem */; };
@@ -25,13 +26,12 @@
 		BD941EA1964DBDDA07BF038D /* AtlasDomain in Frameworks */ = {isa = PBXBuildFile; productRef = CACD2BDF80C5BCDB56A82F15 /* AtlasDomain */; };
 		C2732566EA6AA5B62BB477C6 /* AtlasInfrastructure in Frameworks */ = {isa = PBXBuildFile; productRef = 23C18AF13B2760AEE0DF79C6 /* AtlasInfrastructure */; };
 		C3F8F2C8DD224ED58EBC16FE /* AtlasProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = 00FA77C665755532AED335FB /* AtlasProtocol */; };
-		C432DF893196B06D2FB00047 /* AtlasFeaturesApps in Frameworks */ = {isa = PBXBuildFile; productRef = E010799E86FC790C1EF4C411 /* AtlasFeaturesApps */; };
-		AA1234567890ABCD00000001 /* AtlasFeaturesAbout in Frameworks */ = {isa = PBXBuildFile; productRef = AA1234567890ABCD00000002 /* AtlasFeaturesAbout */; };
-		C9C68157AB43054FCD85789E /* AtlasFeaturesSettings in Frameworks */ = {isa = PBXBuildFile; productRef = FE51513F5C3746B2C3DA5E9A /* AtlasFeaturesSettings */; };
-		D6401099A3147109478204F7 /* AtlasFeaturesOverview in Frameworks */ = {isa = PBXBuildFile; productRef = 8E08917C8A3949F62A609030 /* AtlasFeaturesOverview */; };
+		C432DF893196B06D2FB00047 /* AtlasFeaturesAbout in Frameworks */ = {isa = PBXBuildFile; productRef = 04DC6841EE038F6B26128C2C /* AtlasFeaturesAbout */; };
+		C9C68157AB43054FCD85789E /* AtlasFeaturesPermissions in Frameworks */ = {isa = PBXBuildFile; productRef = CBA0DE5338A0B120BF572CCA /* AtlasFeaturesPermissions */; };
+		D6401099A3147109478204F7 /* AtlasFeaturesHistory in Frameworks */ = {isa = PBXBuildFile; productRef = D2ACE8BE6E790F13FAE97F90 /* AtlasFeaturesHistory */; };
 		D823AD669FF7D35E9967DA9A /* AtlasAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B5E85855AB6534C486F6AB /* AtlasAppUITests.swift */; };
 		F6099542DFD08E63D266956A /* AtlasApplication in Frameworks */ = {isa = PBXBuildFile; productRef = 76722DB4CBBA64B136FB7925 /* AtlasApplication */; };
-		F7D156229C72B9FC025453F3 /* AtlasFeaturesPermissions in Frameworks */ = {isa = PBXBuildFile; productRef = CBA0DE5338A0B120BF572CCA /* AtlasFeaturesPermissions */; };
+		F7D156229C72B9FC025453F3 /* AtlasFeaturesOverview in Frameworks */ = {isa = PBXBuildFile; productRef = 8E08917C8A3949F62A609030 /* AtlasFeaturesOverview */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -88,14 +88,14 @@
 				18361B20FDB815F8F80A8D89 /* AtlasCoreAdapters in Frameworks */,
 				921EC8AC0282E18F50EE5B2C /* AtlasDesignSystem in Frameworks */,
 				BD941EA1964DBDDA07BF038D /* AtlasDomain in Frameworks */,
-				AA1234567890ABCD00000001 /* AtlasFeaturesAbout in Frameworks */,
-				C432DF893196B06D2FB00047 /* AtlasFeaturesApps in Frameworks */,
-				017840491908148F704A4D6C /* AtlasFeaturesHistory in Frameworks */,
-				D6401099A3147109478204F7 /* AtlasFeaturesOverview in Frameworks */,
-				F7D156229C72B9FC025453F3 /* AtlasFeaturesPermissions in Frameworks */,
-				C9C68157AB43054FCD85789E /* AtlasFeaturesSettings in Frameworks */,
-				18248DDA2E6242D30B2FF84B /* AtlasFeaturesSmartClean in Frameworks */,
-				6BD148B117B161893E57FF2C /* AtlasInfrastructure in Frameworks */,
+				C432DF893196B06D2FB00047 /* AtlasFeaturesAbout in Frameworks */,
+				017840491908148F704A4D6C /* AtlasFeaturesApps in Frameworks */,
+				D6401099A3147109478204F7 /* AtlasFeaturesHistory in Frameworks */,
+				F7D156229C72B9FC025453F3 /* AtlasFeaturesOverview in Frameworks */,
+				C9C68157AB43054FCD85789E /* AtlasFeaturesPermissions in Frameworks */,
+				18248DDA2E6242D30B2FF84B /* AtlasFeaturesSettings in Frameworks */,
+				6BD148B117B161893E57FF2C /* AtlasFeaturesSmartClean in Frameworks */,
+				0F5F7A6D0F43DA152DAF0BFF /* AtlasInfrastructure in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -264,7 +264,7 @@
 				A110B5FE410BD691B10F4338 /* AtlasCoreAdapters */,
 				F700399094224F65B9B2FCB1 /* AtlasDesignSystem */,
 				CACD2BDF80C5BCDB56A82F15 /* AtlasDomain */,
-				AA1234567890ABCD00000002 /* AtlasFeaturesAbout */,
+				04DC6841EE038F6B26128C2C /* AtlasFeaturesAbout */,
 				E010799E86FC790C1EF4C411 /* AtlasFeaturesApps */,
 				D2ACE8BE6E790F13FAE97F90 /* AtlasFeaturesHistory */,
 				8E08917C8A3949F62A609030 /* AtlasFeaturesOverview */,
@@ -675,6 +675,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = AtlasProtocol;
 		};
+		04DC6841EE038F6B26128C2C /* AtlasFeaturesAbout */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AtlasFeaturesAbout;
+		};
 		07F92560DDAA3271466226A0 /* AtlasApplication */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AtlasApplication;
@@ -718,10 +722,6 @@
 		D2ACE8BE6E790F13FAE97F90 /* AtlasFeaturesHistory */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AtlasFeaturesHistory;
-		};
-		AA1234567890ABCD00000002 /* AtlasFeaturesAbout */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AtlasFeaturesAbout;
 		};
 		E010799E86FC790C1EF4C411 /* AtlasFeaturesApps */ = {
 			isa = XCSwiftPackageProductDependency;

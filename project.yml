@@ -76,6 +76,8 @@ targets:
       - package: Packages
         product: AtlasDomain
       - package: Packages
+        product: AtlasFeaturesAbout
+      - package: Packages
         product: AtlasFeaturesApps
       - package: Packages
         product: AtlasFeaturesHistory
