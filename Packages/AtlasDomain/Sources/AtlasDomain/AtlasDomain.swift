@@ -11,6 +11,57 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
 
     public var id: String { rawValue }
 
+    // MARK: - Sidebar
+
+    public enum SidebarSection: String, CaseIterable, Identifiable, Sendable {
+        case core
+        case manage
+
+        public var id: String { rawValue }
+
+        public var title: String {
+            switch self {
+            case .core:
+                return AtlasL10n.string("sidebar.section.core")
+            case .manage:
+                return AtlasL10n.string("sidebar.section.manage")
+            }
+        }
+
+        public var routes: [AtlasRoute] {
+            switch self {
+            case .core:
+                return [.overview, .smartClean, .apps]
+            case .manage:
+                return [.history, .permissions]
+            }
+        }
+    }
+
+    public var isSidebarRoute: Bool {
+        switch self {
+        case .settings, .about:
+            return false
+        default:
+            return true
+        }
+    }
+
+    public static var sidebarRoutes: [AtlasRoute] {
+        allCases.filter(\.isSidebarRoute)
+    }
+
+    public var sidebarSection: SidebarSection? {
+        switch self {
+        case .overview, .smartClean, .apps:
+            return .core
+        case .history, .permissions:
+            return .manage
+        case .settings, .about:
+            return nil
+        }
+    }
+
     public var title: String {
         switch self {
         case .overview:

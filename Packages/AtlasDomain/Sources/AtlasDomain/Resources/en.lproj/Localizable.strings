@@ -602,3 +602,8 @@
 "about.social.discord" = "Discord";
 
 "smartclean.preview.callout.review.title" = "Some steps in this plan need a closer review";
+
+"sidebar.section.core" = "Core";
+"sidebar.section.manage" = "Manage";
+"about.window.title" = "About Atlas";
+"commands.about" = "About Atlas";

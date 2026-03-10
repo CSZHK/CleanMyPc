@@ -602,3 +602,8 @@
 "about.social.discord" = "Discord";
 
 "smartclean.preview.callout.review.title" = "这份计划中仍有步骤需要复核";
+
+"sidebar.section.core" = "核心";
+"sidebar.section.manage" = "管理";
+"about.window.title" = "关于 Atlas";
+"commands.about" = "关于 Atlas";
