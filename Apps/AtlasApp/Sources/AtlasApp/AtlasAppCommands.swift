@@ -5,8 +5,14 @@ struct AtlasAppCommands: Commands {
     @ObservedObject var model: AtlasAppModel
 
     var body: some Commands {
+        CommandGroup(replacing: .appInfo) {
+            Button(AtlasL10n.string("commands.about")) {
+                model.navigate(to: .about)
+            }
+        }
+
         CommandMenu(AtlasL10n.string("commands.navigate.menu")) {
-            ForEach(AtlasRoute.allCases) { route in
+            ForEach(AtlasRoute.sidebarRoutes) { route in
                 Button(route.title) {
                     model.navigate(to: route)
                 }
@@ -18,7 +24,7 @@ struct AtlasAppCommands: Commands {
             Button(model.isTaskCenterPresented ? AtlasL10n.string("commands.taskcenter.close") : AtlasL10n.string("commands.taskcenter.open")) {
                 model.toggleTaskCenter()
             }
-            .keyboardShortcut("7", modifiers: .command)
+            .keyboardShortcut("6", modifiers: .command)
         }
 
         CommandMenu(AtlasL10n.string("commands.actions.menu")) {
@@ -80,10 +86,8 @@ private extension AtlasRoute {
             return "4"
         case .permissions:
             return "5"
-        case .settings:
-            return "6"
-        case .about:
-            return "7"
+        case .settings, .about:
+            preconditionFailure("Non-sidebar routes have no shortcut key")
         }
     }
 }

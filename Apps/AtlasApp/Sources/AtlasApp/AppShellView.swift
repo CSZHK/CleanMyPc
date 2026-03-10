@@ -14,9 +14,22 @@ struct AppShellView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(AtlasRoute.allCases, selection: $model.selection) { route in
-                SidebarRouteRow(route: route)
-                    .tag(route)
+            List(selection: $model.selection) {
+                ForEach(AtlasRoute.SidebarSection.allCases) { section in
+                    Section(section.title) {
+                        ForEach(section.routes) { route in
+                            SidebarRouteRow(route: route)
+                                .tag(route)
+                        }
+                    }
+                }
+
+                Section {
+                    SidebarRouteRow(route: .settings)
+                        .tag(AtlasRoute.settings)
+                    SidebarRouteRow(route: .about)
+                        .tag(AtlasRoute.about)
+                }
             }
             .navigationTitle(AtlasL10n.string("app.name"))
             .navigationSplitViewColumnWidth(min: AtlasLayout.sidebarMinWidth, ideal: AtlasLayout.sidebarIdealWidth)
@@ -25,17 +38,7 @@ struct AppShellView: View {
         } detail: {
             let route = model.selection ?? .overview
 
-            detailView(for: route)
-                .id(route)
-                .transition(.opacity)
-                .searchable(
-                    text: Binding(
-                        get: { model.searchText(for: route) },
-                        set: { model.setSearchText($0, for: route) }
-                    ),
-                    prompt: AtlasL10n.string("app.search.prompt.route", route.searchPromptLabel)
-                )
-                .accessibilityHint(AtlasL10n.string("app.search.hint.route", route.searchPromptLabel))
+            detailContent(for: route)
                 .toolbar {
                     ToolbarItemGroup {
                         Button {
@@ -64,39 +67,6 @@ struct AppShellView: View {
                         .accessibilityIdentifier("toolbar.taskCenter")
                         .accessibilityLabel(AtlasL10n.string("toolbar.taskcenter.accessibilityLabel"))
                         .accessibilityHint(AtlasL10n.string("toolbar.taskcenter.accessibilityHint"))
-
-                        Button {
-                            model.navigate(to: .permissions)
-                            Task {
-                                await model.inspectPermissions()
-                            }
-                        } label: {
-                            Label {
-                                Text(AtlasL10n.string("toolbar.permissions"))
-                            } icon: {
-                                Image(systemName: AtlasIcon.permissions)
-                                    .symbolRenderingMode(.hierarchical)
-                            }
-                        }
-                        .help(AtlasL10n.string("toolbar.permissions.help"))
-                        .accessibilityIdentifier("toolbar.permissions")
-                        .accessibilityLabel(AtlasL10n.string("toolbar.permissions.accessibilityLabel"))
-                        .accessibilityHint(AtlasL10n.string("toolbar.permissions.accessibilityHint"))
-
-                        Button {
-                            model.navigate(to: .settings)
-                        } label: {
-                            Label {
-                                Text(AtlasL10n.string("toolbar.settings"))
-                            } icon: {
-                                Image(systemName: AtlasIcon.settings)
-                                    .symbolRenderingMode(.hierarchical)
-                            }
-                        }
-                        .help(AtlasL10n.string("toolbar.settings.help"))
-                        .accessibilityIdentifier("toolbar.settings")
-                        .accessibilityLabel(AtlasL10n.string("toolbar.settings.accessibilityLabel"))
-                        .accessibilityHint(AtlasL10n.string("toolbar.settings.accessibilityHint"))
                     }
                 }
                 .animation(AtlasMotion.slow, value: model.selection)
@@ -125,6 +95,28 @@ struct AppShellView: View {
             .onExitCommand {
                 model.closeTaskCenter()
             }
+        }
+    }
+
+    @ViewBuilder
+    private func detailContent(for route: AtlasRoute) -> some View {
+        switch route {
+        case .settings, .about:
+            detailView(for: route)
+                .id(route)
+                .transition(.opacity)
+        default:
+            detailView(for: route)
+                .id(route)
+                .transition(.opacity)
+                .searchable(
+                    text: Binding(
+                        get: { model.searchText(for: route) },
+                        set: { model.setSearchText($0, for: route) }
+                    ),
+                    prompt: AtlasL10n.string("app.search.prompt.route", route.searchPromptLabel)
+                )
+                .accessibilityHint(AtlasL10n.string("app.search.hint.route", route.searchPromptLabel))
         }
     }
 
@@ -269,7 +261,7 @@ private struct SidebarRouteRow: View {
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("route.\(route.id)")
         .accessibilityLabel("\(route.title). \(route.subtitle)")
-        .accessibilityHint(AtlasL10n.string("sidebar.route.hint", route.shortcutNumber))
+        .accessibilityHint(route.shortcutNumber.isEmpty ? "" : AtlasL10n.string("sidebar.route.hint", route.shortcutNumber))
     }
 }
 
@@ -291,9 +283,9 @@ private extension AtlasRoute {
         case .permissions:
             return "5"
         case .settings:
-            return "6"
+            return ","
         case .about:
-            return "7"
+            return ""
         }
     }
 }
