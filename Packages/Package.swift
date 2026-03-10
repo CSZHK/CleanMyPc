@@ -67,7 +67,8 @@ let package = Package(
         .target(
             name: "AtlasFeaturesAbout",
             dependencies: ["AtlasDesignSystem", "AtlasDomain"],
-            path: "AtlasFeaturesAbout/Sources/AtlasFeaturesAbout"
+            path: "AtlasFeaturesAbout/Sources/AtlasFeaturesAbout",
+            resources: [.process("Resources")]
         ),
         .target(
             name: "AtlasFeaturesApps",

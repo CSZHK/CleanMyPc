@@ -596,6 +596,9 @@
 "about.opensource.detail" = "This project is open source. Star, fork, or contribute on GitHub.";
 "about.opensource.visit" = "View on GitHub";
 "about.social.title" = "Follow Me";
-"about.social.detail" = "WeChat Official Account & Xiaohongshu";
+"about.social.wechat" = "WeChat Official Account";
+"about.social.xiaohongshu" = "Xiaohongshu";
+"about.social.x" = "X (Twitter)";
+"about.social.discord" = "Discord";
 
 "smartclean.preview.callout.review.title" = "Some steps in this plan need a closer review";

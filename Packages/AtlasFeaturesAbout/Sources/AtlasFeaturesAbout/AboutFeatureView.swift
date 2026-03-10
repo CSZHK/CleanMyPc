@@ -14,9 +14,11 @@ public struct AboutFeatureView: View {
                 title: AtlasL10n.string("about.author.title")
             ) {
                 HStack(alignment: .center, spacing: AtlasSpacing.md) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 40, weight: .light))
-                        .foregroundStyle(AtlasColor.brand)
+                    Image("avatar", bundle: .module)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 48, height: 48)
+                        .clipShape(Circle())
                         .accessibilityHidden(true)
 
                     VStack(alignment: .leading, spacing: AtlasSpacing.xxs) {
@@ -33,6 +35,30 @@ public struct AboutFeatureView: View {
                 Text(AtlasL10n.string("about.author.bio"))
                     .font(AtlasTypography.body)
                     .foregroundStyle(.secondary)
+
+                Divider()
+                    .padding(.vertical, AtlasSpacing.xs)
+
+                HStack(spacing: AtlasSpacing.md) {
+                    SocialBadge(
+                        assetName: "icon-wechat",
+                        label: AtlasL10n.string("about.social.wechat")
+                    )
+                    SocialBadge(
+                        assetName: "icon-xiaohongshu",
+                        label: AtlasL10n.string("about.social.xiaohongshu")
+                    )
+                    SocialBadge(
+                        assetName: "icon-x",
+                        label: AtlasL10n.string("about.social.x"),
+                        url: "https://x.com/lizikk_zhu"
+                    )
+                    SocialBadge(
+                        assetName: "icon-discord",
+                        label: AtlasL10n.string("about.social.discord"),
+                        url: "https://discord.gg"
+                    )
+                }
             }
 
             AtlasCallout(
@@ -76,22 +102,38 @@ public struct AboutFeatureView: View {
                 .padding(.top, AtlasSpacing.sm)
             }
 
-            AtlasInfoCard(
-                title: AtlasL10n.string("about.social.title")
-            ) {
-                HStack(spacing: AtlasSpacing.md) {
-                    Image(systemName: "ellipsis.bubble")
-                        .font(.title3)
-                        .foregroundStyle(AtlasColor.brand)
-                        .accessibilityHidden(true)
-
-                    Text(AtlasL10n.string("about.social.detail"))
-                        .font(AtlasTypography.body)
-                        .foregroundStyle(.secondary)
-                }
-            }
         }
         .accessibilityIdentifier("about.screen")
+    }
+}
+
+private struct SocialBadge: View {
+    let assetName: String
+    let label: String
+    var url: String? = nil
+
+    var body: some View {
+        let content = VStack(spacing: AtlasSpacing.xs) {
+            Image(assetName, bundle: .module)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 28, height: 28)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(label)
+
+        if let url, let destination = URL(string: url) {
+            Link(destination: destination) { content }
+        } else {
+            content
+        }
     }
 }
 

@@ -596,6 +596,9 @@
 "about.opensource.detail" = "本项目已开源。欢迎在 GitHub 上 Star、Fork 或参与贡献。";
 "about.opensource.visit" = "在 GitHub 上查看";
 "about.social.title" = "关注作者";
-"about.social.detail" = "微信公众号 & 小红书";
+"about.social.wechat" = "微信公众号";
+"about.social.xiaohongshu" = "小红书";
+"about.social.x" = "X (Twitter)";
+"about.social.discord" = "Discord";
 
 "smartclean.preview.callout.review.title" = "这份计划中仍有步骤需要复核";
