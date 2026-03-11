@@ -7,6 +7,6 @@ OUTPUT_DIR="${1:-$ROOT_DIR/Docs/Media/README}"
 mkdir -p "$OUTPUT_DIR"
 
 ATLAS_EXPORT_README_ASSETS_DIR="$OUTPUT_DIR" \
-swift run --package-path "$ROOT_DIR/Apps" AtlasApp
+    swift run --package-path "$ROOT_DIR/Apps" AtlasApp
 
 echo "README assets exported to: $OUTPUT_DIR"
