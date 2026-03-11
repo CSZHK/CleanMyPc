@@ -42,8 +42,8 @@
 "category.apps" = "应用";
 "category.browsers" = "浏览器";
 
-"settings.acknowledgement.body" = "Atlas for Mac 包含源自开源项目 Mole（作者 tw93 及贡献者）的软件，并依据 MIT 许可证使用。Atlas for Mac 是独立产品，与原作者不存在关联或背书关系。";
-"settings.notices.body" = "本产品包含源自开源项目 Mole（作者 tw93 及贡献者）的软件，并依据 MIT 许可证使用。";
+"settings.acknowledgement.body" = "Atlas for Mac 是一个基于 MIT 协议开源的项目，并基于开源项目 Mole（作者 tw93 及贡献者）进行复用与演进。项目中使用的 Mole 相关代码同样依据 MIT 许可证使用。Atlas for Mac 是独立产品，与原作者不存在关联或背书关系。";
+"settings.notices.body" = "Atlas for Mac 项目以 MIT 许可证开源。本产品同时包含源自开源项目 Mole（作者 tw93 及贡献者）的软件，并依据 MIT 许可证使用。";
 "fixture.finding.derivedData.title" = "Xcode 派生数据";
 "fixture.finding.derivedData.detail" = "来自旧项目的构建产物和索引。";
 "fixture.finding.browserCaches.title" = "浏览器缓存";

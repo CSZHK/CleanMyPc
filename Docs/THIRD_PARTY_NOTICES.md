@@ -2,6 +2,11 @@
 
 This project includes planning for third-party and upstream open-source acknowledgements.
 
+## Project License
+
+- Project: `Atlas for Mac`
+- License: `MIT`
+
 ## Upstream Project
 
 - Project: `Mole`
@@ -16,7 +21,7 @@ If Atlas for Mac ships code derived from upstream Mole sources, the applicable c
 ## Notice Template
 
 ```text
-This product includes software derived from the open-source project Mole by tw93 and contributors, used under the MIT License.
+Atlas for Mac is released under the MIT License. This product also includes software derived from the open-source project Mole by tw93 and contributors, used under the MIT License.
 ```
 
 ## Future Additions

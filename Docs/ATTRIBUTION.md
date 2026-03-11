@@ -6,13 +6,15 @@ Atlas for Mac is an independent product and does not use the Mole brand in user-
 
 ## Upstream Acknowledgement
 
-The project acknowledges the open-source project `Mole` by `tw93 and contributors` as an upstream inspiration and potential source of reused or adapted code.
+Atlas for Mac is released as an open-source project under the `MIT` license.
+
+The project acknowledges the open-source project `Mole` by `tw93 and contributors` as an upstream foundation and source of reused or adapted code.
 
 ## User-Facing Copy
 
 Recommended acknowledgement copy:
 
-> Atlas for Mac includes software derived from the open-source project Mole by tw93 and contributors, used under the MIT License. Atlas for Mac is an independent product and is not affiliated with or endorsed by the original authors.
+> Atlas for Mac is an open-source project released under the MIT License and built in part on the open-source project Mole by tw93 and contributors. Mole-derived components included in Atlas for Mac are also used under the MIT License. Atlas for Mac is an independent product and is not affiliated with or endorsed by the original authors.
 
 ## Placement
 
