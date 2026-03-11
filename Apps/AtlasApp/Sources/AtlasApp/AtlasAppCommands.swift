@@ -24,7 +24,7 @@ struct AtlasAppCommands: Commands {
             Button(model.isTaskCenterPresented ? AtlasL10n.string("commands.taskcenter.close") : AtlasL10n.string("commands.taskcenter.open")) {
                 model.toggleTaskCenter()
             }
-            .keyboardShortcut("6", modifiers: .command)
+            .keyboardShortcut("7", modifiers: .command)
         }
 
         CommandMenu(AtlasL10n.string("commands.actions.menu")) {

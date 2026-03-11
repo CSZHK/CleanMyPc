@@ -3,6 +3,8 @@ import AtlasDomain
 import SwiftUI
 
 public struct SmartCleanFeatureView: View {
+    @Environment(\.atlasContentWidth) private var contentWidth
+
     private let findings: [Finding]
     private let plan: ActionPlan
     private let scanSummary: String
@@ -49,7 +51,8 @@ public struct SmartCleanFeatureView: View {
     public var body: some View {
         AtlasScreen(
             title: AtlasL10n.string("smartclean.screen.title"),
-            subtitle: AtlasL10n.string("smartclean.screen.subtitle")
+            subtitle: AtlasL10n.string("smartclean.screen.subtitle"),
+            maxContentWidth: AtlasLayout.maxWorkflowWidth
         ) {
             AtlasCallout(
                 title: statusTitle,
@@ -106,7 +109,7 @@ public struct SmartCleanFeatureView: View {
                 }
             }
 
-            LazyVGrid(columns: AtlasLayout.metricColumns, spacing: AtlasSpacing.lg) {
+            LazyVGrid(columns: metricColumns, spacing: AtlasSpacing.lg) {
                 AtlasMetricCard(
                     title: AtlasL10n.string("smartclean.metric.previewSize.title"),
                     value: AtlasFormatters.byteCount(resolvedPlanEstimatedBytes),
@@ -220,6 +223,10 @@ public struct SmartCleanFeatureView: View {
                 }
             }
         }
+    }
+
+    private var metricColumns: [GridItem] {
+        AtlasLayout.adaptiveMetricColumns(for: contentWidth)
     }
 
     @ViewBuilder
@@ -595,4 +602,3 @@ private enum SmartCleanPrimaryAction: Equatable {
         }
     }
 }
-

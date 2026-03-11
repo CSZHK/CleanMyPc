@@ -3,6 +3,8 @@ import AtlasDomain
 import SwiftUI
 
 public struct AppsFeatureView: View {
+    @Environment(\.atlasContentWidth) private var contentWidth
+
     private let apps: [AppFootprint]
     private let previewPlan: ActionPlan?
     private let currentPreviewedAppID: UUID?
@@ -15,6 +17,7 @@ public struct AppsFeatureView: View {
     private let onExecuteAppUninstall: (UUID) -> Void
 
     @State private var selectedAppID: UUID?
+    @State private var browserWidth: CGFloat?
 
     public init(
         apps: [AppFootprint] = AtlasScaffoldFixtures.apps,
@@ -44,7 +47,8 @@ public struct AppsFeatureView: View {
     public var body: some View {
         AtlasScreen(
             title: AtlasL10n.string("apps.screen.title"),
-            subtitle: AtlasL10n.string("apps.screen.subtitle")
+            subtitle: AtlasL10n.string("apps.screen.subtitle"),
+            maxContentWidth: AtlasLayout.maxWorkspaceWidth
         ) {
             AtlasCallout(
                 title: previewPlan == nil ? AtlasL10n.string("apps.callout.default.title") : AtlasL10n.string("apps.callout.preview.title"),
@@ -65,7 +69,7 @@ public struct AppsFeatureView: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    LazyVGrid(columns: AtlasLayout.metricColumns, spacing: AtlasSpacing.lg) {
+                    LazyVGrid(columns: inventoryMetricColumns, spacing: AtlasSpacing.lg) {
                         AtlasMetricCard(
                             title: AtlasL10n.string("apps.metric.listed.title"),
                             value: "\(sortedApps.count)",
@@ -104,33 +108,38 @@ public struct AppsFeatureView: View {
                 subtitle: AtlasL10n.string("apps.browser.subtitle"),
                 tone: selectedAppMatchingPreview == nil ? .neutral : .warning
             ) {
-                GeometryReader { proxy in
-                    let isWide = proxy.size.width >= 680
-                    let sidebarWidth = min(max(proxy.size.width * 0.3, 220), 280)
+                Group {
+                    if isWideBrowserLayout {
+                        HStack(alignment: .top, spacing: AtlasSpacing.xl) {
+                            appsSidebar
+                                .frame(width: sidebarWidth)
+                                .frame(maxHeight: .infinity)
 
-                    Group {
-                        if isWide {
-                            HStack(alignment: .top, spacing: AtlasSpacing.xl) {
-                                appsSidebar
-                                    .frame(width: sidebarWidth)
-                                    .frame(maxHeight: .infinity)
+                            appDetailPanel
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        }
+                    } else {
+                        VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
+                            appsSidebar
+                                .frame(minHeight: 240, idealHeight: 320, maxHeight: 400)
 
-                                appDetailPanel
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            }
-                        } else {
-                            VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-                                appsSidebar
-                                    .frame(minHeight: 260, maxHeight: 260)
-
-                                appDetailPanel
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            }
+                            appDetailPanel
+                                .frame(maxWidth: .infinity)
                         }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(minHeight: 400, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .frame(minHeight: isWideBrowserLayout ? 460 : nil, alignment: .topLeading)
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear.preference(key: BrowserWidthKey.self, value: proxy.size.width)
+                    }
+                )
+                .onPreferenceChange(BrowserWidthKey.self) { newWidth in
+                    if newWidth > 0 {
+                        browserWidth = newWidth
+                    }
+                }
             }
         }
         .onAppear(perform: syncSelection)
@@ -145,6 +154,30 @@ public struct AppsFeatureView: View {
 
     private var sortedAppIDs: [UUID] {
         sortedApps.map(\.id)
+    }
+
+    private var effectiveBrowserWidth: CGFloat {
+        let measuredWidth = browserWidth ?? contentWidth
+        return max(measuredWidth, 0)
+    }
+
+    private var isWideBrowserLayout: Bool {
+        effectiveBrowserWidth >= AtlasLayout.browserSplitThreshold
+    }
+
+    private var sidebarWidth: CGFloat {
+        min(max(effectiveBrowserWidth * 0.3, 220), 280)
+    }
+
+    private var detailMetricColumns: [GridItem] {
+        let estimatedDetailWidth = isWideBrowserLayout
+            ? max(effectiveBrowserWidth - sidebarWidth - AtlasSpacing.xl - (AtlasSpacing.xl * 2), 320)
+            : effectiveBrowserWidth
+        return AtlasLayout.adaptiveMetricColumns(for: estimatedDetailWidth)
+    }
+
+    private var inventoryMetricColumns: [GridItem] {
+        AtlasLayout.adaptiveMetricColumns(for: contentWidth)
     }
 
     private var groupedApps: [AppGroup] {
@@ -226,26 +259,33 @@ public struct AppsFeatureView: View {
                 .font(AtlasTypography.label)
                 .foregroundStyle(.secondary)
 
-            ScrollView {
-                if let selectedApp {
-                    AppDetailView(
-                        app: selectedApp,
-                        previewPlan: selectedAppMatchingPreview,
-                        isBuildingPreview: activePreviewAppID == selectedApp.id,
-                        isUninstalling: activeUninstallAppID == selectedApp.id,
-                        isBusy: isRunning,
-                        onPreview: { onPreviewAppUninstall(selectedApp.id) },
-                        onUninstall: { onExecuteAppUninstall(selectedApp.id) }
-                    )
-                } else {
-                    AtlasEmptyState(
-                        title: AtlasL10n.string("apps.detail.empty.title"),
-                        detail: AtlasL10n.string("apps.detail.empty.detail"),
-                        systemImage: "cursorarrow.click",
-                        tone: .neutral
-                    )
+            Group {
+                ScrollView {
+                    Group {
+                        if let selectedApp {
+                            AppDetailView(
+                                app: selectedApp,
+                                previewPlan: selectedAppMatchingPreview,
+                                metricColumns: detailMetricColumns,
+                                isBuildingPreview: activePreviewAppID == selectedApp.id,
+                                isUninstalling: activeUninstallAppID == selectedApp.id,
+                                isBusy: isRunning,
+                                onPreview: { onPreviewAppUninstall(selectedApp.id) },
+                                onUninstall: { onExecuteAppUninstall(selectedApp.id) }
+                            )
+                        } else {
+                            AtlasEmptyState(
+                                title: AtlasL10n.string("apps.detail.empty.title"),
+                                detail: AtlasL10n.string("apps.detail.empty.detail"),
+                                systemImage: "cursorarrow.click",
+                                tone: .neutral
+                            )
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
                 }
             }
+            .animation(.easeInOut(duration: 0.2), value: selectedAppID)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(AtlasSpacing.xl)
@@ -347,6 +387,7 @@ private struct AppSidebarSectionHeader: View {
 private struct AppDetailView: View {
     let app: AppFootprint
     let previewPlan: ActionPlan?
+    let metricColumns: [GridItem]
     let isBuildingPreview: Bool
     let isUninstalling: Bool
     let isBusy: Bool
@@ -357,27 +398,17 @@ private struct AppDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-            HStack(alignment: .top, spacing: AtlasSpacing.lg) {
-                VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
-                    Text(app.name)
-                        .font(AtlasTypography.sectionTitle)
-
-                    Text(app.bundleIdentifier)
-                        .font(AtlasTypography.body)
-                        .foregroundStyle(.secondary)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: AtlasSpacing.lg) {
+                    headerCopy
+                    Spacer(minLength: AtlasSpacing.lg)
+                    headerMeta
                 }
 
-                Spacer(minLength: AtlasSpacing.lg)
-
-                VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
-                    Text(AtlasFormatters.byteCount(app.bytes))
-                        .font(AtlasTypography.cardMetric)
-                        .foregroundStyle(.primary)
-
-                    AtlasStatusChip(
-                        AtlasL10n.string("apps.list.row.leftovers", app.leftoverItems),
-                        tone: app.leftoverItems > 0 ? .warning : .success
-                    )
+                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                    headerCopy
+                    headerMeta
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
 
@@ -403,7 +434,7 @@ private struct AppDetailView: View {
                     value: "\(app.leftoverItems)",
                     detail: AtlasL10n.string("apps.metric.leftovers.detail")
                 )
-                AtlasKeyValueRow(
+                AtlasMachineTextBlock(
                     title: AtlasL10n.string("apps.detail.path"),
                     value: app.bundlePath,
                     detail: app.bucket.title
@@ -416,7 +447,7 @@ private struct AppDetailView: View {
                     subtitle: previewPlan.title,
                     tone: .warning
                 ) {
-                    LazyVGrid(columns: AtlasLayout.metricColumns, spacing: AtlasSpacing.lg) {
+                    LazyVGrid(columns: metricColumns, spacing: AtlasSpacing.lg) {
                         AtlasMetricCard(
                             title: AtlasL10n.string("apps.preview.metric.size.title"),
                             value: AtlasFormatters.byteCount(previewPlan.estimatedBytes),
@@ -472,6 +503,31 @@ private struct AppDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var headerCopy: some View {
+        VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
+            Text(app.name)
+                .font(AtlasTypography.sectionTitle)
+
+            Text(app.bundleIdentifier)
+                .font(AtlasTypography.body)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var headerMeta: some View {
+        VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
+            Text(AtlasFormatters.byteCount(app.bytes))
+                .font(AtlasTypography.cardMetric)
+                .foregroundStyle(.primary)
+
+            AtlasStatusChip(
+                AtlasL10n.string("apps.list.row.leftovers", app.leftoverItems),
+                tone: app.leftoverItems > 0 ? .warning : .success
+            )
+        }
     }
 
     private var previewButton: some View {
@@ -563,5 +619,12 @@ private extension AppFootprint {
             return .leftovers
         }
         return .other
+    }
+}
+
+private struct BrowserWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }

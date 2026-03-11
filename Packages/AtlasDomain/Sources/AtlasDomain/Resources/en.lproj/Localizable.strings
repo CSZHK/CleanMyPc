@@ -46,29 +46,29 @@
 "settings.notices.body" = "Atlas for Mac is released under the MIT License. This product also includes software derived from the open-source project Mole (https://github.com/tw93/mole) by tw93 and contributors, used under the MIT License.";
 "fixture.finding.derivedData.title" = "Xcode Derived Data";
 "fixture.finding.derivedData.detail" = "Build artifacts and indexes from older projects.";
-"fixture.finding.browserCaches.title" = "Browser caches";
+"fixture.finding.browserCaches.title" = "Browser Caches";
 "fixture.finding.browserCaches.detail" = "WebKit and Chromium cache folders with low recovery risk.";
-"fixture.finding.oldRuntimes.title" = "Old simulator runtimes";
+"fixture.finding.oldRuntimes.title" = "Old Simulator Runtimes";
 "fixture.finding.oldRuntimes.detail" = "Unused iOS simulator assets that need review before deletion.";
-"fixture.finding.launchAgents.title" = "Launch-agent leftovers";
+"fixture.finding.launchAgents.title" = "Launch-Agent Leftovers";
 "fixture.finding.launchAgents.detail" = "Background helpers tied to removed apps and older experiments.";
 
-"fixture.plan.reclaimCommonClutter.title" = "Reclaim common clutter";
+"fixture.plan.reclaimCommonClutter.title" = "Reclaim Common Clutter";
 "fixture.plan.item.moveDerivedData.title" = "Move Xcode Derived Data to Trash";
 "fixture.plan.item.moveDerivedData.detail" = "Keep recovery available from History and Recovery.";
-"fixture.plan.item.reviewRuntimes.title" = "Review simulator runtimes";
-"fixture.plan.item.reviewRuntimes.detail" = "Ask the worker to confirm the plan details before execution.";
-"fixture.plan.item.inspectAgents.title" = "Inspect launch agents";
-"fixture.plan.item.inspectAgents.detail" = "Require helper validation before removing privileged items.";
+"fixture.plan.item.reviewRuntimes.title" = "Review Simulator Runtimes";
+"fixture.plan.item.reviewRuntimes.detail" = "Confirm the plan details before execution.";
+"fixture.plan.item.inspectAgents.title" = "Inspect Launch Agents";
+"fixture.plan.item.inspectAgents.detail" = "Require system validation before removing privileged items.";
 
 "fixture.task.scan.summary" = "Scanned 214 locations and generated a cleanup plan that can free 35.3 GB.";
 "fixture.task.execute.summary" = "Moving safe cache items into recovery storage.";
 "fixture.task.permissions.summary" = "Permission status refreshed without prompting the user.";
 
-"fixture.recovery.chromeCache.title" = "Chrome cache bundle";
+"fixture.recovery.chromeCache.title" = "Chrome Cache Bundle";
 "fixture.recovery.chromeCache.detail" = "Recoverable cache package from the previous Smart Clean run.";
 "fixture.recovery.chromeCache.payload" = "Recovered cache data from the previous Smart Clean run.";
-"fixture.recovery.simulatorSupport.title" = "Legacy simulator device support";
+"fixture.recovery.simulatorSupport.title" = "Legacy Simulator Device Support";
 "fixture.recovery.simulatorSupport.detail" = "This item still needs review and will clear after one week.";
 "fixture.recovery.simulatorSupport.payload" = "Simulator support files waiting for review.";
 
@@ -292,7 +292,7 @@
 "smartclean.preview.metric.space.detail.other" = "Estimated across %d planned steps.";
 "smartclean.preview.callout.safe.title" = "This plan stays mostly in the Safe lane";
 "smartclean.preview.callout.safe.detail" = "Most selected steps should remain recoverable through History and Recovery.";
-"smartclean.preview.empty.detail" = "Run a scan or update the plan to turn current findings into concrete cleanup steps. If you just ran a plan, this section shows only the remaining items.";
+"smartclean.preview.empty.detail.postExecution" = "Run a scan or update the plan to turn current findings into concrete cleanup steps. If you just ran a plan, this section shows only the remaining items.";
 "smartclean.preview.callout.review.detail" = "Check the highlighted steps before you run the plan so you understand what stays recoverable and what needs extra judgment.";
 "smartclean.preview.empty.title" = "No cleanup plan yet";
 "smartclean.preview.empty.detail" = "Run a scan or update the plan to turn current findings into concrete cleanup steps.";
@@ -491,7 +491,7 @@
 "permissions.metric.later.title" = "Not Needed Yet";
 "permissions.metric.later.detail" = "These can stay off without putting Atlas into limited mode until a related workflow asks for them.";
 "permissions.metric.tracked.title" = "Tracked Permissions";
-"permissions.metric.tracked.detail" = "The minimum set Atlas surfaces for the frozen MVP workflows.";
+"permissions.metric.tracked.detail" = "The minimum set Atlas surfaces for the current workflows.";
 "permissions.refresh" = "Check Permission Status";
 "permissions.refresh.hint" = "Checks the current permission snapshot without opening System Settings.";
 "permissions.requiredSection.title" = "Required Now";
@@ -544,7 +544,7 @@
 "settings.notifications.hint" = "Turns task and recovery notifications on or off.";
 "settings.distribution.title" = "Distribution";
 "settings.distribution.value" = "Developer ID + Notarization";
-"settings.distribution.detail" = "The frozen MVP assumes direct distribution rather than a Mac App Store release.";
+"settings.distribution.detail" = "This version uses direct distribution rather than a Mac App Store release.";
 "settings.exclusions.title" = "Rules & Exclusions";
 "settings.exclusions.subtitle" = "These paths stay out of scan results and cleanup plans.";
 "settings.exclusions.empty.title" = "No exclusions configured";
@@ -607,3 +607,7 @@
 "sidebar.section.manage" = "Manage";
 "about.window.title" = "About Atlas";
 "commands.about" = "About Atlas";
+
+"storage.screen.title" = "Storage";
+"storage.screen.subtitle" = "Reserved list-based storage views for a future scope decision.";
+"storage.largeItems.title" = "Large Items";

@@ -37,7 +37,7 @@
 "permission.accessibility" = "辅助功能";
 "permission.notifications" = "通知";
 
-"category.developer" = "开发";
+"category.developer" = "开发者";
 "category.system" = "系统";
 "category.apps" = "应用";
 "category.browsers" = "浏览器";
@@ -57,9 +57,9 @@
 "fixture.plan.item.moveDerivedData.title" = "将 Xcode 派生数据移入废纸篓";
 "fixture.plan.item.moveDerivedData.detail" = "保留恢复路径，可在历史和恢复中找回。";
 "fixture.plan.item.reviewRuntimes.title" = "复核模拟器运行时";
-"fixture.plan.item.reviewRuntimes.detail" = "执行前先让 worker 确认计划细节。";
+"fixture.plan.item.reviewRuntimes.detail" = "执行前先确认计划细节。";
 "fixture.plan.item.inspectAgents.title" = "检查启动代理";
-"fixture.plan.item.inspectAgents.detail" = "移除受权限影响的项目之前，需要先通过 helper 校验。";
+"fixture.plan.item.inspectAgents.detail" = "移除受权限影响的项目之前，需要先通过系统辅助工具校验。";
 
 "fixture.task.scan.summary" = "已扫描 214 个位置，并生成预计可释放 35.3 GB 的清理计划。";
 "fixture.task.execute.summary" = "正在将安全缓存项移入恢复区。";
@@ -89,7 +89,7 @@
 "fixture.storage.movies.age" = "最近 6 个月内生成的大型媒体文件";
 "fixture.storage.installers.title" = "未使用的安装器";
 "fixture.storage.installers.age" = "大部分磁盘镜像已超过 30 天";
-"application.error.workerRejected" = "Worker 拒绝了请求（%@）：%@";
+"application.error.workerRejected" = "后台服务拒绝了请求（%@）：%@";
 "xpc.error.encodingFailed" = "无法编码后台请求：%@";
 "xpc.error.decodingFailed" = "无法解析后台响应：%@";
 "xpc.error.invalidResponse" = "后台工作组件返回了无效响应。请完全退出并重新打开 Atlas；若仍失败，请重新安装当前版本。";
@@ -212,7 +212,7 @@
 "overview.callout.limited.detail" = "当前仍缺少至少一项主流程必需权限，因此 Atlas 会保持受限模式；补齐后就会自动恢复为就绪状态。";
 "overview.metric.reclaimable.title" = "预计可释放空间";
 "overview.metric.reclaimable.detail" = "基于当前清理计划和最近的工作区状态估算。执行后会按剩余项目重新计算。";
-"overview.metric.findings.title" = "待处理发现项";
+"overview.metric.findings.title" = "就绪发现项";
 "overview.metric.findings.detail" = "在真正执行前，Atlas 会先将其分为安全、复核和高级三个分区。";
 "overview.metric.permissions.title" = "权限就绪度";
 "overview.metric.permissions.ready" = "Atlas 已具备当前流程所需的权限。";
@@ -292,7 +292,7 @@
 "smartclean.preview.metric.space.detail.other" = "按当前 %d 个计划步骤估算。";
 "smartclean.preview.callout.safe.title" = "当前计划主要来自“安全”分区";
 "smartclean.preview.callout.safe.detail" = "大多数已选步骤都可以在历史和恢复中找回。";
-"smartclean.preview.empty.detail" = "运行一次扫描或更新计划，把当前发现项变成具体的清理步骤。若刚执行完计划，这里只显示剩余项目。";
+"smartclean.preview.empty.detail.postExecution" = "运行一次扫描或更新计划，把当前发现项变成具体的清理步骤。若刚执行完计划，这里只显示剩余项目。";
 "smartclean.preview.callout.review.detail" = "建议在执行前检查高亮步骤，确认哪些仍可恢复、哪些需要额外判断。";
 "smartclean.preview.empty.title" = "还没有清理计划";
 "smartclean.preview.empty.detail" = "运行一次扫描或更新计划，把当前发现项变成具体的清理步骤。";
@@ -375,7 +375,7 @@
 "apps.detail.empty.detail" = "从左侧列表选择一个应用，以检查占用并生成卸载计划。";
 "apps.detail.size" = "应用占用";
 "apps.detail.leftovers" = "残留文件";
-"apps.detail.path" = "Bundle 路径";
+"apps.detail.path" = "应用包路径";
 "apps.detail.callout.preview.title" = "先生成卸载计划";
 "apps.detail.callout.preview.detail" = "为了让卸载更可控，Atlas 会先展示准确步骤，再决定是否真正移除。";
 "apps.detail.callout.ready.title" = "这个应用已经可以在复核后卸载";
@@ -491,7 +491,7 @@
 "permissions.metric.later.title" = "暂不需要";
 "permissions.metric.later.detail" = "这些权限暂未授予也不会让 Atlas 进入受限模式，只有相关流程需要时才会用到。";
 "permissions.metric.tracked.title" = "跟踪权限";
-"permissions.metric.tracked.detail" = "冻结 MVP 流程当前展示的最小权限集合。";
+"permissions.metric.tracked.detail" = "当前版本展示的最小权限集合。";
 "permissions.refresh" = "检查权限状态";
 "permissions.refresh.hint" = "检查当前权限快照，而不会直接打开系统设置。";
 "permissions.requiredSection.title" = "当前必需";
@@ -544,7 +544,7 @@
 "settings.notifications.hint" = "打开或关闭任务和恢复通知。";
 "settings.distribution.title" = "分发方式";
 "settings.distribution.value" = "Developer ID + Notarization";
-"settings.distribution.detail" = "冻结 MVP 假设采用直接分发，而不是 Mac App Store。";
+"settings.distribution.detail" = "当前版本采用直接分发，而不是 Mac App Store。";
 "settings.exclusions.title" = "规则与排除项";
 "settings.exclusions.subtitle" = "这些路径不会出现在扫描结果和清理计划里。";
 "settings.exclusions.empty.title" = "还没有配置排除项";
@@ -582,9 +582,9 @@
 "emptystate.action.startScan" = "开始扫描";
 "about.screen.title" = "关于";
 "about.screen.subtitle" = "Atlas for Mac 背后的开发者与愿景。";
-"about.author.title" = "关于作者";
+"about.author.title" = "开发者";
 "about.author.name" = "Lizi KK";
-"about.author.role" = "前百度 & 阿里技术高P · atomstorm.ai Founder";
+"about.author.role" = "前百度 & 阿里技术负责人 · atomstorm.ai 创始人";
 "about.author.bio" = "使用 AI Coding 构建 Atlas。每一行代码都由 AI 辅助，但都经过了人的决策、审美和架构判断。";
 "about.author.quote" = "AI 是极其强大的手和脚，但你必须做那个头脑清醒的大脑。";
 "about.product.title" = "作者的其他产品";
@@ -607,3 +607,7 @@
 "sidebar.section.manage" = "管理";
 "about.window.title" = "关于 Atlas";
 "commands.about" = "关于 Atlas";
+
+"storage.screen.title" = "存储";
+"storage.screen.subtitle" = "为未来版本预留的基于列表的存储视图。";
+"storage.largeItems.title" = "大文件";

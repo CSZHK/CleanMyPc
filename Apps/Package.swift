@@ -18,6 +18,7 @@ let package = Package(
                 .product(name: "AtlasCoreAdapters", package: "Packages"),
                 .product(name: "AtlasDesignSystem", package: "Packages"),
                 .product(name: "AtlasDomain", package: "Packages"),
+                .product(name: "AtlasFeaturesAbout", package: "Packages"),
                 .product(name: "AtlasFeaturesApps", package: "Packages"),
                 .product(name: "AtlasFeaturesHistory", package: "Packages"),
                 .product(name: "AtlasFeaturesOverview", package: "Packages"),

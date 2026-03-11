@@ -11,10 +11,10 @@ public struct StorageFeatureView: View {
 
     public var body: some View {
         AtlasScreen(
-            title: "Storage",
-            subtitle: "Reserved list-based storage views for a future scope decision beyond the frozen MVP shell."
+            title: AtlasL10n.string("storage.screen.title"),
+            subtitle: AtlasL10n.string("storage.screen.subtitle")
         ) {
-            AtlasInfoCard(title: "Large Items") {
+            AtlasInfoCard(title: AtlasL10n.string("storage.largeItems.title")) {
                 VStack(alignment: .leading, spacing: 14) {
                     ForEach(insights) { insight in
                         HStack(alignment: .top, spacing: 12) {

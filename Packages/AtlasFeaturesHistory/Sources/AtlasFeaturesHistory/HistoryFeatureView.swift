@@ -3,11 +3,14 @@ import AtlasDomain
 import SwiftUI
 
 public struct HistoryFeatureView: View {
+    @Environment(\.atlasContentWidth) private var contentWidth
+
     private let taskRuns: [TaskRun]
     private let recoveryItems: [RecoveryItem]
     private let restoringItemID: UUID?
     private let onRestoreItem: (UUID) -> Void
 
+    @State private var browserWidth: CGFloat?
     @State private var selectedSection: HistoryBrowserSection
     @State private var selectedTaskRunID: UUID?
     @State private var selectedRecoveryItemID: UUID?
@@ -35,7 +38,8 @@ public struct HistoryFeatureView: View {
     public var body: some View {
         AtlasScreen(
             title: AtlasL10n.string("history.screen.title"),
-            subtitle: AtlasL10n.string("history.screen.subtitle")
+            subtitle: AtlasL10n.string("history.screen.subtitle"),
+            maxContentWidth: AtlasLayout.maxWorkspaceWidth
         ) {
             AtlasCallout(
                 title: screenCalloutTitle,
@@ -44,7 +48,7 @@ public struct HistoryFeatureView: View {
                 systemImage: screenCalloutSystemImage
             )
 
-            LazyVGrid(columns: AtlasLayout.metricColumns, spacing: AtlasSpacing.lg) {
+            LazyVGrid(columns: metricColumns, spacing: AtlasSpacing.lg) {
                 AtlasMetricCard(
                     title: AtlasL10n.string("history.metric.activity.title"),
                     value: "\(visibleEventCount)",
@@ -78,48 +82,57 @@ public struct HistoryFeatureView: View {
                 tone: browserTone
             ) {
                 VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-                    HStack(alignment: .center, spacing: AtlasSpacing.lg) {
-                        Picker("", selection: $selectedSection) {
-                            ForEach(HistoryBrowserSection.allCases) { section in
-                                Text(section.title).tag(section)
-                            }
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .center, spacing: AtlasSpacing.lg) {
+                            browserSectionPicker
+                                .frame(maxWidth: 320)
+
+                            Spacer(minLength: AtlasSpacing.lg)
+
+                            Text(browserSummary)
+                                .font(AtlasTypography.bodySmall)
+                                .foregroundStyle(.secondary)
                         }
-                        .pickerStyle(.segmented)
-                        .frame(maxWidth: 300)
-                        .accessibilityIdentifier("history.sectionPicker")
 
-                        Spacer(minLength: AtlasSpacing.lg)
+                        VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                            browserSectionPicker
 
-                        Text(browserSummary)
-                            .font(AtlasTypography.bodySmall)
-                            .foregroundStyle(.secondary)
+                            Text(browserSummary)
+                                .font(AtlasTypography.bodySmall)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
 
-                    GeometryReader { proxy in
-                        let isWide = proxy.size.width >= 680
-                        let sidebarWidth = min(max(proxy.size.width * 0.3, 210), 270)
+                    Group {
+                        if isWideBrowserLayout {
+                            HStack(alignment: .top, spacing: AtlasSpacing.xl) {
+                                browserSidebar
+                                    .frame(width: sidebarWidth)
+                                    .frame(maxHeight: .infinity)
 
-                        Group {
-                            if isWide {
-                                HStack(alignment: .top, spacing: AtlasSpacing.xl) {
-                                    browserSidebar
-                                        .frame(width: sidebarWidth)
-                                        .frame(maxHeight: .infinity)
-                                    detailPanel
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                }
-                            } else {
-                                VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-                                    browserSidebar
-                                        .frame(minHeight: 260, maxHeight: 260)
-                                    detailPanel
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                }
+                                detailPanel
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                            }
+                        } else {
+                            VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
+                                browserSidebar
+                                    .frame(minHeight: 240, idealHeight: 320, maxHeight: 400)
+                                detailPanel
+                                    .frame(maxWidth: .infinity)
                             }
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     }
-                    .frame(minHeight: 400, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .frame(minHeight: isWideBrowserLayout ? 460 : nil, alignment: .topLeading)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear.preference(key: HistoryBrowserWidthKey.self, value: proxy.size.width)
+                        }
+                    )
+                    .onPreferenceChange(HistoryBrowserWidthKey.self) { newWidth in
+                        if newWidth > 0 { browserWidth = newWidth }
+                    }
                 }
             }
         }
@@ -152,6 +165,23 @@ public struct HistoryFeatureView: View {
 
     private var sortedRecoveryItemIDs: [UUID] {
         sortedRecoveryItems.map(\.id)
+    }
+
+    private var effectiveBrowserWidth: CGFloat {
+        let measuredWidth = browserWidth ?? contentWidth
+        return max(measuredWidth, 0)
+    }
+
+    private var isWideBrowserLayout: Bool {
+        effectiveBrowserWidth >= AtlasLayout.browserSplitThreshold
+    }
+
+    private var sidebarWidth: CGFloat {
+        min(max(effectiveBrowserWidth * 0.3, 210), 270)
+    }
+
+    private var metricColumns: [GridItem] {
+        AtlasLayout.adaptiveMetricColumns(for: contentWidth)
     }
 
     private var selectedTaskRun: TaskRun? {
@@ -468,6 +498,16 @@ public struct HistoryFeatureView: View {
         .overlay(sidebarBorder)
     }
 
+    private var browserSectionPicker: some View {
+        Picker("", selection: $selectedSection) {
+            ForEach(HistoryBrowserSection.allCases) { section in
+                Text(section.title).tag(section)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("history.sectionPicker")
+    }
+
     private var detailPanel: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
             Text(AtlasL10n.string("history.detail.title"))
@@ -475,41 +515,47 @@ public struct HistoryFeatureView: View {
                 .foregroundStyle(.secondary)
 
             ScrollView {
-                switch selectedSection {
-                case .archive:
-                    if let taskRun = selectedTaskRun {
-                        HistoryTaskDetailView(
-                            taskRun: taskRun,
-                            isLatest: sortedTaskRuns.first?.id == taskRun.id
-                        )
-                    } else {
-                        AtlasEmptyState(
-                            title: AtlasL10n.string("history.detail.empty.title"),
-                            detail: AtlasL10n.string("history.detail.empty.detail"),
-                            systemImage: "cursorarrow.click",
-                            tone: .neutral
-                        )
-                    }
-                case .recovery:
-                    if let item = selectedRecoveryItem {
-                        HistoryRecoveryDetailView(
-                            item: item,
-                            isRestoring: restoringItemID == item.id,
-                            canRestore: restoringItemID == nil,
-                            onRestore: { onRestoreItem(item.id) }
-                        )
-                    } else {
-                        AtlasEmptyState(
-                            title: AtlasL10n.string("history.detail.empty.title"),
-                            detail: AtlasL10n.string("history.detail.empty.detail"),
-                            systemImage: "cursorarrow.click",
-                            tone: .neutral
-                        )
+                Group {
+                    switch selectedSection {
+                    case .archive:
+                        if let taskRun = selectedTaskRun {
+                            HistoryTaskDetailView(
+                                taskRun: taskRun,
+                                isLatest: sortedTaskRuns.first?.id == taskRun.id
+                            )
+                        } else {
+                            AtlasEmptyState(
+                                title: AtlasL10n.string("history.detail.empty.title"),
+                                detail: AtlasL10n.string("history.detail.empty.detail"),
+                                systemImage: "cursorarrow.click",
+                                tone: .neutral
+                            )
+                        }
+                    case .recovery:
+                        if let item = selectedRecoveryItem {
+                            HistoryRecoveryDetailView(
+                                item: item,
+                                isRestoring: restoringItemID == item.id,
+                                canRestore: restoringItemID == nil,
+                                onRestore: { onRestoreItem(item.id) }
+                            )
+                        } else {
+                            AtlasEmptyState(
+                                title: AtlasL10n.string("history.detail.empty.title"),
+                                detail: AtlasL10n.string("history.detail.empty.detail"),
+                                systemImage: "cursorarrow.click",
+                                tone: .neutral
+                            )
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
+            .animation(.easeInOut(duration: 0.2), value: selectedTaskRunID)
+            .animation(.easeInOut(duration: 0.2), value: selectedRecoveryItemID)
+            .animation(.easeInOut(duration: 0.2), value: selectedSection)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(AtlasSpacing.xl)
         .background(detailBackground)
         .overlay(detailBorder)
@@ -804,28 +850,17 @@ private struct HistoryTaskDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-            HStack(alignment: .top, spacing: AtlasSpacing.lg) {
-                VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
-                    HStack(spacing: AtlasSpacing.sm) {
-                        Text(taskRun.kind.title)
-                            .font(AtlasTypography.sectionTitle)
-
-                        if isLatest {
-                            Text(AtlasL10n.string("history.timeline.latest"))
-                                .font(AtlasTypography.caption)
-                                .foregroundStyle(AtlasColor.brand)
-                        }
-                    }
-
-                    Text(taskRun.summary)
-                        .font(AtlasTypography.body)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: AtlasSpacing.lg) {
+                    taskHeaderCopy
+                    Spacer(minLength: AtlasSpacing.lg)
+                    AtlasStatusChip(taskRun.status.title, tone: taskRun.status.atlasTone)
                 }
 
-                Spacer(minLength: AtlasSpacing.lg)
-
-                AtlasStatusChip(taskRun.status.title, tone: taskRun.status.atlasTone)
+                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                    taskHeaderCopy
+                    AtlasStatusChip(taskRun.status.title, tone: taskRun.status.atlasTone)
+                }
             }
 
             AtlasCallout(
@@ -855,6 +890,26 @@ private struct HistoryTaskDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
+
+    private var taskHeaderCopy: some View {
+        VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
+            HStack(spacing: AtlasSpacing.sm) {
+                Text(taskRun.kind.title)
+                    .font(AtlasTypography.sectionTitle)
+
+                if isLatest {
+                    Text(AtlasL10n.string("history.timeline.latest"))
+                        .font(AtlasTypography.caption)
+                        .foregroundStyle(AtlasColor.brand)
+                }
+            }
+
+            Text(taskRun.summary)
+                .font(AtlasTypography.body)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
 }
 
 private struct HistoryRecoveryDetailView: View {
@@ -865,30 +920,17 @@ private struct HistoryRecoveryDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-            HStack(alignment: .top, spacing: AtlasSpacing.lg) {
-                VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
-                    Text(item.title)
-                        .font(AtlasTypography.sectionTitle)
-
-                    Text(item.detail)
-                        .font(AtlasTypography.body)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: AtlasSpacing.lg) {
+                    recoveryHeaderCopy
+                    Spacer(minLength: AtlasSpacing.lg)
+                    recoveryHeaderMeta
                 }
 
-                Spacer(minLength: AtlasSpacing.lg)
-
-                VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
-                    AtlasStatusChip(
-                        item.isExpiringSoon
-                            ? AtlasL10n.string("history.recovery.badge.expiring")
-                            : AtlasL10n.string("history.recovery.badge.available"),
-                        tone: item.isExpiringSoon ? .warning : .success
-                    )
-
-                    Text(AtlasFormatters.byteCount(item.bytes))
-                        .font(AtlasTypography.label)
-                        .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                    recoveryHeaderCopy
+                    recoveryHeaderMeta
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
 
@@ -943,19 +985,56 @@ private struct HistoryRecoveryDetailView: View {
                     .strokeBorder(AtlasColor.border, lineWidth: 1)
             )
 
-            HStack(alignment: .center, spacing: AtlasSpacing.md) {
-                Spacer(minLength: 0)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: AtlasSpacing.md) {
+                    Spacer(minLength: 0)
 
-                Button(isRestoring ? AtlasL10n.string("history.restore.running") : AtlasL10n.string("history.restore.action")) {
-                    onRestore()
+                    restoreButton
                 }
-                .buttonStyle(.atlasPrimary)
-                .disabled(!canRestore)
-                .accessibilityIdentifier("history.restore.\(item.id.uuidString)")
-                .accessibilityHint(AtlasL10n.string("history.restore.hint"))
+
+                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                    restoreButton
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var recoveryHeaderCopy: some View {
+        VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
+            Text(item.title)
+                .font(AtlasTypography.sectionTitle)
+
+            Text(item.detail)
+                .font(AtlasTypography.body)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var recoveryHeaderMeta: some View {
+        VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
+            AtlasStatusChip(
+                item.isExpiringSoon
+                    ? AtlasL10n.string("history.recovery.badge.expiring")
+                    : AtlasL10n.string("history.recovery.badge.available"),
+                tone: item.isExpiringSoon ? .warning : .success
+            )
+
+            Text(AtlasFormatters.byteCount(item.bytes))
+                .font(AtlasTypography.label)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var restoreButton: some View {
+        Button(isRestoring ? AtlasL10n.string("history.restore.running") : AtlasL10n.string("history.restore.action")) {
+            onRestore()
+        }
+        .buttonStyle(.atlasPrimary)
+        .disabled(!canRestore)
+        .accessibilityIdentifier("history.restore.\(item.id.uuidString)")
+        .accessibilityHint(AtlasL10n.string("history.restore.hint"))
     }
 }
 
@@ -1074,5 +1153,12 @@ private extension TaskStatus {
         case .failed, .cancelled:
             return AtlasL10n.string("history.detail.task.callout.failed.detail")
         }
+    }
+}
+
+private struct HistoryBrowserWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }

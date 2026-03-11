@@ -66,12 +66,20 @@ public struct AtlasScreen<Content: View>: View {
     private let title: String
     private let subtitle: String
     private let useScrollView: Bool
+    private let maxContentWidth: CGFloat?
     private let content: Content
 
-    public init(title: String, subtitle: String, useScrollView: Bool = true, @ViewBuilder content: () -> Content) {
+    public init(
+        title: String,
+        subtitle: String,
+        useScrollView: Bool = true,
+        maxContentWidth: CGFloat? = AtlasLayout.maxReadingWidth,
+        @ViewBuilder content: () -> Content
+    ) {
         self.title = title
         self.subtitle = subtitle
         self.useScrollView = useScrollView
+        self.maxContentWidth = maxContentWidth
         self.content = content()
     }
 
@@ -101,13 +109,14 @@ public struct AtlasScreen<Content: View>: View {
     }
 
     private func contentStack(horizontalPadding: CGFloat, containerWidth: CGFloat) -> some View {
-        let contentWidth = min(AtlasLayout.maxReadingWidth, containerWidth - horizontalPadding * 2)
+        let availableWidth = max(containerWidth - horizontalPadding * 2, 0)
+        let contentWidth = min(maxContentWidth ?? availableWidth, availableWidth)
 
         return VStack(alignment: .leading, spacing: AtlasSpacing.xxl) {
             header
             content
         }
-        .frame(maxWidth: AtlasLayout.maxReadingWidth, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: maxContentWidth ?? .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(.horizontal, horizontalPadding)
         .padding(.vertical, AtlasSpacing.xxl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -335,40 +344,21 @@ public struct AtlasDetailRow<Trailing: View>: View {
     }
 
     private var rowBody: some View {
-        HStack(alignment: .top, spacing: AtlasSpacing.lg) {
-            if let systemImage {
-                ZStack {
-                    Circle()
-                        .fill(tone.softFill)
-                        .frame(width: AtlasLayout.sidebarIconSize + 4, height: AtlasLayout.sidebarIconSize + 4)
-
-                    Image(systemName: systemImage)
-                        .font(.headline)
-                        .foregroundStyle(tone.tint)
-                        .accessibilityHidden(true)
-                }
+        AtlasAdaptiveDetailRowLayout(
+            spacing: AtlasSpacing.lg,
+            accessorySpacing: AtlasSpacing.md,
+            minimumTextWidth: AtlasLayout.detailRowMinimumTextWidth
+        ) {
+            AtlasDetailRowLayoutSlot {
+                iconView
             }
-
-            VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
-                Text(title)
-                    .font(AtlasTypography.rowTitle)
-
-                Text(subtitle)
-                    .font(AtlasTypography.body)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let footnote {
-                    Text(footnote)
-                        .font(AtlasTypography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            AtlasDetailRowLayoutSlot {
+                textStack
             }
-
-            Spacer(minLength: AtlasSpacing.lg)
-
-            trailing
+            .layoutPriority(1)
+            AtlasDetailRowLayoutSlot {
+                trailing
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AtlasSpacing.lg)
@@ -380,6 +370,43 @@ public struct AtlasDetailRow<Trailing: View>: View {
             RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
                 .strokeBorder(AtlasColor.border, lineWidth: 1)
         )
+    }
+
+    @ViewBuilder
+    private var iconView: some View {
+        if let systemImage {
+            ZStack {
+                Circle()
+                    .fill(tone.softFill)
+                    .frame(width: AtlasLayout.sidebarIconSize + 4, height: AtlasLayout.sidebarIconSize + 4)
+
+                Image(systemName: systemImage)
+                    .font(.headline)
+                    .foregroundStyle(tone.tint)
+                    .accessibilityHidden(true)
+            }
+        } else {
+            EmptyView()
+        }
+    }
+
+    private var textStack: some View {
+        VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
+            Text(title)
+                .font(AtlasTypography.rowTitle)
+
+            Text(subtitle)
+                .font(AtlasTypography.body)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let footnote {
+                Text(footnote)
+                    .font(AtlasTypography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 }
 
@@ -411,16 +438,20 @@ public struct AtlasKeyValueRow: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-            HStack(alignment: .top, spacing: AtlasSpacing.md) {
-                Text(title)
-                    .font(AtlasTypography.rowTitle)
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: AtlasSpacing.md) {
+                    titleView
 
-                Spacer(minLength: AtlasSpacing.lg)
+                    Spacer(minLength: AtlasSpacing.lg)
 
-                Text(value)
-                    .font(AtlasTypography.label)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.trailing)
+                    valueView(alignment: .trailing)
+                }
+
+                VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
+                    titleView
+                    valueView(alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
 
             if let detail {
@@ -435,6 +466,219 @@ public struct AtlasKeyValueRow: View {
         .accessibilityLabel(Text(title))
         .accessibilityValue(Text(value))
         .accessibilityHint(Text(detail ?? ""))
+    }
+
+    private var titleView: some View {
+        Text(title)
+            .font(AtlasTypography.rowTitle)
+    }
+
+    private func valueView(alignment: TextAlignment) -> some View {
+        Text(value)
+            .font(AtlasTypography.label)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(alignment)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+public struct AtlasMachineTextBlock: View {
+    private let title: String
+    private let value: String
+    private let detail: String?
+
+    public init(title: String, value: String, detail: String? = nil) {
+        self.title = title
+        self.value = value
+        self.detail = detail
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
+            Text(title)
+                .font(AtlasTypography.caption)
+                .foregroundStyle(.secondary)
+
+            Text(value)
+                .font(.system(size: 12, weight: .regular, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let detail {
+                Text(detail)
+                    .font(AtlasTypography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AtlasSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AtlasRadius.md, style: .continuous)
+                .fill(Color.primary.opacity(0.03))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AtlasRadius.md, style: .continuous)
+                .strokeBorder(AtlasColor.border, lineWidth: 1)
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(title))
+        .accessibilityValue(Text(value))
+        .accessibilityHint(Text(detail ?? ""))
+    }
+}
+
+private struct AtlasAdaptiveDetailRowLayout: Layout {
+    let spacing: CGFloat
+    let accessorySpacing: CGFloat
+    let minimumTextWidth: CGFloat
+
+    func sizeThatFits(
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout Void
+    ) -> CGSize {
+        measurements(for: proposal, subviews: subviews).size
+    }
+
+    func placeSubviews(
+        in bounds: CGRect,
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout Void
+    ) {
+        let measurements = measurements(
+            for: ProposedViewSize(width: bounds.width, height: proposal.height),
+            subviews: subviews
+        )
+
+        guard let textSubview = subview(at: 1, in: subviews) else {
+            return
+        }
+        let accessorySubview = subview(at: 2, in: subviews)
+        let contentX = bounds.minX + measurements.leadingOffset
+        let textProposal = ProposedViewSize(width: measurements.textWidth, height: nil)
+        let textSize = textSubview.sizeThatFits(textProposal)
+
+        if measurements.hasIcon, let iconSubview = subview(at: 0, in: subviews) {
+            iconSubview.place(
+                at: CGPoint(x: bounds.minX, y: bounds.minY),
+                proposal: ProposedViewSize(
+                    width: measurements.iconSize.width,
+                    height: measurements.iconSize.height
+                )
+            )
+        }
+
+        textSubview.place(
+            at: CGPoint(x: contentX, y: bounds.minY),
+            proposal: textProposal
+        )
+
+        guard measurements.hasAccessory else {
+            return
+        }
+
+        if measurements.useCompactLayout {
+            accessorySubview?.place(
+                at: CGPoint(
+                    x: contentX,
+                    y: bounds.minY + textSize.height + accessorySpacing
+                ),
+                proposal: ProposedViewSize(width: measurements.textWidth, height: nil)
+            )
+        } else {
+            accessorySubview?.place(
+                at: CGPoint(
+                    x: bounds.maxX - measurements.accessorySize.width,
+                    y: bounds.minY
+                ),
+                proposal: ProposedViewSize(
+                    width: measurements.accessorySize.width,
+                    height: measurements.accessorySize.height
+                )
+            )
+        }
+    }
+
+    private func measurements(
+        for proposal: ProposedViewSize,
+        subviews: Subviews
+    ) -> AtlasAdaptiveDetailRowMeasurements {
+        let iconSize = subview(at: 0, in: subviews)?.sizeThatFits(.unspecified) ?? .zero
+        let accessoryIdealSize = subview(at: 2, in: subviews)?.sizeThatFits(.unspecified) ?? .zero
+
+        let hasIcon = iconSize != .zero
+        let hasAccessory = accessoryIdealSize != .zero
+        let leadingOffset = hasIcon ? iconSize.width + spacing : 0
+        let horizontalAccessoryOffset = hasAccessory ? accessoryIdealSize.width + spacing : 0
+        let resolvedWidth = proposal.width
+        let horizontalTextWidth = resolvedWidth.map { max($0 - leadingOffset - horizontalAccessoryOffset, 0) }
+        let useCompactLayout = hasAccessory && (horizontalTextWidth.map { $0 < minimumTextWidth } ?? false)
+
+        if useCompactLayout {
+            let textWidth = max((resolvedWidth ?? minimumTextWidth) - leadingOffset, 0)
+            let textSize = subview(at: 1, in: subviews)?.sizeThatFits(ProposedViewSize(width: textWidth, height: nil)) ?? .zero
+            let accessorySize = subview(at: 2, in: subviews)?.sizeThatFits(ProposedViewSize(width: textWidth, height: nil)) ?? .zero
+            let contentHeight = textSize.height + accessorySpacing + accessorySize.height
+            let width = resolvedWidth ?? (leadingOffset + max(textSize.width, accessorySize.width))
+
+            return AtlasAdaptiveDetailRowMeasurements(
+                size: CGSize(width: width, height: max(iconSize.height, contentHeight)),
+                iconSize: iconSize,
+                accessorySize: accessorySize,
+                textWidth: textWidth,
+                leadingOffset: leadingOffset,
+                hasIcon: hasIcon,
+                hasAccessory: hasAccessory,
+                useCompactLayout: true
+            )
+        } else {
+            let textSize = subview(at: 1, in: subviews)?.sizeThatFits(ProposedViewSize(width: horizontalTextWidth, height: nil)) ?? .zero
+            let width = resolvedWidth ?? (leadingOffset + textSize.width + horizontalAccessoryOffset)
+
+            return AtlasAdaptiveDetailRowMeasurements(
+                size: CGSize(width: width, height: max(iconSize.height, textSize.height, accessoryIdealSize.height)),
+                iconSize: iconSize,
+                accessorySize: accessoryIdealSize,
+                textWidth: max(width - leadingOffset - horizontalAccessoryOffset, 0),
+                leadingOffset: leadingOffset,
+                hasIcon: hasIcon,
+                hasAccessory: hasAccessory,
+                useCompactLayout: false
+            )
+        }
+    }
+
+    private func subview(at index: Int, in subviews: Subviews) -> LayoutSubview? {
+        guard subviews.indices.contains(index) else {
+            return nil
+        }
+        return subviews[index]
+    }
+}
+
+private struct AtlasAdaptiveDetailRowMeasurements {
+    let size: CGSize
+    let iconSize: CGSize
+    let accessorySize: CGSize
+    let textWidth: CGFloat
+    let leadingOffset: CGFloat
+    let hasIcon: Bool
+    let hasAccessory: Bool
+    let useCompactLayout: Bool
+}
+
+private struct AtlasDetailRowLayoutSlot<Content: View>: View {
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        content
     }
 }
 

@@ -228,6 +228,14 @@ public enum AtlasMotion {
 public enum AtlasLayout {
     /// Maximum content reading width — prevents overly long text lines.
     public static let maxReadingWidth: CGFloat = 920
+    /// Wider content ceiling for split-pane workspace screens.
+    public static let maxWorkspaceWidth: CGFloat = 1200
+    /// Slightly wider content ceiling for workflow-heavy screens.
+    public static let maxWorkflowWidth: CGFloat = 1080
+    /// Switch split-pane cards into stacked mode before detail panels become cramped.
+    public static let browserSplitThreshold: CGFloat = 860
+    /// Keep enough readable width for text before detail-row accessories stay inline.
+    public static let detailRowMinimumTextWidth: CGFloat = 240
     /// Standard 3-column metric grid definition.
     public static let metricColumns: [GridItem] = [
         GridItem(.flexible(minimum: 180), spacing: AtlasSpacing.lg),
