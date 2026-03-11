@@ -16,9 +16,23 @@ if [[ -f "$ROOT_DIR/project.yml" ]]; then
     fi
 fi
 
-xcodebuild \
-    -project "$PROJECT_PATH" \
-    -scheme "$SCHEME" \
-    -configuration "$CONFIGURATION" \
-    -derivedDataPath "$DERIVED_DATA_PATH" \
-    build
+VERSION_OVERRIDES=()
+if [[ -n "${ATLAS_VERSION:-}" ]]; then
+    VERSION_OVERRIDES+=(MARKETING_VERSION="$ATLAS_VERSION")
+fi
+if [[ -n "${ATLAS_BUILD_NUMBER:-}" ]]; then
+    VERSION_OVERRIDES+=(CURRENT_PROJECT_VERSION="$ATLAS_BUILD_NUMBER")
+fi
+
+xcodebuild_args=(
+    -project "$PROJECT_PATH"
+    -scheme "$SCHEME"
+    -configuration "$CONFIGURATION"
+    -derivedDataPath "$DERIVED_DATA_PATH"
+)
+
+if (( ${#VERSION_OVERRIDES[@]} > 0 )); then
+    xcodebuild_args+=("${VERSION_OVERRIDES[@]}")
+fi
+
+xcodebuild "${xcodebuild_args[@]}" build

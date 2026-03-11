@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest an idea for Mole
+about: Suggest an idea for Atlas for Mac
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''

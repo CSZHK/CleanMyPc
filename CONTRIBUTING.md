@@ -1,181 +1,133 @@
-# Contributing to Mole
+# Contributing to Atlas for Mac
 
-## Setup
+Thank you for your interest in contributing to Atlas for Mac! This guide covers everything you need to get started.
+
+## Prerequisites
+
+- macOS 14.0 (Sonoma) or later
+- Xcode 16+ (Swift 6.0)
+- [xcodegen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen`
+- Go 1.24+ (only for legacy CLI components)
+
+## Getting Started
 
 ```bash
-# Install development tools
-brew install shfmt shellcheck bats-core golangci-lint
+# Clone the repository
+git clone https://github.com/CSZHK/CleanMyPc.git
+cd CleanMyPc
 
-# Install goimports for better Go formatting
-go install golang.org/x/tools/cmd/goimports@latest
+# Option A: Run directly
+swift run --package-path Apps AtlasApp
+
+# Option B: Open in Xcode
+xcodegen generate
+open Atlas.xcodeproj
 ```
 
-## Development
+## Architecture Overview
 
-Run quality checks before committing (auto-formats code):
+Atlas uses a layered Swift Package architecture with strict top-down dependency direction:
+
+```
+Apps/AtlasApp              ← App entry point, state management, routing
+  ↓
+Feature Packages           ← One package per module (Overview, SmartClean, Apps, etc.)
+  ↓
+AtlasDesignSystem          ← Brand tokens, reusable UI components
+AtlasDomain                ← Core models, localization (AtlasL10n)
+  ↓
+AtlasApplication           ← Workspace controller, repository layer
+AtlasInfrastructure        ← Worker management, XPC communication
+  ↓
+XPC/AtlasWorkerXPC         ← Sandboxed worker service
+Helpers/                   ← Privileged helper for elevated operations
+```
+
+Each feature package depends only on `AtlasDesignSystem` + `AtlasDomain` and receives callbacks for parent coordination.
+
+## Running Tests
+
+```bash
+# Domain, design system, adapters, and shared packages
+swift test --package-path Packages
+
+# App-level tests
+swift test --package-path Apps
+
+# Run a single test target
+swift test --package-path Packages --filter AtlasDomainTests
+
+# Full test suite (includes Go and shell tests)
+./scripts/test.sh
+```
+
+## Code Quality
+
+Run formatting and linting before committing:
 
 ```bash
 ./scripts/check.sh
 ```
 
-Run tests:
-
-```bash
-./scripts/test.sh
-```
+CI will also run these checks automatically on every push and pull request.
 
 ## Code Style
 
-### Basic Rules
+### Swift
 
-- Bash 3.2+ compatible (macOS default)
-- 4 spaces indent
-- Use `set -euo pipefail` in all scripts
-- Quote all variables: `"$variable"`
-- Use `[[ ]]` not `[ ]` for tests
-- Use `local` for function variables, `readonly` for constants
-- Function names: `snake_case`
-- BSD commands not GNU (e.g., `stat -f%z` not `stat --format`)
+- Swift 6.0 with strict concurrency enabled
+- Follow existing patterns in the codebase
+- Use `AtlasL10n` for all user-facing strings — never hardcode display text
 
-Config: `.editorconfig` and `.shellcheckrc`
+### Design System
+
+All UI should use the shared design tokens from `AtlasDesignSystem`:
+
+- **Colors**: `AtlasColor` — brand (teal), accent (mint), semantic (success/warning/danger/info)
+- **Typography**: `AtlasTypography` — screenTitle, heroMetric, sectionTitle, label, body, caption
+- **Spacing**: `AtlasSpacing` — 4pt grid (xxs=4, xs=8, sm=12, md=16, lg=20, xl=24, section=32)
+- **Radius**: `AtlasRadius` — continuous corners (sm=8, md=12, lg=16)
 
 ### File Operations
 
-**Always use safe wrappers, never `rm -rf` directly:**
+All cleanup and deletion logic must use safe wrappers. Never use raw `rm -rf` or unguarded file removal. See `SECURITY_AUDIT.md` for details on path validation and deletion boundaries.
 
-```bash
-# Single file/directory
-safe_remove "/path/to/file"
+## Localization
 
-# Purge files older than 7 days
-safe_find_delete "$dir" "*.log" 7 "f"
+Atlas supports Simplified Chinese (default) and English.
 
-# With sudo
-safe_sudo_remove "/Library/Caches/com.example"
+String files are located at:
+
+```
+Packages/AtlasDomain/Sources/AtlasDomain/Resources/zh-Hans.lproj/Localizable.strings
+Packages/AtlasDomain/Sources/AtlasDomain/Resources/en.lproj/Localizable.strings
 ```
 
-See `lib/core/file_ops.sh` for all safe functions.
+When adding user-facing text:
 
-### Pipefail Safety
-
-All commands that might fail must be handled:
-
-```bash
-# Correct: handle failure
-find /nonexistent -name "*.cache" 2>/dev/null || true
-
-# Correct: check array before use
-if [[ ${#array[@]} -gt 0 ]]; then
-    for item in "${array[@]}"; do
-        process "$item"
-    done
-fi
-
-# Correct: arithmetic operations
-((count++)) || true
-```
-
-### Error Handling
-
-```bash
-# Network requests with timeout
-result=$(curl -fsSL --connect-timeout 2 --max-time 3 "$url" 2>/dev/null || echo "")
-
-# Command existence check
-if ! command -v brew >/dev/null 2>&1; then
-    log_warning "Homebrew not installed"
-    return 0
-fi
-```
-
-### UI and Logging
-
-```bash
-# Logging
-log_info "Starting cleanup"
-log_success "Cache cleaned"
-log_warning "Some files skipped"
-log_error "Operation failed"
-
-# Spinners
-with_spinner "Cleaning cache" rm -rf "$cache_dir"
-
-# Or inline
-start_inline_spinner "Processing..."
-# ... work ...
-stop_inline_spinner "Complete"
-```
-
-### Debug Mode
-
-Enable debug output with `--debug`:
-
-```bash
-mo --debug clean
-./bin/clean.sh --debug
-```
-
-Modules check the internal `MO_DEBUG` variable:
-
-```bash
-if [[ "${MO_DEBUG:-0}" == "1" ]]; then
-    echo "[MODULE] Debug message" >&2
-fi
-```
-
-Format: `[MODULE_NAME] message` output to stderr.
-
-## Requirements
-
-- macOS 10.14 or newer, works on Intel and Apple Silicon
-- Default macOS Bash 3.2+ plus administrator privileges for cleanup tasks
-- Install Command Line Tools with `xcode-select --install` for curl, tar, and related utilities
-- Go 1.24+ is required to build the `mo status` or `mo analyze` TUI binaries locally.
+1. Add entries to **both** `.strings` files
+2. Access strings via the `AtlasL10n` enum
 
 ## Go Components
 
-`mo status` and `mo analyze` use Go with Bubble Tea for interactive dashboards.
-
-**Code organization:**
-
-- Each module split into focused files by responsibility
-- `cmd/analyze/` - Disk analyzer with 7 files under 500 lines each
-- `cmd/status/` - System monitor with metrics split into 11 domain files
-
-**Development workflow:**
-
-- Format code with `gofmt -w ./cmd/...`
-- Run `go vet ./cmd/...` to check for issues
-- Build with `go build ./...` to verify all packages compile
-
-**Building Go Binaries:**
-
-For local development:
+The `cmd/analyze/` and `cmd/status/` directories contain Go-based TUI tools inherited from the upstream Mole project. These are built separately:
 
 ```bash
-# Build binaries for current architecture
-make build
-
-# Or run directly without building
-go run ./cmd/analyze
-go run ./cmd/status
+make build              # Build for current architecture
+go run ./cmd/analyze    # Run disk analyzer directly
+go run ./cmd/status     # Run system monitor directly
 ```
-
-For releases, GitHub Actions builds architecture-specific binaries automatically.
-
-**Guidelines:**
-
-- Keep files focused on single responsibility
-- Extract constants instead of magic numbers
-- Use context for timeout control on external commands
-- Add comments explaining **why** something is done, not just **what** is being done.
 
 ## Pull Requests
 
-1. Fork and create branch from `main`
-2. Make changes
-3. Run checks: `./scripts/check.sh`
-4. Commit and push
-5. Open PR targeting `main`
+1. Fork the repository and create a branch from `main`
+2. Make your changes
+3. Run tests: `swift test --package-path Packages && swift test --package-path Apps`
+4. Run quality checks: `./scripts/check.sh`
+5. Open a PR targeting `main`
 
-CI will verify formatting, linting, and tests.
+CI will verify formatting, linting, and tests automatically.
+
+## Security
+
+If you discover a security vulnerability, **do not** open a public issue. Please report it privately following the instructions in [SECURITY.md](SECURITY.md).

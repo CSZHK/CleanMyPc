@@ -31,8 +31,13 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var latestScanProgress: Double = 0
     @Published private(set) var isCurrentSmartCleanPlanFresh: Bool
     @Published private(set) var smartCleanPlanIssue: String?
+    @Published private(set) var latestUpdateResult: AtlasAppUpdate?
+    @Published private(set) var isCheckingForUpdate = false
+    @Published private(set) var updateCheckNotice: String?
+    @Published private(set) var updateCheckError: String?
 
     private let workspaceController: AtlasWorkspaceController
+    private let updateChecker = AtlasUpdateChecker()
     private let notificationPermissionRequester: @Sendable () async -> Bool
     private var didRequestInitialHealthSnapshot = false
     private var didRequestInitialPermissionSnapshot = false
@@ -80,6 +85,46 @@ final class AtlasAppModel: ObservableObject {
 
     var appLanguage: AtlasLanguage {
         settings.language
+    }
+
+    var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+    }
+
+    var appBuild: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+
+    func checkForUpdate() async {
+        guard !isCheckingForUpdate else { return }
+
+        isCheckingForUpdate = true
+        defer { isCheckingForUpdate = false }
+
+        updateCheckNotice = nil
+        updateCheckError = nil
+
+        do {
+            let result = try await updateChecker.checkForUpdate(currentVersion: appVersion)
+            withAnimation(.snappy(duration: 0.24)) {
+                latestUpdateResult = result
+            }
+        } catch let error as AtlasUpdateCheckerError {
+            withAnimation(.snappy(duration: 0.24)) {
+                latestUpdateResult = nil
+            }
+            switch error {
+            case .noPublishedRelease:
+                updateCheckNotice = error.localizedDescription
+            case .requestFailed:
+                updateCheckError = error.localizedDescription
+            }
+        } catch {
+            withAnimation(.snappy(duration: 0.24)) {
+                latestUpdateResult = nil
+            }
+            updateCheckError = error.localizedDescription
+        }
     }
 
     func searchText(for route: AtlasRoute) -> String {

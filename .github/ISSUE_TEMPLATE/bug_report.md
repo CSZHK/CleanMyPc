@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug or issue with Mole
+about: Report a bug or issue with Atlas for Mac
 title: '[BUG] '
 labels: bug
 assignees: ''
@@ -14,40 +14,25 @@ If you believe the issue may allow unsafe deletion, path validation bypass, priv
 
 ## Steps to reproduce
 
-1. Run command: `mo ...`
-2. ...
-3. See error
+1. Open Atlas for Mac
+2. Navigate to the relevant module (e.g., Smart Clean, Apps, Overview)
+3. Perform the action that triggers the bug
+4. See error
 
 ## Expected behavior
 
 A clear and concise description of what you expected to happen.
 
-## Debug logs
+## Screenshots
 
-Please run the command with `--debug` flag and paste the output here:
-
-```bash
-mo <command> --debug
-# Example: mo clean --debug
-```
-
-<details>
-<summary>Debug output</summary>
-
-```text
-Paste the debug output here
-```
-
-</details>
+If applicable, add screenshots to help explain your problem.
 
 ## Environment
 
-Please run `mo update` to ensure you are on the latest version, then paste the output of `mo --version` below:
-
-```text
-Paste mo --version output here
-```
+- macOS version:
+- Atlas for Mac version:
+- Chip: Apple Silicon / Intel
 
 ## Additional context
 
-Add any other context about the problem here, such as screenshots or related issues.
+Add any other context about the problem here, such as console logs or related issues.

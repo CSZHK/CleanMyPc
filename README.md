@@ -12,6 +12,39 @@ Atlas for Mac is a native macOS application for people who need to understand wh
 
 This repository is the working source for the new Atlas for Mac product. Atlas for Mac itself is open source under the MIT License. It remains an independent project and may reuse selected upstream Mole capabilities under the MIT License, but user-facing naming, release materials, and product direction are Atlas-first.
 
+## Installation
+
+### Download
+
+Download the latest release from the [Releases](https://github.com/CSZHK/CleanMyPc/releases) page:
+
+- **`.dmg`** — Recommended. Open the disk image and drag Atlas to your Applications folder.
+- **`.zip`** — Extract and move Atlas.app to your Applications folder.
+- **`.pkg`** — Run the installer package for guided installation.
+
+### Requirements
+
+- macOS 14.0 (Sonoma) or later
+- Apple Silicon or Intel Mac
+
+### Build from Source
+
+```bash
+git clone https://github.com/CSZHK/CleanMyPc.git
+cd CleanMyPc
+swift run --package-path Apps AtlasApp
+```
+
+Or open in Xcode:
+
+```bash
+brew install xcodegen
+xcodegen generate
+open Atlas.xcodeproj
+```
+
+> **Note**: The app is currently unsigned. On first launch, you may need to right-click and select "Open" to bypass Gatekeeper, or go to System Settings > Privacy & Security to allow it.
+
 ## MVP Modules
 
 - `Overview`

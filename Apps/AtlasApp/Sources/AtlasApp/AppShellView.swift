@@ -40,38 +40,29 @@ struct AppShellView: View {
 
             detailContent(for: route)
                 .toolbar {
-                    ToolbarItemGroup {
-                        Button {
-                            model.openTaskCenter()
-                        } label: {
-                            Label {
-                                Text(AtlasL10n.string("toolbar.taskcenter"))
-                            } icon: {
-                                ZStack(alignment: .topTrailing) {
-                                    Image(systemName: AtlasIcon.taskCenter)
-                                        .symbolRenderingMode(.hierarchical)
-
-                                    if activeTaskCount > 0 {
-                                        Text(activeTaskCount > 99 ? "99+" : "\(activeTaskCount)")
-                                            .font(.caption2.weight(.bold))
-                                            .foregroundStyle(.white)
-                                            .padding(.horizontal, activeTaskCount > 9 ? AtlasSpacing.xxs : AtlasSpacing.xs)
-                                            .padding(.vertical, 2)
-                                            .background(Capsule(style: .continuous).fill(AtlasColor.accent))
-                                            .offset(x: 10, y: -8)
-                                    }
-                                }
-                            }
-                        }
-                        .help(AtlasL10n.string("toolbar.taskcenter.help"))
-                        .accessibilityIdentifier("toolbar.taskCenter")
-                        .accessibilityLabel(AtlasL10n.string("toolbar.taskcenter.accessibilityLabel"))
-                        .accessibilityHint(AtlasL10n.string("toolbar.taskcenter.accessibilityHint"))
+                    ToolbarItem {
+                        taskCenterToolbarButton
                     }
                 }
                 .animation(AtlasMotion.slow, value: model.selection)
         }
         .navigationSplitViewStyle(.balanced)
+        .overlay(alignment: .topTrailing) {
+            AboutUpdateToolbarButton(
+                appVersion: model.appVersion,
+                appBuild: model.appBuild,
+                updateResult: model.latestUpdateResult,
+                isCheckingForUpdate: model.isCheckingForUpdate,
+                updateCheckNotice: model.updateCheckNotice,
+                updateCheckError: model.updateCheckError,
+                onCheckForUpdate: {
+                    Task { await model.checkForUpdate() }
+                }
+            )
+            .padding(.top, 10)
+            .padding(.trailing, 24)
+            .ignoresSafeArea(.container, edges: .top)
+        }
         .task {
             await model.refreshHealthSnapshotIfNeeded()
             await model.refreshPermissionsIfNeeded()
@@ -225,6 +216,35 @@ struct AppShellView: View {
         model.snapshot.taskRuns.filter { taskRun in
             taskRun.status == .queued || taskRun.status == .running
         }.count
+    }
+
+    private var taskCenterToolbarButton: some View {
+        Button {
+            model.openTaskCenter()
+        } label: {
+            Label {
+                Text(AtlasL10n.string("toolbar.taskcenter"))
+            } icon: {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: AtlasIcon.taskCenter)
+                        .symbolRenderingMode(.hierarchical)
+
+                    if activeTaskCount > 0 {
+                        Text(activeTaskCount > 99 ? "99+" : "\(activeTaskCount)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, activeTaskCount > 9 ? AtlasSpacing.xxs : AtlasSpacing.xs)
+                            .padding(.vertical, 2)
+                            .background(Capsule(style: .continuous).fill(AtlasColor.accent))
+                            .offset(x: 10, y: -8)
+                    }
+                }
+            }
+        }
+        .help(AtlasL10n.string("toolbar.taskcenter.help"))
+        .accessibilityIdentifier("toolbar.taskCenter")
+        .accessibilityLabel(AtlasL10n.string("toolbar.taskcenter.accessibilityLabel"))
+        .accessibilityHint(AtlasL10n.string("toolbar.taskcenter.accessibilityHint"))
     }
 }
 

@@ -1,10 +1,10 @@
-# Mole Security Audit
+# Atlas for Mac Security Audit
 
-This document describes the security-relevant behavior of the current `main` branch. It is intended as a public description of Mole's safety boundaries, destructive-operation controls, release integrity signals, and known limitations.
+This document describes the security-relevant behavior of the current `main` branch. It is intended as a public description of Atlas for Mac's safety boundaries, destructive-operation controls, release integrity signals, and known limitations.
 
 ## Executive Summary
 
-Mole is a local system maintenance tool. Its main risk surface is not remote code execution; it is unintended local damage caused by cleanup, uninstall, optimize, purge, installer cleanup, or other destructive operations.
+Atlas for Mac is a local system maintenance tool. Its main risk surface is not remote code execution; it is unintended local damage caused by cleanup, uninstall, optimize, purge, installer cleanup, or other destructive operations.
 
 The project is designed around safety-first defaults:
 
@@ -14,7 +14,7 @@ The project is designed around safety-first defaults:
 - symlink handling is conservative
 - preview, confirmation, timeout, and operation logging are used to make destructive behavior more visible and auditable
 
-Mole prioritizes bounded cleanup over aggressive cleanup. When uncertainty exists, the tool should refuse, skip, or require stronger confirmation instead of widening deletion scope.
+Atlas for Mac prioritizes bounded cleanup over aggressive cleanup. When uncertainty exists, the tool should refuse, skip, or require stronger confirmation instead of widening deletion scope.
 
 The project continues to strengthen:
 
@@ -24,7 +24,7 @@ The project continues to strengthen:
 
 ## Threat Surface
 
-The highest-risk areas in Mole are:
+The highest-risk areas in Atlas for Mac are:
 
 - direct file and directory deletion
 - recursive cleanup across common user and system cache locations
@@ -133,7 +133,7 @@ See [`journal/2026-03-11-safe-remove-design.md`](journal/2026-03-11-safe-remove-
 
 ## Protected Directories and Categories
 
-Mole has explicit protected-path and protected-category logic in addition to root-path blocking.
+Atlas for Mac has explicit protected-path and protected-category logic in addition to root-path blocking.
 
 Protected or conservatively handled categories include:
 
@@ -181,7 +181,7 @@ Path traversal handling is also explicit:
 
 ## Privilege Escalation and Sudo Boundaries
 
-Mole uses sudo for a subset of system-maintenance paths, but elevated behavior is still bounded by validation and protected-path rules.
+Atlas for Mac uses sudo for a subset of system-maintenance paths, but elevated behavior is still bounded by validation and protected-path rules.
 
 Key properties:
 
@@ -192,11 +192,11 @@ Key properties:
 - sudo cleanup skips or reports denied operations instead of widening scope
 - authentication, SIP/MDM, and read-only filesystem failures are classified separately in file-operation results
 
-When sudo is denied or unavailable, Mole prefers skipping privileged cleanup to forcing execution through unsafe fallback behavior.
+When sudo is denied or unavailable, Atlas for Mac prefers skipping privileged cleanup to forcing execution through unsafe fallback behavior.
 
 ## Sensitive Data Exclusions
 
-Mole is not intended to aggressively delete high-value user data.
+Atlas for Mac is not intended to aggressively delete high-value user data.
 
 Examples of conservative handling include:
 
@@ -218,7 +218,7 @@ This reduces the risk of incorrectly classifying active software as orphaned dat
 
 ## Dry-Run, Confirmation, and Audit Logging
 
-Mole exposes multiple safety controls before and during destructive actions:
+Atlas for Mac exposes multiple safety controls before and during destructive actions:
 
 - `--dry-run` previews are available for major destructive commands
 - interactive high-risk flows require explicit confirmation before deletion
@@ -236,7 +236,7 @@ Relevant timeout behavior includes:
 
 ## Release Integrity and Continuous Security Signals
 
-Mole treats release trust as part of its security posture, not just a packaging detail.
+Atlas for Mac treats release trust as part of its security posture, not just a packaging detail.
 
 Repository-level signals include:
 

@@ -36,30 +36,9 @@ public struct AboutFeatureView: View {
                     .font(AtlasTypography.body)
                     .foregroundStyle(.secondary)
 
-                Divider()
-                    .padding(.vertical, AtlasSpacing.xs)
-
-                HStack(spacing: AtlasSpacing.md) {
-                    SocialBadge(
-                        assetName: "icon-wechat",
-                        label: AtlasL10n.string("about.social.wechat")
-                    )
-                    SocialBadge(
-                        assetName: "icon-xiaohongshu",
-                        label: AtlasL10n.string("about.social.xiaohongshu")
-                    )
-                    SocialBadge(
-                        assetName: "icon-x",
-                        label: AtlasL10n.string("about.social.x"),
-                        url: "https://x.com/lizikk_zhu"
-                    )
-                    SocialBadge(
-                        assetName: "icon-discord",
-                        label: AtlasL10n.string("about.social.discord"),
-                        url: "https://discord.gg"
-                    )
-                }
             }
+
+            SocialGrid()
 
             AtlasCallout(
                 title: AtlasL10n.string("about.author.quote"),
@@ -107,33 +86,110 @@ public struct AboutFeatureView: View {
     }
 }
 
-private struct SocialBadge: View {
-    let assetName: String
+// MARK: - Social Grid
+
+private struct SocialGrid: View {
+    var body: some View {
+        HStack(spacing: AtlasSpacing.md) {
+            SocialCard(
+                iconAsset: "icon-wechat",
+                label: AtlasL10n.string("about.social.wechat"),
+                qrCodeAsset: "qrcode-wechat"
+            )
+            SocialCard(
+                iconAsset: "icon-xiaohongshu",
+                label: AtlasL10n.string("about.social.xiaohongshu"),
+                qrCodeAsset: "qrcode-xiaohongshu"
+            )
+            SocialCard(
+                iconAsset: "icon-x",
+                label: AtlasL10n.string("about.social.x"),
+                url: "https://x.com/lizikk_zhu"
+            )
+            SocialCard(
+                iconAsset: "icon-discord",
+                label: AtlasL10n.string("about.social.discord"),
+                url: "https://discord.gg/aR2kF8Xman"
+            )
+        }
+    }
+}
+
+private struct SocialCard: View {
+    let iconAsset: String
     let label: String
+    var qrCodeAsset: String? = nil
     var url: String? = nil
 
-    var body: some View {
-        let content = VStack(spacing: AtlasSpacing.xs) {
-            Image(assetName, bundle: .module)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 28, height: 28)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+    @State private var isHovering = false
 
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+    var body: some View {
+        Group {
+            if let url, let destination = URL(string: url) {
+                Link(destination: destination) { cardContent }
+            } else {
+                cardContent
+            }
         }
-        .frame(maxWidth: .infinity)
+        .onHover { isHovering = $0 }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(label)
+    }
 
-        if let url, let destination = URL(string: url) {
-            Link(destination: destination) { content }
-        } else {
-            content
+    private var cardContent: some View {
+        VStack(spacing: AtlasSpacing.sm) {
+            if let qrCodeAsset {
+                Image(qrCodeAsset, bundle: .module)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    .padding(.horizontal, AtlasSpacing.section)
+                    .padding(.top, AtlasSpacing.sm)
+            } else {
+                Spacer()
+
+                Image(iconAsset, bundle: .module)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 52, height: 52)
+
+                Spacer()
+            }
+
+            HStack(spacing: AtlasSpacing.xxs) {
+                Image(iconAsset, bundle: .module)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 12, height: 12)
+
+                Text(label)
+                    .font(AtlasTypography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                if url != nil {
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .padding(.bottom, AtlasSpacing.xs)
         }
+        .frame(maxWidth: .infinity, minHeight: 120)
+        .background(
+            RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
+                .fill(AtlasColor.cardRaised)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
+                .strokeBorder(
+                    isHovering ? AtlasColor.borderEmphasis : AtlasColor.border,
+                    lineWidth: 1
+                )
+        )
+        .scaleEffect(isHovering ? 1.02 : 1.0)
+        .animation(.easeOut(duration: 0.15), value: isHovering)
     }
 }
 

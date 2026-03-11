@@ -7,7 +7,7 @@ updates:
     labels:
       - "dependencies"
     reviewers:
-      - "tw93"
+      - "CSZHK"
     open-pull-requests-limit: 10
 
   - package-ecosystem: "gomod"
@@ -17,5 +17,5 @@ updates:
     labels:
       - "dependencies"
     reviewers:
-      - "tw93"
+      - "CSZHK"
     open-pull-requests-limit: 10

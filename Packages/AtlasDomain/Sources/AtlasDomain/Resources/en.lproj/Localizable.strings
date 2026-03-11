@@ -611,3 +611,19 @@
 "storage.screen.title" = "Storage";
 "storage.screen.subtitle" = "Reserved list-based storage views for a future scope decision.";
 "storage.largeItems.title" = "Large Items";
+
+"update.version.title" = "Version";
+"update.version.current" = "Current Version";
+"update.version.build" = "Build";
+"update.check.action" = "Check for Updates";
+"update.check.checking" = "Checking…";
+"update.available.title" = "New version %@ available";
+"update.available.detail" = "Current version %@, latest version %@. Download the update from GitHub.";
+"update.available.download" = "Download";
+"update.upToDate.title" = "You're up to date";
+"update.upToDate.detail" = "Version %@ is the latest release.";
+"update.notice.title" = "Updates unavailable";
+"update.notice.noPublishedRelease" = "Atlas for Mac has not published a downloadable release yet.";
+"update.error.title" = "Update check failed";
+"update.error.detail" = "Could not reach the update server. Please try again later.";
+"update.error.requestFailed" = "Could not connect to the GitHub release server.";
