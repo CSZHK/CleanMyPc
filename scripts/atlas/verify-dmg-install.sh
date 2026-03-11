@@ -12,27 +12,27 @@ INFO_PLIST="$INSTALLED_APP_PATH/Contents/Info.plist"
 KEEP_INSTALLED_APP="${KEEP_INSTALLED_APP:-0}"
 
 cleanup() {
-  if mount | grep -q "on $MOUNT_POINT "; then
-    hdiutil detach "$MOUNT_POINT" -quiet || true
-  fi
-  if [[ "$KEEP_INSTALLED_APP" != "1" && -d "$INSTALLED_APP_PATH" ]]; then
-    python3 - "$INSTALLED_APP_PATH" <<'PY'
+    if mount | grep -q "on $MOUNT_POINT "; then
+        hdiutil detach "$MOUNT_POINT" -quiet || true
+    fi
+    if [[ "$KEEP_INSTALLED_APP" != "1" && -d "$INSTALLED_APP_PATH" ]]; then
+        python3 - "$INSTALLED_APP_PATH" << 'PY'
 from pathlib import Path
 import shutil, sys
 app = Path(sys.argv[1])
 if app.exists():
     shutil.rmtree(app)
 PY
-  fi
+    fi
 }
 trap cleanup EXIT
 
 if [[ ! -f "$DMG_PATH" ]]; then
-  echo "DMG not found: $DMG_PATH" >&2
-  exit 1
+    echo "DMG not found: $DMG_PATH" >&2
+    exit 1
 fi
 
-python3 - "$MOUNT_POINT" <<'PY'
+python3 - "$MOUNT_POINT" << 'PY'
 from pathlib import Path
 import shutil, sys
 mount_path = Path(sys.argv[1])
@@ -45,11 +45,11 @@ mkdir -p "$INSTALL_ROOT/Applications"
 hdiutil attach "$DMG_PATH" -mountpoint "$MOUNT_POINT" -nobrowse -quiet
 
 if [[ ! -d "$SOURCE_APP_PATH" ]]; then
-  echo "Mounted app not found at $SOURCE_APP_PATH" >&2
-  exit 1
+    echo "Mounted app not found at $SOURCE_APP_PATH" >&2
+    exit 1
 fi
 
-python3 - "$SOURCE_APP_PATH" "$INSTALLED_APP_PATH" <<'PY'
+python3 - "$SOURCE_APP_PATH" "$INSTALLED_APP_PATH" << 'PY'
 from pathlib import Path
 import shutil, sys
 src = Path(sys.argv[1])
@@ -59,10 +59,10 @@ if dst.exists():
 shutil.copytree(src, dst, symlinks=True)
 PY
 
-APP_DISPLAY_NAME=$(/usr/bin/defaults read "$INFO_PLIST" CFBundleDisplayName 2>/dev/null || echo "")
+APP_DISPLAY_NAME=$(/usr/bin/defaults read "$INFO_PLIST" CFBundleDisplayName 2> /dev/null || echo "")
 if [[ "$APP_DISPLAY_NAME" != "Atlas for Mac" ]]; then
-  echo "Unexpected installed app display name: ${APP_DISPLAY_NAME:-<empty>}" >&2
-  exit 1
+    echo "Unexpected installed app display name: ${APP_DISPLAY_NAME:-<empty>}" >&2
+    exit 1
 fi
 
 echo "DMG install validation succeeded"
