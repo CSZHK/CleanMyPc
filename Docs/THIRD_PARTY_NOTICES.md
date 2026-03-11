@@ -21,7 +21,7 @@ If Atlas for Mac ships code derived from upstream Mole sources, the applicable c
 ## Notice Template
 
 ```text
-Atlas for Mac is released under the MIT License. This product also includes software derived from the open-source project Mole by tw93 and contributors, used under the MIT License.
+Atlas for Mac is released under the MIT License. This product also includes software derived from the open-source project Mole (https://github.com/tw93/mole) by tw93 and contributors, used under the MIT License.
 ```
 
 ## Future Additions

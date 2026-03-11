@@ -42,8 +42,8 @@
 "category.apps" = "Apps";
 "category.browsers" = "Browsers";
 
-"settings.acknowledgement.body" = "Atlas for Mac is an open-source project released under the MIT License and built in part on the open-source project Mole by tw93 and contributors. Mole-derived components included in Atlas for Mac are also used under the MIT License. Atlas for Mac is an independent product and is not affiliated with or endorsed by the original authors.";
-"settings.notices.body" = "Atlas for Mac is released under the MIT License. This product also includes software derived from the open-source project Mole by tw93 and contributors, used under the MIT License.";
+"settings.acknowledgement.body" = "Atlas for Mac is an open-source project released under the MIT License and built in part on the open-source project Mole (https://github.com/tw93/mole) by tw93 and contributors. Mole-derived components included in Atlas for Mac are also used under the MIT License. Atlas for Mac is an independent product and is not affiliated with or endorsed by the original authors.";
+"settings.notices.body" = "Atlas for Mac is released under the MIT License. This product also includes software derived from the open-source project Mole (https://github.com/tw93/mole) by tw93 and contributors, used under the MIT License.";
 "fixture.finding.derivedData.title" = "Xcode Derived Data";
 "fixture.finding.derivedData.detail" = "Build artifacts and indexes from older projects.";
 "fixture.finding.browserCaches.title" = "Browser caches";

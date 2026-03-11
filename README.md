@@ -93,4 +93,4 @@ This exports the configured app icon and current app-shell screenshots into `Doc
 
 ## Attribution
 
-Atlas for Mac is an independent MIT-licensed open-source project. This repository builds in part on the open-source project Mole by tw93 and contributors, and still contains upstream Mole code and adapters used as implementation input. If upstream-derived code ships, keep [Docs/ATTRIBUTION.md](/Users/zhukang/CleanMyPc/Docs/ATTRIBUTION.md) and [Docs/THIRD_PARTY_NOTICES.md](/Users/zhukang/CleanMyPc/Docs/THIRD_PARTY_NOTICES.md) in sync with shipped artifacts.
+Atlas for Mac is an independent MIT-licensed open-source project. This repository builds in part on the open-source project [Mole](https://github.com/tw93/mole) by tw93 and contributors, and still contains upstream Mole code and adapters used as implementation input. If upstream-derived code ships, keep [Docs/ATTRIBUTION.md](Docs/ATTRIBUTION.md) and [Docs/THIRD_PARTY_NOTICES.md](Docs/THIRD_PARTY_NOTICES.md) in sync with shipped artifacts.
