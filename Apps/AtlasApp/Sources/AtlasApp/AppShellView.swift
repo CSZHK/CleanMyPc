@@ -31,6 +31,7 @@ struct AppShellView: View {
                         .tag(AtlasRoute.about)
                 }
             }
+            .id(model.appLanguage)
             .navigationTitle(AtlasL10n.string("app.name"))
             .navigationSplitViewColumnWidth(min: AtlasLayout.sidebarMinWidth, ideal: AtlasLayout.sidebarIdealWidth)
             .listStyle(.sidebar)
