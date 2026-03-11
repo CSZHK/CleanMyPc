@@ -31,7 +31,7 @@ xcodebuild_args=(
     -derivedDataPath "$DERIVED_DATA_PATH"
 )
 
-if (( ${#VERSION_OVERRIDES[@]} > 0 )); then
+if ((${#VERSION_OVERRIDES[@]} > 0)); then
     xcodebuild_args+=("${VERSION_OVERRIDES[@]}")
 fi
 
