@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		00FF4F36C92195A962A9F59B /* TaskCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31527C6248CC4F0D354F6593 /* TaskCenterView.swift */; };
 		017840491908148F704A4D6C /* AtlasFeaturesApps in Frameworks */ = {isa = PBXBuildFile; productRef = E010799E86FC790C1EF4C411 /* AtlasFeaturesApps */; };
+		0AAC86F28CA878B4829DA4F5 /* ReadmeAssetExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A363C421B6DA2EFE09AE3D7 /* ReadmeAssetExporter.swift */; };
 		0F5F7A6D0F43DA152DAF0BFF /* AtlasInfrastructure in Frameworks */ = {isa = PBXBuildFile; productRef = 45024873B6BFA049536C71E1 /* AtlasInfrastructure */; };
 		10289D654617F349037539C6 /* AtlasCoreAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 95BB6838D0184A8A534E383B /* AtlasCoreAdapters */; };
 		18248DDA2E6242D30B2FF84B /* AtlasFeaturesSettings in Frameworks */ = {isa = PBXBuildFile; productRef = FE51513F5C3746B2C3DA5E9A /* AtlasFeaturesSettings */; };
@@ -69,6 +70,7 @@
 		13B5E85855AB6534C486F6AB /* AtlasAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasAppUITests.swift; sourceTree = "<group>"; };
 		31527C6248CC4F0D354F6593 /* TaskCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCenterView.swift; sourceTree = "<group>"; };
 		67FF6A7D6D44C9F4789DA0FF /* Packages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Packages; path = Packages; sourceTree = SOURCE_ROOT; };
+		6A363C421B6DA2EFE09AE3D7 /* ReadmeAssetExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadmeAssetExporter.swift; sourceTree = "<group>"; };
 		6D6F7E5AF1DB77BD9455C253 /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
 		7514A7238A2A0C3B19F6D967 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7B60D354F907D973C9D78524 /* AtlasAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AtlasAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -189,6 +191,7 @@
 				D47D886B3961FF355B7634A4 /* AtlasApp.swift */,
 				A57454A431BBD25C9D9F7ACA /* AtlasAppCommands.swift */,
 				D49DD35B2A03E408EDF80E69 /* AtlasAppModel.swift */,
+				6A363C421B6DA2EFE09AE3D7 /* ReadmeAssetExporter.swift */,
 				31527C6248CC4F0D354F6593 /* TaskCenterView.swift */,
 			);
 			path = AtlasApp;
@@ -361,6 +364,7 @@
 				BC30CCA25FC8A3EB81BE296A /* AtlasApp.swift in Sources */,
 				B17BB446E0574DB8518951C8 /* AtlasAppCommands.swift in Sources */,
 				74A5A06AD14DA376F908F6C9 /* AtlasAppModel.swift in Sources */,
+				0AAC86F28CA878B4829DA4F5 /* ReadmeAssetExporter.swift in Sources */,
 				00FF4F36C92195A962A9F59B /* TaskCenterView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
