@@ -212,7 +212,9 @@ clean_project_caches() {
                 [[ -d "$cache_dir/cache" ]] && safe_clean "$cache_dir/cache"/* "Next.js build cache" || true
                 ;;
             "__pycache__")
-                [[ -d "$cache_dir" ]] && safe_clean "$cache_dir"/* "Python bytecode cache" || true
+                # Remove the cache directory itself so we avoid expanding every
+                # .pyc file into a separate safe_clean target.
+                [[ -d "$cache_dir" ]] && safe_clean "$cache_dir" "Python bytecode cache" || true
                 ;;
             ".dart_tool")
                 if [[ -d "$cache_dir" ]]; then

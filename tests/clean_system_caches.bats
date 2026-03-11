@@ -138,6 +138,25 @@ setup() {
     rm -rf "$HOME/Projects"
 }
 
+@test "clean_project_caches removes pycache directories as single targets" {
+    mkdir -p "$HOME/Projects/python-app/__pycache__"
+    touch "$HOME/Projects/python-app/pyproject.toml"
+    touch "$HOME/Projects/python-app/__pycache__/module.pyc"
+
+    run env HOME="$HOME" PROJECT_ROOT="$PROJECT_ROOT" bash --noprofile --norc <<'EOF'
+set -euo pipefail
+source "$PROJECT_ROOT/lib/core/common.sh"
+source "$PROJECT_ROOT/lib/clean/caches.sh"
+safe_clean() { echo "$2|$1"; }
+clean_project_caches
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Python bytecode cache|$HOME/Projects/python-app/__pycache__"* ]]
+    [[ "$output" != *"module.pyc"* ]]
+
+    rm -rf "$HOME/Projects"
+}
+
 @test "clean_project_caches scans configured roots instead of HOME" {
     mkdir -p "$HOME/.config/mole"
     mkdir -p "$HOME/CustomProjects/app/.next/cache"
@@ -177,7 +196,8 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"Next.js build cache"* ]]
     grep -q -- "-P $HOME/CustomProjects " "$find_log"
-    ! grep -q -- "-P $HOME " "$find_log"
+    run grep -q -- "-P $HOME " "$find_log"
+    [ "$status" -eq 1 ]
 
     rm -rf "$HOME/CustomProjects" "$HOME/.config/mole" "$fake_bin" "$find_log"
 }
@@ -251,6 +271,7 @@ set -euo pipefail
 source "$PROJECT_ROOT/lib/core/common.sh"
 source "$PROJECT_ROOT/lib/clean/caches.sh"
 MO_TIMEOUT_BIN=""
+MO_TIMEOUT_PERL_BIN="${MO_TIMEOUT_PERL_BIN:-$(command -v perl)}"
 export MOLE_PROJECT_CACHE_DISCOVERY_TIMEOUT=0.5
 export MOLE_PROJECT_CACHE_SCAN_TIMEOUT=0.5
 SECONDS=0

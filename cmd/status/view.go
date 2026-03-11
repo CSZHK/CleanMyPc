@@ -365,6 +365,8 @@ func renderDiskCard(disks []DiskStatus, io DiskIOStatus) cardData {
 		addGroup("EXTR", external)
 		if len(lines) == 0 {
 			lines = append(lines, subtleStyle.Render("No disks detected"))
+		} else if len(disks) == 1 {
+			lines = append(lines, formatDiskMetaLine(disks[0]))
 		}
 	}
 	readBar := ioBar(io.ReadRate)
@@ -398,8 +400,19 @@ func formatDiskLine(label string, d DiskStatus) string {
 	}
 	bar := progressBar(d.UsedPercent)
 	used := humanBytesShort(d.Used)
-	total := humanBytesShort(d.Total)
-	return fmt.Sprintf("%-6s %s  %5.1f%%, %s/%s", label, bar, d.UsedPercent, used, total)
+	free := uint64(0)
+	if d.Total > d.Used {
+		free = d.Total - d.Used
+	}
+	return fmt.Sprintf("%-6s %s  %s used, %s free", label, bar, used, humanBytesShort(free))
+}
+
+func formatDiskMetaLine(d DiskStatus) string {
+	parts := []string{humanBytesShort(d.Total)}
+	if d.Fstype != "" {
+		parts = append(parts, strings.ToUpper(d.Fstype))
+	}
+	return fmt.Sprintf("Total  %s", strings.Join(parts, " · "))
 }
 
 func ioBar(rate float64) string {

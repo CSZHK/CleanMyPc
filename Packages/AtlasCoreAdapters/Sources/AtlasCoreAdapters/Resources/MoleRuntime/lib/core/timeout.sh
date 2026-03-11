@@ -42,9 +42,9 @@ if [[ -z "${MO_TIMEOUT_INITIALIZED:-}" ]]; then
         fi
     done
 
-    if [[ -z "$MO_TIMEOUT_BIN" ]] && command -v perl > /dev/null 2>&1; then
+    if command -v perl > /dev/null 2>&1; then
         MO_TIMEOUT_PERL_BIN="$(command -v perl)"
-        if [[ "${MO_DEBUG:-0}" == "1" ]]; then
+        if [[ -z "$MO_TIMEOUT_BIN" ]] && [[ "${MO_DEBUG:-0}" == "1" ]]; then
             echo "[TIMEOUT] Using perl fallback: $MO_TIMEOUT_PERL_BIN" >&2
         fi
     fi

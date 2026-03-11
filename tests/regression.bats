@@ -114,6 +114,7 @@ EOF
 set -euo pipefail
 source "$PROJECT_ROOT/lib/core/timeout.sh"
 MO_TIMEOUT_BIN=""
+MO_TIMEOUT_PERL_BIN="${MO_TIMEOUT_PERL_BIN:-$(command -v perl)}"
 SECONDS=0
 set +e
 run_with_timeout 1 "$FAKE_CMD"

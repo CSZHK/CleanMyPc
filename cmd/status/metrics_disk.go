@@ -22,6 +22,23 @@ var skipDiskMounts = map[string]bool{
 	"/dev":                     true,
 }
 
+var skipDiskFSTypes = map[string]bool{
+	"afpfs":   true,
+	"autofs":  true,
+	"cifs":    true,
+	"devfs":   true,
+	"fuse":    true,
+	"fuseblk": true,
+	"fusefs":  true,
+	"macfuse": true,
+	"nfs":     true,
+	"osxfuse": true,
+	"procfs":  true,
+	"smbfs":   true,
+	"tmpfs":   true,
+	"webdav":  true,
+}
+
 func collectDisks() ([]DiskStatus, error) {
 	partitions, err := disk.Partitions(false)
 	if err != nil {
@@ -34,17 +51,7 @@ func collectDisks() ([]DiskStatus, error) {
 		seenVolume = make(map[string]bool)
 	)
 	for _, part := range partitions {
-		if strings.HasPrefix(part.Device, "/dev/loop") {
-			continue
-		}
-		if skipDiskMounts[part.Mountpoint] {
-			continue
-		}
-		if strings.HasPrefix(part.Mountpoint, "/System/Volumes/") {
-			continue
-		}
-		// Skip /private mounts.
-		if strings.HasPrefix(part.Mountpoint, "/private/") {
+		if shouldSkipDiskPartition(part) {
 			continue
 		}
 		baseDevice := baseDeviceName(part.Device)
@@ -95,6 +102,34 @@ func collectDisks() ([]DiskStatus, error) {
 	}
 
 	return disks, nil
+}
+
+func shouldSkipDiskPartition(part disk.PartitionStat) bool {
+	if strings.HasPrefix(part.Device, "/dev/loop") {
+		return true
+	}
+	if skipDiskMounts[part.Mountpoint] {
+		return true
+	}
+	if strings.HasPrefix(part.Mountpoint, "/System/Volumes/") {
+		return true
+	}
+	if strings.HasPrefix(part.Mountpoint, "/private/") {
+		return true
+	}
+
+	fstype := strings.ToLower(part.Fstype)
+	if skipDiskFSTypes[fstype] || strings.Contains(fstype, "fuse") {
+		return true
+	}
+
+	// On macOS, local disks should come from /dev. This filters sshfs/macFUSE-style
+	// mounts that can mirror the root volume and show up as duplicate internal disks.
+	if runtime.GOOS == "darwin" && part.Device != "" && !strings.HasPrefix(part.Device, "/dev/") {
+		return true
+	}
+
+	return false
 }
 
 var (

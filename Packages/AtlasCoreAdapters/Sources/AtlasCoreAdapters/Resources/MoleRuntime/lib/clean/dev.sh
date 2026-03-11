@@ -198,13 +198,18 @@ clean_dev_docker() {
             fi
             stop_section_spinner
             if [[ "$docker_running" == "true" ]]; then
-                clean_tool_cache "Docker build cache" docker builder prune -af
+                # Remove unused images, stopped containers, unused networks, and
+                # anonymous volumes in one pass. This maps better to the large
+                # reclaimable "docker system df" buckets users typically see.
+                clean_tool_cache "Docker unused data" docker system prune -af --volumes
             else
+                echo -e "  ${GRAY}${ICON_WARNING}${NC} Docker unused data · skipped (daemon not running)"
+                note_activity
                 debug_log "Docker daemon not running, skipping Docker cache cleanup"
             fi
         else
             note_activity
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Docker build cache · would clean"
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Docker unused data · would clean"
         fi
     fi
     safe_clean ~/.docker/buildx/cache/* "Docker BuildX cache"
@@ -359,47 +364,49 @@ clean_xcode_device_support() {
         version_dirs+=("$entry")
     done < <(command find "$ds_dir" -mindepth 1 -maxdepth 1 -print0 2> /dev/null)
 
-    # Sort by modification time (most recent first)
-    local -a sorted_dirs=()
-    while IFS= read -r line; do
-        sorted_dirs+=("${line#* }")
-    done < <(
-        for entry in "${version_dirs[@]}"; do
-            printf '%s %s\n' "$(stat -f%m "$entry" 2> /dev/null || echo 0)" "$entry"
-        done | sort -rn
-    )
+    if [[ ${#version_dirs[@]} -gt 0 ]]; then
+        # Sort by modification time (most recent first)
+        local -a sorted_dirs=()
+        while IFS= read -r line; do
+            sorted_dirs+=("${line#* }")
+        done < <(
+            for entry in "${version_dirs[@]}"; do
+                printf '%s %s\n' "$(stat -f%m "$entry" 2> /dev/null || echo 0)" "$entry"
+            done | sort -rn
+        )
 
-    # Get stale versions (everything after keep_count)
-    local -a stale_dirs=("${sorted_dirs[@]:$keep_count}")
+        # Get stale versions (everything after keep_count)
+        local -a stale_dirs=("${sorted_dirs[@]:$keep_count}")
 
-    if [[ ${#stale_dirs[@]} -gt 0 ]]; then
-        # Calculate total size of stale versions
-        local stale_size_kb=0 entry_size_kb
-        for stale_entry in "${stale_dirs[@]}"; do
-            entry_size_kb=$(get_path_size_kb "$stale_entry" 2> /dev/null || echo 0)
-            stale_size_kb=$((stale_size_kb + entry_size_kb))
-        done
-        local stale_size_human
-        stale_size_human=$(bytes_to_human "$((stale_size_kb * 1024))")
-
-        if [[ "$DRY_RUN" == "true" ]]; then
-            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} ${display_name} · would remove ${#stale_dirs[@]} old versions (${stale_size_human}), keeping ${keep_count} most recent"
-            note_activity
-        else
-            # Remove old versions
-            local removed_count=0
+        if [[ ${#stale_dirs[@]} -gt 0 ]]; then
+            # Calculate total size of stale versions
+            local stale_size_kb=0 entry_size_kb
             for stale_entry in "${stale_dirs[@]}"; do
-                if should_protect_path "$stale_entry" || is_path_whitelisted "$stale_entry"; then
-                    continue
-                fi
-                if safe_remove "$stale_entry"; then
-                    removed_count=$((removed_count + 1))
-                fi
+                entry_size_kb=$(get_path_size_kb "$stale_entry" 2> /dev/null || echo 0)
+                stale_size_kb=$((stale_size_kb + entry_size_kb))
             done
+            local stale_size_human
+            stale_size_human=$(bytes_to_human "$((stale_size_kb * 1024))")
 
-            if [[ $removed_count -gt 0 ]]; then
-                echo -e "  ${GREEN}${ICON_SUCCESS}${NC} ${display_name} · removed ${removed_count} old versions, ${stale_size_human}"
+            if [[ "$DRY_RUN" == "true" ]]; then
+                echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} ${display_name} · would remove ${#stale_dirs[@]} old versions (${stale_size_human}), keeping ${keep_count} most recent"
                 note_activity
+            else
+                # Remove old versions
+                local removed_count=0
+                for stale_entry in "${stale_dirs[@]}"; do
+                    if should_protect_path "$stale_entry" || is_path_whitelisted "$stale_entry"; then
+                        continue
+                    fi
+                    if safe_remove "$stale_entry"; then
+                        removed_count=$((removed_count + 1))
+                    fi
+                done
+
+                if [[ $removed_count -gt 0 ]]; then
+                    echo -e "  ${GREEN}${ICON_SUCCESS}${NC} ${display_name} · removed ${removed_count} old versions, ${stale_size_human}"
+                    note_activity
+                fi
             fi
         fi
     fi
