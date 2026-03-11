@@ -25,7 +25,6 @@ temp/
 *.tmp
 *.temp
 *.dmg
-tests/tmp-*
 
 # Cache
 .cache/
@@ -77,15 +76,15 @@ coverage.html
 
 session.json
 run_tests.ps1
-AGENTS.md
 mole_guidelines.md
-CLAUDE.md
+
 # Swift / Xcode
 .build/
+/build/
 DerivedData/
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
 *.swiftpm/
+*.xcresult/
 
 dist/
-.build/atlas-native/
