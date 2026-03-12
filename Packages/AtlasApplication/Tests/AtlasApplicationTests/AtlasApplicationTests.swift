@@ -55,6 +55,7 @@ final class AtlasApplicationTests: XCTestCase {
 
         XCTAssertEqual(output.actionPlan.title, plan.title)
         XCTAssertEqual(output.actionPlan.estimatedBytes, plan.estimatedBytes)
+        XCTAssertEqual(output.actionPlan.items.first?.targetPaths, plan.items.first?.targetPaths)
     }
 
     func testExecutePlanUsesWorkerEventsToBuildSummary() async throws {

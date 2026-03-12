@@ -306,6 +306,9 @@ public struct SmartCleanFeatureView: View {
         guard item.kind != .inspectPermission else {
             return false
         }
+        if let targetPaths = item.targetPaths, !targetPaths.isEmpty {
+            return true
+        }
         guard let finding = findings.first(where: { $0.id == item.id }) else {
             return false
         }

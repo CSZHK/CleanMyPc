@@ -255,6 +255,13 @@ public enum AtlasSmartCleanExecutionSupport {
             "/component_crx_cache",
             "/GoogleUpdater",
             "/CoreSimulator.log",
+            "/Application Cache",
+            "/GPUCache",
+            "/cache2",
+            "/extensions_crx_cache",
+            "/GraphiteDawnCache",
+            "/GrShaderCache",
+            "/ShaderCache",
         ]
         if safeFragments.contains(where: { path.contains($0) }) {
             return true
@@ -570,8 +577,23 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             )
         }
 
-        let selectedIDs = Set(state.currentPlan.items.map(\.id))
-        let selectedFindings = state.snapshot.findings.filter { selectedIDs.contains($0.id) }
+        let selectedItems = state.currentPlan.items
+        let findingsByID = Dictionary(uniqueKeysWithValues: state.snapshot.findings.map { ($0.id, $0) })
+        let missingFindingIDs = selectedItems.compactMap { item in
+            findingsByID[item.id] == nil ? item.id : nil
+        }
+
+        if !missingFindingIDs.isEmpty {
+            return rejectedResult(
+                for: request,
+                code: .invalidSelection,
+                reason: "The requested Smart Clean items are no longer available. Refresh the preview and try again."
+            )
+        }
+
+        let selectedFindings = selectedItems.compactMap { item in
+            findingsByID[item.id]
+        }
 
         guard !selectedFindings.isEmpty else {
             return rejectedResult(
@@ -581,8 +603,16 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             )
         }
 
-        let executableFindings = selectedFindings.filter { actionKind(for: $0) != .inspectPermission }
-        let missingExecutableTargets = executableFindings.filter { ($0.targetPaths ?? []).isEmpty }
+        let executableSelections = selectedItems.compactMap { item -> SmartCleanExecutableSelection? in
+            guard item.kind != .inspectPermission, let finding = findingsByID[item.id] else {
+                return nil
+            }
+            return SmartCleanExecutableSelection(
+                finding: finding,
+                targetPaths: resolvedTargetPaths(for: item, finding: finding)
+            )
+        }
+        let missingExecutableTargets = executableSelections.filter { $0.targetPaths.isEmpty }
 
         if !missingExecutableTargets.isEmpty && !allowStateOnlyCleanExecution {
             return rejectedResult(
@@ -591,7 +621,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
                 reason: "Smart Clean execution is unavailable because one or more plan items do not include executable cleanup targets in this build."
             )
         }
-        let skippedCount = selectedFindings.count - executableFindings.count
+        let skippedCount = selectedItems.count - executableSelections.count
         let taskID = UUID()
 
         let response = AtlasResponseEnvelope(
@@ -600,9 +630,9 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         )
 
         var executionResult = SmartCleanExecutionResult()
-        if !executableFindings.isEmpty {
+        if !executableSelections.isEmpty {
             do {
-                executionResult = try await executeSmartCleanFindings(executableFindings)
+                executionResult = try await executeSmartCleanSelections(executableSelections)
             } catch let failure as SmartCleanExecutionFailure {
                 executionResult = failure.result
                 if !allowStateOnlyCleanExecution && !executionResult.hasRecordedOutcome {
@@ -623,11 +653,12 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             }
         }
 
-        let physicallyExecutedFindings = executableFindings.filter {
+        let executedFindings = executableSelections.map(\.finding)
+        let physicallyExecutedFindings = executedFindings.filter {
             !(executionResult.restoreMappingsByFindingID[$0.id] ?? []).isEmpty
         }
-        let staleFindings = executableFindings.filter { executionResult.staleFindingIDs.contains($0.id) }
-        let failedFindings = executableFindings.filter { executionResult.failedFindingIDs.contains($0.id) }
+        let staleFindings = executedFindings.filter { executionResult.staleFindingIDs.contains($0.id) }
+        let failedFindings = executedFindings.filter { executionResult.failedFindingIDs.contains($0.id) }
         let recoveryItems = physicallyExecutedFindings.map {
             makeRecoveryItem(for: $0, deletedAt: Date(), restoreMappings: executionResult.restoreMappingsByFindingID[$0.id])
         }
@@ -876,12 +907,12 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         }
     }
 
-    private func executeSmartCleanFindings(_ findings: [Finding]) async throws -> SmartCleanExecutionResult {
+    private func executeSmartCleanSelections(_ selections: [SmartCleanExecutableSelection]) async throws -> SmartCleanExecutionResult {
         var result = SmartCleanExecutionResult()
-        for finding in findings {
-            let targetPaths = Array(Set(finding.targetPaths ?? [])).sorted()
+        for selection in selections {
+            let targetPaths = Array(Set(selection.targetPaths)).sorted()
             guard !targetPaths.isEmpty else {
-                result.failedFindingIDs.insert(finding.id)
+                result.failedFindingIDs.insert(selection.finding.id)
                 result.failureReason = result.failureReason ?? "Smart Clean finding is missing executable targets."
                 throw SmartCleanExecutionFailure(result: result)
             }
@@ -894,17 +925,21 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
                     }
                 }
                 if mappings.isEmpty {
-                    result.staleFindingIDs.insert(finding.id)
+                    result.staleFindingIDs.insert(selection.finding.id)
                 } else {
-                    result.restoreMappingsByFindingID[finding.id] = mappings
+                    result.restoreMappingsByFindingID[selection.finding.id] = mappings
                 }
             } catch {
-                result.failedFindingIDs.insert(finding.id)
+                result.failedFindingIDs.insert(selection.finding.id)
                 result.failureReason = result.failureReason ?? error.localizedDescription
                 throw SmartCleanExecutionFailure(result: result)
             }
         }
         return result
+    }
+
+    private func resolvedTargetPaths(for item: ActionItem, finding: Finding) -> [String] {
+        Array(Set(item.targetPaths ?? finding.targetPaths ?? [])).sorted()
     }
 
     private func prepareSmartCleanTargetPaths(_ targetPaths: [String]) throws -> [String] {
@@ -1087,7 +1122,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         RecoveryItem(
             title: finding.title,
             detail: finding.detail,
-            originalPath: inferredPath(for: finding),
+            originalPath: restoreMappings?.first?.originalPath ?? inferredPath(for: finding),
             bytes: finding.bytes,
             deletedAt: deletedAt,
             expiresAt: recoveryExpiryDate(from: deletedAt),
@@ -1143,7 +1178,8 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
                 title: actionTitle(for: finding),
                 detail: finding.detail,
                 kind: actionKind(for: finding),
-                recoverable: finding.risk != .advanced
+                recoverable: finding.risk != .advanced,
+                targetPaths: Array(Set(finding.targetPaths ?? [])).sorted()
             )
         }
 
@@ -1165,7 +1201,8 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
                     title: AtlasL10n.string("infrastructure.plan.uninstall.moveBundle.title", language: state.settings.language, app.name),
                     detail: AtlasL10n.string("infrastructure.plan.uninstall.moveBundle.detail", language: state.settings.language, app.bundlePath),
                     kind: .removeApp,
-                    recoverable: true
+                    recoverable: true,
+                    targetPaths: [app.bundlePath]
                 ),
                 ActionItem(
                     title: AtlasL10n.string(app.leftoverItems == 1 ? "infrastructure.plan.uninstall.archive.one" : "infrastructure.plan.uninstall.archive.other", language: state.settings.language, app.leftoverItems),
@@ -1232,6 +1269,11 @@ private struct SmartCleanExecutionResult {
     var hasRecordedOutcome: Bool {
         !restoreMappingsByFindingID.isEmpty || !staleFindingIDs.isEmpty
     }
+}
+
+private struct SmartCleanExecutableSelection {
+    let finding: Finding
+    let targetPaths: [String]
 }
 
 private struct SmartCleanExecutionFailure: LocalizedError {

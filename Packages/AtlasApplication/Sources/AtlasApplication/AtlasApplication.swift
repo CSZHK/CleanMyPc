@@ -67,14 +67,27 @@ public enum AtlasScaffoldWorkspace {
 
     private static func makeInitialPlan(from findings: [Finding]) -> ActionPlan {
         let items = findings.map { finding in
-            ActionItem(
+            let hasExecutableTargets = !((finding.targetPaths ?? []).isEmpty)
+            let kind: ActionItem.Kind
+            if !hasExecutableTargets || finding.risk == .advanced {
+                kind = .inspectPermission
+            } else if finding.category == "Apps" {
+                kind = .removeApp
+            } else if finding.risk == .review {
+                kind = .archiveFile
+            } else {
+                kind = .removeCache
+            }
+
+            return ActionItem(
                 id: finding.id,
                 title: finding.risk == .advanced
                     ? AtlasL10n.string("application.plan.inspectPrivileged", finding.title)
                     : AtlasL10n.string("application.plan.reviewFinding", finding.title),
                 detail: finding.detail,
-                kind: finding.category == "Apps" ? .removeApp : (finding.risk == .advanced ? .inspectPermission : .removeCache),
-                recoverable: finding.risk != .advanced
+                kind: kind,
+                recoverable: finding.risk != .advanced,
+                targetPaths: finding.targetPaths
             )
         }
 

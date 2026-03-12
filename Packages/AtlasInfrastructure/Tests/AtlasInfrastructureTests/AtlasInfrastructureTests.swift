@@ -434,6 +434,64 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertEqual(result.snapshot.findings.count, 0)
     }
 
+    func testExecutePlanUsesStructuredTargetPathsCarriedByCurrentPlan() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let targetDirectory = home.appendingPathComponent("Library/Caches/AtlasExecutionTests/" + UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: targetDirectory, withIntermediateDirectories: true)
+        let targetFile = targetDirectory.appendingPathComponent("plan-target.cache")
+        try Data("cache".utf8).write(to: targetFile)
+
+        let finding = Finding(
+            id: UUID(),
+            title: "Plan-backed cache",
+            detail: targetFile.path,
+            bytes: 5,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: nil
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 5,
+                findings: [finding],
+                apps: [],
+                taskRuns: [],
+                recoveryItems: [],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(
+                title: "Review 1 selected finding",
+                items: [
+                    ActionItem(
+                        id: finding.id,
+                        title: "Move Plan-backed cache to Trash",
+                        detail: finding.detail,
+                        kind: .removeCache,
+                        recoverable: true,
+                        targetPaths: [targetFile.path]
+                    )
+                ],
+                estimatedBytes: 5
+            ),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: false)
+        let result = try await worker.submit(AtlasRequestEnvelope(command: .executePlan(planID: state.currentPlan.id)))
+
+        if case let .accepted(task) = result.response.response {
+            XCTAssertEqual(task.kind, .executePlan)
+        } else {
+            XCTFail("Expected accepted execute-plan response")
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: targetFile.path))
+        XCTAssertEqual(result.snapshot.findings.count, 0)
+        XCTAssertEqual(result.snapshot.recoveryItems.first?.originalPath, targetFile.path)
+    }
+
     func testScanExecuteRescanRemovesExecutedTargetFromRealResults() async throws {
         let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
         let home = FileManager.default.homeDirectoryForCurrentUser

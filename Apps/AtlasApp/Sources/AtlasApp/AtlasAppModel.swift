@@ -234,12 +234,11 @@ final class AtlasAppModel: ObservableObject {
     }
 
     var currentSmartCleanPlanHasExecutableTargets: Bool {
-        let selectedIDs = Set(currentPlan.items.map(\.id))
-        let executableFindings = snapshot.findings.filter { selectedIDs.contains($0.id) && !$0.targetPathsDescriptionIsInspectionOnly }
-        guard !executableFindings.isEmpty else {
+        let executableItems = currentPlan.items.filter { $0.kind != .inspectPermission }
+        guard !executableItems.isEmpty else {
             return false
         }
-        return executableFindings.allSatisfy { !($0.targetPaths ?? []).isEmpty }
+        return executableItems.allSatisfy { !resolvedTargetPaths(for: $0).isEmpty }
     }
 
     func refreshHealthSnapshotIfNeeded() async {
@@ -620,9 +619,17 @@ final class AtlasAppModel: ObservableObject {
     }
 }
 
-private extension Finding {
-    var targetPathsDescriptionIsInspectionOnly: Bool {
-        risk == .advanced || !AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(self)
+private extension AtlasAppModel {
+    func resolvedTargetPaths(for item: ActionItem) -> [String] {
+        if let targetPaths = item.targetPaths, !targetPaths.isEmpty {
+            return targetPaths
+        }
+
+        guard let finding = snapshot.findings.first(where: { $0.id == item.id }) else {
+            return []
+        }
+
+        return finding.targetPaths ?? []
     }
 }
 

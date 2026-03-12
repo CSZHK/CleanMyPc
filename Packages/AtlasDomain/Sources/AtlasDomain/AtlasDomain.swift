@@ -178,19 +178,22 @@ public struct ActionItem: Identifiable, Codable, Hashable, Sendable {
     public var detail: String
     public var kind: Kind
     public var recoverable: Bool
+    public var targetPaths: [String]?
 
     public init(
         id: UUID = UUID(),
         title: String,
         detail: String,
         kind: Kind,
-        recoverable: Bool
+        recoverable: Bool,
+        targetPaths: [String]? = nil
     ) {
         self.id = id
         self.title = title
         self.detail = detail
         self.kind = kind
         self.recoverable = recoverable
+        self.targetPaths = targetPaths
     }
 }
 
@@ -597,21 +600,24 @@ public enum AtlasScaffoldFixtures {
                     title: AtlasL10n.string("fixture.plan.item.moveDerivedData.title", language: language),
                     detail: AtlasL10n.string("fixture.plan.item.moveDerivedData.detail", language: language),
                     kind: .removeCache,
-                    recoverable: true
+                    recoverable: true,
+                    targetPaths: ["~/Library/Developer/Xcode/DerivedData/AtlasFixture"]
                 ),
                 ActionItem(
                     id: uuid("00000000-0000-0000-0000-000000000012"),
                     title: AtlasL10n.string("fixture.plan.item.reviewRuntimes.title", language: language),
                     detail: AtlasL10n.string("fixture.plan.item.reviewRuntimes.detail", language: language),
                     kind: .archiveFile,
-                    recoverable: true
+                    recoverable: true,
+                    targetPaths: ["~/Library/Developer/Xcode/iOS DeviceSupport/AtlasFixtureRuntime"]
                 ),
                 ActionItem(
                     id: uuid("00000000-0000-0000-0000-000000000013"),
                     title: AtlasL10n.string("fixture.plan.item.inspectAgents.title", language: language),
                     detail: AtlasL10n.string("fixture.plan.item.inspectAgents.detail", language: language),
                     kind: .inspectPermission,
-                    recoverable: false
+                    recoverable: false,
+                    targetPaths: ["~/Library/LaunchAgents/com.example.atlas-fixture.plist"]
                 ),
             ],
             estimatedBytes: 23_200_000_000

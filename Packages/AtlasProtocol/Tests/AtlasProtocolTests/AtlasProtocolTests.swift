@@ -31,4 +31,29 @@ final class AtlasProtocolTests: XCTestCase {
 
         XCTAssertEqual(decoded.response, envelope.response)
     }
+
+    func testPreviewResponseRoundTripsStructuredPlanTargets() throws {
+        let plan = ActionPlan(
+            title: "Review 1 selected finding",
+            items: [
+                ActionItem(
+                    id: UUID(uuidString: "10000000-0000-0000-0000-000000000099") ?? UUID(),
+                    title: "Move container cache to Trash",
+                    detail: "Sandboxed cache path",
+                    kind: .removeCache,
+                    recoverable: true,
+                    targetPaths: ["/Users/test/Library/Containers/com.example.sample/Data/Library/Caches/cache.db"]
+                )
+            ],
+            estimatedBytes: 1_024
+        )
+        let envelope = AtlasResponseEnvelope(
+            requestID: UUID(),
+            response: .preview(plan)
+        )
+        let data = try JSONEncoder().encode(envelope)
+        let decoded = try JSONDecoder().decode(AtlasResponseEnvelope.self, from: data)
+
+        XCTAssertEqual(decoded.response, envelope.response)
+    }
 }

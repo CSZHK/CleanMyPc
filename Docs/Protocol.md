@@ -83,6 +83,15 @@
 - `items`
 - `estimatedBytes`
 
+### ActionItem
+
+- `id`
+- `title`
+- `detail`
+- `kind`
+- `recoverable`
+- `targetPaths` (optional structured execution targets carried by the current plan)
+
 ### TaskRun
 
 - `id`
@@ -129,6 +138,7 @@
 - Destructive flows must end in a history record.
 - Recoverable flows must produce structured recovery items.
 - Helper actions must remain allowlisted structured actions, never arbitrary command strings.
+- Fresh Smart Clean preview plans should carry `ActionItem.targetPaths` for executable items so execution does not have to reconstruct destructive intent from UI state.
 
 ## Current Implementation Note
 
@@ -139,6 +149,7 @@
 - Atlas localizes user-facing shell copy through a package-scoped resource bundle and uses the persisted language to keep summaries and settings text aligned.
 - App uninstall can invoke the packaged or development helper executable through structured JSON actions.
 - Structured Smart Clean findings can now carry executable target paths, and a safe subset of those targets can be moved to Trash and physically restored later.
+- Structured Smart Clean action items now also carry `targetPaths`, and `plan.execute` prefers those plan-carried targets. Older cached plans can still fall back to finding-carried targets for backward compatibility.
 - The app shell communicates with the worker over structured XPC `Data` payloads that encode Atlas request and result envelopes.
 
 - `executePlan` is fail-closed for unsupported targets, but now supports a real Trash-based execution path for a safe structured subset of Smart Clean items.

@@ -63,6 +63,10 @@ private struct AtlasReadmeAssetExporter {
         AtlasL10n.setCurrentLanguage(screenshotLanguage)
 
         let state = AtlasScaffoldWorkspace.state(language: screenshotLanguage)
+        let canExecuteSmartCleanPlan = state.currentPlan.items.contains(where: { $0.kind != .inspectPermission })
+            && state.currentPlan.items
+                .filter { $0.kind != .inspectPermission }
+                .allSatisfy { !($0.targetPaths ?? []).isEmpty }
 
         try exportAppIcon()
         try renderView(
@@ -78,7 +82,7 @@ private struct AtlasReadmeAssetExporter {
                 isScanning: false,
                 isExecutingPlan: false,
                 isCurrentPlanFresh: true,
-                canExecutePlan: true,
+                canExecutePlan: canExecuteSmartCleanPlan,
                 planIssue: nil
             ),
             fileName: "atlas-smart-clean.png"

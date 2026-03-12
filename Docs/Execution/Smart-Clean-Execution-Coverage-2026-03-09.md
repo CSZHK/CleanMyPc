@@ -13,6 +13,7 @@ This document is intentionally simpler than `Docs/Execution/Execution-Chain-Audi
 The current behavior is now:
 
 - real scan when the upstream clean workflow succeeds
+- current-session preview plans carry structured `targetPaths` for executable items
 - real execution for a safe structured subset of targets
 - physical restoration for executed items when recovery mappings are present
 - explicit failure for unsupported or unstructured targets
@@ -35,11 +36,19 @@ These user-owned targets can be moved to Trash directly by the worker when they 
 - `~/.npm/*`
 - `~/.npm_cache/*`
 - `~/.oh-my-zsh/cache/*`
+- selected developer cache roots under the current user home, including `~/.yarn/cache/*`, `~/.bun/install/cache/*`, `~/.cargo/registry/cache/*`, `~/.cargo/git/*`, `~/.docker/buildx/cache/*`, `~/.turbo/cache/*`, `~/.vite/cache/*`, `~/.parcel-cache/*`, and `~/.node-gyp/*`
 - paths containing:
   - `__pycache__`
   - `.next/cache`
+  - `Application Cache`
+  - `GPUCache`
+  - `cache2`
   - `component_crx_cache`
+  - `extensions_crx_cache`
   - `GoogleUpdater`
+  - `GraphiteDawnCache`
+  - `GrShaderCache`
+  - `ShaderCache`
   - `CoreSimulator.log`
 - `.pyc` files under the current user home directory
 
@@ -58,6 +67,8 @@ Targets under these allowlisted roots can run through the helper boundary:
 The following categories remain incomplete unless they resolve to the supported structured targets above:
 
 - broader `System` cleanup paths
+- `Library/Containers` cleanup paths
+- `Group Containers` cleanup paths
 - partially aggregated dry-run results that do not yet carry executable sub-paths
 - categories that only expose a summary concept rather than concrete target paths
 - any Smart Clean item that requires a more privileged or more specific restore model than the current Trash-backed flow supports
@@ -75,6 +86,12 @@ The UI now makes this explicit by:
 - marking cached plans as previous results
 - disabling `Run Plan` until the plan is revalidated
 - showing which plan steps can run directly and which remain review-only
+
+The worker contract now also makes this explicit:
+
+- `plan.preview` carries structured `targetPaths` on executable plan items
+- `plan.execute` prefers those plan-carried targets instead of reconstructing execution intent from transient UI state
+- older cached plans can still fall back to finding-carried targets, but fresh release-facing execution should rely on the current plan
 
 
 ### When execution succeeds
