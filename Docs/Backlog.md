@@ -46,6 +46,11 @@
 - `EPIC-08` Permissions and System Integration
 - `EPIC-09` Quality and Verification
 - `EPIC-10` Packaging, Signing, and Release
+- `EPIC-16` Beta Stabilization and Execution Truthfulness
+- `EPIC-17` Signed Public Beta Packaging
+- `EPIC-18` Public Beta Feedback and Trust Closure
+- `EPIC-19` GA Recovery and Execution Hardening
+- `EPIC-20` GA Launch Readiness
 
 ## Now / Next / Later
 
@@ -194,6 +199,88 @@
 - `ATL-114` Normalize cross-screen action labels, confirmation sheets, and completion summaries — `Docs Agent`
 - `ATL-115` Measure perceived latency and remove avoidable visual jumps in core flows — `QA Agent`
 - `ATL-116` Polish Week 2 gate review — `Product Agent`
+
+## Internal Beta Hardening Track
+
+### Current Status
+
+- `Complete` — frozen MVP is implemented and internally beta-ready.
+- `Blocked` — release trust still depends on removing silent fallback and tightening execution/recovery honesty.
+- `Dormant` — signed public beta work is inactive until Apple signing/notarization credentials exist.
+
+### Focus
+
+- Keep the roadmap inside the frozen MVP modules.
+- Hard-fix execution truthfulness before any broader distribution plan resumes.
+- Make recovery claims match shipped restore behavior.
+- Keep signed public beta work as a conditional branch, not the active mainline.
+
+### Epics
+
+- `EPIC-16` Beta Stabilization and Execution Truthfulness
+- `EPIC-17` Signed Public Beta Packaging
+- `EPIC-18` Public Beta Feedback and Trust Closure
+- `EPIC-19` GA Recovery and Execution Hardening
+- `EPIC-20` GA Launch Readiness
+
+### Now / Next / Later
+
+#### Now
+
+- Remove or gate silent fallback in release-facing execution flows
+- Run bilingual manual QA on a clean machine
+- Validate packaged first-launch behavior with a fresh state file
+- Tighten release-facing copy where execution or recovery is overstated
+
+#### Next
+
+- Expand real `Smart Clean` execute coverage for the highest-value safe targets
+- Add stronger `scan -> execute -> rescan` contract coverage
+- Implement physical restore for file-backed recoverable actions, or narrow product claims
+- Freeze recovery-related copy only after behavior is proven
+
+#### Later
+
+- Obtain Apple signing and notarization credentials
+- Produce signed and notarized `.app`, `.dmg`, and `.pkg` artifacts
+- Validate signed install behavior on a clean machine
+- Run a small hardware-diverse public beta cohort only after signed distribution is available
+
+### Seed Issues
+
+#### Release Phase 1: Beta Stabilization
+
+- `ATL-201` Remove or development-gate silent XPC fallback in release-facing execution flows — `System Agent`
+- `ATL-202` Add explicit failure states when real worker execution is unavailable — `Mac App Agent`
+- `ATL-203` Run bilingual manual QA on a clean machine — `QA Agent`
+- `ATL-204` Validate fresh-state first launch from packaged artifacts — `QA Agent`
+- `ATL-205` Narrow release-facing recovery and execution copy where needed — `UX Agent` + `Docs Agent`
+- `ATL-206` Beta stabilization gate review — `Product Agent`
+
+#### Release Phase 2: Smart Clean Execution Credibility
+
+- `ATL-211` Expand real `Smart Clean` execute coverage for top safe target classes — `System Agent`
+- `ATL-212` Carry executable structured targets through the worker path — `Core Agent`
+- `ATL-213` Add stronger `scan -> execute -> rescan` contract coverage — `QA Agent`
+- `ATL-214` Make history and completion states reflect real side effects only — `Mac App Agent`
+- `ATL-215` Execution credibility gate review — `Product Agent`
+
+#### Release Phase 3: Recovery Credibility
+
+- `ATL-221` Implement physical restore for file-backed recoverable actions where safe — `System Agent`
+- `ATL-222` Validate shipped restore behavior on real file-backed test cases — `QA Agent`
+- `ATL-223` Narrow README, in-app, and release-note recovery claims if needed — `Docs Agent` + `Product Agent`
+- `ATL-224` Freeze recovery contract and acceptance evidence — `Product Agent`
+- `ATL-225` Recovery credibility gate review — `Product Agent`
+
+#### Conditional Release Phase 4: Signed Distribution and External Beta
+
+- `ATL-231` Obtain Apple release signing credentials — `Release Agent`
+- `ATL-232` Pass `signing-preflight.sh` on the release machine — `Release Agent`
+- `ATL-233` Produce signed and notarized native artifacts — `Release Agent`
+- `ATL-234` Validate signed DMG and PKG install on a clean machine — `QA Agent`
+- `ATL-235` Run a trusted hardware-diverse signed beta cohort — `Product Agent`
+- `ATL-236` Triage public-beta issues before any GA candidate naming — `Product Agent`
 
 ## Definition of Ready
 

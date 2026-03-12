@@ -90,6 +90,8 @@
 "fixture.storage.installers.title" = "Unused installers";
 "fixture.storage.installers.age" = "Mostly disk images older than 30 days";
 "application.error.workerRejected" = "Worker rejected request (%@): %@";
+"application.error.executionUnavailable" = "Atlas could not run this action with the real worker path: %@";
+"application.error.helperUnavailable" = "Atlas could not complete this action because the privileged helper is unavailable: %@";
 "xpc.error.encodingFailed" = "Could not encode the background worker request: %@";
 "xpc.error.decodingFailed" = "Could not decode the background worker response: %@";
 "xpc.error.invalidResponse" = "The background worker returned an invalid response. Fully quit and reopen Atlas; if it still fails, reinstall the current build.";
@@ -103,7 +105,7 @@
 "application.preview.updated.one" = "Updated the cleanup plan for 1 action.";
 "application.preview.updated.other" = "Updated the cleanup plan for %d actions.";
 "application.plan.executed" = "Cleanup plan completed.";
-"application.recovery.completed" = "Recovery restore completed.";
+"application.recovery.completed" = "Recovery request completed. On-disk return is available only when Atlas has a supported restore path.";
 "application.apps.loaded.one" = "Loaded 1 app footprint.";
 "application.apps.loaded.other" = "Loaded %d app footprints.";
 "application.apps.previewUpdated" = "Updated the uninstall plan for %@.";
@@ -285,13 +287,13 @@
 "smartclean.execution.reviewOnly" = "Review Only";
 "smartclean.execution.coverage.full" = "All %d steps in this plan can run directly";
 "smartclean.execution.coverage.partial" = "Only %d of %d steps in this plan can run directly";
-"smartclean.execution.coverage.full.detail" = "These steps will really move items to Trash and support restore when a recovery path is available.";
+"smartclean.execution.coverage.full.detail" = "These steps can really move supported targets to Trash. On-disk restore is available only when Atlas records a matching recovery path.";
 "smartclean.execution.coverage.partial.detail" = "%d remaining step(s) still need review or are not supported for direct execution yet.";
 "smartclean.preview.metric.space.title" = "This Plan Can Free";
 "smartclean.preview.metric.space.detail.one" = "Estimated across 1 planned step.";
 "smartclean.preview.metric.space.detail.other" = "Estimated across %d planned steps.";
 "smartclean.preview.callout.safe.title" = "This plan stays mostly in the Safe lane";
-"smartclean.preview.callout.safe.detail" = "Most selected steps should remain recoverable through History and Recovery.";
+"smartclean.preview.callout.safe.detail" = "Most selected steps should remain reviewable through History and Recovery. Physical restore is available only for items with a supported recovery path.";
 "smartclean.preview.empty.detail.postExecution" = "Run a scan or update the plan to turn current findings into concrete cleanup steps. If you just ran a plan, this section shows only the remaining items.";
 "smartclean.preview.callout.review.detail" = "Check the highlighted steps before you run the plan so you understand what stays recoverable and what needs extra judgment.";
 "smartclean.preview.empty.title" = "No cleanup plan yet";
@@ -303,6 +305,7 @@
 "smartclean.status.empty" = "Run a fresh scan to generate a cleanup plan";
 "smartclean.status.cached" = "This plan has not been revalidated yet";
 "smartclean.status.revalidationFailed" = "Could not update the current plan";
+"smartclean.status.executionFailed" = "Could not run the current plan";
 "smartclean.cached.title" = "This plan is from a previous result";
 "smartclean.revalidationFailed.title" = "Revalidation failed, so this still shows the previous plan";
 "smartclean.cached.detail" = "Run a fresh scan or update the plan before you execute it. What you see here is the last saved plan, not a verified current result.";
@@ -390,7 +393,7 @@
 "history.callout.running.title" = "A recent task is still in progress";
 "history.callout.running.detail" = "Keep the timeline open if you want to confirm when it finishes and whether it creates new recovery items.";
 "history.callout.recovery.title" = "Recovery-first cleanup is active";
-"history.callout.recovery.detail" = "Each recoverable action stays visible until its retention window ends, so you can reverse decisions with confidence.";
+"history.callout.recovery.detail" = "Each recoverable action stays visible until its retention window ends. Some items can return on disk; others only restore Atlas's workspace state.";
 "history.metric.activity.title" = "Visible events";
 "history.metric.activity.detail.empty" = "Run a scan or cleanup action to build the audit trail.";
 "history.metric.activity.detail.latest" = "Latest update %@";
@@ -459,12 +462,12 @@
 "history.detail.recovery.window" = "Retention window";
 "history.detail.recovery.window.open" = "Still recoverable";
 "history.detail.recovery.callout.available.title" = "This item is still recoverable";
-"history.detail.recovery.callout.available.detail" = "Restore it whenever you are ready while the retention window remains open.";
+"history.detail.recovery.callout.available.detail" = "Restore it while the retention window remains open. On-disk return is available only when Atlas has a supported restore path for this item.";
 "history.detail.recovery.callout.expiring.title" = "Restore soon if you still need this";
 "history.detail.recovery.callout.expiring.detail" = "This recovery item is close to the end of its retention window.";
 "history.restore.action" = "Restore";
 "history.restore.running" = "Restoring…";
-"history.restore.hint" = "Restores this item while its recovery window is still open.";
+"history.restore.hint" = "Restores this item while its recovery window is still open. On-disk return is available only for supported file-backed items.";
 "history.run.footnote.finished" = "Started %@ • Finished %@";
 "history.run.footnote.running" = "Started %@ • Still in progress";
 "history.recovery.footnote.deleted" = "Deleted %@";
@@ -573,7 +576,7 @@
 "confirm.title" = "Confirm";
 "confirm.cancel" = "Cancel";
 "smartclean.confirm.execute.title" = "Run this cleanup plan?";
-"smartclean.confirm.execute.message" = "This will process the reviewed plan. Items marked recoverable can be restored from History.";
+"smartclean.confirm.execute.message" = "This will process the reviewed plan. Recoverable items stay visible in History, and on-disk restore is available only when Atlas has a supported recovery path.";
 "apps.confirm.uninstall.title" = "Uninstall this app?";
 "apps.confirm.uninstall.message" = "This will remove %@ and its leftovers. Recoverable items can be restored from History.";
 "emptystate.action.scan" = "Run Smart Clean";

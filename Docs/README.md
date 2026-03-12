@@ -17,15 +17,17 @@ This directory contains the working product, design, engineering, and compliance
 - `Protocol.md` — local JSON protocol and core schemas
 - `TaskStateMachine.md` — task lifecycle rules
 - `ErrorCodes.md` — user-facing and system error registry
-- `ROADMAP.md` — 12-week MVP execution plan
+- `ROADMAP.md` — active internal-beta hardening roadmap and conditional release branch
 - `Backlog.md` — epics, issue seeds, and board conventions
 - `DECISIONS.md` — frozen product and architecture decisions
 - `RISKS.md` — active project risk register
 - `Execution/` — weekly execution plans, status snapshots, beta checklists, gate reviews, manual test SOPs, and release execution notes
 - `Execution/Current-Status-2026-03-07.md` — current engineering status snapshot
+- `Execution/Release-Roadmap-2026-03-12.md` — internal-beta hardening plan plus conditional signed release path
 - `Execution/UI-Audit-2026-03-08.md` — UI design audit and prioritized remediation directions
 - `Execution/UI-Copy-Walkthrough-2026-03-09.md` — page-by-page UI copy glossary, consistency checklist, and acceptance guide
 - `Execution/Execution-Chain-Audit-2026-03-09.md` — end-to-end review of real vs scaffold execution paths and release-facing trust gaps
+- `Execution/Implementation-Plan-ATL-201-202-205-2026-03-12.md` — implementation plan for internal-beta hardening tasks ATL-201, ATL-202, and ATL-205
 - `Execution/Smart-Clean-Execution-Coverage-2026-03-09.md` — user-facing summary of what Smart Clean can execute for real today
 - `Execution/Smart-Clean-QA-Checklist-2026-03-09.md` — QA checklist for scan, execute, rescan, and physical restore validation
 - `Execution/Smart-Clean-Manual-Verification-2026-03-09.md` — local-machine fixture workflow for validating real Smart Clean execution and restore

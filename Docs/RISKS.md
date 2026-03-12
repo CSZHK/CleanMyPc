@@ -46,7 +46,7 @@
 - Probability: Medium
 - Owner: `Release Agent`
 - Risk: Helper signing or notarization may fail late in the schedule.
-- Mitigation: Validate packaging flow before feature-complete milestone. Current repo now includes native build/package scripts and CI workflow, but signing and notarization still depend on release credentials.
+- Mitigation: Keep signed distribution off the active critical path until Apple release credentials exist. Once credentials are available, validate packaging flow before any public beta naming or broad external distribution.
 
 ## R-007 Experience Polish Drift
 
@@ -96,3 +96,19 @@
 - Owner: `System Agent`
 - Risk: Silent fallback from XPC to the scaffold worker can make user-facing execution appear successful even when the primary worker path is unavailable.
 - Mitigation: Restrict fallback to explicit development mode or surface a concrete error when real execution infrastructure is unavailable.
+
+## R-013 Public Beta Coverage Blind Spot
+
+- Impact: High
+- Probability: Medium
+- Owner: `QA Agent`
+- Risk: When signing credentials eventually arrive, a public beta that is too small, too homogeneous, or too unstructured may miss install, permission, or cleanup regressions that only appear on different hardware, macOS states, or trust settings.
+- Mitigation: Keep this as a conditional release risk. Use a deliberately hardware-diverse trusted beta cohort, require structured issue intake, and rerun clean-machine install and first-run validation before calling any signed build GA-ready.
+
+## R-014 GA Recovery Claim Drift
+
+- Impact: High
+- Probability: Medium
+- Owner: `Product Agent`
+- Risk: GA release notes, README copy, or in-app messaging may overstate Atlas's recovery model before physical restore is actually shipped for file-backed recoverable actions.
+- Mitigation: Treat recovery wording as a gated release artifact. Either ship physical restore for file-backed recoverable actions before GA or narrow all GA-facing recovery claims to the shipped behavior.

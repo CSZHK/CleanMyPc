@@ -14,6 +14,7 @@ public struct SmartCleanFeatureView: View {
     private let isCurrentPlanFresh: Bool
     private let canExecutePlan: Bool
     private let planIssue: String?
+    private let executionIssue: String?
     private let onStartScan: () -> Void
     private let onRefreshPreview: () -> Void
     private let onExecutePlan: () -> Void
@@ -30,6 +31,7 @@ public struct SmartCleanFeatureView: View {
         isCurrentPlanFresh: Bool = false,
         canExecutePlan: Bool = false,
         planIssue: String? = nil,
+        executionIssue: String? = nil,
         onStartScan: @escaping () -> Void = {},
         onRefreshPreview: @escaping () -> Void = {},
         onExecutePlan: @escaping () -> Void = {}
@@ -43,6 +45,7 @@ public struct SmartCleanFeatureView: View {
         self.isCurrentPlanFresh = isCurrentPlanFresh
         self.canExecutePlan = canExecutePlan
         self.planIssue = planIssue
+        self.executionIssue = executionIssue
         self.onStartScan = onStartScan
         self.onRefreshPreview = onRefreshPreview
         self.onExecutePlan = onExecutePlan
@@ -154,7 +157,7 @@ public struct SmartCleanFeatureView: View {
                     )
                 }
 
-                if !plan.items.isEmpty {
+                if !plan.items.isEmpty, !hasExecutionFailure {
                     AtlasCallout(
                         title: planValidationCalloutTitle,
                         detail: planValidationCalloutDetail,
@@ -163,7 +166,7 @@ public struct SmartCleanFeatureView: View {
                     )
                 }
 
-                if plan.items.isEmpty || manualReviewCount > 0 {
+                if !hasExecutionFailure && (plan.items.isEmpty || manualReviewCount > 0) {
                     AtlasCallout(
                         title: manualReviewCount == 0 ? AtlasL10n.string("smartclean.preview.callout.safe.title") : AtlasL10n.string("smartclean.preview.callout.review.title"),
                         detail: manualReviewCount == 0
@@ -317,6 +320,10 @@ public struct SmartCleanFeatureView: View {
         !isCurrentPlanFresh && planIssue != nil
     }
 
+    private var hasExecutionFailure: Bool {
+        executionIssue != nil
+    }
+
     private var isShowingCachedPlanState: Bool {
         !isCurrentPlanFresh && !plan.items.isEmpty
     }
@@ -355,6 +362,7 @@ public struct SmartCleanFeatureView: View {
     private var statusTitle: String {
         if isScanning { return AtlasL10n.string("smartclean.status.scanning") }
         if isExecutingPlan { return AtlasL10n.string("smartclean.status.executing") }
+        if hasExecutionFailure { return AtlasL10n.string("smartclean.status.executionFailed") }
         if hasPlanRevalidationFailure { return AtlasL10n.string("smartclean.status.revalidationFailed") }
         if isShowingCachedPlanState { return AtlasL10n.string("smartclean.status.cached") }
         if findings.isEmpty { return AtlasL10n.string("smartclean.status.empty") }
@@ -363,6 +371,7 @@ public struct SmartCleanFeatureView: View {
 
     private var statusDetail: String {
         if isScanning || isExecutingPlan { return scanSummary }
+        if hasExecutionFailure { return executionIssue ?? scanSummary }
         if hasPlanRevalidationFailure { return planIssue ?? AtlasL10n.string("smartclean.cached.detail") }
         if isShowingCachedPlanState { return AtlasL10n.string("smartclean.cached.detail") }
         if findings.isEmpty { return AtlasL10n.string("smartclean.status.empty.detail") }
@@ -372,6 +381,7 @@ public struct SmartCleanFeatureView: View {
     private var statusTone: AtlasTone {
         if isExecutingPlan { return .warning }
         if isScanning { return .neutral }
+        if hasExecutionFailure { return .danger }
         if hasPlanRevalidationFailure { return .danger }
         if isShowingCachedPlanState { return .warning }
         return manualReviewCount == 0 ? .success : .warning
@@ -380,6 +390,7 @@ public struct SmartCleanFeatureView: View {
     private var statusSymbol: String {
         if isScanning { return "sparkles" }
         if isExecutingPlan { return "play.circle.fill" }
+        if hasExecutionFailure { return "xmark.octagon.fill" }
         if hasPlanRevalidationFailure { return "xmark.octagon.fill" }
         if isShowingCachedPlanState { return "externaldrive.badge.exclamationmark" }
         return manualReviewCount == 0 ? "checkmark.shield.fill" : "exclamationmark.triangle.fill"

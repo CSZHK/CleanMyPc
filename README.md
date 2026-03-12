@@ -18,7 +18,7 @@ This repository is the working source for the new Atlas for Mac product. Atlas f
 
 ## Disclaimer
 
-Atlas for Mac is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by Apple, the upstream Mole authors, or any other commercial Mac utility vendor. Some components in this repository may reuse or adapt upstream Mole code under the MIT License; when such code ships, the related attribution and third-party notices must remain available. Cleanup, uninstall, and recovery actions can affect local files, caches, and app data, so review findings and recovery options before execution.
+Atlas for Mac is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by Apple, the upstream Mole authors, or any other commercial Mac utility vendor. Some components in this repository may reuse or adapt upstream Mole code under the MIT License; when such code ships, the related attribution and third-party notices must remain available. Cleanup, uninstall, and recovery actions can affect local files, caches, and app data, so review findings and recovery options before execution. Recoverable actions remain reviewable in Atlas, but physical on-disk restore is only available when a supported recovery path exists.
 
 ## Installation
 
@@ -67,6 +67,7 @@ open Atlas.xcodeproj
 
 - Explain recommendations before execution.
 - Prefer recovery-backed actions over permanent deletion.
+- Keep recovery claims honest: not every recoverable item is physically restorable on disk.
 - Keep permission requests least-privilege and contextual.
 - Preserve a native macOS app shell with worker and helper boundaries.
 - Support `简体中文` and `English`, with `简体中文` as the default app language.

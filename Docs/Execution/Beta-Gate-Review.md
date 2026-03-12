@@ -54,6 +54,7 @@
 
 - Core frozen MVP workflows are complete end to end.
 - Recovery-first behavior is visible in both Smart Clean and Apps flows.
+- Physical on-disk restore is currently limited to recovery items that carry a supported restore path; older or unstructured records may still be model-only restore.
 - Settings and permission refresh flows are functional.
 - The app now defaults to `简体中文` and supports switching to `English` through persisted settings.
 
@@ -85,6 +86,7 @@
 ## Conditions
 
 - Internal beta / trusted-user beta can proceed with the current ad hoc-signed local artifacts.
+- Recovery and execution copy must stay explicit about supported restore paths and unsupported cleanup targets during internal beta.
 - Public beta or broad external distribution must wait until signing and notarization credentials are available and the release packaging path is re-run.
 
 ## Follow-up Actions

@@ -143,7 +143,14 @@ public enum AtlasWorkspaceControllerError: LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case let .rejected(code, reason):
-            return AtlasL10n.string("application.error.workerRejected", code.rawValue, reason)
+            switch code {
+            case .executionUnavailable:
+                return AtlasL10n.string("application.error.executionUnavailable", reason)
+            case .helperUnavailable:
+                return AtlasL10n.string("application.error.helperUnavailable", reason)
+            default:
+                return AtlasL10n.string("application.error.workerRejected", code.rawValue, reason)
+            }
         case let .unexpectedResponse(reason):
             return reason
         }

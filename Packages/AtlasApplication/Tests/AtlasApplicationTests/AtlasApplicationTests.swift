@@ -162,6 +162,52 @@ final class AtlasApplicationTests: XCTestCase {
         XCTAssertEqual(output.snapshot.permissions.count, permissions.count)
         XCTAssertEqual(output.events.count, permissions.count)
     }
+
+    func testExecutePlanMapsExecutionUnavailableToLocalizedError() async throws {
+        let plan = AtlasScaffoldWorkspace.state().currentPlan
+        let request = AtlasRequestEnvelope(command: .executePlan(planID: plan.id))
+        let result = AtlasWorkerCommandResult(
+            request: request,
+            response: AtlasResponseEnvelope(
+                requestID: request.id,
+                response: .rejected(code: .executionUnavailable, reason: "XPC worker offline")
+            ),
+            events: [],
+            snapshot: AtlasScaffoldWorkspace.snapshot(),
+            previewPlan: nil
+        )
+        let controller = AtlasWorkspaceController(worker: FakeWorker(result: result))
+
+        do {
+            _ = try await controller.executePlan(planID: plan.id)
+            XCTFail("Expected executePlan to throw")
+        } catch {
+            XCTAssertEqual(error.localizedDescription, AtlasL10n.string("application.error.executionUnavailable", "XPC worker offline"))
+        }
+    }
+
+    func testRestoreItemsMapsHelperUnavailableToLocalizedError() async throws {
+        let itemID = UUID()
+        let request = AtlasRequestEnvelope(command: .restoreItems(taskID: UUID(), itemIDs: [itemID]))
+        let result = AtlasWorkerCommandResult(
+            request: request,
+            response: AtlasResponseEnvelope(
+                requestID: request.id,
+                response: .rejected(code: .helperUnavailable, reason: "Privileged helper missing")
+            ),
+            events: [],
+            snapshot: AtlasScaffoldWorkspace.snapshot(),
+            previewPlan: nil
+        )
+        let controller = AtlasWorkspaceController(worker: FakeWorker(result: result))
+
+        do {
+            _ = try await controller.restoreItems(itemIDs: [itemID])
+            XCTFail("Expected restoreItems to throw")
+        } catch {
+            XCTAssertEqual(error.localizedDescription, AtlasL10n.string("application.error.helperUnavailable", "Privileged helper missing"))
+        }
+    }
 }
 
 private actor FakeWorker: AtlasWorkerServing {

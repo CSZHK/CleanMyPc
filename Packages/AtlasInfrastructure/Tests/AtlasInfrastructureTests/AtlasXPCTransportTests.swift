@@ -60,6 +60,35 @@ final class AtlasXPCTransportTests: XCTestCase {
         }
     }
 
+    func testPreferredWorkerServiceDoesNotFallbackWhenXPCRejectsExecutionUnavailable() async throws {
+        let request = AtlasRequestEnvelope(command: .healthSnapshot)
+        let rejected = AtlasWorkerCommandResult(
+            request: request,
+            response: AtlasResponseEnvelope(
+                requestID: request.id,
+                response: .rejected(code: .executionUnavailable, reason: "simulated packaged worker failure")
+            ),
+            events: [],
+            snapshot: AtlasScaffoldWorkspace.snapshot(),
+            previewPlan: nil
+        )
+        let responseData = try JSONEncoder().encode(rejected)
+        let service = AtlasPreferredWorkerService(
+            requestConfiguration: AtlasXPCRequestConfiguration(timeout: 1, retryCount: 0, retryDelay: 0),
+            requestExecutor: { _ in responseData },
+            fallbackWorker: AtlasScaffoldWorkerService(allowStateOnlyCleanExecution: true),
+            allowFallback: false
+        )
+
+        let result = try await service.submit(request)
+
+        guard case let .rejected(code, reason) = result.response.response else {
+            return XCTFail("Expected rejected response without fallback, got \(result.response.response)")
+        }
+        XCTAssertEqual(code, .executionUnavailable)
+        XCTAssertEqual(reason, "simulated packaged worker failure")
+    }
+
 
     func testPreferredWorkerServiceFallsBackWhenXPCWorkerRejectsExecutionUnavailable() async throws {
         let request = AtlasRequestEnvelope(command: .healthSnapshot)

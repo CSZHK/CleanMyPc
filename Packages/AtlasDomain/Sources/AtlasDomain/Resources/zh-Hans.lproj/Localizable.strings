@@ -90,6 +90,8 @@
 "fixture.storage.installers.title" = "未使用的安装器";
 "fixture.storage.installers.age" = "大部分磁盘镜像已超过 30 天";
 "application.error.workerRejected" = "后台服务拒绝了请求（%@）：%@";
+"application.error.executionUnavailable" = "Atlas 当前无法通过真实工作链路执行这项操作：%@";
+"application.error.helperUnavailable" = "Atlas 当前无法完成这项操作，因为特权辅助组件不可用：%@";
 "xpc.error.encodingFailed" = "无法编码后台请求：%@";
 "xpc.error.decodingFailed" = "无法解析后台响应：%@";
 "xpc.error.invalidResponse" = "后台工作组件返回了无效响应。请完全退出并重新打开 Atlas；若仍失败，请重新安装当前版本。";
@@ -103,7 +105,7 @@
 "application.preview.updated.one" = "已根据 1 个操作更新清理计划。";
 "application.preview.updated.other" = "已根据 %d 个操作更新清理计划。";
 "application.plan.executed" = "清理计划已执行完成。";
-"application.recovery.completed" = "恢复操作已完成。";
+"application.recovery.completed" = "恢复请求已完成。只有在 Atlas 具备受支持恢复路径时，项目才会真正回到磁盘。";
 "application.apps.loaded.one" = "已载入 1 个应用占用项。";
 "application.apps.loaded.other" = "已载入 %d 个应用占用项。";
 "application.apps.previewUpdated" = "已更新 %@ 的卸载计划。";
@@ -285,13 +287,13 @@
 "smartclean.execution.reviewOnly" = "仅供复核";
 "smartclean.execution.coverage.full" = "这份计划中的 %d 个步骤都可直接执行";
 "smartclean.execution.coverage.partial" = "这份计划中有 %d/%d 个步骤可直接执行";
-"smartclean.execution.coverage.full.detail" = "这些步骤会真正移动到废纸篓，并在有恢复路径时支持恢复。";
+"smartclean.execution.coverage.full.detail" = "这些步骤会真正把受支持的目标移到废纸篓。只有在 Atlas 记录了匹配恢复路径时，才支持磁盘级恢复。";
 "smartclean.execution.coverage.partial.detail" = "其余 %d 个步骤仍需复核，或当前还不支持直接执行。";
 "smartclean.preview.metric.space.title" = "这份计划预计释放";
 "smartclean.preview.metric.space.detail.one" = "按当前 1 个计划步骤估算。";
 "smartclean.preview.metric.space.detail.other" = "按当前 %d 个计划步骤估算。";
 "smartclean.preview.callout.safe.title" = "当前计划主要来自“安全”分区";
-"smartclean.preview.callout.safe.detail" = "大多数已选步骤都可以在历史和恢复中找回。";
+"smartclean.preview.callout.safe.detail" = "大多数已选步骤都会在历史和恢复中保留可追溯记录。只有具备受支持恢复路径的项目，才支持磁盘级恢复。";
 "smartclean.preview.empty.detail.postExecution" = "运行一次扫描或更新计划，把当前发现项变成具体的清理步骤。若刚执行完计划，这里只显示剩余项目。";
 "smartclean.preview.callout.review.detail" = "建议在执行前检查高亮步骤，确认哪些仍可恢复、哪些需要额外判断。";
 "smartclean.preview.empty.title" = "还没有清理计划";
@@ -303,6 +305,7 @@
 "smartclean.status.empty" = "运行新的扫描以生成清理计划";
 "smartclean.status.cached" = "当前计划尚未重新验证";
 "smartclean.status.revalidationFailed" = "未能更新当前计划";
+"smartclean.status.executionFailed" = "当前计划未能执行";
 "smartclean.cached.title" = "这份计划来自上一次结果";
 "smartclean.revalidationFailed.title" = "重新验证失败，以下仍是上一次计划";
 "smartclean.cached.detail" = "请先重新运行扫描或更新计划，再执行。当前显示的只是上一次保存的计划，不能直接视为当前可执行结果。";
@@ -390,7 +393,7 @@
 "history.callout.running.title" = "最近有任务仍在进行中";
 "history.callout.running.detail" = "保留时间线可帮助你确认任务何时完成，以及是否会产生新的可恢复项目。";
 "history.callout.recovery.title" = "恢复优先的清理策略已启用";
-"history.callout.recovery.detail" = "每个可恢复操作都会在保留期结束前保持可见，便于你有把握地撤销决定。";
+"history.callout.recovery.detail" = "每个可恢复操作都会在保留期结束前保持可见。有些项目可以恢复回磁盘，有些则只会恢复 Atlas 的工作区状态。";
 "history.metric.activity.title" = "当前记录";
 "history.metric.activity.detail.empty" = "运行一次扫描或清理操作后，这里会开始形成审计轨迹。";
 "history.metric.activity.detail.latest" = "最近更新 %@";
@@ -459,12 +462,12 @@
 "history.detail.recovery.window" = "保留窗口";
 "history.detail.recovery.window.open" = "仍可恢复";
 "history.detail.recovery.callout.available.title" = "这个项目仍可恢复";
-"history.detail.recovery.callout.available.detail" = "只要保留窗口还在，你可以在准备好后随时恢复。";
+"history.detail.recovery.callout.available.detail" = "只要保留窗口还在，你就可以恢复。只有当 Atlas 为该项目记录了受支持的恢复路径时，它才会真正回到磁盘。";
 "history.detail.recovery.callout.expiring.title" = "如果还需要它，请尽快恢复";
 "history.detail.recovery.callout.expiring.detail" = "这个恢复项已经接近保留窗口的结束时间。";
 "history.restore.action" = "恢复";
 "history.restore.running" = "正在恢复…";
-"history.restore.hint" = "只要恢复窗口仍然开放，就可以把这个项目恢复回工作区。";
+"history.restore.hint" = "只要恢复窗口仍然开放，就可以恢复这个项目。只有受支持的文件型项目才会真正回到磁盘。";
 "history.run.footnote.finished" = "开始于 %@ • 结束于 %@";
 "history.run.footnote.running" = "开始于 %@ • 仍在进行中";
 "history.recovery.footnote.deleted" = "删除于 %@";
@@ -573,7 +576,7 @@
 "confirm.title" = "确认";
 "confirm.cancel" = "取消";
 "smartclean.confirm.execute.title" = "执行这份清理计划？";
-"smartclean.confirm.execute.message" = "将按复核后的计划执行清理。标记为可恢复的项目可以在历史中找回。";
+"smartclean.confirm.execute.message" = "将按复核后的计划执行清理。可恢复项目会保留在历史中；只有具备受支持恢复路径的项目，才支持磁盘级恢复。";
 "apps.confirm.uninstall.title" = "卸载这个应用？";
 "apps.confirm.uninstall.message" = "将移除 %@ 及其残留文件。可恢复的项目可以在历史中找回。";
 "emptystate.action.scan" = "运行智能清理";

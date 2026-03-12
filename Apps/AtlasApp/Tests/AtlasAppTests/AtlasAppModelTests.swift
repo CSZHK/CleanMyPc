@@ -3,6 +3,7 @@ import XCTest
 import AtlasApplication
 import AtlasDomain
 import AtlasInfrastructure
+import AtlasProtocol
 
 @MainActor
 final class AtlasAppModelTests: XCTestCase {
@@ -92,6 +93,49 @@ final class AtlasAppModelTests: XCTestCase {
         XCTAssertGreaterThan(model.latestScanProgress, 0)
     }
 
+    func testExecuteCurrentPlanExposesExplicitExecutionIssueWhenWorkerRejectsExecution() async {
+        let repository = makeRepository()
+        let model = AtlasAppModel(
+            repository: repository,
+            workerService: RejectingWorker(code: .executionUnavailable, reason: "XPC worker offline")
+        )
+
+        await model.executeCurrentPlan()
+
+        XCTAssertFalse(model.isPlanRunning)
+        XCTAssertEqual(model.smartCleanExecutionIssue, AtlasL10n.string("application.error.executionUnavailable", "XPC worker offline"))
+        XCTAssertEqual(model.latestScanSummary, AtlasL10n.string("application.error.executionUnavailable", "XPC worker offline"))
+    }
+
+    func testPreferredXPCWorkerPathFailsClosedWhenScanIsRejected() async throws {
+        let repository = makeRepository()
+        let rejectedRequest = AtlasRequestEnvelope(command: .startScan(taskID: UUID()))
+        let rejectedResult = AtlasWorkerCommandResult(
+            request: rejectedRequest,
+            response: AtlasResponseEnvelope(
+                requestID: rejectedRequest.id,
+                response: .rejected(code: .executionUnavailable, reason: "simulated packaged worker failure")
+            ),
+            events: [],
+            snapshot: AtlasScaffoldWorkspace.snapshot(language: .en),
+            previewPlan: nil
+        )
+        let responseData = try JSONEncoder().encode(rejectedResult)
+        let model = AtlasAppModel(
+            repository: repository,
+            preferXPCWorker: true,
+            allowScaffoldFallback: false,
+            xpcRequestConfiguration: AtlasXPCRequestConfiguration(timeout: 1, retryCount: 0, retryDelay: 0),
+            xpcRequestExecutor: { _ in responseData }
+        )
+
+        await model.runSmartCleanScan()
+
+        XCTAssertFalse(model.isCurrentSmartCleanPlanFresh)
+        XCTAssertEqual(model.smartCleanPlanIssue, AtlasL10n.string("application.error.executionUnavailable", "simulated packaged worker failure"))
+        XCTAssertFalse(model.latestScanSummary.contains("reclaimable item"))
+    }
+
     func testRefreshAppsUsesInventoryProvider() async throws {
         let repository = makeRepository()
         let worker = AtlasScaffoldWorkerService(
@@ -120,6 +164,29 @@ final class AtlasAppModelTests: XCTestCase {
 
         XCTAssertGreaterThan(model.snapshot.findings.count, findingsCountAfterExecute)
         XCTAssertFalse(model.snapshot.recoveryItems.contains(where: { $0.id == recoveryItemID }))
+    }
+
+    func testRestoreRecoveryItemClearsPreviousSmartCleanExecutionIssue() async throws {
+        let repository = makeRepository()
+        let realWorker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: true)
+        let seededState = repository.loadState()
+        XCTAssertFalse(seededState.snapshot.recoveryItems.isEmpty)
+        let recoveryItemID = try XCTUnwrap(seededState.snapshot.recoveryItems.first?.id)
+        let model = AtlasAppModel(
+            repository: repository,
+            workerService: ExecuteRejectingRestoreDelegatingWorker(
+                code: .executionUnavailable,
+                reason: "XPC worker offline",
+                restoreWorker: realWorker
+            )
+        )
+
+        await model.executeCurrentPlan()
+        XCTAssertNotNil(model.smartCleanExecutionIssue)
+
+        await model.restoreRecoveryItem(recoveryItemID)
+
+        XCTAssertNil(model.smartCleanExecutionIssue)
     }
 
     func testSettingsUpdatePersistsThroughWorker() async throws {
@@ -293,5 +360,58 @@ private actor NotificationPermissionRecorder {
 
     func callCount() -> Int {
         calls
+    }
+}
+
+private actor RejectingWorker: AtlasWorkerServing {
+    let code: AtlasProtocolErrorCode
+    let reason: String
+
+    init(code: AtlasProtocolErrorCode, reason: String) {
+        self.code = code
+        self.reason = reason
+    }
+
+    func submit(_ request: AtlasRequestEnvelope) async throws -> AtlasWorkerCommandResult {
+        AtlasWorkerCommandResult(
+            request: request,
+            response: AtlasResponseEnvelope(
+                requestID: request.id,
+                response: .rejected(code: code, reason: reason)
+            ),
+            events: [],
+            snapshot: AtlasScaffoldWorkspace.snapshot(language: .en),
+            previewPlan: nil
+        )
+    }
+}
+
+private actor ExecuteRejectingRestoreDelegatingWorker: AtlasWorkerServing {
+    let code: AtlasProtocolErrorCode
+    let reason: String
+    let restoreWorker: AtlasScaffoldWorkerService
+
+    init(code: AtlasProtocolErrorCode, reason: String, restoreWorker: AtlasScaffoldWorkerService) {
+        self.code = code
+        self.reason = reason
+        self.restoreWorker = restoreWorker
+    }
+
+    func submit(_ request: AtlasRequestEnvelope) async throws -> AtlasWorkerCommandResult {
+        switch request.command {
+        case .executePlan:
+            return AtlasWorkerCommandResult(
+                request: request,
+                response: AtlasResponseEnvelope(
+                    requestID: request.id,
+                    response: .rejected(code: code, reason: reason)
+                ),
+                events: [],
+                snapshot: AtlasScaffoldWorkspace.snapshot(language: .en),
+                previewPlan: nil
+            )
+        default:
+            return try await restoreWorker.submit(request)
+        }
     }
 }

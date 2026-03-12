@@ -124,6 +124,7 @@ Use these statements consistently in user-facing communication:
 - `Smart Clean runs real cleanup only for supported items in the current plan.`
 - `Unsupported items stay review-only until Atlas can execute them safely.`
 - `Recoverable items can be restored when a recovery path is available.`
+- `Some recoverable items restore on disk, while older or unstructured records restore Atlas state only.`
 - `If Atlas cannot prove the cleanup step, it should fail instead of claiming success.`
 
 Avoid saying:

@@ -54,7 +54,7 @@
 
 ## Current Blockers
 
-- `Smart Clean` execute now supports a real Trash-based path for structured safe targets, and those targets can be physically restored. Full disk-backed coverage is still incomplete, and unsupported targets fail closed. See `Docs/Execution/Execution-Chain-Audit-2026-03-09.md`.
+- `Smart Clean` execute now supports a real Trash-based path for structured safe targets, and those targets can be physically restored when recovery mappings are present. Full disk-backed coverage is still incomplete, and unsupported targets fail closed. See `Docs/Execution/Execution-Chain-Audit-2026-03-09.md`.
 - Silent fallback from XPC to the scaffold worker can mask execution-path failures in user-facing flows. See `Docs/Execution/Execution-Chain-Audit-2026-03-09.md`.
 - Public signed distribution is still blocked by missing Apple release credentials:
   - `Developer ID Application`

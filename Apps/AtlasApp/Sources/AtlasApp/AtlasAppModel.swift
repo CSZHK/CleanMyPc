@@ -31,6 +31,7 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var latestScanProgress: Double = 0
     @Published private(set) var isCurrentSmartCleanPlanFresh: Bool
     @Published private(set) var smartCleanPlanIssue: String?
+    @Published private(set) var smartCleanExecutionIssue: String?
     @Published private(set) var latestUpdateResult: AtlasAppUpdate?
     @Published private(set) var isCheckingForUpdate = false
     @Published private(set) var updateCheckNotice: String?
@@ -45,6 +46,10 @@ final class AtlasAppModel: ObservableObject {
     init(
         repository: AtlasWorkspaceRepository = AtlasWorkspaceRepository(),
         workerService: (any AtlasWorkerServing)? = nil,
+        preferXPCWorker: Bool? = nil,
+        allowScaffoldFallback: Bool? = nil,
+        xpcRequestConfiguration: AtlasXPCRequestConfiguration = AtlasXPCRequestConfiguration(),
+        xpcRequestExecutor: AtlasXPCDataRequestExecutor? = nil,
         notificationPermissionRequester: (@Sendable () async -> Bool)? = nil
     ) {
         let state = repository.loadState()
@@ -57,6 +62,7 @@ final class AtlasAppModel: ObservableObject {
         self.latestPermissionsSummary = AtlasL10n.string("model.permissions.ready")
         self.isCurrentSmartCleanPlanFresh = false
         self.smartCleanPlanIssue = nil
+        self.smartCleanExecutionIssue = nil
         let directWorker = AtlasScaffoldWorkerService(
             repository: repository,
             healthSnapshotProvider: MoleHealthAdapter(),
@@ -64,11 +70,15 @@ final class AtlasAppModel: ObservableObject {
             appsInventoryProvider: MacAppsInventoryAdapter(),
             helperExecutor: AtlasPrivilegedHelperClient()
         )
-        let prefersXPCWorker = ProcessInfo.processInfo.environment["ATLAS_PREFER_XPC_WORKER"] == "1"
+        let prefersXPCWorker = preferXPCWorker ?? (ProcessInfo.processInfo.environment["ATLAS_PREFER_XPC_WORKER"] == "1")
+        let shouldAllowScaffoldFallback = allowScaffoldFallback
+            ?? (ProcessInfo.processInfo.environment["ATLAS_ALLOW_SCAFFOLD_FALLBACK"] == "1")
         let defaultWorker: any AtlasWorkerServing = prefersXPCWorker
             ? AtlasPreferredWorkerService(
+                requestConfiguration: xpcRequestConfiguration,
+                requestExecutor: xpcRequestExecutor,
                 fallbackWorker: directWorker,
-                allowFallback: true
+                allowFallback: shouldAllowScaffoldFallback
             )
             : directWorker
         self.workspaceController = AtlasWorkspaceController(
@@ -305,6 +315,7 @@ final class AtlasAppModel: ObservableObject {
         isScanRunning = true
         latestScanSummary = AtlasL10n.string("model.scan.submitting")
         latestScanProgress = 0
+        smartCleanExecutionIssue = nil
 
         do {
             let output = try await workspaceController.startScan()
@@ -315,6 +326,7 @@ final class AtlasAppModel: ObservableObject {
                 latestScanProgress = output.progressFraction
                 isCurrentSmartCleanPlanFresh = output.actionPlan != nil
                 smartCleanPlanIssue = nil
+                smartCleanExecutionIssue = nil
             }
         } catch {
             latestScanSummary = error.localizedDescription
@@ -327,6 +339,7 @@ final class AtlasAppModel: ObservableObject {
 
     @discardableResult
     func refreshPlanPreview() async -> Bool {
+        smartCleanExecutionIssue = nil
         do {
             let output = try await workspaceController.previewPlan(findingIDs: snapshot.findings.map(\.id))
             withAnimation(.snappy(duration: 0.24)) {
@@ -336,6 +349,7 @@ final class AtlasAppModel: ObservableObject {
                 latestScanProgress = min(max(latestScanProgress, 1), 1)
                 isCurrentSmartCleanPlanFresh = true
                 smartCleanPlanIssue = nil
+                smartCleanExecutionIssue = nil
             }
             return true
         } catch {
@@ -352,6 +366,7 @@ final class AtlasAppModel: ObservableObject {
 
         selection = .smartClean
         isPlanRunning = true
+        smartCleanExecutionIssue = nil
 
         do {
             let output = try await workspaceController.executePlan(planID: currentPlan.id)
@@ -360,6 +375,7 @@ final class AtlasAppModel: ObservableObject {
                 latestScanSummary = output.summary
                 latestScanProgress = output.progressFraction
                 smartCleanPlanIssue = nil
+                smartCleanExecutionIssue = nil
             }
             let didRefreshPlan = await refreshPlanPreview()
             if !didRefreshPlan {
@@ -367,7 +383,7 @@ final class AtlasAppModel: ObservableObject {
             }
         } catch {
             latestScanSummary = error.localizedDescription
-            smartCleanPlanIssue = error.localizedDescription
+            smartCleanExecutionIssue = error.localizedDescription
         }
 
         isPlanRunning = false
@@ -463,6 +479,7 @@ final class AtlasAppModel: ObservableObject {
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = output.snapshot
                 latestScanSummary = output.summary
+                smartCleanExecutionIssue = nil
             }
             await refreshPlanPreview()
         } catch {

@@ -145,6 +145,7 @@ struct AppShellView: View {
                 isCurrentPlanFresh: model.isCurrentSmartCleanPlanFresh,
                 canExecutePlan: model.canExecuteCurrentSmartCleanPlan,
                 planIssue: model.smartCleanPlanIssue,
+                executionIssue: model.smartCleanExecutionIssue,
                 onStartScan: {
                     Task { await model.runSmartCleanScan() }
                 },

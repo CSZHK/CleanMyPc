@@ -26,6 +26,7 @@
 
 - Where to find past runs
 - When recovery restores a file physically
+- When recovery only restores Atlas workspace state
 - Which actions are recoverable
 - What happens when recovery expires
 
