@@ -30,6 +30,8 @@ This directory contains the working product, design, engineering, and compliance
 - `Execution/Execution-Chain-Audit-2026-03-09.md` — end-to-end review of real vs scaffold execution paths and release-facing trust gaps
 - `Execution/Implementation-Plan-ATL-201-202-205-2026-03-12.md` — implementation plan for internal-beta hardening tasks ATL-201, ATL-202, and ATL-205
 - `Execution/Execution-Credibility-Gate-Review-2026-03-12.md` — gate review for ATL-211, ATL-212, and ATL-215 Smart Clean execution credibility work
+- `Execution/Recovery-Contract-2026-03-13.md` — frozen recovery semantics, claim boundaries, and acceptance evidence for ATL-221 through ATL-224
+- `Execution/Recovery-Credibility-Gate-Review-2026-03-13.md` — gate review for ATL-221 through ATL-225 recovery credibility work
 - `Execution/Smart-Clean-Execution-Coverage-2026-03-09.md` — user-facing summary of what Smart Clean can execute for real today
 - `Execution/Smart-Clean-QA-Checklist-2026-03-09.md` — QA checklist for scan, execute, rescan, and physical restore validation
 - `Execution/Smart-Clean-Manual-Verification-2026-03-09.md` — local-machine fixture workflow for validating real Smart Clean execution and restore
