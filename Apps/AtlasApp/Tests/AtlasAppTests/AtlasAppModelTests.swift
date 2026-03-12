@@ -75,7 +75,7 @@ final class AtlasAppModelTests: XCTestCase {
         XCTAssertTrue(model.latestScanSummary.contains("2 reclaimable item"))
     }
 
-    func testExecuteCurrentPlanMovesFindingsIntoRecovery() async throws {
+    func testExecuteCurrentPlanOnlyRecordsRecoveryForRealSideEffects() async throws {
         let repository = makeRepository()
         let worker = AtlasScaffoldWorkerService(
             repository: repository,
@@ -88,7 +88,7 @@ final class AtlasAppModelTests: XCTestCase {
         await model.runSmartCleanScan()
         await model.executeCurrentPlan()
 
-        XCTAssertGreaterThan(model.snapshot.recoveryItems.count, initialRecoveryCount)
+        XCTAssertEqual(model.snapshot.recoveryItems.count, initialRecoveryCount)
         XCTAssertEqual(model.snapshot.taskRuns.first?.kind, .executePlan)
         XCTAssertGreaterThan(model.latestScanProgress, 0)
     }

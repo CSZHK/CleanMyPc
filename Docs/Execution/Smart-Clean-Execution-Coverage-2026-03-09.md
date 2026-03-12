@@ -31,6 +31,7 @@ These user-owned targets can be moved to Trash directly by the worker when they 
 - `~/Library/Suggestions/*`
 - `~/Library/Messages/Caches/*`
 - `~/Library/Developer/Xcode/DerivedData/*`
+- `~/Library/pnpm/store/*`
 - `~/.npm/*`
 - `~/.npm_cache/*`
 - `~/.oh-my-zsh/cache/*`
@@ -116,6 +117,11 @@ That means:
 
 - the item can reappear in Atlas UI state
 - the underlying file may not be physically restored on disk
+
+The History surface now needs to reflect this split explicitly:
+
+- file-backed recovery entries can claim on-disk return only when `restoreMappings` exist
+- Atlas-only recovery entries must describe themselves as workspace-state restoration, not physical file restoration
 
 ## Product Messaging Guidance
 

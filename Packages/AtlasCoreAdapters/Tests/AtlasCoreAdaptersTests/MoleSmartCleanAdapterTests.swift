@@ -33,11 +33,13 @@ final class MoleSmartCleanAdapterTests: XCTestCase {
 Developer tools	/Users/test/Library/Developer/Xcode/DerivedData/ProjectA	1024
 Developer tools	/Users/test/Library/Developer/Xcode/DerivedData/ProjectB	2048
 Browsers	/Users/test/Library/Caches/Google/Chrome/Default/Cache_Data	512
+Developer tools	/Users/test/Library/pnpm/store/v3/files/atlas-fixture/package.tgz	256
 """.write(to: fileURL, atomically: true, encoding: .utf8)
 
         let findings = MoleSmartCleanAdapter.parseDetailedFindings(from: fileURL)
 
         XCTAssertTrue(findings.contains(where: { $0.title == "Xcode DerivedData" && ($0.targetPaths?.count ?? 0) == 2 }))
         XCTAssertTrue(findings.contains(where: { $0.title == "Chrome cache" && ($0.targetPaths?.first?.contains("Chrome/Default") ?? false) }))
+        XCTAssertTrue(findings.contains(where: { $0.title == "pnpm store" && ($0.targetPaths?.first?.contains("/Library/pnpm/store") ?? false) }))
     }
 }

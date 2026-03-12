@@ -5,6 +5,7 @@ CACHE_ROOT="$HOME/Library/Caches/AtlasExecutionFixturesCache"
 LOG_ROOT="$HOME/Library/Logs/AtlasExecutionFixturesLogs"
 DERIVED_ROOT="$HOME/Library/Developer/Xcode/DerivedData/AtlasExecutionFixturesDerivedData"
 PYCACHE_ROOT="$HOME/Library/Caches/AtlasExecutionFixturesPycache"
+PNPM_ROOT="$HOME/Library/pnpm/store/v3/files/AtlasExecutionFixturesPnpm"
 
 create_blob() {
     local path="$1"
@@ -19,7 +20,7 @@ create_blob() {
 
 print_status() {
     local existing=false
-    for path in "$CACHE_ROOT" "$LOG_ROOT" "$DERIVED_ROOT" "$PYCACHE_ROOT"; do
+    for path in "$CACHE_ROOT" "$LOG_ROOT" "$DERIVED_ROOT" "$PYCACHE_ROOT" "$PNPM_ROOT"; do
         if [[ -e "$path" ]]; then
             existing=true
             du -sh "$path"
@@ -40,6 +41,7 @@ create_fixtures() {
     create_blob "$DERIVED_ROOT/Build/Logs/build-products.bin" 16
     mkdir -p "$PYCACHE_ROOT/project/__pycache__"
     create_blob "$PYCACHE_ROOT/project/__pycache__/sample.cpython-312.pyc" 4
+    create_blob "$PNPM_ROOT/package.tgz" 10
 
     echo "Created Smart Clean manual fixtures:"
     print_status
@@ -48,7 +50,7 @@ create_fixtures() {
 }
 
 cleanup_fixtures() {
-    rm -rf "$CACHE_ROOT" "$LOG_ROOT" "$DERIVED_ROOT" "$PYCACHE_ROOT"
+    rm -rf "$CACHE_ROOT" "$LOG_ROOT" "$DERIVED_ROOT" "$PYCACHE_ROOT" "$PNPM_ROOT"
     echo "Removed Smart Clean manual fixtures."
 }
 

@@ -28,6 +28,7 @@ The helper creates disposable fixtures under these locations:
 - `~/Library/Logs/AtlasExecutionFixturesLogs`
 - `~/Library/Developer/Xcode/DerivedData/AtlasExecutionFixturesDerivedData`
 - `~/Library/Caches/AtlasExecutionFixturesPycache`
+- `~/Library/pnpm/store/v3/files/AtlasExecutionFixturesPnpm`
 
 These locations are chosen because the current Smart Clean implementation can execute and restore them for real.
 
@@ -41,7 +42,7 @@ These locations are chosen because the current Smart Clean implementation can ex
 
 Expected:
 - The script prints the created roots and files.
-- `status` shows non-zero size under all four fixture roots.
+- `status` shows non-zero size under all five fixture roots.
 
 ### 2. Confirm upstream dry-run sees the fixtures
 
@@ -54,6 +55,7 @@ Expected:
   - `~/Library/Caches`
   - `~/Library/Logs`
   - `~/Library/Developer/Xcode/DerivedData`
+  - `~/Library/pnpm/store`
 - The fixture helper `status` output gives you the exact on-disk paths to compare before and after execution.
 
 ### 3. Run Smart Clean scan in the app

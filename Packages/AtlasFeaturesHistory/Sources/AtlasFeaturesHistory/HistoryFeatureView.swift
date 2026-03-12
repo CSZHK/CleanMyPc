@@ -935,14 +935,10 @@ private struct HistoryRecoveryDetailView: View {
             }
 
             AtlasCallout(
-                title: item.isExpiringSoon
-                    ? AtlasL10n.string("history.detail.recovery.callout.expiring.title")
-                    : AtlasL10n.string("history.detail.recovery.callout.available.title"),
-                detail: item.isExpiringSoon
-                    ? AtlasL10n.string("history.detail.recovery.callout.expiring.detail")
-                    : AtlasL10n.string("history.detail.recovery.callout.available.detail"),
-                tone: item.isExpiringSoon ? .warning : .success,
-                systemImage: item.isExpiringSoon ? "exclamationmark.triangle.fill" : "checkmark.circle.fill"
+                title: recoveryCalloutTitle,
+                detail: recoveryCalloutDetail,
+                tone: recoveryCalloutTone,
+                systemImage: recoveryCalloutSystemImage
             )
 
             VStack(alignment: .leading, spacing: AtlasSpacing.md) {
@@ -1028,13 +1024,71 @@ private struct HistoryRecoveryDetailView: View {
     }
 
     private var restoreButton: some View {
-        Button(isRestoring ? AtlasL10n.string("history.restore.running") : AtlasL10n.string("history.restore.action")) {
+        Button(isRestoring ? restoreRunningTitle : restoreActionTitle) {
             onRestore()
         }
         .buttonStyle(.atlasPrimary)
         .disabled(!canRestore)
         .accessibilityIdentifier("history.restore.\(item.id.uuidString)")
-        .accessibilityHint(AtlasL10n.string("history.restore.hint"))
+        .accessibilityHint(restoreHint)
+    }
+
+    private var recoveryCalloutTitle: String {
+        switch (item.hasPhysicalRestorePath, item.isExpiringSoon) {
+        case (true, true):
+            return AtlasL10n.string("history.detail.recovery.callout.expiring.fileBacked.title")
+        case (true, false):
+            return AtlasL10n.string("history.detail.recovery.callout.available.fileBacked.title")
+        case (false, true):
+            return AtlasL10n.string("history.detail.recovery.callout.expiring.stateOnly.title")
+        case (false, false):
+            return AtlasL10n.string("history.detail.recovery.callout.available.stateOnly.title")
+        }
+    }
+
+    private var recoveryCalloutDetail: String {
+        switch (item.hasPhysicalRestorePath, item.isExpiringSoon) {
+        case (true, true):
+            return AtlasL10n.string("history.detail.recovery.callout.expiring.fileBacked.detail")
+        case (true, false):
+            return AtlasL10n.string("history.detail.recovery.callout.available.fileBacked.detail")
+        case (false, true):
+            return AtlasL10n.string("history.detail.recovery.callout.expiring.stateOnly.detail")
+        case (false, false):
+            return AtlasL10n.string("history.detail.recovery.callout.available.stateOnly.detail")
+        }
+    }
+
+    private var recoveryCalloutTone: AtlasTone {
+        if item.isExpiringSoon {
+            return .warning
+        }
+        return item.hasPhysicalRestorePath ? .success : .neutral
+    }
+
+    private var recoveryCalloutSystemImage: String {
+        if item.isExpiringSoon {
+            return "exclamationmark.triangle.fill"
+        }
+        return item.hasPhysicalRestorePath ? "checkmark.circle.fill" : "rectangle.stack.badge.person.crop"
+    }
+
+    private var restoreActionTitle: String {
+        item.hasPhysicalRestorePath
+            ? AtlasL10n.string("history.restore.action")
+            : AtlasL10n.string("history.restore.action.stateOnly")
+    }
+
+    private var restoreRunningTitle: String {
+        item.hasPhysicalRestorePath
+            ? AtlasL10n.string("history.restore.running")
+            : AtlasL10n.string("history.restore.running.stateOnly")
+    }
+
+    private var restoreHint: String {
+        item.hasPhysicalRestorePath
+            ? AtlasL10n.string("history.restore.hint.fileBacked")
+            : AtlasL10n.string("history.restore.hint.stateOnly")
     }
 }
 
@@ -1057,6 +1111,10 @@ private extension TaskRun {
 }
 
 private extension RecoveryItem {
+    var hasPhysicalRestorePath: Bool {
+        !(restoreMappings ?? []).isEmpty
+    }
+
     var isExpiringSoon: Bool {
         guard let expiresAt else {
             return false

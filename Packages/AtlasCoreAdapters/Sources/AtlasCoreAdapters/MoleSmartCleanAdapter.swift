@@ -151,6 +151,7 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
         if path.contains("component_crx_cache") { return "Chrome component cache" }
         if path.contains("googleupdater") { return "Google Updater cache" }
         if path.contains("deriveddata") { return "Xcode DerivedData" }
+        if path.contains("/library/pnpm/store") { return "pnpm store" }
         if path.contains("/__pycache__") || last == "__pycache__" { return "Python bytecode cache" }
         if path.contains("/.next/cache") { return "Next.js build cache" }
         if path.contains("/.npm/") || path.hasSuffix("/.npm") || path.contains("_cacache") { return "npm cache" }
