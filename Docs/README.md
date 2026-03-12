@@ -23,6 +23,7 @@ This directory contains the working product, design, engineering, and compliance
 - `RISKS.md` — active project risk register
 - `Execution/` — weekly execution plans, status snapshots, beta checklists, gate reviews, manual test SOPs, and release execution notes
 - `Execution/Current-Status-2026-03-07.md` — current engineering status snapshot
+- `Execution/Internal-Beta-Hardening-Week-2026-03-16.md` — one-week execution plan for clean-machine QA and Smart Clean hardening
 - `Execution/Release-Roadmap-2026-03-12.md` — internal-beta hardening plan plus conditional signed release path
 - `Execution/UI-Audit-2026-03-08.md` — UI design audit and prioritized remediation directions
 - `Execution/UI-Copy-Walkthrough-2026-03-09.md` — page-by-page UI copy glossary, consistency checklist, and acceptance guide
