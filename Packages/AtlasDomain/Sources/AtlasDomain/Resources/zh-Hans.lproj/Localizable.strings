@@ -92,6 +92,8 @@
 "application.error.workerRejected" = "后台服务拒绝了请求（%@）：%@";
 "application.error.executionUnavailable" = "Atlas 当前无法通过真实工作链路执行这项操作：%@";
 "application.error.helperUnavailable" = "Atlas 当前无法完成这项操作，因为特权辅助组件不可用：%@";
+"application.error.restoreExpired" = "这个项目已经超出恢复保留窗口，Atlas 不能再恢复它：%@";
+"application.error.restoreConflict" = "Atlas 无法恢复这个项目，因为它的原始目标位置已经存在内容：%@";
 "xpc.error.encodingFailed" = "无法编码后台请求：%@";
 "xpc.error.decodingFailed" = "无法解析后台响应：%@";
 "xpc.error.invalidResponse" = "后台工作组件返回了无效响应。请完全退出并重新打开 Atlas；若仍失败，请重新安装当前版本。";

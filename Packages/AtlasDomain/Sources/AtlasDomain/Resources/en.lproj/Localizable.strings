@@ -92,6 +92,8 @@
 "application.error.workerRejected" = "Worker rejected request (%@): %@";
 "application.error.executionUnavailable" = "Atlas could not run this action with the real worker path: %@";
 "application.error.helperUnavailable" = "Atlas could not complete this action because the privileged helper is unavailable: %@";
+"application.error.restoreExpired" = "Atlas can no longer restore this item because its recovery retention window has expired: %@";
+"application.error.restoreConflict" = "Atlas could not restore this item because its original destination already exists: %@";
 "xpc.error.encodingFailed" = "Could not encode the background worker request: %@";
 "xpc.error.decodingFailed" = "Could not decode the background worker response: %@";
 "xpc.error.invalidResponse" = "The background worker returned an invalid response. Fully quit and reopen Atlas; if it still fails, reinstall the current build.";

@@ -536,7 +536,7 @@ public struct HistoryFeatureView: View {
                             HistoryRecoveryDetailView(
                                 item: item,
                                 isRestoring: restoringItemID == item.id,
-                                canRestore: restoringItemID == nil,
+                                canRestore: restoringItemID == nil && !item.isExpired,
                                 onRestore: { onRestoreItem(item.id) }
                             )
                         } else {
@@ -1113,6 +1113,13 @@ private extension TaskRun {
 private extension RecoveryItem {
     var hasPhysicalRestorePath: Bool {
         !(restoreMappings ?? []).isEmpty
+    }
+
+    var isExpired: Bool {
+        guard let expiresAt else {
+            return false
+        }
+        return expiresAt <= Date()
     }
 
     var isExpiringSoon: Bool {

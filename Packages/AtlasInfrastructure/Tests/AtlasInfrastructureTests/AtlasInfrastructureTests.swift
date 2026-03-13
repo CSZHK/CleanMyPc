@@ -27,6 +27,55 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertThrowsError(try repository.saveState(AtlasScaffoldWorkspace.state()))
     }
 
+    func testRepositorySaveStatePrunesExpiredRecoveryItems() throws {
+        let baseDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let clock = TestClock(now: baseDate)
+        let repository = AtlasWorkspaceRepository(
+            stateFileURL: temporaryStateFileURL(),
+            nowProvider: { clock.now }
+        )
+        let activeItem = RecoveryItem(
+            id: UUID(),
+            title: "Active recovery",
+            detail: "Still valid",
+            originalPath: "~/Library/Caches/Active",
+            bytes: 5,
+            deletedAt: baseDate.addingTimeInterval(-120),
+            expiresAt: baseDate.addingTimeInterval(3600),
+            payload: nil,
+            restoreMappings: nil
+        )
+        let expiredItem = RecoveryItem(
+            id: UUID(),
+            title: "Expired recovery",
+            detail: "Expired",
+            originalPath: "~/Library/Caches/Expired",
+            bytes: 7,
+            deletedAt: baseDate.addingTimeInterval(-7200),
+            expiresAt: baseDate.addingTimeInterval(-1),
+            payload: nil,
+            restoreMappings: nil
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 0,
+                findings: [],
+                apps: [],
+                taskRuns: [],
+                recoveryItems: [activeItem, expiredItem],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "Review 0 selected findings", items: [], estimatedBytes: 0),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+
+        let saved = try repository.saveState(state)
+
+        XCTAssertEqual(saved.snapshot.recoveryItems.map(\.id), [activeItem.id])
+        XCTAssertEqual(repository.loadState().snapshot.recoveryItems.map(\.id), [activeItem.id])
+    }
+
     func testExecutePlanMovesSupportedFindingsIntoRecoveryWhileKeepingInspectionOnlyItems() async throws {
         let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
         let home = FileManager.default.homeDirectoryForCurrentUser
@@ -709,6 +758,237 @@ final class AtlasInfrastructureTests: XCTestCase {
         )
     }
 
+    func testRestoreItemsRejectsExpiredRecoveryItemsAndPrunesThem() async throws {
+        let baseDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let clock = TestClock(now: baseDate)
+        let repository = AtlasWorkspaceRepository(
+            stateFileURL: temporaryStateFileURL(),
+            nowProvider: { clock.now }
+        )
+        let finding = Finding(
+            id: UUID(),
+            title: "Atlas-only fixture",
+            detail: "Expires soon",
+            bytes: 5,
+            risk: .safe,
+            category: "Developer tools"
+        )
+        let recoveryItem = RecoveryItem(
+            id: UUID(),
+            title: finding.title,
+            detail: finding.detail,
+            originalPath: "~/Library/Caches/AtlasOnly",
+            bytes: 5,
+            deletedAt: baseDate,
+            expiresAt: baseDate.addingTimeInterval(10),
+            payload: .finding(finding),
+            restoreMappings: nil
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 0,
+                findings: [],
+                apps: [],
+                taskRuns: [],
+                recoveryItems: [recoveryItem],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "Review 0 selected findings", items: [], estimatedBytes: 0),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            nowProvider: { clock.now },
+            allowStateOnlyCleanExecution: false
+        )
+        clock.now = baseDate.addingTimeInterval(60)
+
+        let restore = try await worker.submit(
+            AtlasRequestEnvelope(command: .restoreItems(taskID: UUID(), itemIDs: [recoveryItem.id]))
+        )
+
+        guard case let .rejected(code, reason) = restore.response.response else {
+            return XCTFail("Expected rejected restore response")
+        }
+        XCTAssertEqual(code, .restoreExpired)
+        XCTAssertTrue(reason.contains("expired"))
+        XCTAssertFalse(restore.snapshot.recoveryItems.contains(where: { $0.id == recoveryItem.id }))
+        XCTAssertFalse(repository.loadState().snapshot.recoveryItems.contains(where: { $0.id == recoveryItem.id }))
+    }
+
+    func testRestoreItemsMixedSummaryIncludesDiskAndStateOnlyClauses() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let targetDirectory = home.appendingPathComponent("Library/Caches/AtlasExecutionTests/" + UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: targetDirectory, withIntermediateDirectories: true)
+        let targetFile = targetDirectory.appendingPathComponent("sample.cache")
+        try Data("cache".utf8).write(to: targetFile)
+
+        var trashedURL: NSURL?
+        try FileManager.default.trashItem(at: targetFile, resultingItemURL: &trashedURL)
+        let trashedPath = try XCTUnwrap((trashedURL as URL?)?.path)
+
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: targetDirectory)
+            if let trashedURL {
+                try? FileManager.default.removeItem(at: trashedURL as URL)
+            }
+        }
+
+        let fileBackedFinding = Finding(
+            id: UUID(),
+            title: "Disk-backed fixture",
+            detail: targetFile.path,
+            bytes: 5,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: [targetFile.path]
+        )
+        let stateOnlyFinding = Finding(
+            id: UUID(),
+            title: "Atlas-only fixture",
+            detail: "State-only recovery item",
+            bytes: 7,
+            risk: .safe,
+            category: "Developer tools"
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 0,
+                findings: [],
+                apps: [],
+                taskRuns: [],
+                recoveryItems: [
+                    RecoveryItem(
+                        id: UUID(),
+                        title: fileBackedFinding.title,
+                        detail: fileBackedFinding.detail,
+                        originalPath: targetFile.path,
+                        bytes: fileBackedFinding.bytes,
+                        deletedAt: Date(),
+                        expiresAt: Date().addingTimeInterval(3600),
+                        payload: .finding(fileBackedFinding),
+                        restoreMappings: [RecoveryPathMapping(originalPath: targetFile.path, trashedPath: trashedPath)]
+                    ),
+                    RecoveryItem(
+                        id: UUID(),
+                        title: stateOnlyFinding.title,
+                        detail: stateOnlyFinding.detail,
+                        originalPath: "~/Library/Caches/AtlasOnly",
+                        bytes: stateOnlyFinding.bytes,
+                        deletedAt: Date(),
+                        expiresAt: Date().addingTimeInterval(3600),
+                        payload: .finding(stateOnlyFinding),
+                        restoreMappings: nil
+                    ),
+                ],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "Review 0 selected findings", items: [], estimatedBytes: 0),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+        _ = try repository.saveState(state)
+
+        let restoreItemIDs = state.snapshot.recoveryItems.map(\.id)
+        let worker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: false)
+        let restore = try await worker.submit(AtlasRequestEnvelope(command: .restoreItems(taskID: UUID(), itemIDs: restoreItemIDs)))
+
+        if case let .accepted(task) = restore.response.response {
+            XCTAssertEqual(task.kind, .restore)
+        } else {
+            XCTFail("Expected accepted restore response")
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: targetFile.path))
+        XCTAssertTrue(restore.snapshot.findings.contains(where: { $0.id == fileBackedFinding.id }))
+        XCTAssertTrue(restore.snapshot.findings.contains(where: { $0.id == stateOnlyFinding.id }))
+        XCTAssertEqual(
+            restore.snapshot.taskRuns.first?.summary,
+            [
+                AtlasL10n.string("infrastructure.restore.summary.disk.one", language: state.settings.language),
+                AtlasL10n.string("infrastructure.restore.summary.state.one", language: state.settings.language),
+            ].joined(separator: " ")
+        )
+    }
+
+    func testRestoreItemsRejectsWhenDestinationAlreadyExists() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let fileManager = FileManager.default
+        let home = fileManager.homeDirectoryForCurrentUser
+        let sourceDirectory = home.appendingPathComponent("Library/Caches/AtlasExecutionTests/" + UUID().uuidString, isDirectory: true)
+        let destinationDirectory = home.appendingPathComponent("Library/Caches/AtlasExecutionTests/" + UUID().uuidString, isDirectory: true)
+        try fileManager.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
+
+        let trashedCandidate = sourceDirectory.appendingPathComponent("trashed.cache")
+        try Data("trashed".utf8).write(to: trashedCandidate)
+        var trashedURL: NSURL?
+        try fileManager.trashItem(at: trashedCandidate, resultingItemURL: &trashedURL)
+        let trashedPath = try XCTUnwrap((trashedURL as URL?)?.path)
+
+        let destinationURL = destinationDirectory.appendingPathComponent("trashed.cache")
+        try Data("existing".utf8).write(to: destinationURL)
+
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: sourceDirectory)
+            try? FileManager.default.removeItem(at: destinationDirectory)
+            if let trashedURL {
+                try? FileManager.default.removeItem(at: trashedURL as URL)
+            }
+        }
+
+        let finding = Finding(
+            id: UUID(),
+            title: "Conflicting restore",
+            detail: destinationURL.path,
+            bytes: 7,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: [destinationURL.path]
+        )
+        let recoveryItem = RecoveryItem(
+            id: UUID(),
+            title: finding.title,
+            detail: finding.detail,
+            originalPath: destinationURL.path,
+            bytes: 7,
+            deletedAt: Date(),
+            expiresAt: Date().addingTimeInterval(3600),
+            payload: .finding(finding),
+            restoreMappings: [RecoveryPathMapping(originalPath: destinationURL.path, trashedPath: trashedPath)]
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 0,
+                findings: [],
+                apps: [],
+                taskRuns: [],
+                recoveryItems: [recoveryItem],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "Review 0 selected findings", items: [], estimatedBytes: 0),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: false)
+        let restore = try await worker.submit(
+            AtlasRequestEnvelope(command: .restoreItems(taskID: UUID(), itemIDs: [recoveryItem.id]))
+        )
+
+        guard case let .rejected(code, reason) = restore.response.response else {
+            return XCTFail("Expected rejected restore response")
+        }
+        XCTAssertEqual(code, .restoreConflict)
+        XCTAssertTrue(reason.contains(destinationURL.path))
+        XCTAssertTrue(fileManager.fileExists(atPath: destinationURL.path))
+        XCTAssertTrue(fileManager.fileExists(atPath: trashedPath))
+    }
+
     func testExecuteAppUninstallRemovesAppAndCreatesRecoveryEntry() async throws {
         let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
         let worker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: true)
@@ -722,6 +1002,84 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertFalse(result.snapshot.apps.contains(where: { $0.id == app.id }))
         XCTAssertTrue(result.snapshot.recoveryItems.contains(where: { $0.title == app.name }))
         XCTAssertEqual(result.snapshot.taskRuns.first?.kind, .uninstallApp)
+    }
+
+    func testExecuteAppUninstallRestorePhysicallyRestoresAppBundle() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let fileManager = FileManager.default
+        let appRoot = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Applications/AtlasExecutionTests/" + UUID().uuidString, isDirectory: true)
+        let appBundleURL = appRoot.appendingPathComponent("Atlas Restore Test.app", isDirectory: true)
+        try fileManager.createDirectory(at: appBundleURL, withIntermediateDirectories: true)
+        let executableURL = appBundleURL.appendingPathComponent("Contents/MacOS/AtlasRestoreTest")
+        try fileManager.createDirectory(at: executableURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executableURL)
+
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: appRoot)
+        }
+
+        let app = AppFootprint(
+            id: UUID(),
+            name: "Atlas Restore Test",
+            bundleIdentifier: "com.atlas.restore-test",
+            bundlePath: appBundleURL.path,
+            bytes: 17,
+            leftoverItems: 1
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: app.bytes,
+                findings: [],
+                apps: [app],
+                taskRuns: [],
+                recoveryItems: [],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "Review 0 selected findings", items: [], estimatedBytes: 0),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            helperExecutor: StubPrivilegedHelperExecutor(),
+            allowStateOnlyCleanExecution: false
+        )
+
+        let execute = try await worker.submit(
+            AtlasRequestEnvelope(command: .executeAppUninstall(appID: app.id))
+        )
+
+        if case let .accepted(task) = execute.response.response {
+            XCTAssertEqual(task.kind, .uninstallApp)
+        } else {
+            XCTFail("Expected accepted uninstall response")
+        }
+
+        XCTAssertFalse(fileManager.fileExists(atPath: appBundleURL.path))
+        XCTAssertFalse(execute.snapshot.apps.contains(where: { $0.id == app.id }))
+
+        let recoveryItem = try XCTUnwrap(execute.snapshot.recoveryItems.first)
+        XCTAssertEqual(recoveryItem.restoreMappings?.first?.originalPath, appBundleURL.path)
+        XCTAssertNotNil(recoveryItem.restoreMappings?.first?.trashedPath)
+
+        let restore = try await worker.submit(
+            AtlasRequestEnvelope(command: .restoreItems(taskID: UUID(), itemIDs: [recoveryItem.id]))
+        )
+
+        if case let .accepted(task) = restore.response.response {
+            XCTAssertEqual(task.kind, .restore)
+        } else {
+            XCTFail("Expected accepted restore response")
+        }
+
+        XCTAssertTrue(fileManager.fileExists(atPath: appBundleURL.path))
+        XCTAssertTrue(restore.snapshot.apps.contains(where: { $0.id == app.id }))
+        XCTAssertEqual(
+            restore.snapshot.taskRuns.first?.summary,
+            AtlasL10n.string("infrastructure.restore.summary.disk.one", language: state.settings.language)
+        )
     }
 
     private func temporaryStateFileURL() -> URL {
@@ -759,5 +1117,45 @@ private struct FileBackedSmartCleanProvider: AtlasSmartCleanScanProviding {
             targetPaths: [targetFileURL.path]
         )
         return AtlasSmartCleanScanResult(findings: [finding], summary: "Found 1 reclaimable item.")
+    }
+}
+
+private actor StubPrivilegedHelperExecutor: AtlasPrivilegedActionExecuting {
+    func perform(_ action: AtlasHelperAction) async throws -> AtlasHelperActionResult {
+        let fileManager = FileManager.default
+        let targetURL = URL(fileURLWithPath: action.targetPath)
+
+        switch action.kind {
+        case .trashItems:
+            var trashedURL: NSURL?
+            try fileManager.trashItem(at: targetURL, resultingItemURL: &trashedURL)
+            return AtlasHelperActionResult(
+                action: action,
+                success: true,
+                message: "Moved item to Trash.",
+                resolvedPath: (trashedURL as URL?)?.path
+            )
+        case .restoreItem:
+            let destinationPath = try XCTUnwrap(action.destinationPath)
+            let destinationURL = URL(fileURLWithPath: destinationPath)
+            try fileManager.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try fileManager.moveItem(at: targetURL, to: destinationURL)
+            return AtlasHelperActionResult(
+                action: action,
+                success: true,
+                message: "Restored item from Trash.",
+                resolvedPath: destinationURL.path
+            )
+        case .removeLaunchService, .repairOwnership:
+            throw NSError(domain: "StubPrivilegedHelperExecutor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unsupported test helper action: \(action.kind)"])
+        }
+    }
+}
+
+private final class TestClock: @unchecked Sendable {
+    var now: Date
+
+    init(now: Date) {
+        self.now = now
     }
 }

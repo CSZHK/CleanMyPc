@@ -161,6 +161,10 @@ public enum AtlasWorkspaceControllerError: LocalizedError, Sendable {
                 return AtlasL10n.string("application.error.executionUnavailable", reason)
             case .helperUnavailable:
                 return AtlasL10n.string("application.error.helperUnavailable", reason)
+            case .restoreExpired:
+                return AtlasL10n.string("application.error.restoreExpired", reason)
+            case .restoreConflict:
+                return AtlasL10n.string("application.error.restoreConflict", reason)
             default:
                 return AtlasL10n.string("application.error.workerRejected", code.rawValue, reason)
             }

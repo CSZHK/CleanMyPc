@@ -189,6 +189,62 @@ final class AtlasAppModelTests: XCTestCase {
         XCTAssertNil(model.smartCleanExecutionIssue)
     }
 
+    func testRestoreExpiredRecoveryItemReloadsPersistedState() async throws {
+        let baseDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let clock = TestClock(now: baseDate)
+        let repository = makeRepository(nowProvider: { clock.now })
+        let finding = Finding(
+            id: UUID(),
+            title: "Expiring fixture",
+            detail: "Expires soon",
+            bytes: 5,
+            risk: .safe,
+            category: "Developer tools"
+        )
+        let recoveryItem = RecoveryItem(
+            id: UUID(),
+            title: finding.title,
+            detail: finding.detail,
+            originalPath: "~/Library/Caches/AtlasOnly",
+            bytes: 5,
+            deletedAt: baseDate,
+            expiresAt: baseDate.addingTimeInterval(10),
+            payload: .finding(finding),
+            restoreMappings: nil
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 0,
+                findings: [],
+                apps: [],
+                taskRuns: [],
+                recoveryItems: [recoveryItem],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "Review 0 selected findings", items: [], estimatedBytes: 0),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            nowProvider: { clock.now },
+            allowStateOnlyCleanExecution: true
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker)
+        XCTAssertTrue(model.snapshot.recoveryItems.contains(where: { $0.id == recoveryItem.id }))
+
+        clock.now = baseDate.addingTimeInterval(60)
+        await model.restoreRecoveryItem(recoveryItem.id)
+
+        XCTAssertFalse(model.snapshot.recoveryItems.contains(where: { $0.id == recoveryItem.id }))
+        XCTAssertEqual(
+            model.latestScanSummary,
+            AtlasL10n.string("application.error.restoreExpired", "One or more selected recovery items have expired and can no longer be restored.")
+        )
+    }
+
     func testSettingsUpdatePersistsThroughWorker() async throws {
         let repository = makeRepository()
         let permissionInspector = AtlasPermissionInspector(
@@ -309,11 +365,12 @@ final class AtlasAppModelTests: XCTestCase {
         XCTAssertEqual(AtlasRoute.overview.title, "Overview")
     }
 
-    private func makeRepository() -> AtlasWorkspaceRepository {
+    private func makeRepository(nowProvider: @escaping @Sendable () -> Date = { Date() }) -> AtlasWorkspaceRepository {
         AtlasWorkspaceRepository(
             stateFileURL: FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString, isDirectory: true)
-                .appendingPathComponent("workspace-state.json")
+                .appendingPathComponent("workspace-state.json"),
+            nowProvider: nowProvider
         )
     }
 }
@@ -413,5 +470,13 @@ private actor ExecuteRejectingRestoreDelegatingWorker: AtlasWorkerServing {
         default:
             return try await restoreWorker.submit(request)
         }
+    }
+}
+
+private final class TestClock: @unchecked Sendable {
+    var now: Date
+
+    init(now: Date) {
+        self.now = now
     }
 }

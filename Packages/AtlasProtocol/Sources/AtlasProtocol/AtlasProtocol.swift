@@ -2,7 +2,7 @@ import AtlasDomain
 import Foundation
 
 public enum AtlasProtocolVersion {
-    public static let current = "0.3.0"
+    public static let current = "0.3.1"
 }
 
 public enum AtlasCommand: Codable, Hashable, Sendable {
@@ -46,6 +46,8 @@ public enum AtlasProtocolErrorCode: String, Codable, CaseIterable, Hashable, Sen
     case permissionRequired
     case helperUnavailable
     case executionUnavailable
+    case restoreExpired
+    case restoreConflict
     case invalidSelection
 }
 

@@ -40,6 +40,7 @@
 
 - XPC transport
 - JSON-backed workspace state persistence
+- Recovery-state normalization that prunes expired recovery entries on load/save
 - Logging and audit events
 - Best-effort permission inspection
 - Helper executable client
@@ -54,6 +55,7 @@
 - Allowlisted helper actions for bundle trashing, restoration, and launch-service removal
 - Release-facing execution must fail closed when real worker/adapter/helper capability is unavailable; scaffold fallback is development-only by opt-in
 - Smart Clean now supports a real Trash-based execution path for a safe structured subset of user-owned targets, plus physical restoration when recovery mappings are present
+- Restore requests recheck expiry and destination conflicts before side effects, so expired or conflicting recovery items fail closed
 
 ## Process Boundaries
 

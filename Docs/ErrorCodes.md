@@ -31,6 +31,11 @@
 - Use sheets for permission and destructive confirmation flows.
 - Use result pages for partial success, cancellation, and recovery outcomes.
 
+## Recovery Semantics
+
+- `restore_expired` — the recovery retention window has closed; the item must no longer be restorable and should disappear from active recovery state on the next refresh.
+- `restore_conflict` — the original destination already exists; the restore request must fail closed without moving the trashed source.
+
 ## Format
 
 - User-visible format recommendation: `ATLAS-<DOMAIN>-<NUMBER>`

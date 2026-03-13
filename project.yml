@@ -21,6 +21,7 @@ schemes:
       config: Debug
       gatherCoverageData: false
       targets:
+        - name: AtlasAppTests
         - name: AtlasAppUITests
     run:
       config: Debug
@@ -62,6 +63,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.atlasformac.app
         PRODUCT_NAME: Atlas for Mac
+        PRODUCT_MODULE_NAME: AtlasApp
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: 1
         GENERATE_INFOPLIST_FILE: YES
@@ -99,6 +101,21 @@ targets:
         product: AtlasFeaturesSmartClean
       - package: Packages
         product: AtlasInfrastructure
+  AtlasAppTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Apps/AtlasApp/Tests/AtlasAppTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.atlasformac.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Atlas for Mac.app/Contents/MacOS/Atlas for Mac"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        AD_HOC_CODE_SIGNING_ALLOWED: YES
+    dependencies:
+      - target: AtlasApp
   AtlasAppUITests:
     type: bundle.ui-testing
     platform: macOS

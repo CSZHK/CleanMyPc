@@ -8,7 +8,7 @@
 
 ## Protocol Version
 
-- Current implementation version: `0.3.0`
+- Current implementation version: `0.3.1`
 
 ## UI ↔ Worker Commands
 
@@ -56,6 +56,8 @@
 - `permissionRequired`
 - `helperUnavailable`
 - `executionUnavailable`
+- `restoreExpired`
+- `restoreConflict`
 - `invalidSelection`
 
 ## Event Payloads
@@ -146,6 +148,7 @@
 - `scan.start` is backed by `bin/clean.sh --dry-run` through `MoleSmartCleanAdapter` when the upstream workflow succeeds. If it cannot complete, the worker now rejects the request instead of silently fabricating scan results.
 - `apps.list` is backed by `MacAppsInventoryAdapter`, which scans local app bundles and derives leftover counts.
 - The worker persists a local JSON-backed workspace state containing the latest snapshot, current Smart Clean plan, and settings, including the persisted app-language preference.
+- The repository and worker normalize recovery state by pruning expired `RecoveryItem`s and rejecting restore requests that arrive after the retention window has closed.
 - Atlas localizes user-facing shell copy through a package-scoped resource bundle and uses the persisted language to keep summaries and settings text aligned.
 - App uninstall can invoke the packaged or development helper executable through structured JSON actions.
 - Structured Smart Clean findings can now carry executable target paths, and a safe subset of those targets can be moved to Trash and physically restored later.
@@ -154,3 +157,4 @@
 
 - `executePlan` is fail-closed for unsupported targets, but now supports a real Trash-based execution path for a safe structured subset of Smart Clean items.
 - `recovery.restore` can physically restore items when `restoreMappings` are present; otherwise it falls back to model rehydration only.
+- `recovery.restore` rejects expired recovery items with `restoreExpired` and rejects destination collisions with `restoreConflict`.

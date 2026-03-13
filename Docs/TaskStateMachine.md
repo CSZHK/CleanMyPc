@@ -57,6 +57,7 @@
 - Progress must not move backwards.
 - Destructive tasks must be audited.
 - Recoverable tasks must leave structured recovery entries until restored or expired.
+- Expired recovery entries must no longer remain actionable in active recovery state.
 - Repeated write requests must honor idempotency rules when those flows become externally reentrant.
 
 ## Current MVP Notes
@@ -65,4 +66,5 @@
 - `execute_clean` must not report completion in release-facing flows unless real cleanup side effects have been applied. Fresh preview plans now carry structured execution targets, and unsupported or unstructured targets should fail closed.
 - `execute_uninstall` removes an app from the current workspace view and creates a recovery entry.
 - `restore` can physically restore items when structured recovery mappings are present, and can still rehydrate a `Finding` or an `AppFootprint` into Atlas state from the recovery payload.
+- `restore` must reject expired recovery items before side effects and must fail closed when the original destination already exists.
 - User-visible task summaries and settings-driven text should reflect the persisted app-language preference when generated.

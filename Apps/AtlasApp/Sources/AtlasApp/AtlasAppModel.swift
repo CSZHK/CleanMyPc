@@ -37,6 +37,7 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var updateCheckNotice: String?
     @Published private(set) var updateCheckError: String?
 
+    private let repository: AtlasWorkspaceRepository
     private let workspaceController: AtlasWorkspaceController
     private let updateChecker = AtlasUpdateChecker()
     private let notificationPermissionRequester: @Sendable () async -> Bool
@@ -53,6 +54,7 @@ final class AtlasAppModel: ObservableObject {
         notificationPermissionRequester: (@Sendable () async -> Bool)? = nil
     ) {
         let state = repository.loadState()
+        self.repository = repository
         self.snapshot = state.snapshot
         self.currentPlan = state.currentPlan
         self.settings = state.settings
@@ -482,6 +484,12 @@ final class AtlasAppModel: ObservableObject {
             }
             await refreshPlanPreview()
         } catch {
+            let persistedState = repository.loadState()
+            withAnimation(.snappy(duration: 0.24)) {
+                snapshot = persistedState.snapshot
+                currentPlan = persistedState.currentPlan
+                settings = persistedState.settings
+            }
             latestScanSummary = error.localizedDescription
         }
 

@@ -297,9 +297,14 @@ public enum AtlasSmartCleanExecutionSupport {
 
 public struct AtlasWorkspaceRepository: Sendable {
     private let stateFileURL: URL
+    private let nowProvider: @Sendable () -> Date
 
-    public init(stateFileURL: URL? = nil) {
+    public init(
+        stateFileURL: URL? = nil,
+        nowProvider: @escaping @Sendable () -> Date = { Date() }
+    ) {
         self.stateFileURL = stateFileURL ?? Self.defaultStateFileURL
+        self.nowProvider = nowProvider
     }
 
     public func loadState() -> AtlasWorkspaceState {
@@ -308,7 +313,12 @@ public struct AtlasWorkspaceRepository: Sendable {
         if FileManager.default.fileExists(atPath: stateFileURL.path) {
             do {
                 let data = try Data(contentsOf: stateFileURL)
-                return try decoder.decode(AtlasWorkspaceState.self, from: data)
+                let decoded = try decoder.decode(AtlasWorkspaceState.self, from: data)
+                let normalized = normalizedState(decoded)
+                if normalized != decoded {
+                    _ = try? saveState(normalized)
+                }
+                return normalized
             } catch let repositoryError as AtlasWorkspaceRepositoryError {
                 reportFailure(repositoryError, operation: "load existing workspace state from \(stateFileURL.path)")
             } catch {
@@ -332,6 +342,7 @@ public struct AtlasWorkspaceRepository: Sendable {
     public func saveState(_ state: AtlasWorkspaceState) throws -> AtlasWorkspaceState {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let normalizedState = normalizedState(state)
 
         do {
             try FileManager.default.createDirectory(
@@ -344,7 +355,7 @@ public struct AtlasWorkspaceRepository: Sendable {
 
         let data: Data
         do {
-            data = try encoder.encode(state)
+            data = try encoder.encode(normalizedState)
         } catch {
             throw AtlasWorkspaceRepositoryError.encodeFailed(error.localizedDescription)
         }
@@ -355,7 +366,7 @@ public struct AtlasWorkspaceRepository: Sendable {
             throw AtlasWorkspaceRepositoryError.writeFailed(error.localizedDescription)
         }
 
-        return state
+        return normalizedState
     }
 
     public func loadScaffoldSnapshot() -> AtlasWorkspaceSnapshot {
@@ -375,6 +386,15 @@ public struct AtlasWorkspaceRepository: Sendable {
         if let data = message.data(using: .utf8) {
             try? FileHandle.standardError.write(contentsOf: data)
         }
+    }
+
+    private func normalizedState(_ state: AtlasWorkspaceState) -> AtlasWorkspaceState {
+        var normalized = state
+        let now = nowProvider()
+        normalized.snapshot.recoveryItems.removeAll { item in
+            item.isExpired(asOf: now)
+        }
+        return normalized
     }
 
     private static var defaultStateFileURL: URL {
@@ -403,6 +423,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     private let smartCleanScanProvider: (any AtlasSmartCleanScanProviding)?
     private let appsInventoryProvider: (any AtlasAppInventoryProviding)?
     private let helperExecutor: (any AtlasPrivilegedActionExecuting)?
+    private let nowProvider: @Sendable () -> Date
     private let allowProviderFailureFallback: Bool
     private let allowStateOnlyCleanExecution: Bool
     private var state: AtlasWorkspaceState
@@ -415,6 +436,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         appsInventoryProvider: (any AtlasAppInventoryProviding)? = nil,
         helperExecutor: (any AtlasPrivilegedActionExecuting)? = nil,
         auditStore: AtlasAuditStore = AtlasAuditStore(),
+        nowProvider: @escaping @Sendable () -> Date = { Date() },
         allowProviderFailureFallback: Bool = ProcessInfo.processInfo.environment["ATLAS_ALLOW_PROVIDER_FAILURE_FALLBACK"] == "1",
         allowStateOnlyCleanExecution: Bool = ProcessInfo.processInfo.environment["ATLAS_ALLOW_STATE_ONLY_CLEAN_EXECUTION"] == "1"
     ) {
@@ -425,6 +447,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         self.smartCleanScanProvider = smartCleanScanProvider
         self.appsInventoryProvider = appsInventoryProvider
         self.helperExecutor = helperExecutor
+        self.nowProvider = nowProvider
         self.allowProviderFailureFallback = allowProviderFailureFallback
         self.allowStateOnlyCleanExecution = allowStateOnlyCleanExecution
         self.state = repository.loadState()
@@ -433,6 +456,11 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
 
     public func submit(_ request: AtlasRequestEnvelope) async throws -> AtlasWorkerCommandResult {
         AtlasL10n.setCurrentLanguage(state.settings.language)
+        if case .restoreItems = request.command {
+            // Restore needs selected-item expiry reporting before the general prune.
+        } else {
+            await pruneExpiredRecoveryItemsIfNeeded(context: "process request \(request.id.uuidString)")
+        }
         switch request.command {
         case .healthSnapshot:
             return try await healthSnapshot(using: request)
@@ -695,7 +723,20 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     }
 
     private func restoreItems(using request: AtlasRequestEnvelope, taskID: UUID, itemIDs: [UUID]) async -> AtlasWorkerCommandResult {
-        let itemsToRestore = state.snapshot.recoveryItems.filter { itemIDs.contains($0.id) }
+        let requestedItemIDs = Set(itemIDs)
+        let expiredSelectionIDs = requestedItemIDs.intersection(expiredRecoveryItemIDs())
+
+        if !expiredSelectionIDs.isEmpty {
+            await pruneExpiredRecoveryItemsIfNeeded(context: "prune expired recovery items before rejected restore")
+            return rejectedResult(
+                for: request,
+                code: .restoreExpired,
+                reason: "One or more selected recovery items have expired and can no longer be restored."
+            )
+        }
+
+        await pruneExpiredRecoveryItemsIfNeeded(context: "refresh recovery retention before restore")
+        let itemsToRestore = state.snapshot.recoveryItems.filter { requestedItemIDs.contains($0.id) }
 
         guard !itemsToRestore.isEmpty else {
             return rejectedResult(
@@ -713,6 +754,12 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
                 do {
                     try await restoreRecoveryMappings(restoreMappings)
                     physicalRestoreCount += 1
+                } catch let failure as RecoveryRestoreFailure {
+                    return rejectedResult(
+                        for: request,
+                        code: failure.code,
+                        reason: failure.localizedDescription
+                    )
                 } catch {
                     return rejectedResult(
                         for: request,
@@ -885,6 +932,25 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         )
     }
 
+    private func expiredRecoveryItemIDs(asOf now: Date? = nil) -> Set<UUID> {
+        let cutoff = now ?? nowProvider()
+        return Set(state.snapshot.recoveryItems.compactMap { item in
+            item.isExpired(asOf: cutoff) ? item.id : nil
+        })
+    }
+
+    private func pruneExpiredRecoveryItemsIfNeeded(context: String, now: Date? = nil) async {
+        let cutoff = now ?? nowProvider()
+        let expiredIDs = expiredRecoveryItemIDs(asOf: cutoff)
+        guard !expiredIDs.isEmpty else {
+            return
+        }
+
+        state.snapshot.recoveryItems.removeAll { expiredIDs.contains($0.id) }
+        await persistState(context: context)
+        await auditStore.append("Pruned \(expiredIDs.count) expired recovery item(s)")
+    }
+
     private func persistState(context: String) async {
         do {
             _ = try repository.saveState(state)
@@ -1003,23 +1069,23 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         let sourceURL = URL(fileURLWithPath: mapping.trashedPath).resolvingSymlinksInPath()
         let destinationURL = URL(fileURLWithPath: mapping.originalPath).resolvingSymlinksInPath()
         guard FileManager.default.fileExists(atPath: sourceURL.path) else {
-            throw AtlasWorkspaceRepositoryError.writeFailed("Recovery source is no longer available on disk: \(sourceURL.path)")
+            throw RecoveryRestoreFailure.executionUnavailable("Recovery source is no longer available on disk: \(sourceURL.path)")
         }
         if shouldUseHelperForSmartCleanTarget(destinationURL) {
             guard let helperExecutor else {
-                throw AtlasWorkspaceRepositoryError.writeFailed("Bundled helper unavailable for recovery target: \(destinationURL.path)")
+                throw RecoveryRestoreFailure.helperUnavailable("Bundled helper unavailable for recovery target: \(destinationURL.path)")
             }
             let result = try await helperExecutor.perform(AtlasHelperAction(kind: .restoreItem, targetPath: sourceURL.path, destinationPath: destinationURL.path))
             guard result.success else {
-                throw AtlasWorkspaceRepositoryError.writeFailed(result.message)
+                throw RecoveryRestoreFailure.executionUnavailable(result.message)
             }
             return
         }
         guard isDirectlyTrashableSmartCleanTarget(destinationURL) else {
-            throw AtlasWorkspaceRepositoryError.writeFailed("Recovery target is outside the supported execution allowlist: \(destinationURL.path)")
+            throw RecoveryRestoreFailure.executionUnavailable("Recovery target is outside the supported execution allowlist: \(destinationURL.path)")
         }
         if FileManager.default.fileExists(atPath: destinationURL.path) {
-            throw AtlasWorkspaceRepositoryError.writeFailed("Recovery target already exists: \(destinationURL.path)")
+            throw RecoveryRestoreFailure.restoreConflict("Recovery target already exists: \(destinationURL.path)")
         }
         try FileManager.default.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try FileManager.default.moveItem(at: sourceURL, to: destinationURL)
@@ -1281,6 +1347,41 @@ private struct SmartCleanExecutionFailure: LocalizedError {
 
     var errorDescription: String? {
         result.failureReason
+    }
+}
+
+private enum RecoveryRestoreFailure: LocalizedError {
+    case helperUnavailable(String)
+    case restoreConflict(String)
+    case executionUnavailable(String)
+
+    var code: AtlasProtocolErrorCode {
+        switch self {
+        case .helperUnavailable:
+            return .helperUnavailable
+        case .restoreConflict:
+            return .restoreConflict
+        case .executionUnavailable:
+            return .executionUnavailable
+        }
+    }
+
+    var errorDescription: String? {
+        switch self {
+        case let .helperUnavailable(reason),
+             let .restoreConflict(reason),
+             let .executionUnavailable(reason):
+            return reason
+        }
+    }
+}
+
+private extension RecoveryItem {
+    func isExpired(asOf date: Date) -> Bool {
+        guard let expiresAt else {
+            return false
+        }
+        return expiresAt <= date
     }
 }
 

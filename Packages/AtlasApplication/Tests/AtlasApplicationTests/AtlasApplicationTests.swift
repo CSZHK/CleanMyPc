@@ -209,6 +209,52 @@ final class AtlasApplicationTests: XCTestCase {
             XCTAssertEqual(error.localizedDescription, AtlasL10n.string("application.error.helperUnavailable", "Privileged helper missing"))
         }
     }
+
+    func testRestoreItemsMapsRestoreExpiredToLocalizedError() async throws {
+        let itemID = UUID()
+        let request = AtlasRequestEnvelope(command: .restoreItems(taskID: UUID(), itemIDs: [itemID]))
+        let result = AtlasWorkerCommandResult(
+            request: request,
+            response: AtlasResponseEnvelope(
+                requestID: request.id,
+                response: .rejected(code: .restoreExpired, reason: "Recovery retention expired")
+            ),
+            events: [],
+            snapshot: AtlasScaffoldWorkspace.snapshot(),
+            previewPlan: nil
+        )
+        let controller = AtlasWorkspaceController(worker: FakeWorker(result: result))
+
+        do {
+            _ = try await controller.restoreItems(itemIDs: [itemID])
+            XCTFail("Expected restoreItems to throw")
+        } catch {
+            XCTAssertEqual(error.localizedDescription, AtlasL10n.string("application.error.restoreExpired", "Recovery retention expired"))
+        }
+    }
+
+    func testRestoreItemsMapsRestoreConflictToLocalizedError() async throws {
+        let itemID = UUID()
+        let request = AtlasRequestEnvelope(command: .restoreItems(taskID: UUID(), itemIDs: [itemID]))
+        let result = AtlasWorkerCommandResult(
+            request: request,
+            response: AtlasResponseEnvelope(
+                requestID: request.id,
+                response: .rejected(code: .restoreConflict, reason: "Original path already exists")
+            ),
+            events: [],
+            snapshot: AtlasScaffoldWorkspace.snapshot(),
+            previewPlan: nil
+        )
+        let controller = AtlasWorkspaceController(worker: FakeWorker(result: result))
+
+        do {
+            _ = try await controller.restoreItems(itemIDs: [itemID])
+            XCTFail("Expected restoreItems to throw")
+        } catch {
+            XCTAssertEqual(error.localizedDescription, AtlasL10n.string("application.error.restoreConflict", "Original path already exists"))
+        }
+    }
 }
 
 private actor FakeWorker: AtlasWorkerServing {

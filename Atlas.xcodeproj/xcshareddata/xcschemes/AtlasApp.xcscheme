@@ -58,6 +58,17 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "BC1D0FBB35276C2AE56A0268"
+               BuildableName = "AtlasAppTests.xctest"
+               BlueprintName = "AtlasAppTests"
+               ReferencedContainer = "container:Atlas.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "DC24C4DDD452116007066447"
                BuildableName = "AtlasAppUITests.xctest"
                BlueprintName = "AtlasAppUITests"

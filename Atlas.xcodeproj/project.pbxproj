@@ -15,6 +15,7 @@
 		18248DDA2E6242D30B2FF84B /* AtlasFeaturesSettings in Frameworks */ = {isa = PBXBuildFile; productRef = FE51513F5C3746B2C3DA5E9A /* AtlasFeaturesSettings */; };
 		18361B20FDB815F8F80A8D89 /* AtlasCoreAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = A110B5FE410BD691B10F4338 /* AtlasCoreAdapters */; };
 		1FD68E8A5DFA42F86C474290 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10ECA6F0B2C093A4FDBA60A5 /* main.swift */; };
+		3F61098A3E68EB5B385D676C /* AtlasAppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E3F033599CA5CB41CC01A2D /* AtlasAppModelTests.swift */; };
 		568260A734C660E1C1E29EEF /* AtlasApplication in Frameworks */ = {isa = PBXBuildFile; productRef = 07F92560DDAA3271466226A0 /* AtlasApplication */; };
 		5E17D3D1A8B2B6844C11E4A0 /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6F7E5AF1DB77BD9455C253 /* AppShellView.swift */; };
 		69A95E0759F67A6749B13268 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7514A7238A2A0C3B19F6D967 /* Assets.xcassets */; };
@@ -50,6 +51,13 @@
 			remoteGlobalIDString = 6554EF197FBC626F52F4BA4B;
 			remoteInfo = AtlasWorkerXPC;
 		};
+		4D8C0366067B16B0EDEFF06F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 43D55555CA7BCC7C87E44A39 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 98260B956C6EC40DBBEEC103;
+			remoteInfo = AtlasApp;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -68,12 +76,14 @@
 /* Begin PBXFileReference section */
 		10ECA6F0B2C093A4FDBA60A5 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		13B5E85855AB6534C486F6AB /* AtlasAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasAppUITests.swift; sourceTree = "<group>"; };
+		1E3F033599CA5CB41CC01A2D /* AtlasAppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasAppModelTests.swift; sourceTree = "<group>"; };
 		31527C6248CC4F0D354F6593 /* TaskCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCenterView.swift; sourceTree = "<group>"; };
 		67FF6A7D6D44C9F4789DA0FF /* Packages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Packages; path = Packages; sourceTree = SOURCE_ROOT; };
 		6A363C421B6DA2EFE09AE3D7 /* ReadmeAssetExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadmeAssetExporter.swift; sourceTree = "<group>"; };
 		6D6F7E5AF1DB77BD9455C253 /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
 		7514A7238A2A0C3B19F6D967 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7B60D354F907D973C9D78524 /* AtlasAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AtlasAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7FF49AAA8C253DBEE96EC8D3 /* AtlasAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AtlasAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		97A2723BA50C375AFC3C9321 /* AtlasWorkerXPC.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = AtlasWorkerXPC.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		9AB1D202267B7A0E93C4D7A4 /* AtlasApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AtlasApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A57454A431BBD25C9D9F7ACA /* AtlasAppCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasAppCommands.swift; sourceTree = "<group>"; };
@@ -115,6 +125,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		239A9C84704A886CD4AF1BE3 /* AtlasAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				1E3F033599CA5CB41CC01A2D /* AtlasAppModelTests.swift */,
+			);
+			path = AtlasAppTests;
+			sourceTree = "<group>";
+		};
 		33096698F9C248F87E324810 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
@@ -135,6 +153,7 @@
 			isa = PBXGroup;
 			children = (
 				3FA23CAAED1482D5CD7DBA21 /* Sources */,
+				6E9CA333F7EF9B53949FFE51 /* Tests */,
 			);
 			path = AtlasApp;
 			sourceTree = "<group>";
@@ -145,6 +164,14 @@
 				10ECA6F0B2C093A4FDBA60A5 /* main.swift */,
 			);
 			path = AtlasWorkerXPC;
+			sourceTree = "<group>";
+		};
+		6E9CA333F7EF9B53949FFE51 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				239A9C84704A886CD4AF1BE3 /* AtlasAppTests */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		70A20106B8807AFCC4851B2C = {
@@ -177,6 +204,7 @@
 			isa = PBXGroup;
 			children = (
 				9AB1D202267B7A0E93C4D7A4 /* AtlasApp.app */,
+				7FF49AAA8C253DBEE96EC8D3 /* AtlasAppTests.xctest */,
 				7B60D354F907D973C9D78524 /* AtlasAppUITests.xctest */,
 				97A2723BA50C375AFC3C9321 /* AtlasWorkerXPC.xpc */,
 			);
@@ -280,6 +308,24 @@
 			productReference = 9AB1D202267B7A0E93C4D7A4 /* AtlasApp.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BC1D0FBB35276C2AE56A0268 /* AtlasAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AFB6375FA8AB26AE68C66925 /* Build configuration list for PBXNativeTarget "AtlasAppTests" */;
+			buildPhases = (
+				E0B1CC6AEF9B151A45B8A49E /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1402ADF5C02FD65B5B68E38C /* PBXTargetDependency */,
+			);
+			name = AtlasAppTests;
+			packageProductDependencies = (
+			);
+			productName = AtlasAppTests;
+			productReference = 7FF49AAA8C253DBEE96EC8D3 /* AtlasAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		DC24C4DDD452116007066447 /* AtlasAppUITests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E425825D3882044CA19B8446 /* Build configuration list for PBXNativeTarget "AtlasAppUITests" */;
@@ -330,6 +376,7 @@
 			projectRoot = "";
 			targets = (
 				98260B956C6EC40DBBEEC103 /* AtlasApp */,
+				BC1D0FBB35276C2AE56A0268 /* AtlasAppTests */,
 				DC24C4DDD452116007066447 /* AtlasAppUITests */,
 				6554EF197FBC626F52F4BA4B /* AtlasWorkerXPC */,
 			);
@@ -377,9 +424,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E0B1CC6AEF9B151A45B8A49E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3F61098A3E68EB5B385D676C /* AtlasAppModelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		1402ADF5C02FD65B5B68E38C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 98260B956C6EC40DBBEEC103 /* AtlasApp */;
+			targetProxy = 4D8C0366067B16B0EDEFF06F /* PBXContainerItemProxy */;
+		};
 		4561468E37A46EEB82269AB0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 6554EF197FBC626F52F4BA4B /* AtlasWorkerXPC */;
@@ -511,6 +571,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app;
+				PRODUCT_MODULE_NAME = AtlasApp;
 				PRODUCT_NAME = "Atlas for Mac";
 				SDKROOT = macosx;
 			};
@@ -579,6 +640,25 @@
 			};
 			name = Debug;
 		};
+		A91320B2152453D347819B2E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AD_HOC_CODE_SIGNING_ALLOWED = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Atlas for Mac.app/Contents/MacOS/Atlas for Mac";
+			};
+			name = Debug;
+		};
 		CBD20A4D8B026FF2EDBFF1DC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -599,8 +679,28 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app;
+				PRODUCT_MODULE_NAME = AtlasApp;
 				PRODUCT_NAME = "Atlas for Mac";
 				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D2CF1D133D0E5FFAEFA90E2F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				AD_HOC_CODE_SIGNING_ALLOWED = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Atlas for Mac.app/Contents/MacOS/Atlas for Mac";
 			};
 			name = Release;
 		};
@@ -668,6 +768,15 @@
 			buildConfigurations = (
 				80FBDFCF43796CA155FBC38A /* Debug */,
 				68F246BD818BA75693294371 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AFB6375FA8AB26AE68C66925 /* Build configuration list for PBXNativeTarget "AtlasAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A91320B2152453D347819B2E /* Debug */,
+				D2CF1D133D0E5FFAEFA90E2F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
