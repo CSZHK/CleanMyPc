@@ -746,6 +746,22 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             )
         }
 
+        do {
+            try validateRestoreItems(itemsToRestore)
+        } catch let failure as RecoveryRestoreFailure {
+            return rejectedResult(
+                for: request,
+                code: failure.code,
+                reason: failure.localizedDescription
+            )
+        } catch {
+            return rejectedResult(
+                for: request,
+                code: .executionUnavailable,
+                reason: error.localizedDescription
+            )
+        }
+
         var physicalRestoreCount = 0
         var atlasOnlyRestoreCount = 0
 
@@ -770,7 +786,9 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             } else {
                 atlasOnlyRestoreCount += 1
             }
+        }
 
+        for item in itemsToRestore {
             switch item.payload {
             case let .finding(finding):
                 if !state.snapshot.findings.contains(where: { $0.id == finding.id }) {
@@ -785,7 +803,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             }
         }
 
-        state.snapshot.recoveryItems.removeAll { itemIDs.contains($0.id) }
+        state.snapshot.recoveryItems.removeAll { requestedItemIDs.contains($0.id) }
         recalculateReclaimableSpace()
         state.currentPlan = makePreviewPlan(findingIDs: state.snapshot.findings.map(\.id))
 
@@ -932,6 +950,21 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         )
     }
 
+    private func validateRestoreItems(_ items: [RecoveryItem]) throws {
+        for item in items {
+            guard let restoreMappings = item.restoreMappings, !restoreMappings.isEmpty else {
+                continue
+            }
+            try validateRestoreMappings(restoreMappings)
+        }
+    }
+
+    private func validateRestoreMappings(_ restoreMappings: [RecoveryPathMapping]) throws {
+        for mapping in restoreMappings {
+            try validateRestoreTarget(mapping)
+        }
+    }
+
     private func expiredRecoveryItemIDs(asOf now: Date? = nil) -> Set<UUID> {
         let cutoff = now ?? nowProvider()
         return Set(state.snapshot.recoveryItems.compactMap { item in
@@ -1065,30 +1098,62 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         }
     }
 
-    private func restoreRecoveryTarget(_ mapping: RecoveryPathMapping) async throws {
+    private func validateRestoreTarget(_ mapping: RecoveryPathMapping) throws {
         let sourceURL = URL(fileURLWithPath: mapping.trashedPath).resolvingSymlinksInPath()
         let destinationURL = URL(fileURLWithPath: mapping.originalPath).resolvingSymlinksInPath()
         guard FileManager.default.fileExists(atPath: sourceURL.path) else {
             throw RecoveryRestoreFailure.executionUnavailable("Recovery source is no longer available on disk: \(sourceURL.path)")
         }
         if shouldUseHelperForSmartCleanTarget(destinationURL) {
-            guard let helperExecutor else {
+            guard helperExecutor != nil else {
                 throw RecoveryRestoreFailure.helperUnavailable("Bundled helper unavailable for recovery target: \(destinationURL.path)")
             }
-            let result = try await helperExecutor.perform(AtlasHelperAction(kind: .restoreItem, targetPath: sourceURL.path, destinationPath: destinationURL.path))
-            guard result.success else {
-                throw RecoveryRestoreFailure.executionUnavailable(result.message)
-            }
-            return
-        }
-        guard isDirectlyTrashableSmartCleanTarget(destinationURL) else {
+        } else if !isDirectlyTrashableSmartCleanTarget(destinationURL) {
             throw RecoveryRestoreFailure.executionUnavailable("Recovery target is outside the supported execution allowlist: \(destinationURL.path)")
         }
         if FileManager.default.fileExists(atPath: destinationURL.path) {
             throw RecoveryRestoreFailure.restoreConflict("Recovery target already exists: \(destinationURL.path)")
         }
+    }
+
+    private func restoreRecoveryTarget(_ mapping: RecoveryPathMapping) async throws {
+        try validateRestoreTarget(mapping)
+        let sourceURL = URL(fileURLWithPath: mapping.trashedPath).resolvingSymlinksInPath()
+        let destinationURL = URL(fileURLWithPath: mapping.originalPath).resolvingSymlinksInPath()
+        if shouldUseHelperForSmartCleanTarget(destinationURL) {
+            guard let helperExecutor else {
+                throw RecoveryRestoreFailure.helperUnavailable("Bundled helper unavailable for recovery target: \(destinationURL.path)")
+            }
+            do {
+                let result = try await helperExecutor.perform(
+                    AtlasHelperAction(kind: .restoreItem, targetPath: sourceURL.path, destinationPath: destinationURL.path)
+                )
+                guard result.success else {
+                    throw recoveryRestoreFailure(fromHelperMessage: result.message)
+                }
+            } catch let failure as RecoveryRestoreFailure {
+                throw failure
+            } catch let clientError as AtlasHelperClientError {
+                switch clientError {
+                case .helperUnavailable:
+                    throw RecoveryRestoreFailure.helperUnavailable(clientError.localizedDescription)
+                case .encodingFailed, .decodingFailed, .invocationFailed:
+                    throw RecoveryRestoreFailure.executionUnavailable(clientError.localizedDescription)
+                }
+            } catch {
+                throw RecoveryRestoreFailure.executionUnavailable(error.localizedDescription)
+            }
+            return
+        }
         try FileManager.default.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try FileManager.default.moveItem(at: sourceURL, to: destinationURL)
+    }
+
+    private func recoveryRestoreFailure(fromHelperMessage message: String) -> RecoveryRestoreFailure {
+        if message.hasPrefix("Restore destination already exists:") {
+            return .restoreConflict(message)
+        }
+        return .executionUnavailable(message)
     }
 
     private func shouldUseHelperForSmartCleanTarget(_ targetURL: URL) -> Bool {

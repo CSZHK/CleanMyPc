@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-03-13
+
 ### Added
 
 - Native macOS app with 7 MVP modules: Overview, Smart Clean, Apps, History, Recovery, Permissions, Settings
@@ -21,6 +23,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Native packaging: `.app`, `.zip`, `.dmg`, `.pkg` artifact generation
 - Go-based TUI tools inherited from upstream Mole: disk analyzer (`analyze`) and system monitor (`status`)
 - CI/CD: GitHub Actions for formatting, linting, testing, CodeQL scanning, and release packaging
+
+### Fixed
+
+- Recovery restore requests now preflight every selected item before Atlas mutates local recovery state, preventing partial in-memory restore success when a later item fails.
+- Helper-backed restore destination conflicts now surface restore-specific errors instead of falling back to a generic execution-unavailable message.
+- Expired recovery items are pruned from persisted state and rejected with explicit restore-expired messaging.
+- Revalidated the current native release candidate with package tests, app tests, DMG install verification, launch smoke, and native UI automation.
 
 ### Attribution
 

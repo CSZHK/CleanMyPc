@@ -119,6 +119,8 @@ Do not expand into:
 
 - Added one new real Smart Clean execute target class for `~/Library/pnpm/store/*`.
 - Added stronger worker-side truthfulness so Atlas only records recovery/history side effects when a real file move happened.
+- Hardened recovery restore semantics so batched restore requests preflight all selected items before mutating Atlas state.
+- Mapped helper-backed restore destination conflicts back to the restore-specific rejection path instead of the generic execution-unavailable path.
 - Split History recovery messaging between:
   - file-backed restore entries with `restoreMappings`
   - Atlas-only recovery entries with no supported on-disk restore path
@@ -126,17 +128,17 @@ Do not expand into:
 
 ### Current blocker
 
-- Interactive bilingual UI automation on this machine is **blocked** by macOS Accessibility trust for the current terminal process.
-- `./scripts/atlas/ui-automation-preflight.sh` reported `Accessibility trusted for current process: false` on **2026-03-12**.
+- Local UI automation is no longer a hard blocker on this Mac.
+- `./scripts/atlas/full-acceptance.sh` passed on **2026-03-13** for the latest recovery-fix candidate build.
 
-This means the packaged-build install and fresh-state launch checks below are complete, but a full click-through clean-machine bilingual UI walkthrough still requires either:
+The remaining gap is narrower:
 
-- Accessibility trust to be granted on this Mac, or
-- a separate clean machine for the final interactive pass.
+- a dedicated clean-machine bilingual manual walkthrough is still outstanding
+- current packaged-build evidence is still machine-local, not evidence from a second physical clean Mac
 
 ## Packaged-Build Evidence
 
-### Latest artifacts built on 2026-03-12
+### Latest artifacts built on 2026-03-13
 
 - App: `dist/native/Atlas for Mac.app`
 - DMG: `dist/native/Atlas-for-Mac.dmg`
@@ -147,16 +149,19 @@ This means the packaged-build install and fresh-state launch checks below are co
 ### Checksum record
 
 ```text
-b85425649c5d781f234cdf1690ce01f330e3216d963cbf7d8f720a2e66611ffa  Atlas-for-Mac.zip
-2d5f480110d13f83c38e2296fafaa72617fc122d694d78c2c32c3a260f0ae110  Atlas-for-Mac.dmg
-d71c45b0312ceeb045e390d851e246fe7f59e90961f2a482cfb21ee4f65d56ec  Atlas-for-Mac.pkg
+2d5988ac5f03d06b5f8ec2c94869752ad5c67de0f7eeb7b59aeb9e463f6cdee9  Atlas-for-Mac.zip
+2b5d1a1b6636edcf180b5639bcf62734d25e05adcb405419f7a234ade3870c1e  Atlas-for-Mac.dmg
+e89f50a77d9148d18ca78d8a0fd005394fc5848e6ae6a5231700e1b180135495  Atlas-for-Mac.pkg
 ```
 
 ### Verified commands
 
-- `./scripts/atlas/package-native.sh` — **pass** on 2026-03-12
-- `KEEP_INSTALLED_APP=1 ./scripts/atlas/verify-dmg-install.sh` — **pass** on 2026-03-12
-- `STATE_DIR="$PWD/.build/atlas-hardening-fresh-state-2026-03-12" ./scripts/atlas/verify-app-launch.sh` — **pass** on 2026-03-12
+- `./scripts/atlas/full-acceptance.sh` — **pass** on 2026-03-13
+- `./scripts/atlas/package-native.sh` — **pass** on 2026-03-13
+- `./scripts/atlas/verify-bundle-contents.sh` — **pass** on 2026-03-13
+- `KEEP_INSTALLED_APP=1 ./scripts/atlas/verify-dmg-install.sh` — **pass** on 2026-03-13
+- `./scripts/atlas/verify-app-launch.sh` — **pass** on 2026-03-13
+- `./scripts/atlas/run-ui-automation.sh` — **pass** on 2026-03-13 for the latest recovery-fix candidate build
 
 ### Fresh-state file evidence
 
@@ -170,19 +175,19 @@ This is a machine-local fresh-state packaged-build verification, not a claim of 
 
 ### 1. Clean-machine bilingual QA
 
-**Status:** `Partially complete / locally blocked`
+**Status:** `Partially complete / manual clean-machine pass still pending`
 
 Completed evidence:
 
 - Packaged install path verified to `~/Applications/Atlas for Mac.app`
 - Fresh-state packaged launch verified with a brand-new workspace-state directory
 - Default first-launch language persisted as `zh-Hans`
-- Language-switch persistence covered by app-model test evidence
+- Language-switch persistence covered by app-model test evidence and local UI automation
 - Smart Clean, Apps, and Recovery trust paths covered by package and app tests listed below
 
 Remaining blocker:
 
-- Interactive packaged-app UI walkthrough for first launch + bilingual control verification is blocked on local Accessibility trust
+- A dedicated clean-machine bilingual manual walkthrough is still not recorded for this candidate build
 
 ### 2. Fresh-state verification with latest packaged build
 
@@ -231,6 +236,7 @@ Behavior tightened so that:
 
 - `swift test --package-path Packages --filter MoleSmartCleanAdapterTests` — **pass** on 2026-03-12
 - `swift test --package-path Packages --filter AtlasInfrastructureTests` — **pass** on 2026-03-12
+- `swift test --package-path Packages` — **pass** on 2026-03-13 after the recovery restore atomicity and helper-conflict fix
 
 Key tests:
 
@@ -244,6 +250,7 @@ Key tests:
 ### App-model coverage
 
 - `swift test --package-path Apps --filter AtlasAppModelTests` — **pass** on 2026-03-12
+- `swift test --package-path Apps` — **pass** on 2026-03-13 after the recovery restore atomicity and helper-conflict fix
 
 Key tests:
 
@@ -251,6 +258,7 @@ Key tests:
 - `testPreferredXPCWorkerPathFailsClosedWhenScanIsRejected`
 - `testExecuteCurrentPlanExposesExplicitExecutionIssueWhenWorkerRejectsExecution`
 - `testExecuteCurrentPlanOnlyRecordsRecoveryForRealSideEffects`
+- `testRestoreExpiredRecoveryItemReloadsPersistedState`
 - `testRestoreRecoveryItemReturnsFindingToWorkspace`
 
 ## QA Matrix
@@ -260,7 +268,7 @@ Key tests:
 | First launch | packaged app launch smoke with new state dir | Pass |
 | Install path | DMG install validation to `~/Applications` | Pass |
 | Default language | fresh packaged state file persisted `zh-Hans` | Pass |
-| Language switching | app-model persistence test; UI click-through still blocked locally | Partial |
+| Language switching | app-model persistence test plus local UI automation pass on 2026-03-13; clean-machine manual pass still pending | Partial |
 | Smart Clean execute | package tests + real file-backed contract tests | Pass |
 | Apps | app-model and infrastructure uninstall/recovery tests | Pass |
 | History / Recovery | file-backed vs Atlas-only summary/copy split + restore tests | Pass |
@@ -281,6 +289,8 @@ Do not say:
 
 ## Files Changed for Hardening
 
+- `Apps/AtlasApp/Sources/AtlasApp/AtlasAppModel.swift`
+- `Packages/AtlasApplication/Sources/AtlasApplication/AtlasApplication.swift`
 - `Packages/AtlasInfrastructure/Sources/AtlasInfrastructure/AtlasInfrastructure.swift`
 - `Packages/AtlasInfrastructure/Tests/AtlasInfrastructureTests/AtlasInfrastructureTests.swift`
 - `Packages/AtlasCoreAdapters/Sources/AtlasCoreAdapters/MoleSmartCleanAdapter.swift`
