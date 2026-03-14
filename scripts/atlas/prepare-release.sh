@@ -7,7 +7,7 @@ APP_MODEL_FILE="$ROOT_DIR/Apps/AtlasApp/Sources/AtlasApp/AtlasAppModel.swift"
 CHANGELOG_FILE="$ROOT_DIR/CHANGELOG.md"
 
 usage() {
-    cat <<'EOF'
+    cat << 'EOF'
 Usage:
   ./scripts/atlas/prepare-release.sh <version> [build-number] [release-date]
 
