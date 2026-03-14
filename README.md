@@ -32,6 +32,12 @@ Download the latest release from the [Releases](https://github.com/CSZHK/CleanMy
 
 Prefer the latest non-prerelease release if you want the normal public install path. GitHub prereleases may contain development-signed builds intended for testing; those builds can require `Open Anyway` or a right-click `Open` flow before launch.
 
+If you install a prerelease and macOS blocks the app, you will see a warning similar to this in `System Settings -> Privacy & Security`:
+
+<p align="center">
+  <img src="Docs/Media/README/atlas-prerelease-warning.png" alt="macOS Security warning for Atlas for Mac prerelease build with Open Anyway action" width="900" />
+</p>
+
 ### Requirements
 
 - macOS 14.0 (Sonoma) or later
