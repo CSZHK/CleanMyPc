@@ -72,6 +72,8 @@
 - Distribution target: `Developer ID + Hardened Runtime + Notarization`
 - Initial release target: direct distribution, not Mac App Store
 - Native packaging currently uses `xcodegen + xcodebuild`, embeds the helper into `Contents/Helpers/`, and emits `.zip`, `.dmg`, and `.pkg` distribution artifacts.
+- Tagged GitHub Releases reuse the same native packaging scripts in CI and publish `.zip`, `.dmg`, `.pkg`, and checksum assets.
+- When release signing credentials are configured, CI signs and notarizes those assets; otherwise it falls back to a local development signing identity and marks the GitHub Release as a prerelease.
 - Local internal packaging now prefers a stable non-ad-hoc app signature when a usable identity is available, so macOS TCC decisions can survive rebuilds more reliably during development.
 - If Apple release certificates are unavailable, Atlas can fall back to a repo-managed local signing keychain for stable app-bundle identity; public release artifacts still require `Developer ID`.
 

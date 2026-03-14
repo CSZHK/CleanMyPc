@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-03-14
+
+### Added
+
+- Tag-driven GitHub Releases now publish Atlas native `.zip`, `.dmg`, and `.pkg` assets in addition to the legacy command-line binaries.
+- Added `scripts/atlas/prepare-release.sh` to align app version, build number, and changelog scaffolding before tagging a release.
+
+### Changed
+
+- Release automation now falls back to a development-signed prerelease path when `Developer ID` signing credentials are unavailable, instead of blocking native packaging entirely.
+- README installation guidance now distinguishes signed public releases from development prereleases and recommends local stable signing for developer packaging.
+
+### Fixed
+
+- `package-native.sh` and `signing-preflight.sh` now support `notarytool` profiles stored in a non-default keychain, which unblocks CI-based notarization.
+
 ## [1.0.1] - 2026-03-13
 
 ### Added

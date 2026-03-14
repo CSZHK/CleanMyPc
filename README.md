@@ -30,6 +30,8 @@ Download the latest release from the [Releases](https://github.com/CSZHK/CleanMy
 - **`.zip`** — Extract and move Atlas.app to your Applications folder.
 - **`.pkg`** — Run the installer package for guided installation.
 
+Prefer the latest non-prerelease release if you want the normal public install path. GitHub prereleases may contain development-signed builds intended for testing; those builds can require `Open Anyway` or a right-click `Open` flow before launch.
+
 ### Requirements
 
 - macOS 14.0 (Sonoma) or later
@@ -51,7 +53,7 @@ xcodegen generate
 open Atlas.xcodeproj
 ```
 
-> **Note**: The app is currently unsigned. On first launch, you may need to right-click and select "Open" to bypass Gatekeeper, or go to System Settings > Privacy & Security to allow it.
+> **Note**: Atlas release assets can be either `Developer ID signed + notarized` or `development prerelease` builds, depending on the release. If you install a prerelease or a local build, macOS may require `Open Anyway` or a right-click `Open` flow before launch.
 
 ## MVP Modules
 
@@ -115,8 +117,11 @@ open Atlas.xcodeproj
 ### Package `.zip`, `.dmg`, and `.pkg` artifacts
 
 ```bash
+./scripts/atlas/ensure-local-signing-identity.sh
 ./scripts/atlas/package-native.sh
 ```
+
+The local signing step is recommended on machines that do not have Apple release certificates. It gives local and prerelease builds a stable development signature instead of falling back to ad hoc packaging.
 
 ### Run focused tests
 

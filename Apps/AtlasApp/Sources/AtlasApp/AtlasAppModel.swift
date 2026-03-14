@@ -100,11 +100,11 @@ final class AtlasAppModel: ObservableObject {
     }
 
     var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.1"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.2"
     }
 
     var appBuild: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "2"
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "3"
     }
 
     func checkForUpdate() async {

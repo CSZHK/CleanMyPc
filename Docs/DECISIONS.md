@@ -40,6 +40,8 @@
 
 - Destructive helper actions use a structured executable boundary with path validation
 - Native MVP packaging uses `xcodegen + xcodebuild`, then embeds the helper into the app bundle
+- Tagged GitHub Releases should publish the native `.zip`, `.dmg`, and `.pkg` assets from CI using the same packaging scripts as local release builds
+- If CI lacks `Developer ID` release credentials, tagged native assets may still be published as development-signed prereleases instead of blocking the packaging path entirely
 - Signing and notarization remain optional release-time steps driven by credentials
 - Internal packaging should prefer a stable local app-signing identity over ad hoc signing whenever possible so macOS permission state does not drift across rebuilds
 

@@ -7,6 +7,7 @@ source "$ROOT_DIR/scripts/atlas/signing-common.sh"
 APP_IDENTITY_OVERRIDE="${ATLAS_CODESIGN_IDENTITY:-}"
 INSTALLER_IDENTITY_OVERRIDE="${ATLAS_INSTALLER_SIGN_IDENTITY:-}"
 NOTARY_PROFILE_OVERRIDE="${ATLAS_NOTARY_PROFILE:-}"
+NOTARY_KEYCHAIN_OVERRIDE="${ATLAS_NOTARY_KEYCHAIN:-}"
 
 codesign_output="$(security find-identity -v -p codesigning 2> /dev/null || true)"
 basic_output="$(security find-identity -v -p basic 2> /dev/null || true)"
@@ -26,6 +27,9 @@ printf '======================\n'
 printf 'Developer ID Application: %s\n' "${app_identity:-MISSING}"
 printf 'Developer ID Installer:   %s\n' "${installer_identity:-MISSING}"
 printf 'Notary profile:           %s\n' "${NOTARY_PROFILE_OVERRIDE:-MISSING}"
+if [[ -n "$NOTARY_KEYCHAIN_OVERRIDE" ]]; then
+    printf 'Notary keychain:          %s\n' "$NOTARY_KEYCHAIN_OVERRIDE"
+fi
 if [[ -n "$local_identity" ]]; then
     printf 'Stable local app identity: %s\n' "$local_identity"
 else
@@ -47,7 +51,12 @@ if [[ -z "$NOTARY_PROFILE_OVERRIDE" ]]; then
 fi
 
 if [[ -n "$NOTARY_PROFILE_OVERRIDE" ]]; then
-    if xcrun notarytool history --keychain-profile "$NOTARY_PROFILE_OVERRIDE" > /dev/null 2>&1; then
+    notarytool_args=(history --keychain-profile "$NOTARY_PROFILE_OVERRIDE")
+    if [[ -n "$NOTARY_KEYCHAIN_OVERRIDE" ]]; then
+        notarytool_args+=(--keychain "$NOTARY_KEYCHAIN_OVERRIDE")
+    fi
+
+    if xcrun notarytool "${notarytool_args[@]}" > /dev/null 2>&1; then
         echo '✓ notarytool profile is usable'
     else
         echo '✗ notarytool profile could not be validated'

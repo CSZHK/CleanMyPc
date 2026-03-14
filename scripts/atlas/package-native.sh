@@ -21,6 +21,7 @@ APP_SIGNING_KEYCHAIN="$(atlas_resolve_app_signing_keychain "$APP_SIGN_IDENTITY")
 APP_SIGNING_MODE="$(atlas_signing_mode_for_identity "$APP_SIGN_IDENTITY")"
 INSTALLER_SIGN_IDENTITY="$(atlas_resolve_installer_signing_identity)"
 NOTARY_PROFILE="${ATLAS_NOTARY_PROFILE:-}"
+NOTARY_KEYCHAIN="${ATLAS_NOTARY_KEYCHAIN:-}"
 
 mkdir -p "$DIST_DIR"
 
@@ -122,10 +123,15 @@ echo "Installer package: $PKG_PATH"
 echo "Checksums: $SHA_PATH"
 
 if [[ -n "$NOTARY_PROFILE" && "$APP_SIGNING_MODE" == "developer-id" && -n "$INSTALLER_SIGN_IDENTITY" ]]; then
-    xcrun notarytool submit "$PKG_PATH" --keychain-profile "$NOTARY_PROFILE" --wait
+    notarytool_args=(--keychain-profile "$NOTARY_PROFILE")
+    if [[ -n "$NOTARY_KEYCHAIN" ]]; then
+        notarytool_args+=(--keychain "$NOTARY_KEYCHAIN")
+    fi
+
+    xcrun notarytool submit "$PKG_PATH" "${notarytool_args[@]}" --wait
     xcrun stapler staple "$PKG_PATH"
-    xcrun notarytool submit "$DMG_PATH" --keychain-profile "$NOTARY_PROFILE" --wait
-    xcrun notarytool submit "$ZIP_PATH" --keychain-profile "$NOTARY_PROFILE" --wait
+    xcrun notarytool submit "$DMG_PATH" "${notarytool_args[@]}" --wait
+    xcrun notarytool submit "$ZIP_PATH" "${notarytool_args[@]}" --wait
     xcrun stapler staple "$PACKAGED_APP_PATH"
     /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$PACKAGED_APP_PATH" "$ZIP_PATH"
     (
