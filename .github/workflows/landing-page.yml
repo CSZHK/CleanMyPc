@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'Apps/LandingSite/**'
+      - '.github/workflows/landing-page.yml'
     branches: [main]
   release:
     types: [published]
