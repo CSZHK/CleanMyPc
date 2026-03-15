@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const OWNER = 'nicekid1';
+const OWNER = 'CSZHK';
 const REPO = 'CleanMyPc';
 const OUTPUT = join(__dirname, '..', 'src', 'data', 'release-manifest.json');
 

@@ -51,7 +51,7 @@ export function getDownloadUrl(manifest: ReleaseManifest): string {
     manifest.assets.zip ??
     manifest.assets.pkg ??
     manifest.releaseUrl ??
-    'https://github.com/nicekid1/CleanMyPc/releases'
+    'https://github.com/CSZHK/CleanMyPc/releases'
   );
 }
 
