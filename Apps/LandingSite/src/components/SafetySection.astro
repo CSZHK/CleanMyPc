@@ -1,0 +1,141 @@
+---
+import { t, type Locale } from '../i18n/utils';
+import { getRelease } from '../data/release';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+const manifest = getRelease();
+---
+
+<section class="safety section band--dark fade-in" id="safety">
+  <div class="safety__inner container">
+    <div class="safety__header">
+      <h2 class="safety__title">{copy.safety.sectionTitle}</h2>
+      <p class="safety__subtitle">{copy.safety.subtitle}</p>
+    </div>
+
+    <div class="safety__grid">
+      {copy.safety.points.map((point) => (
+        <div class="safety__card">
+          <h3 class="safety__card-title">{point.title}</h3>
+          <p class="safety__card-desc">{point.description}</p>
+        </div>
+      ))}
+    </div>
+
+    {manifest.gatekeeperWarning && (
+      <div class="safety__gatekeeper">
+        <h3 class="safety__gk-title">{copy.safety.gatekeeperGuide.title}</h3>
+        <ol class="safety__gk-steps">
+          {copy.safety.gatekeeperGuide.steps.map((step) => (
+            <li class="safety__gk-step">{step}</li>
+          ))}
+        </ol>
+        <div class="safety__gk-visual">
+          <img
+            src="/images/screenshots/atlas-prerelease-warning.png"
+            alt={locale === 'zh' ? 'macOS Gatekeeper 预发布警告示意' : 'macOS Gatekeeper prerelease warning'}
+            width="400"
+            height="280"
+            loading="lazy"
+            class="safety__gk-img"
+          />
+        </div>
+      </div>
+    )}
+  </div>
+</section>
+
+<style>
+  .safety__header {
+    text-align: center;
+    margin-bottom: var(--atlas-space-section-gap);
+  }
+
+  .safety__title {
+    font-size: var(--atlas-text-section);
+    font-weight: var(--atlas-text-section-weight);
+    margin-bottom: var(--atlas-space-md);
+  }
+
+  .safety__subtitle {
+    font-size: clamp(1rem, 2vw, 1.125rem);
+    color: var(--atlas-color-text-secondary);
+    max-width: 600px;
+    margin-inline: auto;
+    line-height: var(--atlas-leading-normal);
+  }
+
+  .safety__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--atlas-space-xxl);
+    margin-bottom: var(--atlas-space-section-gap);
+  }
+
+  .safety__card {
+    padding: var(--atlas-space-xl);
+    background: var(--atlas-color-bg-surface);
+    border: 1px solid var(--atlas-color-border);
+    border-radius: var(--atlas-radius-xl);
+  }
+
+  .safety__card-title {
+    font-family: var(--atlas-font-display);
+    font-size: var(--atlas-text-card-title);
+    font-weight: var(--atlas-text-card-title-weight);
+    color: var(--atlas-color-text-primary);
+    margin-bottom: var(--atlas-space-sm);
+  }
+
+  .safety__card-desc {
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-text-secondary);
+    line-height: var(--atlas-leading-normal);
+  }
+
+  .safety__gatekeeper {
+    padding: var(--atlas-space-xxl);
+    background: rgba(245, 158, 11, 0.05);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    border-radius: var(--atlas-radius-xl);
+  }
+
+  .safety__gk-title {
+    font-family: var(--atlas-font-display);
+    font-size: var(--atlas-text-card-title);
+    font-weight: var(--atlas-text-card-title-weight);
+    color: var(--atlas-color-warning);
+    margin-bottom: var(--atlas-space-lg);
+  }
+
+  .safety__gk-steps {
+    list-style: decimal;
+    list-style-position: inside;
+    display: flex;
+    flex-direction: column;
+    gap: var(--atlas-space-sm);
+    margin-bottom: var(--atlas-space-xl);
+  }
+
+  .safety__gk-step {
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-text-secondary);
+    line-height: var(--atlas-leading-normal);
+  }
+
+  .safety__gk-visual {
+    display: flex;
+    justify-content: center;
+  }
+
+  .safety__gk-img {
+    border-radius: var(--atlas-radius-md);
+    border: 1px solid var(--atlas-color-border);
+    max-width: 400px;
+  }
+</style>

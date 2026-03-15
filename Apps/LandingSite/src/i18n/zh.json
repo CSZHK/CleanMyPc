@@ -1,0 +1,236 @@
+{
+  "meta": {
+    "title": "Atlas for Mac — 可解释、可恢复的 Mac 维护工作台",
+    "description": "Atlas 是一款开源 macOS 维护工具，扫描前可预览，操作后可恢复。面向开发者和进阶用户设计。",
+    "ogImage": "/images/og-atlas-zh.png"
+  },
+  "nav": {
+    "whyAtlas": "为什么选 Atlas",
+    "howItWorks": "工作流程",
+    "developers": "开发者友好",
+    "safety": "安全机制",
+    "faq": "常见问题",
+    "download": "下载"
+  },
+  "hero": {
+    "headline": "Mac 维护，每一步都可解释、可恢复",
+    "subheadline": "Atlas 是开源的 macOS 维护工作台。扫描结果逐项说明，清理操作支持回滚，不静默删除任何文件。",
+    "ctaPrimary": "下载 Atlas",
+    "ctaSecondary": "查看源码",
+    "badgeStable": "稳定版",
+    "badgePrerelease": "预发布版",
+    "badgeComingSoon": "即将推出",
+    "prereleaseWarning": "预发布版本仅供测试，可能存在未知问题。请勿在生产环境使用。",
+    "gatekeeperNote": "首次打开需右键选择「打开」以通过 macOS Gatekeeper 验证。",
+    "versionLabel": "版本 {version} · {date}"
+  },
+  "trustStrip": {
+    "openSource": "完整开源",
+    "recoveryFirst": "恢复优先",
+    "developerAware": "开发者友好",
+    "macNative": "原生 macOS",
+    "directDownload": "直接下载"
+  },
+  "problem": {
+    "sectionTitle": "为什么选 Atlas",
+    "scenarios": [
+      {
+        "before": "清理工具删了文件，不告诉你删的是什么",
+        "after": "Atlas 扫描后逐项列出结果，你确认后才执行"
+      },
+      {
+        "before": "误删了配置文件，无法恢复",
+        "after": "Atlas 在保留期内支持逐项恢复（如适用）"
+      },
+      {
+        "before": "工具要求完全磁盘访问权限，却不解释原因",
+        "after": "Atlas 按需申请权限，每次都说明用途"
+      }
+    ]
+  },
+  "features": {
+    "sectionTitle": "核心功能",
+    "cards": [
+      {
+        "title": "系统概览",
+        "value": "一屏掌握 Mac 健康状态",
+        "example": "磁盘用量、缓存占比、可回收空间，一目了然",
+        "trustCue": "只读扫描，不做任何修改"
+      },
+      {
+        "title": "智能清理",
+        "value": "扫描、审查计划、确认后执行",
+        "example": "系统缓存 3.2 GB — 查看明细后决定是否清理",
+        "trustCue": "每次清理前自动备份，支持回滚"
+      },
+      {
+        "title": "应用管理",
+        "value": "分析应用完整足迹并规划卸载",
+        "example": "查看某应用在磁盘上遗留的所有关联文件",
+        "trustCue": "卸载前列出全部待删文件，逐项确认"
+      },
+      {
+        "title": "操作历史",
+        "value": "完整审计轨迹与恢复时间线",
+        "example": "查看过去 30 天内每次清理操作的详细记录",
+        "trustCue": "所有操作均可追溯，不存在静默行为"
+      },
+      {
+        "title": "文件恢复",
+        "value": "保留期内可逐项还原（如适用）",
+        "example": "误删的配置文件可在保留窗口内恢复",
+        "trustCue": "基于文件级备份，非快照机制"
+      },
+      {
+        "title": "权限管理",
+        "value": "最小权限原则，用前先说明",
+        "example": "仅在扫描下载目录时才请求对应权限",
+        "trustCue": "每项权限均附带用途说明"
+      }
+    ]
+  },
+  "howItWorks": {
+    "sectionTitle": "工作流程",
+    "steps": [
+      {
+        "label": "扫描",
+        "description": "Atlas 只读扫描磁盘，识别缓存、日志、残留文件等可清理项目。"
+      },
+      {
+        "label": "审查",
+        "description": "扫描结果逐项展示，附带说明和空间占用，由你决定保留或清理。"
+      },
+      {
+        "label": "执行",
+        "description": "确认后执行清理。被移除的文件在保留期内自动备份（如适用）。"
+      },
+      {
+        "label": "恢复",
+        "description": "在保留窗口内，可通过操作历史逐项还原已清理的文件。"
+      }
+    ]
+  },
+  "developer": {
+    "sectionTitle": "开发者友好",
+    "subtitle": "Atlas 识别开发工具链，避免误删关键文件。",
+    "items": [
+      {
+        "title": "工具链感知",
+        "description": "自动识别 Homebrew、Xcode、Node.js 等开发环境的缓存和产物，标记为安全项或谨慎项。"
+      },
+      {
+        "title": "项目目录保护",
+        "description": "检测 .git、node_modules、build 等项目目录，扫描时默认排除，避免干扰开发流程。"
+      },
+      {
+        "title": "命令行集成",
+        "description": "提供 CLI 工具支持脚本化扫描和清理，方便集成到自动化工作流。"
+      },
+      {
+        "title": "透明的操作日志",
+        "description": "所有操作记录完整的审计日志，包含路径、大小和时间戳，便于排查问题。"
+      }
+    ]
+  },
+  "safety": {
+    "sectionTitle": "安全机制",
+    "subtitle": "Atlas 的设计原则：操作前告知，操作后可恢复。",
+    "points": [
+      {
+        "title": "操作前预览",
+        "description": "每次清理前完整展示待处理文件列表，不存在「一键清理」的黑箱操作。"
+      },
+      {
+        "title": "文件级备份",
+        "description": "被清理的文件在保留期内自动备份，支持从操作历史中逐项恢复（如适用）。"
+      },
+      {
+        "title": "最小权限",
+        "description": "Atlas 仅在需要时请求特定权限，每次均说明用途。不要求完全磁盘访问权限即可运行基础功能。"
+      }
+    ],
+    "gatekeeperGuide": {
+      "title": "首次打开 Atlas",
+      "steps": [
+        "从官网下载 Atlas .dmg 文件",
+        "将 Atlas 拖入「应用程序」文件夹",
+        "右键点击 Atlas 图标，选择「打开」",
+        "在弹出的对话框中点击「打开」以确认"
+      ]
+    }
+  },
+  "screenshots": {
+    "sectionTitle": "界面预览",
+    "items": [
+      {
+        "src": "/images/screenshots/atlas-overview.png",
+        "alt": "Atlas 系统概览界面",
+        "caption": "系统概览 — 磁盘健康、缓存占比、可回收空间"
+      },
+      {
+        "src": "/images/screenshots/atlas-smart-clean.png",
+        "alt": "Atlas 智能清理界面",
+        "caption": "智能清理 — 扫描结果逐项展示，确认后执行"
+      },
+      {
+        "src": "/images/screenshots/atlas-apps.png",
+        "alt": "Atlas 应用管理界面",
+        "caption": "应用管理 — 查看应用完整足迹和关联文件"
+      },
+      {
+        "src": "/images/screenshots/atlas-history.png",
+        "alt": "Atlas 操作历史界面",
+        "caption": "操作历史 — 完整审计轨迹与恢复入口"
+      },
+      {
+        "src": "/images/screenshots/atlas-settings.png",
+        "alt": "Atlas 设置界面",
+        "caption": "设置 — 权限管理与保留期配置"
+      }
+    ]
+  },
+  "openSource": {
+    "sectionTitle": "开源透明",
+    "repoLabel": "GitHub 仓库",
+    "licenseLabel": "开源协议",
+    "attributionLabel": "第三方致谢",
+    "changelogLabel": "更新日志"
+  },
+  "faq": {
+    "sectionTitle": "常见问题",
+    "items": [
+      {
+        "question": "Atlas 经过签名和公证吗？",
+        "answer": "Atlas 使用 Apple Developer ID 签名，并通过 Apple 公证服务验证。首次打开时，macOS Gatekeeper 会自动校验完整性。预发布版本可能未经公证，需要手动确认打开。"
+      },
+      {
+        "question": "预发布版本安装后会怎样？",
+        "answer": "预发布版本可能包含未完成的功能或已知问题，仅供测试用途。由于未经 Apple 公证，首次打开需要右键选择「打开」。建议不要在重要设备上作为主力工具使用。"
+      },
+      {
+        "question": "Atlas 会上传我的文件吗？",
+        "answer": "不会。Atlas 完全在本地运行，不收集、不上传任何用户文件或个人数据。扫描结果和操作记录均存储在本机。源代码完整开源，可自行审查。"
+      },
+      {
+        "question": "「可恢复」具体指什么？",
+        "answer": "Atlas 在执行清理前，会将待删除文件备份到本地保留目录。在保留期（默认 30 天）内，你可以通过操作历史逐项恢复已清理的文件。保留期过后，备份文件将被自动清除。此机制基于文件级备份，并非系统快照，部分场景可能不适用。"
+      },
+      {
+        "question": "Atlas 需要「完全磁盘访问」权限吗？",
+        "answer": "基础功能无需完全磁盘访问权限即可运行。Atlas 遵循最小权限原则，仅在需要扫描特定受保护目录时才会请求对应权限，并在请求前说明用途。"
+      },
+      {
+        "question": "Atlas 是 Mac App Store 应用吗？",
+        "answer": "目前不是。Atlas 通过官网直接下载分发，以保留完整的系统维护能力。Mac App Store 的沙箱限制会影响核心清理和恢复功能。未来可能考虑上架精简版本。"
+      }
+    ]
+  },
+  "footer": {
+    "download": "下载 Atlas",
+    "github": "GitHub",
+    "documentation": "使用文档",
+    "privacy": "隐私政策",
+    "security": "安全说明",
+    "copyright": "Atlas for Mac. 开源项目，基于 MIT 协议发布。"
+  }
+}

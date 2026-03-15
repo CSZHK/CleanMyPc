@@ -1,0 +1,74 @@
+---
+interface Props {
+  title: string;
+  value: string;
+  example: string;
+  trustCue: string;
+}
+
+const { title, value, example, trustCue } = Astro.props;
+---
+
+<article class="feature-card fade-in">
+  <h3 class="feature-card__title">{title}</h3>
+  <p class="feature-card__value">{value}</p>
+  <p class="feature-card__example">{example}</p>
+  <p class="feature-card__trust">
+    <svg class="feature-card__trust-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M11.5 4L5.5 10L2.5 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    {trustCue}
+  </p>
+</article>
+
+<style>
+  .feature-card {
+    padding: var(--atlas-space-xl);
+    background: var(--atlas-color-bg-surface);
+    border: 1px solid var(--atlas-color-border);
+    border-radius: var(--atlas-radius-xl);
+    box-shadow: var(--atlas-shadow-raised);
+    transition: transform var(--atlas-motion-fast),
+                box-shadow var(--atlas-motion-fast);
+  }
+
+  .feature-card:hover {
+    transform: scale(1.008);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .feature-card__title {
+    font-family: var(--atlas-font-display);
+    font-size: var(--atlas-text-card-title);
+    font-weight: var(--atlas-text-card-title-weight);
+    color: var(--atlas-color-text-primary);
+    margin-bottom: var(--atlas-space-sm);
+  }
+
+  .feature-card__value {
+    font-size: var(--atlas-text-body);
+    color: var(--atlas-color-text-primary);
+    line-height: var(--atlas-leading-normal);
+    margin-bottom: var(--atlas-space-md);
+  }
+
+  .feature-card__example {
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-text-secondary);
+    line-height: var(--atlas-leading-normal);
+    margin-bottom: var(--atlas-space-lg);
+  }
+
+  .feature-card__trust {
+    display: flex;
+    align-items: center;
+    gap: var(--atlas-space-xs);
+    font-size: var(--atlas-text-caption);
+    font-weight: var(--atlas-text-caption-weight);
+    color: var(--atlas-color-accent);
+  }
+
+  .feature-card__trust-icon {
+    flex-shrink: 0;
+  }
+</style>

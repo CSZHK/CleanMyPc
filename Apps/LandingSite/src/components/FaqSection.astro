@@ -1,0 +1,97 @@
+---
+import { t, type Locale } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+---
+
+<section class="faq section band--surface fade-in" id="faq">
+  <div class="faq__inner container">
+    <h2 class="faq__title">{copy.faq.sectionTitle}</h2>
+
+    <div class="faq__list">
+      {copy.faq.items.map((item) => (
+        <details class="faq__item">
+          <summary class="faq__question">
+            <span>{item.question}</span>
+            <svg class="faq__chevron" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M5 8L10 13L15 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </summary>
+          <div class="faq__answer">
+            <p>{item.answer}</p>
+          </div>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .faq__title {
+    font-size: var(--atlas-text-section);
+    font-weight: var(--atlas-text-section-weight);
+    text-align: center;
+    margin-bottom: var(--atlas-space-section-gap);
+  }
+
+  .faq__list {
+    max-width: var(--atlas-width-reading);
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--atlas-space-md);
+  }
+
+  .faq__item {
+    border: 1px solid var(--atlas-color-border);
+    border-radius: var(--atlas-radius-lg);
+    background: var(--atlas-color-bg-base);
+    overflow: hidden;
+    transition: border-color var(--atlas-motion-fast);
+  }
+
+  .faq__item[open] {
+    border-color: var(--atlas-color-border-emphasis);
+  }
+
+  .faq__question {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--atlas-space-lg);
+    padding: var(--atlas-space-xl);
+    font-size: var(--atlas-text-body);
+    font-weight: 500;
+    color: var(--atlas-color-text-primary);
+    list-style: none;
+  }
+
+  .faq__question:hover {
+    color: var(--atlas-color-accent);
+  }
+
+  .faq__chevron {
+    flex-shrink: 0;
+    color: var(--atlas-color-text-tertiary);
+    transition: transform var(--atlas-motion-fast);
+  }
+
+  .faq__item[open] .faq__chevron {
+    transform: rotate(180deg);
+  }
+
+  .faq__answer {
+    padding: 0 var(--atlas-space-xl) var(--atlas-space-xl);
+  }
+
+  .faq__answer p {
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-text-secondary);
+    line-height: var(--atlas-leading-relaxed);
+  }
+</style>

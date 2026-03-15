@@ -112,3 +112,11 @@
 - Owner: `Product Agent`
 - Risk: GA release notes, README copy, or in-app messaging may overstate Atlas's recovery model before physical restore is actually shipped for file-backed recoverable actions.
 - Mitigation: Treat recovery wording as a gated release artifact. Either ship physical restore for file-backed recoverable actions before GA or narrow all GA-facing recovery claims to the shipped behavior.
+
+## R-015 Launch Surface Trust Drift
+
+- Impact: High
+- Probability: Medium
+- Owner: `Product Agent`
+- Risk: A future landing page or custom-domain launch surface may overstate release readiness, signed-install status, recovery behavior, or permission expectations relative to the actual downloadable build.
+- Mitigation: Make release-channel state and install guidance dynamic, keep prerelease warnings visible, and gate launch-surface copy review with the same trust standards used for README and release materials.

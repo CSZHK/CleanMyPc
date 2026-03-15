@@ -1,0 +1,210 @@
+---
+import CtaButton from './CtaButton.astro';
+import { t, type Locale } from '../i18n/utils';
+import { getRelease, getDownloadUrl } from '../data/release';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+const manifest = getRelease();
+const downloadUrl = getDownloadUrl(manifest);
+const altLocale = locale === 'zh' ? 'en' : 'zh';
+const altPath = locale === 'zh' ? '/en/' : '/zh/';
+const altLabel = locale === 'zh' ? 'EN' : '中文';
+
+const navItems = [
+  { label: copy.nav.whyAtlas, href: '#why' },
+  { label: copy.nav.howItWorks, href: '#how' },
+  { label: copy.nav.developers, href: '#developers' },
+  { label: copy.nav.safety, href: '#safety' },
+  { label: copy.nav.faq, href: '#faq' },
+];
+---
+
+<header class="navbar" id="navbar">
+  <nav class="navbar__inner container" aria-label="Main navigation">
+    <a href={`/${locale}/`} class="navbar__brand" aria-label="Atlas for Mac">
+      <img src="/images/atlas-icon.png" alt="" width="32" height="32" class="navbar__logo" />
+      <span class="navbar__wordmark">Atlas</span>
+    </a>
+
+    <ul class="navbar__links" id="nav-links">
+      {navItems.map((item) => (
+        <li><a href={item.href} class="navbar__link">{item.label}</a></li>
+      ))}
+    </ul>
+
+    <div class="navbar__actions">
+      <a href={altPath} class="navbar__lang" aria-label={`Switch to ${altLabel}`}>
+        {altLabel}
+      </a>
+      <CtaButton
+        label={copy.nav.download}
+        href={downloadUrl}
+        variant="primary"
+        class="navbar__cta"
+      />
+      <button class="navbar__menu-btn" id="menu-btn" aria-label="Menu" aria-expanded="false">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<script>
+  const btn = document.getElementById('menu-btn');
+  const links = document.getElementById('nav-links');
+  if (btn && links) {
+    btn.addEventListener('click', () => {
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      links.classList.toggle('is-open');
+    });
+  }
+
+  // Sticky background on scroll
+  let ticking = false;
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        if (navbar) {
+          navbar.classList.toggle('is-scrolled', window.scrollY > 40);
+        }
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+</script>
+
+<style>
+  .navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding-block: var(--atlas-space-md);
+    transition: background-color var(--atlas-motion-standard),
+                backdrop-filter var(--atlas-motion-standard);
+  }
+
+  .navbar.is-scrolled {
+    background-color: rgba(13, 15, 17, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--atlas-color-border);
+  }
+
+  .navbar__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--atlas-space-xxl);
+  }
+
+  .navbar__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--atlas-space-sm);
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+
+  .navbar__logo {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--atlas-radius-sm);
+  }
+
+  .navbar__wordmark {
+    font-family: var(--atlas-font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--atlas-color-text-primary);
+  }
+
+  .navbar__links {
+    display: flex;
+    align-items: center;
+    gap: var(--atlas-space-xxl);
+    flex: 1;
+  }
+
+  .navbar__link {
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-text-secondary);
+    text-decoration: none;
+    transition: color var(--atlas-motion-fast);
+    white-space: nowrap;
+  }
+
+  .navbar__link:hover {
+    color: var(--atlas-color-text-primary);
+  }
+
+  .navbar__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--atlas-space-lg);
+    flex-shrink: 0;
+  }
+
+  .navbar__lang {
+    font-family: var(--atlas-font-mono);
+    font-size: var(--atlas-text-caption);
+    font-weight: 500;
+    color: var(--atlas-color-text-secondary);
+    text-decoration: none;
+    padding: var(--atlas-space-xxs) var(--atlas-space-sm);
+    border: 1px solid var(--atlas-color-border);
+    border-radius: var(--atlas-radius-sm);
+    transition: color var(--atlas-motion-fast),
+                border-color var(--atlas-motion-fast);
+  }
+
+  .navbar__lang:hover {
+    color: var(--atlas-color-text-primary);
+    border-color: var(--atlas-color-border-emphasis);
+  }
+
+  .navbar__menu-btn {
+    display: none;
+    color: var(--atlas-color-text-secondary);
+  }
+
+  @media (max-width: 860px) {
+    .navbar__links {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      flex-direction: column;
+      padding: var(--atlas-space-xl);
+      background-color: rgba(13, 15, 17, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--atlas-color-border);
+      gap: var(--atlas-space-lg);
+    }
+
+    .navbar__links.is-open {
+      display: flex;
+    }
+
+    .navbar__menu-btn {
+      display: block;
+    }
+
+    :global(.navbar__cta) {
+      display: none;
+    }
+  }
+</style>

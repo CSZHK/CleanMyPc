@@ -1,0 +1,236 @@
+{
+  "meta": {
+    "title": "Atlas for Mac — Explainable, Recovery-First Mac Maintenance",
+    "description": "Atlas is an open-source macOS maintenance tool. Preview before you scan, restore after you clean. Built for developers and power users.",
+    "ogImage": "/images/og-atlas-en.png"
+  },
+  "nav": {
+    "whyAtlas": "Why Atlas",
+    "howItWorks": "How It Works",
+    "developers": "Developers",
+    "safety": "Safety",
+    "faq": "FAQ",
+    "download": "Download"
+  },
+  "hero": {
+    "headline": "Mac maintenance you can explain and reverse",
+    "subheadline": "Atlas is an open-source macOS maintenance workspace. Every scan result is explained, every clean operation is recoverable. Nothing is silently deleted.",
+    "ctaPrimary": "Download Atlas",
+    "ctaSecondary": "View Source",
+    "badgeStable": "Stable",
+    "badgePrerelease": "Prerelease",
+    "badgeComingSoon": "Coming Soon",
+    "prereleaseWarning": "Prerelease builds are for testing only and may contain unresolved issues. Do not use in production.",
+    "gatekeeperNote": "On first launch, right-click and select \"Open\" to pass macOS Gatekeeper verification.",
+    "versionLabel": "Version {version} · {date}"
+  },
+  "trustStrip": {
+    "openSource": "Fully Open Source",
+    "recoveryFirst": "Recovery First",
+    "developerAware": "Developer Aware",
+    "macNative": "Native macOS",
+    "directDownload": "Direct Download"
+  },
+  "problem": {
+    "sectionTitle": "Why Atlas",
+    "scenarios": [
+      {
+        "before": "Cleanup tools delete files without telling you what was removed",
+        "after": "Atlas lists every scan result for your review before executing"
+      },
+      {
+        "before": "Accidentally deleted a config file with no way to recover",
+        "after": "Atlas supports per-item restore within the retention window, when supported"
+      },
+      {
+        "before": "Tools demand Full Disk Access without explaining why",
+        "after": "Atlas requests permissions on demand and explains each one"
+      }
+    ]
+  },
+  "features": {
+    "sectionTitle": "Core Features",
+    "cards": [
+      {
+        "title": "Overview",
+        "value": "System health at a glance",
+        "example": "Disk usage, cache breakdown, reclaimable space — all on one screen",
+        "trustCue": "Read-only scan, no modifications made"
+      },
+      {
+        "title": "Smart Clean",
+        "value": "Scan, review the plan, then execute",
+        "example": "System cache 3.2 GB — inspect details before deciding to clean",
+        "trustCue": "Auto-backup before every clean, supports rollback"
+      },
+      {
+        "title": "Apps",
+        "value": "Analyze full app footprint and plan uninstalls",
+        "example": "See every associated file an app leaves on disk",
+        "trustCue": "Full file list shown before uninstall, confirm each item"
+      },
+      {
+        "title": "History",
+        "value": "Complete audit trail and recovery timeline",
+        "example": "Review detailed records of every clean operation in the past 30 days",
+        "trustCue": "Every action is traceable, no silent operations"
+      },
+      {
+        "title": "Recovery",
+        "value": "Per-item restore within the retention window, when supported",
+        "example": "Accidentally removed config files can be restored within the retention period",
+        "trustCue": "File-level backup, not snapshot-based"
+      },
+      {
+        "title": "Permissions",
+        "value": "Least privilege, explained before asking",
+        "example": "Downloads folder access is requested only when scanning that directory",
+        "trustCue": "Every permission comes with a usage explanation"
+      }
+    ]
+  },
+  "howItWorks": {
+    "sectionTitle": "How It Works",
+    "steps": [
+      {
+        "label": "Scan",
+        "description": "Atlas performs a read-only scan of your disk, identifying caches, logs, leftover files, and other reclaimable items."
+      },
+      {
+        "label": "Review",
+        "description": "Scan results are listed item by item with explanations and size estimates. You decide what to keep and what to clean."
+      },
+      {
+        "label": "Execute",
+        "description": "After confirmation, Atlas performs the cleanup. Removed files are automatically backed up within the retention period, when supported."
+      },
+      {
+        "label": "Restore",
+        "description": "Within the retention window, you can restore any cleaned file from the operation history on a per-item basis."
+      }
+    ]
+  },
+  "developer": {
+    "sectionTitle": "Developer Friendly",
+    "subtitle": "Atlas recognizes development toolchains and avoids removing critical files.",
+    "items": [
+      {
+        "title": "Toolchain Awareness",
+        "description": "Automatically identifies caches and artifacts from Homebrew, Xcode, Node.js, and other development environments, marking them as safe or cautious."
+      },
+      {
+        "title": "Project Directory Protection",
+        "description": "Detects .git, node_modules, build directories, and other project folders. These are excluded from scans by default to avoid disrupting your workflow."
+      },
+      {
+        "title": "CLI Integration",
+        "description": "Provides command-line tools for scripted scanning and cleaning, ready to integrate into automated workflows."
+      },
+      {
+        "title": "Transparent Operation Logs",
+        "description": "Every operation produces a complete audit log with file paths, sizes, and timestamps for easy troubleshooting."
+      }
+    ]
+  },
+  "safety": {
+    "sectionTitle": "Safety",
+    "subtitle": "Atlas is built on one principle: inform before acting, restore after acting.",
+    "points": [
+      {
+        "title": "Preview Before Action",
+        "description": "A complete file list is shown before every clean operation. There is no black-box \"one-click clean\" behavior."
+      },
+      {
+        "title": "File-Level Backup",
+        "description": "Cleaned files are automatically backed up during the retention period. Per-item restore is available from the operation history, when supported."
+      },
+      {
+        "title": "Least Privilege",
+        "description": "Atlas only requests specific permissions when needed and explains each one. Core features work without Full Disk Access."
+      }
+    ],
+    "gatekeeperGuide": {
+      "title": "Opening Atlas for the First Time",
+      "steps": [
+        "Download the Atlas .dmg file from the official website",
+        "Drag Atlas into your Applications folder",
+        "Right-click the Atlas icon and select \"Open\"",
+        "Click \"Open\" in the confirmation dialog"
+      ]
+    }
+  },
+  "screenshots": {
+    "sectionTitle": "Interface Preview",
+    "items": [
+      {
+        "src": "/images/screenshots/atlas-overview.png",
+        "alt": "Atlas Overview interface",
+        "caption": "Overview — Disk health, cache breakdown, reclaimable space"
+      },
+      {
+        "src": "/images/screenshots/atlas-smart-clean.png",
+        "alt": "Atlas Smart Clean interface",
+        "caption": "Smart Clean — Scan results listed item by item, execute after review"
+      },
+      {
+        "src": "/images/screenshots/atlas-apps.png",
+        "alt": "Atlas Apps interface",
+        "caption": "Apps — View full app footprint and associated files"
+      },
+      {
+        "src": "/images/screenshots/atlas-history.png",
+        "alt": "Atlas History interface",
+        "caption": "History — Complete audit trail and restore entry point"
+      },
+      {
+        "src": "/images/screenshots/atlas-settings.png",
+        "alt": "Atlas Settings interface",
+        "caption": "Settings — Permission management and retention configuration"
+      }
+    ]
+  },
+  "openSource": {
+    "sectionTitle": "Open Source",
+    "repoLabel": "GitHub Repository",
+    "licenseLabel": "License",
+    "attributionLabel": "Third-Party Attribution",
+    "changelogLabel": "Changelog"
+  },
+  "faq": {
+    "sectionTitle": "FAQ",
+    "items": [
+      {
+        "question": "Is Atlas signed and notarized?",
+        "answer": "Atlas is signed with an Apple Developer ID and verified through Apple's notarization service. On first launch, macOS Gatekeeper automatically checks its integrity. Prerelease builds may not be notarized and require manual confirmation to open."
+      },
+      {
+        "question": "What happens with prerelease installs?",
+        "answer": "Prerelease builds may include incomplete features or known issues and are intended for testing only. Since they may not be notarized by Apple, you will need to right-click and select \"Open\" on first launch. We recommend not using them as your primary tool on important machines."
+      },
+      {
+        "question": "Does Atlas upload my files?",
+        "answer": "No. Atlas runs entirely on your local machine. It does not collect or upload any user files or personal data. Scan results and operation records are stored locally. The source code is fully open for your review."
+      },
+      {
+        "question": "What does recovery actually mean?",
+        "answer": "Before cleaning, Atlas backs up files to a local retention directory. Within the retention period (30 days by default), you can restore cleaned files individually through the operation history. After the retention period expires, backups are automatically purged. This is file-level backup, not a system snapshot — some scenarios may not be covered."
+      },
+      {
+        "question": "Does Atlas require Full Disk Access?",
+        "answer": "Core features work without Full Disk Access. Atlas follows the principle of least privilege and only requests access to specific protected directories when needed, explaining the purpose before each request."
+      },
+      {
+        "question": "Is this a Mac App Store app?",
+        "answer": "Not currently. Atlas is distributed as a direct download from the official website to retain full system maintenance capabilities. The Mac App Store sandbox restrictions would limit core cleaning and recovery features. A simplified App Store version may be considered in the future."
+      }
+    ]
+  },
+  "footer": {
+    "download": "Download Atlas",
+    "github": "GitHub",
+    "documentation": "Documentation",
+    "privacy": "Privacy Policy",
+    "security": "Security",
+    "copyright": "Atlas for Mac. Open-source project released under the MIT License."
+  }
+}

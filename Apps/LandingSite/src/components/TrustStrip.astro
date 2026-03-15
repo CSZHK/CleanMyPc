@@ -1,0 +1,51 @@
+---
+import { t, type Locale } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+
+const items = [
+  copy.trustStrip.openSource,
+  copy.trustStrip.recoveryFirst,
+  copy.trustStrip.developerAware,
+  copy.trustStrip.macNative,
+  copy.trustStrip.directDownload,
+];
+---
+
+<section class="trust-strip band--surface" aria-label="Trust signals">
+  <div class="trust-strip__inner container">
+    {items.map((item) => (
+      <span class="trust-strip__pill">{item}</span>
+    ))}
+  </div>
+</section>
+
+<style>
+  .trust-strip {
+    padding-block: var(--atlas-space-xxl);
+    border-top: 1px solid var(--atlas-color-border);
+    border-bottom: 1px solid var(--atlas-color-border);
+  }
+
+  .trust-strip__inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--atlas-space-md);
+  }
+
+  .trust-strip__pill {
+    font-size: var(--atlas-text-body-small);
+    font-weight: 500;
+    color: var(--atlas-color-text-secondary);
+    padding: var(--atlas-space-xs) var(--atlas-space-lg);
+    border: 1px solid var(--atlas-color-border);
+    border-radius: var(--atlas-radius-full);
+    white-space: nowrap;
+  }
+</style>

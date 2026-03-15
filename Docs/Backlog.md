@@ -51,6 +51,7 @@
 - `EPIC-18` Public Beta Feedback and Trust Closure
 - `EPIC-19` GA Recovery and Execution Hardening
 - `EPIC-20` GA Launch Readiness
+- `EPIC-21` Marketing Site and Direct Distribution Landing Page
 
 ## Now / Next / Later
 
@@ -281,6 +282,15 @@
 - `ATL-234` Validate signed DMG and PKG install on a clean machine — `QA Agent`
 - `ATL-235` Run a trusted hardware-diverse signed beta cohort — `Product Agent`
 - `ATL-236` Triage public-beta issues before any GA candidate naming — `Product Agent`
+
+#### Launch Surface Phase 5: Landing Page and Domain
+
+- `ATL-241` Finalize landing-page PRD, CTA policy, and bilingual information architecture — `Product Agent`
+- `ATL-242` Design and implement the marketing site in `Apps/LandingSite/` — `Mac App Agent`
+- `ATL-243` Add GitHub Pages deployment workflow and environment protection — `Release Agent`
+- `ATL-244` Bind and verify a dedicated custom domain with HTTPS enforcement — `Release Agent`
+- `ATL-245` Surface release-channel state, download guidance, and prerelease install help on the page — `UX Agent`
+- `ATL-246` Add privacy-respecting analytics and launch QA for desktop/mobile — `QA Agent`
 
 ## Definition of Ready
 

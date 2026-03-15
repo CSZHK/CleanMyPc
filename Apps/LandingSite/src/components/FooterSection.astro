@@ -1,0 +1,120 @@
+---
+import CtaButton from './CtaButton.astro';
+import { t, type Locale } from '../i18n/utils';
+import { getRelease, getDownloadUrl } from '../data/release';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+const manifest = getRelease();
+const downloadUrl = getDownloadUrl(manifest);
+
+const REPO_URL = 'https://github.com/nicekid1/CleanMyPc';
+---
+
+<footer class="footer band--dark">
+  <div class="footer__inner container">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <img src="/images/atlas-icon.png" alt="" width="40" height="40" class="footer__logo" />
+        <div>
+          <p class="footer__name">Atlas for Mac</p>
+          <p class="footer__tagline">{locale === 'zh' ? '可解释、恢复优先的 Mac 维护工作区' : 'Explainable, recovery-first Mac maintenance'}</p>
+        </div>
+      </div>
+
+      <CtaButton
+        label={copy.footer.download}
+        href={downloadUrl}
+        variant="primary"
+      />
+    </div>
+
+    <nav class="footer__links" aria-label="Footer navigation">
+      <a href={downloadUrl} class="footer__link">{copy.footer.download}</a>
+      <a href={REPO_URL} class="footer__link" target="_blank" rel="noopener noreferrer">{copy.footer.github}</a>
+      <a href={`${REPO_URL}#readme`} class="footer__link" target="_blank" rel="noopener noreferrer">{copy.footer.documentation}</a>
+      <a href={`${REPO_URL}/blob/main/Docs/PRIVACY.md`} class="footer__link" target="_blank" rel="noopener noreferrer">{copy.footer.privacy}</a>
+      <a href={`${REPO_URL}/security`} class="footer__link" target="_blank" rel="noopener noreferrer">{copy.footer.security}</a>
+    </nav>
+
+    <div class="footer__bottom">
+      <p class="footer__copyright">{copy.footer.copyright}</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--atlas-color-border);
+    padding-block: var(--atlas-space-section-gap);
+  }
+
+  .footer__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--atlas-space-section);
+  }
+
+  .footer__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--atlas-space-xl);
+  }
+
+  .footer__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--atlas-space-md);
+  }
+
+  .footer__logo {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--atlas-radius-md);
+  }
+
+  .footer__name {
+    font-family: var(--atlas-font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--atlas-color-text-primary);
+  }
+
+  .footer__tagline {
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-text-tertiary);
+  }
+
+  .footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--atlas-space-xxl);
+  }
+
+  .footer__link {
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-text-secondary);
+    text-decoration: none;
+    transition: color var(--atlas-motion-fast);
+  }
+
+  .footer__link:hover {
+    color: var(--atlas-color-text-primary);
+  }
+
+  .footer__bottom {
+    padding-top: var(--atlas-space-xl);
+    border-top: 1px solid var(--atlas-color-border);
+  }
+
+  .footer__copyright {
+    font-size: var(--atlas-text-caption-small);
+    color: var(--atlas-color-text-tertiary);
+  }
+</style>

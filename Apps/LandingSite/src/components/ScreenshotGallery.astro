@@ -1,0 +1,98 @@
+---
+import { t, type Locale } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+---
+
+<section class="gallery section band--surface fade-in" id="screenshots">
+  <div class="gallery__inner container">
+    <h2 class="gallery__title">{copy.screenshots.sectionTitle}</h2>
+
+    <div class="gallery__grid" id="screenshot-gallery">
+      {copy.screenshots.items.map((item, i) => (
+        <figure class="gallery__item" data-index={i}>
+          <div class="gallery__frame">
+            <img
+              src={item.src}
+              alt={item.alt}
+              width="800"
+              height="560"
+              loading="lazy"
+              class="gallery__img"
+            />
+          </div>
+          <figcaption class="gallery__caption">{item.caption}</figcaption>
+        </figure>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .gallery__title {
+    font-size: var(--atlas-text-section);
+    font-weight: var(--atlas-text-section-weight);
+    text-align: center;
+    margin-bottom: var(--atlas-space-section-gap);
+  }
+
+  .gallery__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--atlas-space-xxl);
+  }
+
+  @media (max-width: 640px) {
+    .gallery__grid {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      gap: var(--atlas-space-lg);
+      padding-bottom: var(--atlas-space-lg);
+    }
+
+    .gallery__item {
+      flex: 0 0 85vw;
+      scroll-snap-align: center;
+    }
+  }
+
+  .gallery__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--atlas-space-md);
+  }
+
+  .gallery__frame {
+    border-radius: var(--atlas-radius-xl);
+    overflow: hidden;
+    border: 1px solid var(--atlas-color-border);
+    box-shadow: var(--atlas-shadow-raised);
+    transition: transform var(--atlas-motion-fast),
+                box-shadow var(--atlas-motion-fast);
+  }
+
+  .gallery__frame:hover {
+    transform: scale(1.005);
+    box-shadow: var(--atlas-shadow-prominent);
+  }
+
+  .gallery__img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .gallery__caption {
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-text-secondary);
+    text-align: center;
+    line-height: var(--atlas-leading-normal);
+  }
+</style>

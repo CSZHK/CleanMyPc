@@ -1,0 +1,21 @@
+{
+  "name": "atlas-landing",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "fetch-release": "tsx scripts/fetch-release.ts",
+    "prebuild": "tsx scripts/fetch-release.ts"
+  },
+  "dependencies": {
+    "astro": "^5.7.0",
+    "@astrojs/sitemap": "^3.3.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

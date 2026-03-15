@@ -1,0 +1,98 @@
+---
+interface Props {
+  label: string;
+  href: string;
+  variant?: 'primary' | 'secondary' | 'ghost';
+  external?: boolean;
+  class?: string;
+}
+
+const {
+  label,
+  href,
+  variant = 'primary',
+  external = true,
+  class: className = '',
+} = Astro.props;
+
+const classes = `cta cta--${variant} ${className}`.trim();
+const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+---
+
+<a href={href} class={classes} {...linkAttrs}>
+  {label}
+  {variant === 'secondary' && (
+    <svg class="cta__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  )}
+</a>
+
+<style>
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--atlas-space-sm);
+    font-family: var(--atlas-font-body);
+    font-size: var(--atlas-text-label);
+    font-weight: var(--atlas-text-label-weight);
+    line-height: 1;
+    text-decoration: none;
+    border-radius: var(--atlas-radius-full);
+    transition: transform var(--atlas-motion-fast),
+                box-shadow var(--atlas-motion-fast),
+                background-color var(--atlas-motion-fast);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .cta--primary {
+    color: #ffffff;
+    padding: var(--atlas-space-md) var(--atlas-space-xxl);
+    background-color: var(--atlas-color-brand);
+    box-shadow: var(--atlas-shadow-cta);
+  }
+
+  .cta--primary:hover {
+    box-shadow: var(--atlas-shadow-cta-hover);
+    transform: translateY(-1px);
+  }
+
+  .cta--primary:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 4px rgba(20, 144, 133, 0.15);
+  }
+
+  .cta--secondary {
+    color: var(--atlas-color-brand);
+    padding: var(--atlas-space-md) var(--atlas-space-xxl);
+    background-color: rgba(20, 144, 133, 0.04);
+    border: 1.5px solid rgba(20, 144, 133, 0.3);
+  }
+
+  .cta--secondary:hover {
+    background-color: rgba(20, 144, 133, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .cta--secondary:active {
+    transform: scale(0.97);
+  }
+
+  .cta--ghost {
+    color: var(--atlas-color-brand);
+    padding: var(--atlas-space-sm) var(--atlas-space-lg);
+  }
+
+  .cta--ghost:hover {
+    background-color: rgba(20, 144, 133, 0.06);
+  }
+
+  .cta--ghost:active {
+    transform: scale(0.97);
+  }
+
+  .cta__icon {
+    flex-shrink: 0;
+  }
+</style>

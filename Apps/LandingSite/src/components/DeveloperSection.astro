@@ -1,0 +1,82 @@
+---
+import { t, type Locale } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+---
+
+<section class="dev section band--surface fade-in" id="developers">
+  <div class="dev__inner container">
+    <div class="dev__header">
+      <h2 class="dev__title">{copy.developer.sectionTitle}</h2>
+      <p class="dev__subtitle">{copy.developer.subtitle}</p>
+    </div>
+
+    <div class="dev__grid">
+      {copy.developer.items.map((item) => (
+        <div class="dev__card">
+          <h3 class="dev__card-title">{item.title}</h3>
+          <p class="dev__card-desc">{item.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .dev__header {
+    text-align: center;
+    margin-bottom: var(--atlas-space-section-gap);
+  }
+
+  .dev__title {
+    font-size: var(--atlas-text-section);
+    font-weight: var(--atlas-text-section-weight);
+    margin-bottom: var(--atlas-space-md);
+  }
+
+  .dev__subtitle {
+    font-size: clamp(1rem, 2vw, 1.125rem);
+    color: var(--atlas-color-text-secondary);
+    max-width: 600px;
+    margin-inline: auto;
+    line-height: var(--atlas-leading-normal);
+  }
+
+  .dev__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--atlas-space-xl);
+  }
+
+  @media (min-width: 860px) {
+    .dev__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .dev__card {
+    padding: var(--atlas-space-xl);
+    background: var(--atlas-color-bg-base);
+    border: 1px solid var(--atlas-color-border);
+    border-radius: var(--atlas-radius-lg);
+  }
+
+  .dev__card-title {
+    font-family: var(--atlas-font-mono);
+    font-size: var(--atlas-text-body-small);
+    font-weight: 500;
+    color: var(--atlas-color-accent);
+    margin-bottom: var(--atlas-space-sm);
+  }
+
+  .dev__card-desc {
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-text-secondary);
+    line-height: var(--atlas-leading-normal);
+  }
+</style>

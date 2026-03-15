@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NavBar from '../../components/NavBar.astro';
+import Hero from '../../components/Hero.astro';
+import TrustStrip from '../../components/TrustStrip.astro';
+import ProblemOutcome from '../../components/ProblemOutcome.astro';
+import FeatureGrid from '../../components/FeatureGrid.astro';
+import HowItWorks from '../../components/HowItWorks.astro';
+import DeveloperSection from '../../components/DeveloperSection.astro';
+import SafetySection from '../../components/SafetySection.astro';
+import ScreenshotGallery from '../../components/ScreenshotGallery.astro';
+import OpenSourceSection from '../../components/OpenSourceSection.astro';
+import FaqSection from '../../components/FaqSection.astro';
+import FooterSection from '../../components/FooterSection.astro';
+import { t } from '../../i18n/utils';
+
+const locale = 'en' as const;
+const copy = t(locale);
+---
+
+<BaseLayout
+  title={copy.meta.title}
+  description={copy.meta.description}
+  locale={locale}
+  ogImage={copy.meta.ogImage}
+>
+  <NavBar locale={locale} />
+
+  <main>
+    <Hero locale={locale} />
+    <TrustStrip locale={locale} />
+    <ProblemOutcome locale={locale} />
+    <FeatureGrid locale={locale} />
+    <HowItWorks locale={locale} />
+    <DeveloperSection locale={locale} />
+    <SafetySection locale={locale} />
+    <ScreenshotGallery locale={locale} />
+    <OpenSourceSection locale={locale} />
+    <FaqSection locale={locale} />
+  </main>
+
+  <FooterSection locale={locale} />
+</BaseLayout>

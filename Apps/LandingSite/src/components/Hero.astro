@@ -1,0 +1,189 @@
+---
+import CtaButton from './CtaButton.astro';
+import ChannelBadge from './ChannelBadge.astro';
+import { t, type Locale } from '../i18n/utils';
+import { getRelease, getDownloadUrl, formatDate } from '../data/release';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+const manifest = getRelease();
+const downloadUrl = getDownloadUrl(manifest);
+
+const badgeLabels = {
+  stable: copy.hero.badgeStable,
+  prerelease: copy.hero.badgePrerelease,
+  none: copy.hero.badgeComingSoon,
+};
+
+const REPO_URL = 'https://github.com/nicekid1/CleanMyPc';
+
+// Per state machine: stable/prerelease → download CTA + GitHub secondary
+// none → GitHub as primary, no secondary download
+const primaryLabel = manifest.channel === 'none'
+  ? copy.hero.ctaSecondary   // "View Source" / "查看源码"
+  : copy.hero.ctaPrimary;    // "Download Atlas" / "下载 Atlas"
+
+const primaryHref = manifest.channel === 'none'
+  ? REPO_URL
+  : downloadUrl;
+
+const showSecondary = manifest.channel !== 'none';
+
+const publishedDate = formatDate(manifest.publishedAt, locale);
+---
+
+<section class="hero band--dark" id="hero">
+  <div class="hero__inner container">
+    <div class="hero__content">
+      <ChannelBadge
+        channel={manifest.channel}
+        label={badgeLabels[manifest.channel]}
+        version={manifest.version ?? undefined}
+        date={publishedDate || undefined}
+      />
+
+      <h1 class="hero__headline">{copy.hero.headline}</h1>
+      <p class="hero__subheadline">{copy.hero.subheadline}</p>
+
+      <div class="hero__actions">
+        <CtaButton
+          label={primaryLabel}
+          href={primaryHref}
+          variant="primary"
+        />
+        {showSecondary && (
+          <CtaButton
+            label={copy.hero.ctaSecondary}
+            href={REPO_URL}
+            variant="secondary"
+          />
+        )}
+      </div>
+
+      {manifest.channel === 'prerelease' && (
+        <p class="hero__warning">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 1L15 14H1L8 1Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+            <path d="M8 6V9M8 11.5V12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          {copy.hero.prereleaseWarning}
+        </p>
+      )}
+
+      {manifest.version && (
+        <p class="hero__version">
+          {copy.hero.versionLabel
+            .replace('{version}', manifest.version)
+            .replace('{date}', publishedDate)}
+        </p>
+      )}
+    </div>
+
+    <div class="hero__visual">
+      <div class="hero__frame">
+        <img
+          src="/images/screenshots/atlas-overview.png"
+          alt={locale === 'zh' ? 'Atlas for Mac 概览界面' : 'Atlas for Mac overview interface'}
+          width="800"
+          height="560"
+          loading="eager"
+          class="hero__screenshot"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding-top: calc(80px + var(--atlas-space-section-gap));
+    padding-bottom: var(--atlas-space-section-gap);
+    overflow: hidden;
+  }
+
+  .hero__inner {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--atlas-space-section-gap);
+    align-items: center;
+  }
+
+  @media (min-width: 860px) {
+    .hero__inner {
+      grid-template-columns: 1fr 1.1fr;
+      gap: var(--atlas-space-section);
+    }
+  }
+
+  .hero__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--atlas-space-lg);
+  }
+
+  .hero__headline {
+    font-size: var(--atlas-text-hero);
+    font-weight: var(--atlas-text-hero-weight);
+    line-height: var(--atlas-leading-tight);
+    letter-spacing: var(--atlas-tracking-tight);
+    color: var(--atlas-color-text-primary);
+  }
+
+  .hero__subheadline {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: var(--atlas-color-text-secondary);
+    line-height: var(--atlas-leading-relaxed);
+    max-width: 480px;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--atlas-space-md);
+    margin-top: var(--atlas-space-sm);
+  }
+
+  .hero__warning {
+    display: flex;
+    align-items: center;
+    gap: var(--atlas-space-sm);
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-warning);
+    padding: var(--atlas-space-sm) var(--atlas-space-md);
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: var(--atlas-radius-md);
+    max-width: max-content;
+  }
+
+  .hero__version {
+    font-family: var(--atlas-font-mono);
+    font-size: var(--atlas-text-caption-small);
+    color: var(--atlas-color-text-tertiary);
+  }
+
+  .hero__visual {
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .hero__frame {
+    position: relative;
+    border-radius: var(--atlas-radius-xxl);
+    overflow: hidden;
+    box-shadow: var(--atlas-shadow-prominent);
+    border: 1px solid var(--atlas-color-border-emphasis);
+    max-width: 100%;
+  }
+
+  .hero__screenshot {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>

@@ -1,0 +1,49 @@
+---
+import FeatureCard from './FeatureCard.astro';
+import { t, type Locale } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+---
+
+<section class="features section band--surface" id="features">
+  <div class="features__inner container">
+    <h2 class="features__title fade-in">{copy.features.sectionTitle}</h2>
+
+    <div class="features__grid">
+      {copy.features.cards.map((card) => (
+        <FeatureCard
+          title={card.title}
+          value={card.value}
+          example={card.example}
+          trustCue={card.trustCue}
+        />
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .features__title {
+    font-size: var(--atlas-text-section);
+    font-weight: var(--atlas-text-section-weight);
+    text-align: center;
+    margin-bottom: var(--atlas-space-section-gap);
+  }
+
+  .features__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--atlas-space-xxl);
+  }
+
+  @media (min-width: 860px) {
+    .features__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

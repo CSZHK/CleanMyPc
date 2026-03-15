@@ -1,0 +1,93 @@
+---
+import '../styles/global.css';
+import '../styles/utilities.css';
+
+interface Props {
+  title: string;
+  description: string;
+  locale: 'en' | 'zh';
+  ogImage?: string;
+}
+
+const { title, description, locale, ogImage = '/images/og-image-zh.png' } = Astro.props;
+const htmlLang = locale === 'zh' ? 'zh-Hans' : 'en';
+const altLocale = locale === 'zh' ? 'en' : 'zh';
+const altPath = locale === 'zh' ? '/en/' : '/zh/';
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+const altUrl = new URL(altPath, Astro.site);
+---
+
+<!doctype html>
+<html lang={htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <!-- Canonical & hreflang -->
+    <link rel="canonical" href={canonicalUrl.href} />
+    <link rel="alternate" hreflang={htmlLang} href={canonicalUrl.href} />
+    <link rel="alternate" hreflang={altLocale === 'zh' ? 'zh-Hans' : 'en'} href={altUrl.href} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(ogImage, Astro.site).href} />
+    <meta property="og:url" content={canonicalUrl.href} />
+    <meta property="og:locale" content={locale === 'zh' ? 'zh_CN' : 'en_US'} />
+    <meta property="og:site_name" content="Atlas for Mac" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL(ogImage, Astro.site).href} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/images/atlas-icon.png" />
+
+    <!-- Font preload -->
+    <link rel="preload" href="/fonts/SpaceGrotesk-Bold.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- Structured Data: SoftwareApplication -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Atlas for Mac",
+      "operatingSystem": "macOS",
+      "applicationCategory": "UtilitiesApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": description,
+      "url": canonicalUrl.href
+    })} />
+  </head>
+  <body>
+    <slot />
+
+    <!-- Scroll-reveal observer -->
+    <script>
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+
+      document.querySelectorAll('.fade-in').forEach((el) => observer.observe(el));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,104 @@
+---
+import { t, type Locale } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+
+const REPO_URL = 'https://github.com/nicekid1/CleanMyPc';
+---
+
+<section class="oss section band--dark fade-in" id="opensource">
+  <div class="oss__inner container">
+    <h2 class="oss__title">{copy.openSource.sectionTitle}</h2>
+
+    <div class="oss__grid">
+      <a href={REPO_URL} class="oss__card" target="_blank" rel="noopener noreferrer">
+        <span class="oss__card-label">{copy.openSource.repoLabel}</span>
+        <span class="oss__card-value">GitHub</span>
+        <svg class="oss__card-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M4 12L12 4M12 4H6M12 4V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+
+      <div class="oss__card">
+        <span class="oss__card-label">{copy.openSource.licenseLabel}</span>
+        <span class="oss__card-value">MIT</span>
+      </div>
+
+      <a href={`${REPO_URL}/blob/main/Docs/ATTRIBUTION.md`} class="oss__card" target="_blank" rel="noopener noreferrer">
+        <span class="oss__card-label">{copy.openSource.attributionLabel}</span>
+        <span class="oss__card-value">ATTRIBUTION.md</span>
+        <svg class="oss__card-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M4 12L12 4M12 4H6M12 4V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+
+      <a href={`${REPO_URL}/releases`} class="oss__card" target="_blank" rel="noopener noreferrer">
+        <span class="oss__card-label">{copy.openSource.changelogLabel}</span>
+        <span class="oss__card-value">Releases</span>
+        <svg class="oss__card-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M4 12L12 4M12 4H6M12 4V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .oss__title {
+    font-size: var(--atlas-text-section);
+    font-weight: var(--atlas-text-section-weight);
+    text-align: center;
+    margin-bottom: var(--atlas-space-section-gap);
+  }
+
+  .oss__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--atlas-space-lg);
+    max-width: 800px;
+    margin-inline: auto;
+  }
+
+  .oss__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--atlas-space-xxs);
+    padding: var(--atlas-space-xl);
+    background: var(--atlas-color-bg-surface);
+    border: 1px solid var(--atlas-color-border);
+    border-radius: var(--atlas-radius-lg);
+    text-decoration: none;
+    position: relative;
+    transition: border-color var(--atlas-motion-fast);
+  }
+
+  a.oss__card:hover {
+    border-color: var(--atlas-color-border-emphasis);
+  }
+
+  .oss__card-label {
+    font-size: var(--atlas-text-caption);
+    font-weight: var(--atlas-text-caption-weight);
+    color: var(--atlas-color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: var(--atlas-tracking-wide);
+  }
+
+  .oss__card-value {
+    font-family: var(--atlas-font-mono);
+    font-size: var(--atlas-text-body);
+    color: var(--atlas-color-text-primary);
+  }
+
+  .oss__card-arrow {
+    position: absolute;
+    top: var(--atlas-space-lg);
+    right: var(--atlas-space-lg);
+    color: var(--atlas-color-text-tertiary);
+  }
+</style>

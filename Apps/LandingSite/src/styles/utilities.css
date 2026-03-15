@@ -1,0 +1,87 @@
+/* ── Layout Utilities ──────────────────────────────── */
+
+.container {
+  width: 100%;
+  max-width: var(--atlas-width-content);
+  margin-inline: auto;
+  padding-inline: var(--atlas-space-xl);
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding-inline: var(--atlas-space-section);
+  }
+}
+
+.section {
+  padding-block: var(--atlas-space-section-gap);
+}
+
+.section--lg {
+  padding-block: var(--atlas-space-section-gap-lg);
+}
+
+.band--dark {
+  background-color: var(--atlas-color-bg-base);
+}
+
+.band--surface {
+  background-color: var(--atlas-color-bg-surface);
+}
+
+/* ── Accessibility ─────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Text Utilities ────────────────────────────────── */
+
+.text-secondary {
+  color: var(--atlas-color-text-secondary);
+}
+
+.text-tertiary {
+  color: var(--atlas-color-text-tertiary);
+}
+
+.text-accent {
+  color: var(--atlas-color-accent);
+}
+
+.text-brand {
+  color: var(--atlas-color-brand);
+}
+
+.text-warning {
+  color: var(--atlas-color-warning);
+}
+
+.font-display {
+  font-family: var(--atlas-font-display);
+}
+
+.font-mono {
+  font-family: var(--atlas-font-mono);
+}
+
+/* ── Animation Utilities ──────────────────────────── */
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity var(--atlas-motion-slow), transform var(--atlas-motion-slow);
+}
+
+.fade-in.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}

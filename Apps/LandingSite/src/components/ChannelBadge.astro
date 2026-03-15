@@ -1,0 +1,78 @@
+---
+interface Props {
+  channel: 'stable' | 'prerelease' | 'none';
+  label: string;
+  version?: string;
+  date?: string;
+}
+
+const { channel, label, version, date } = Astro.props;
+---
+
+<span class={`badge badge--${channel}`}>
+  <span class="badge__dot" aria-hidden="true"></span>
+  <span class="badge__label">{label}</span>
+  {version && <span class="badge__version">v{version}</span>}
+  {date && <span class="badge__date">{date}</span>}
+</span>
+
+<style>
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--atlas-space-xs);
+    font-family: var(--atlas-font-mono);
+    font-size: var(--atlas-text-caption);
+    font-weight: var(--atlas-text-caption-weight);
+    letter-spacing: var(--atlas-tracking-wide);
+    text-transform: uppercase;
+    padding: var(--atlas-space-xxs) var(--atlas-space-sm);
+    border-radius: var(--atlas-radius-sm);
+    line-height: 1.4;
+  }
+
+  .badge__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .badge__version,
+  .badge__date {
+    opacity: 0.7;
+    font-size: var(--atlas-text-caption-small);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .badge--stable {
+    background: rgba(20, 144, 133, 0.15);
+    color: var(--atlas-color-accent);
+    border: 1px solid rgba(20, 144, 133, 0.3);
+  }
+
+  .badge--stable .badge__dot {
+    background-color: var(--atlas-color-accent);
+  }
+
+  .badge--prerelease {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--atlas-color-warning);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  .badge--prerelease .badge__dot {
+    background-color: var(--atlas-color-warning);
+  }
+
+  .badge--none {
+    background: rgba(148, 163, 184, 0.1);
+    color: var(--atlas-color-text-secondary);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .badge--none .badge__dot {
+    background-color: var(--atlas-color-text-secondary);
+  }
+</style>

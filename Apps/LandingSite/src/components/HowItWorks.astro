@@ -1,0 +1,95 @@
+---
+import { t, type Locale } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+---
+
+<section class="how section band--dark fade-in" id="how">
+  <div class="how__inner container">
+    <h2 class="how__title">{copy.howItWorks.sectionTitle}</h2>
+
+    <div class="how__steps">
+      {copy.howItWorks.steps.map((step, i) => (
+        <div class="how__step">
+          <div class="how__step-number" aria-hidden="true">{String(i + 1).padStart(2, '0')}</div>
+          <h3 class="how__step-label">{step.label}</h3>
+          <p class="how__step-desc">{step.description}</p>
+          {i < copy.howItWorks.steps.length - 1 && (
+            <div class="how__connector" aria-hidden="true" />
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .how__title {
+    font-size: var(--atlas-text-section);
+    font-weight: var(--atlas-text-section-weight);
+    text-align: center;
+    margin-bottom: var(--atlas-space-section-gap);
+  }
+
+  .how__steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--atlas-space-xxl);
+    position: relative;
+  }
+
+  @media (min-width: 860px) {
+    .how__steps {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .how__step {
+    text-align: center;
+    position: relative;
+  }
+
+  .how__step-number {
+    font-family: var(--atlas-font-mono);
+    font-size: var(--atlas-text-section);
+    font-weight: 700;
+    color: var(--atlas-color-brand);
+    opacity: 0.3;
+    margin-bottom: var(--atlas-space-md);
+  }
+
+  .how__step-label {
+    font-family: var(--atlas-font-display);
+    font-size: var(--atlas-text-card-title);
+    font-weight: var(--atlas-text-card-title-weight);
+    color: var(--atlas-color-text-primary);
+    margin-bottom: var(--atlas-space-sm);
+  }
+
+  .how__step-desc {
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-text-secondary);
+    line-height: var(--atlas-leading-normal);
+  }
+
+  .how__connector {
+    display: none;
+  }
+
+  @media (min-width: 860px) {
+    .how__connector {
+      display: block;
+      position: absolute;
+      top: 28px;
+      right: -12px;
+      width: 24px;
+      height: 2px;
+      background: var(--atlas-color-border-emphasis);
+    }
+  }
+</style>

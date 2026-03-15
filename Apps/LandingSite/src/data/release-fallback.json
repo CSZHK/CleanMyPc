@@ -1,0 +1,16 @@
+{
+  "channel": "prerelease",
+  "version": "1.0.2",
+  "publishedAt": null,
+  "releaseUrl": "https://github.com/nicekid1/CleanMyPc/releases",
+  "assets": {
+    "dmg": null,
+    "zip": null,
+    "pkg": null,
+    "sha256": null
+  },
+  "gatekeeperWarning": true,
+  "installNote": null,
+  "tagName": null,
+  "generatedAt": "static-fallback"
+}

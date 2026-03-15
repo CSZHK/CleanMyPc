@@ -1,0 +1,104 @@
+/* ══════════════════════════════════════════════════════
+   Atlas Landing Page — Design Tokens
+   Source of truth: AtlasBrand.swift + AtlasColors.xcassets
+   Theme: "Precision Utility" (dark-only)
+   ══════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Colors: Background ──────────────────────────── */
+  --atlas-color-bg-base:          #0D0F11;
+  --atlas-color-bg-surface:       #1A1D21;
+  --atlas-color-bg-surface-hover: #22262B;
+  --atlas-color-bg-raised:        rgba(255, 255, 255, 0.06);
+  --atlas-color-bg-code:          #151820;
+
+  /* ── Colors: Brand ───────────────────────────────── */
+  --atlas-color-brand:            #149085;
+  --atlas-color-brand-light:      #0F766E;
+  --atlas-color-brand-glow:       rgba(20, 144, 133, 0.25);
+
+  /* ── Colors: Accent ──────────────────────────────── */
+  --atlas-color-accent:           #34D399;
+  --atlas-color-accent-bright:    #52E2B5;
+
+  /* ── Colors: Semantic ────────────────────────────── */
+  --atlas-color-success:          #22C55E;
+  --atlas-color-warning:          #F59E0B;
+  --atlas-color-danger:           #EF4444;
+  --atlas-color-info:             #3B82F6;
+
+  /* ── Colors: Text ────────────────────────────────── */
+  --atlas-color-text-primary:     #F1F5F9;
+  --atlas-color-text-secondary:   #94A3B8;
+  --atlas-color-text-tertiary:    rgba(148, 163, 184, 0.6);
+
+  /* ── Colors: Border ──────────────────────────────── */
+  --atlas-color-border:           rgba(241, 245, 249, 0.08);
+  --atlas-color-border-emphasis:  rgba(241, 245, 249, 0.14);
+
+  /* ── Typography ──────────────────────────────────── */
+  --atlas-font-display:           'Space Grotesk', system-ui, sans-serif;
+  --atlas-font-body:              'Instrument Sans', system-ui, sans-serif;
+  --atlas-font-mono:              'IBM Plex Mono', ui-monospace, monospace;
+
+  --atlas-text-hero:              clamp(2.5rem, 5vw, 4rem);
+  --atlas-text-hero-weight:       700;
+  --atlas-text-section:           clamp(1.75rem, 3.5vw, 2.5rem);
+  --atlas-text-section-weight:    700;
+  --atlas-text-card-title:        1.25rem;
+  --atlas-text-card-title-weight: 600;
+  --atlas-text-body:              1rem;
+  --atlas-text-body-weight:       400;
+  --atlas-text-body-small:        0.875rem;
+  --atlas-text-label:             0.875rem;
+  --atlas-text-label-weight:      600;
+  --atlas-text-caption:           0.75rem;
+  --atlas-text-caption-weight:    600;
+  --atlas-text-caption-small:     0.6875rem;
+
+  --atlas-leading-tight:          1.2;
+  --atlas-leading-normal:         1.6;
+  --atlas-leading-relaxed:        1.8;
+  --atlas-tracking-tight:         -0.02em;
+  --atlas-tracking-normal:        0;
+  --atlas-tracking-wide:          0.05em;
+
+  /* ── Spacing (4pt grid) ──────────────────────────── */
+  --atlas-space-xxs:              4px;
+  --atlas-space-xs:               6px;
+  --atlas-space-sm:               8px;
+  --atlas-space-md:               12px;
+  --atlas-space-lg:               16px;
+  --atlas-space-xl:               20px;
+  --atlas-space-xxl:              24px;
+  --atlas-space-screen-h:         28px;
+  --atlas-space-section:          32px;
+  --atlas-space-section-gap:      80px;
+  --atlas-space-section-gap-lg:   120px;
+
+  /* ── Radius ──────────────────────────────────────── */
+  --atlas-radius-sm:              8px;
+  --atlas-radius-md:              12px;
+  --atlas-radius-lg:              16px;
+  --atlas-radius-xl:              20px;
+  --atlas-radius-xxl:             24px;
+  --atlas-radius-full:            9999px;
+
+  /* ── Elevation ───────────────────────────────────── */
+  --atlas-shadow-flat:            none;
+  --atlas-shadow-raised:          0 10px 18px rgba(0, 0, 0, 0.05);
+  --atlas-shadow-prominent:       0 16px 28px rgba(0, 0, 0, 0.09);
+  --atlas-shadow-cta:             0 6px 12px rgba(20, 144, 133, 0.25);
+  --atlas-shadow-cta-hover:       0 8px 20px rgba(20, 144, 133, 0.35);
+
+  /* ── Motion ──────────────────────────────────────── */
+  --atlas-motion-fast:            150ms cubic-bezier(0.2, 0, 0, 1);
+  --atlas-motion-standard:        220ms cubic-bezier(0.2, 0, 0, 1);
+  --atlas-motion-slow:            350ms cubic-bezier(0.2, 0, 0, 1);
+  --atlas-stagger-delay:          80ms;
+
+  /* ── Layout ──────────────────────────────────────── */
+  --atlas-width-reading:          920px;
+  --atlas-width-content:          1080px;
+  --atlas-width-workspace:        1200px;
+}
