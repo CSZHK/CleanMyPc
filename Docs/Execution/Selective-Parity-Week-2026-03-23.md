@@ -22,10 +22,12 @@ Related docs:
 
 ## Goal
 
-Prepare Atlas's next coding phase so that development can start immediately on the two highest-pressure competitive surfaces:
+Prepare Atlas's next coding phase with a strict mainline order so development starts on the highest-pressure competitive surfaces first and does not drift into premature release work:
 
-- `Smart Clean` selective parity against `Mole` and `Lemon`
-- `Apps` depth and uninstall trust against `Pearcleaner` and `Lemon`
+- `EPIC-A` `Apps` evidence execution against `Pearcleaner` and `Lemon`
+- `EPIC-B` `Smart Clean` safe coverage expansion against `Mole` and `Lemon`
+- `EPIC-C` `Recovery` payload hardening
+- `EPIC-D` release readiness only after the product-path epics stabilize
 
 ## Scope
 
@@ -47,40 +49,57 @@ Do not expand into:
 - duplicate-file or similar-photo cleanup as new Atlas modules
 - privacy-cleaning as a new standalone module
 
+## Sequencing Rule
+
+Execute the next mainline epics in this order only:
+
+1. `EPIC-A` Apps Evidence Execution
+2. `EPIC-B` Smart Clean Safe Coverage Expansion
+3. `EPIC-C` Recovery Payload Hardening
+4. `EPIC-D` Release Readiness
+
+Why this order:
+
+- the clearest competitive comparison pressure is already concentrated in `Apps` and `Smart Clean`
+- the release chain is mostly working in pre-signing form
+- public release remains blocked by missing signing materials, not by packaging mechanics
+
 ## Must Deliver
 
-- A concrete competitor-pressure matrix for `Smart Clean` and `Apps`
-- A fixture-backed validation plan for uninstall depth and supported cleanup classes
-- One implementation-ready plan for the first selective-parity coding slice
-- Updated acceptance criteria for `Smart Clean` and `Apps`
-- Updated release-facing beta checklist so validation reflects competitive trust requirements
+- A concrete fixture-backed baseline for `EPIC-A` uninstall evidence work
+- One implementation-ready plan for the first `Apps` evidence coding slice
+- A bounded target list for the next `Smart Clean` safe roots after `Apps`
+- Updated acceptance criteria for `Apps`, `Smart Clean`, and `Recovery`
+- Updated release-facing beta checklist so release work stays downstream of the product-path epics
 
 ## Backlog Mapping
 
-- `ATL-211` Expand real `Smart Clean` execute coverage for top safe target classes most likely compared to `Mole` and `Lemon`
-- `ATL-214` Make history and completion states reflect real side effects only
-- `ATL-226` Build a competitor-pressure matrix for `Apps` using representative `Pearcleaner` and `Lemon` uninstall scenarios
-- `ATL-227` Expand uninstall preview taxonomy and leftover evidence for supported app footprint categories
-- `ATL-228` Surface recoverability, auditability, and supported-vs-review-only cues directly in the `Apps` flow
-- `ATL-229` Validate uninstall depth on mainstream and developer-heavy fixture apps
+- `ATL-251` Define the fixture app baseline for mainstream and developer-heavy uninstall scenarios
+- `ATL-252` Make `Apps` preview, completion, and history render the same uninstall evidence model end to end
+- `ATL-253` Define the restore-triggered app-footprint refresh policy and stale-evidence behavior after recovery
+- `ATL-254` Script the manual acceptance flow for uninstall evidence, restore, and post-restore refresh verification
+- `ATL-256` Define the next batch of high-confidence safe roots outside app containers and freeze the no-go boundaries
+- `ATL-257` Stabilize `review-only` vs `executable` boundary metadata and UI cues across scan, review, execute, completion, and history
+- `ATL-261` Freeze the recovery payload schema, versioning rules, and compatibility contract
+- `ATL-266` Make `full-acceptance` a routine gate on the candidate build instead of a one-off release exercise
 
 ## Day Plan
 
 - `Day 1`
-  - finalize competitor-pressure matrix
-  - freeze non-goals and no-go boundaries for selective parity work
+  - freeze the `EPIC-A -> EPIC-D` execution order
+  - finalize the fixture app baseline and non-go boundaries for the first `Apps` slice
 - `Day 2`
-  - define fixture app set and Smart Clean target-class benchmark set
-  - confirm acceptance and validation expectations
+  - define the cross-surface uninstall evidence model for preview, completion, and history
+  - confirm restore-refresh expectations and acceptance criteria for `Apps`
 - `Day 3`
-  - write the detailed implementation plan for the first coding slice
+  - write the detailed implementation plan for the first `Apps` coding slice
   - identify likely file-touch map and contract-test map
 - `Day 4`
-  - align beta checklist and MVP acceptance matrix with the selective-parity strategy
-  - verify risks and roadmap still match
+  - define the next `Smart Clean` safe roots and the `review-only` vs `executable` boundary rules
+  - align roadmap, risks, and acceptance docs with the ordered epic sequence
 - `Day 5`
   - hold an internal doc gate for development readiness
-  - confirm the next coding session can begin without planning gaps
+  - confirm the next coding session can begin with `EPIC-A` and without another sequencing pass
 
 ## Owner Tasks
 
@@ -119,10 +138,11 @@ Do not expand into:
 
 - selective parity work is expressed as tasks, acceptance, and validation rather than just strategy prose
 - `Smart Clean` and `Apps` both have explicit competitor-driven targets
-- next coding session can start without another planning pass
+- next coding session can start on `EPIC-A` without another planning pass
 
 ## Known Blockers
 
 - signed public beta remains blocked by missing Apple release credentials
 - `Smart Clean` breadth still has to stay subordinate to execution honesty
 - `Apps` depth work must remain bounded by what Atlas can safely prove and recover
+- release readiness still cannot close the public-distribution gap until Apple signing materials exist

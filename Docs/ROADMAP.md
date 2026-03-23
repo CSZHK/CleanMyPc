@@ -6,10 +6,10 @@
 - Product state: `Frozen MVP complete`
 - Validation state: `Internal beta passed with conditions on 2026-03-07`
 - Immediate priorities:
-  - remove silent XPC fallback from release-facing trust assumptions
-  - make `Smart Clean` execution honesty match real filesystem behavior
-  - make `Recovery` claims match shipped restore behavior
-  - convert competitor research into a selective parity plan against `Mole`, `Lemon`, and `Pearcleaner` without reopening MVP scope
+  - turn `Apps` review-only evidence into verifiable and comparable uninstall evidence
+  - expand `Smart Clean` safe coverage only on the next high-confidence roots
+  - harden `Recovery` payload compatibility and restore evidence after execution boundaries stabilize
+  - keep release-readiness work behind the product-path epics until signing materials exist
 - Release-path blocker:
   - no Apple signing and notarization credentials are available on the current machine
 
@@ -36,8 +36,10 @@
 - Atlas should compete as an `explainable, recovery-first Mac maintenance workspace`, not as a generic all-in-one cleaner.
 - The roadmap response is:
   - preserve trust as the primary release gate
-  - close the most visible `Smart Clean` coverage gaps users compare against `Mole` and `Lemon`
-  - deepen the `Apps` module where `Pearcleaner` and `Lemon` set expectations
+  - deepen the `Apps` module first where `Pearcleaner` and `Lemon` set expectations
+  - then close the most visible `Smart Clean` safe-coverage gaps users compare against `Mole` and `Lemon`
+  - harden `Recovery` only after execution boundaries and evidence models are stable
+  - treat release readiness as the final convergence step because signing materials, not packaging mechanics, remain the public-release blocker
   - keep `Storage treemap`, `Menu Bar`, and `Automation` out of scope
 
 ## Active Milestones
@@ -57,80 +59,95 @@
   - unsupported execution paths fail clearly instead of appearing successful
   - recovery wording matches the shipped restore behavior
 
-### Milestone 2: Smart Clean Execution Credibility
+### Milestone 2: Apps Evidence Execution
 
-- Dates: `2026-03-31` to `2026-04-18`
-- Goal: prove that the highest-value safe cleanup paths have real disk-backed side effects.
+- Dates: `2026-03-31` to `2026-04-11`
+- Goal: turn `Apps` review-only evidence from merely visible into verifiable, comparable, and recoverably consistent.
 - Focus:
-  - expand real `Smart Clean` execute coverage for top safe target classes most likely compared to `Mole` and `Lemon`
-  - carry executable structured targets through the worker path
-  - add stronger `scan -> execute -> rescan` contract coverage
-  - make history and completion states reflect real side effects only
+  - define the fixture app baseline for mainstream and developer-heavy uninstall scenarios
+  - make preview, completion, and history reflect the same uninstall evidence model
+  - define the restore-triggered app-footprint refresh strategy and stale-evidence handling
+  - script the manual acceptance flow for uninstall evidence and restore verification
 - Exit criteria:
-  - top safe cleanup paths show real post-execution scan improvement
-  - history does not claim success without real side effects
-  - release-facing docs clearly distinguish supported vs unsupported cleanup paths
+  - supported fixture apps produce consistent evidence across preview, completion, and history
+  - restore follows a defined footprint refresh path or shows explicit stale-evidence state
+  - the `Apps` acceptance path is scriptable and repeatable
 
-### Milestone 3: Recovery Credibility
+### Milestone 3: Smart Clean Safe Coverage Expansion
 
-- Dates: `2026-04-21` to `2026-05-09`
-- Goal: close the gap between Atlas's recovery promise and its shipped restore behavior.
+- Dates: `2026-04-14` to `2026-05-02`
+- Goal: expand only the next batch of high-confidence safe cleanup roots and prove real side effects without widening into high-risk cleanup.
 - Focus:
-  - implement physical restore for file-backed recoverable actions where safe
-  - or narrow product and release messaging if physical restore cannot land safely
-  - validate restore behavior on real file-backed test cases
-  - freeze recovery-related copy only after behavior is confirmed
+  - add the next safe roots outside app containers
+  - stabilize the `review-only` vs `executable` boundary across scan, review, execute, completion, and history
+  - strengthen the `scan -> execute -> rescan` evidence chain for the expanded safe roots
+  - keep unsupported or high-risk paths explicitly non-executable
 - Exit criteria:
-  - recovery language matches shipped behavior
-  - file-backed recoverable actions either restore physically or are no longer described as if they do
-  - QA has explicit evidence for restore behavior on the candidate build
+  - newly supported safe roots show real post-execution rescan improvement
+  - unsupported roots remain clearly marked as `review-only`
+  - release-facing surfaces distinguish supported and unsupported execution scope without ambiguity
 
-### Milestone 4: Apps Competitive Depth
+### Milestone 4: Recovery Payload Hardening
 
-- Dates: `2026-05-12` to `2026-05-30`
-- Goal: close the highest-value `Apps` depth gaps versus `Pearcleaner` and `Lemon` without reopening MVP scope.
+- Dates: `2026-05-05` to `2026-05-23`
+- Goal: make recovery state structurally stable, backward-compatible, and historically trustworthy.
 - Focus:
-  - deepen uninstall preview taxonomy and leftover visibility
-  - improve clarity around launch items, service artifacts, and other app-adjacent footprint categories where Atlas can safely reason about them
-  - surface recoverability and audit cues directly in the uninstall flow
-  - validate uninstall flows against mainstream and developer-heavy fixture apps
+  - stabilize the recovery payload schema and versioning contract
+  - add migration and compatibility handling for older workspace and history state files
+  - deepen `History` detail evidence for restore payloads, conflicts, expiry, and partial restore outcomes
+  - add regression coverage for conflict, expired payload, and partial-restore scenarios
 - Exit criteria:
-  - `Apps` uninstall preview clearly explains footprint scope, leftovers, and recovery implications for supported flows
-  - supported uninstall fixtures show better uninstall depth and clearer completion evidence than the current baseline
-  - release-facing product copy can describe the `Apps` module as a trust-differentiated uninstall workflow, not just an app list with delete actions
+  - recovery payloads follow a stable versioned schema
+  - older state files migrate cleanly or fail with explicit compatibility behavior
+  - `History` detail can explain real restore evidence and degraded outcomes
+  - regression coverage exists for the main restore edge cases
+
+### Milestone 5: Release Readiness
+
+- Dates: `2026-05-26` to `2026-06-13`
+- Goal: turn the stabilized product path into a repeatable release candidate process, then switch to the signing chain when credentials exist.
+- Focus:
+  - make `full-acceptance` a routine gate on candidate builds
+  - stabilize UI automation for trust-critical MVP flows
+  - freeze packaging, install, and launch smoke checks as repeatable release scripts
+  - switch from the pre-signing release chain to `Developer ID + notarization` once credentials become available
+- Exit criteria:
+  - `full-acceptance` runs routinely on candidate builds
+  - trust-critical UI automation is stable enough for release gating
+  - packaging, install, and launch smoke checks are repeatable
+  - the signed chain either passes with credentials present or remains explicitly blocked only by missing credentials
 
 ## Conditional Release Branch
 
-These milestones do not start until Apple release credentials are available.
+These milestones do not start until Milestone `5` is complete and Apple release credentials are available.
 
-### Conditional Milestone A: Signed Public Beta Candidate
+### Conditional Milestone A: Signed External Beta Candidate
 
 - Trigger:
-  - Milestones `1` through `4` are complete
+  - Milestones `1` through `5` are complete
   - `Developer ID Application` is available
   - `Developer ID Installer` is available
   - `ATLAS_NOTARY_PROFILE` is available
 - Goal: produce a signed and notarized external beta candidate.
 - Focus:
-  - pass `./scripts/atlas/signing-preflight.sh`
-  - rerun signed packaging
+  - rerun the release scripts on the signed chain
   - validate signed `.app`, `.dmg`, and `.pkg` install paths on a clean machine
-  - prepare public beta notes and known limitations
+  - prepare external beta notes and known limitations
 - Exit criteria:
   - signed and notarized artifacts install without bypass instructions
   - clean-machine install verification passes on the signed candidate
 
-### Conditional Milestone B: Public Beta Learn Loop
+### Conditional Milestone B: External Beta Learn Loop
 
 - Trigger:
   - Conditional Milestone A is complete
-- Goal: run a small external beta after internal hardening is already complete.
+- Goal: run a small external beta only after the mainline product path is stable.
 - Focus:
   - use a hardware-diverse trusted beta cohort
   - triage install, permission, execution, and restore regressions
   - close P0 issues before any GA candidate is named
 - Exit criteria:
-  - no public-beta P0 remains open
+  - no external-beta P0 remains open
   - primary workflows are validated on more than one machine profile
 
 ### Conditional Milestone C: GA Candidate and Launch

@@ -52,6 +52,10 @@
 - `EPIC-19` GA Recovery and Execution Hardening
 - `EPIC-20` GA Launch Readiness
 - `EPIC-21` Marketing Site and Direct Distribution Landing Page
+- `EPIC-A` Apps Evidence Execution
+- `EPIC-B` Smart Clean Safe Coverage Expansion
+- `EPIC-C` Recovery Payload Hardening
+- `EPIC-D` Release Readiness
 
 ## Now / Next / Later
 
@@ -208,6 +212,7 @@
 - `Complete` — frozen MVP is implemented and internally beta-ready.
 - `Blocked` — release trust still depends on removing silent fallback and tightening execution/recovery honesty.
 - `Dormant` — signed public beta work is inactive until Apple signing/notarization credentials exist.
+- `Superseded` — the live post-hardening epic sequence now lives in `Current Mainline Priority Order` below.
 
 ### Focus
 
@@ -301,6 +306,85 @@
 - `ATL-244` Bind and verify a dedicated custom domain with HTTPS enforcement — `Release Agent`
 - `ATL-245` Surface release-channel state, download guidance, and prerelease install help on the page — `UX Agent`
 - `ATL-246` Add privacy-respecting analytics and launch QA for desktop/mobile — `QA Agent`
+
+## Current Mainline Priority Order
+
+### Current Status
+
+- `Complete` — internal beta hardening established the current execution-honesty baseline.
+- `Open` — the most visible comparison pressure is now concentrated in `Apps` and `Smart Clean`.
+- `Blocked` — final public-signing work still depends on `Developer ID` and notarization materials, so release mechanics are not the immediate product-path blocker.
+
+### Order Rule
+
+Execute the next mainline epics in this order only:
+
+1. `EPIC-A` Apps Evidence Execution
+2. `EPIC-B` Smart Clean Safe Coverage Expansion
+3. `EPIC-C` Recovery Payload Hardening
+4. `EPIC-D` Release Readiness
+
+Reason:
+
+- the clearest competitive differentiation pressure is in `Apps` and `Smart Clean`
+- the current release chain is already mostly working in pre-signing form
+- the gating blocker for public release remains missing signing materials, not packaging mechanics
+
+### Epics
+
+- `EPIC-A` Apps Evidence Execution
+- `EPIC-B` Smart Clean Safe Coverage Expansion
+- `EPIC-C` Recovery Payload Hardening
+- `EPIC-D` Release Readiness
+
+### Now / Next / Later
+
+#### Now
+
+- `EPIC-A` Apps Evidence Execution
+
+#### Next
+
+- `EPIC-B` Smart Clean Safe Coverage Expansion
+
+#### Later
+
+- `EPIC-C` Recovery Payload Hardening
+- `EPIC-D` Release Readiness
+
+### Seed Issues
+
+#### EPIC-A: Apps Evidence Execution
+
+- `ATL-251` Define the fixture app baseline for mainstream and developer-heavy uninstall scenarios — `QA Agent`
+- `ATL-252` Make `Apps` preview, completion, and history render the same uninstall evidence model end to end — `Core Agent` + `Mac App Agent`
+- `ATL-253` Define the restore-triggered app-footprint refresh policy and stale-evidence behavior after recovery — `Core Agent` + `System Agent`
+- `ATL-254` Script the manual acceptance flow for uninstall evidence, restore, and post-restore refresh verification — `QA Agent`
+- `ATL-255` Apps evidence execution gate review — `Product Agent`
+
+#### EPIC-B: Smart Clean Safe Coverage Expansion
+
+- `ATL-256` Define the next batch of high-confidence safe roots outside app containers and freeze the no-go boundaries — `System Agent`
+- `ATL-257` Stabilize `review-only` vs `executable` boundary metadata and UI cues across scan, review, execute, completion, and history — `Core Agent` + `Mac App Agent`
+- `ATL-258` Add `scan -> execute -> rescan` evidence capture and contract coverage for the expanded safe roots — `QA Agent`
+- `ATL-259` Implement and validate the next safe-root execution slice without widening into high-risk cleanup paths — `System Agent`
+- `ATL-260` Smart Clean safe coverage gate review — `Product Agent`
+
+#### EPIC-C: Recovery Payload Hardening
+
+- `ATL-261` Freeze the recovery payload schema, versioning rules, and compatibility contract — `Core Agent`
+- `ATL-262` Add migration and compatibility handling for older workspace and history state files — `Core Agent` + `System Agent`
+- `ATL-263` Expand `History` detail evidence to show restore payload, conflict, expiry, and partial-restore outcomes — `Mac App Agent`
+- `ATL-264` Add regression coverage for restore conflict, expired payload, and partial-restore scenarios — `QA Agent`
+- `ATL-265` Recovery payload hardening gate review — `Product Agent`
+
+#### EPIC-D: Release Readiness
+
+- `ATL-266` Make `full-acceptance` a routine gate on the candidate build instead of a one-off release exercise — `QA Agent`
+- `ATL-267` Stabilize UI automation for trust-critical `Overview`, `Smart Clean`, `Apps`, `History`, and `Recovery` flows — `QA Agent` + `Mac App Agent`
+- `ATL-268` Freeze packaging, install, and launch smoke checks as repeatable release scripts — `Release Agent`
+- `ATL-269` Switch from the pre-signing release chain to `Developer ID + notarization` once credentials are available — `Release Agent`
+- `ATL-270` Release readiness gate review — `Product Agent`
 
 ## Definition of Ready
 

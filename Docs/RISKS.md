@@ -144,3 +144,11 @@
 - Owner: `Docs Agent`
 - Risk: Competitive pressure may tempt reuse of code or assets from `Tencent Lemon Cleaner`, `GrandPerspective`, or GPL-constrained `Czkawka` components, creating license conflict with Atlas's shipping posture. `Pearcleaner` also remains unsuitable for monetized derivative reuse due `Commons Clause`.
 - Mitigation: Treat these projects as product and technical references only, require explicit license review before adapting any third-party implementation, and prefer MIT-compatible upstream or original Atlas implementations for shipped code.
+
+## R-019 Release-First Sequencing Drift
+
+- Impact: High
+- Probability: Medium
+- Owner: `Product Agent`
+- Risk: The team may over-rotate toward release mechanics because the packaging chain mostly works, even though the real public-release blocker is still missing signing materials and the sharper product pressure is in `Apps` and `Smart Clean`.
+- Mitigation: Keep the active mainline order at `Apps -> Smart Clean -> Recovery -> Release`, and treat the `Developer ID + notarization` switch as the final convergence step once product-path evidence and credentials both exist.
