@@ -57,6 +57,11 @@ Before starting beta acceptance, confirm all of the following:
 - [ ] User can execute preview
 - [ ] Execution updates `History`
 - [ ] Execution creates `Recovery` entries for recoverable items
+- [ ] Supported cleanup classes are explicit
+- [ ] Unsupported or review-only cleanup paths fail closed visibly
+- [ ] `scan -> execute -> rescan` proof exists for the validating supported fixture
+- [ ] The validating supported fixture is an app-container cache or temp target under `~/Library/Containers/...`
+- [ ] The validating unsupported fixture is a launch-agent, service-adjacent, or otherwise review-only target
 
 ### Apps
 - [ ] User can open `Apps`
@@ -65,6 +70,11 @@ Before starting beta acceptance, confirm all of the following:
 - [ ] User can execute uninstall
 - [ ] Uninstall updates `History`
 - [ ] Uninstall creates `Recovery` entry
+- [ ] Uninstall preview explains supported footprint categories, not only totals
+- [ ] Review-only evidence displays concrete observed paths for at least one validating fixture
+- [ ] Completion state explains what Atlas actually removed and what was recorded for recovery/history
+- [ ] History / Recovery detail distinguishes the recoverable bundle from review-only leftover evidence
+- [ ] Fixture coverage includes one mainstream GUI app, one developer-heavy app, one launch-item/service-adjacent app, and one sparse-leftover app
 
 ### History / Recovery
 - [ ] History shows recent task runs
@@ -113,6 +123,7 @@ Mark beta candidate as ready only if all are true:
 - [ ] Install path has been validated on the current candidate build
 - [ ] Known unsupported areas are explicitly documented
 - [ ] Release-signing status is explicit
+- [ ] `Smart Clean` and `Apps` do not overclaim parity with broader cleaner tools
 
 ## Sign-off
 

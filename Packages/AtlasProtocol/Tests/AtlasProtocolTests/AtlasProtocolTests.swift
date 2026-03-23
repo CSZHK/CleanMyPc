@@ -56,4 +56,31 @@ final class AtlasProtocolTests: XCTestCase {
 
         XCTAssertEqual(decoded.response, envelope.response)
     }
+
+    func testPreviewResponseRoundTripsReviewOnlyEvidencePaths() throws {
+        let plan = ActionPlan(
+            title: "Uninstall Example",
+            items: [
+                ActionItem(
+                    title: "Review support files (2)",
+                    detail: "Found 12 KB across 2 item(s).",
+                    kind: .inspectPermission,
+                    recoverable: false,
+                    evidencePaths: [
+                        "/Users/test/Library/Application Support/Example",
+                        "/Users/test/Library/Saved Application State/com.example.savedState"
+                    ]
+                )
+            ],
+            estimatedBytes: 1_024
+        )
+        let envelope = AtlasResponseEnvelope(
+            requestID: UUID(),
+            response: .preview(plan)
+        )
+        let data = try JSONEncoder().encode(envelope)
+        let decoded = try JSONDecoder().decode(AtlasResponseEnvelope.self, from: data)
+
+        XCTAssertEqual(decoded.response, envelope.response)
+    }
 }

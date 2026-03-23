@@ -442,6 +442,8 @@ private struct AppDetailView: View {
             }
 
             if let previewPlan {
+                let recoverableItems = previewPlan.items.filter(\.recoverable)
+                let reviewOnlyItems = previewPlan.items.filter { !$0.recoverable }
                 AtlasInfoCard(
                     title: AtlasL10n.string("apps.preview.title"),
                     subtitle: previewPlan.title,
@@ -464,26 +466,95 @@ private struct AppDetailView: View {
                         )
                         AtlasMetricCard(
                             title: AtlasL10n.string("apps.preview.metric.recoverable.title"),
-                            value: "\(previewPlan.items.filter(\.recoverable).count)",
+                            value: "\(recoverableItems.count)",
                             detail: AtlasL10n.string("apps.preview.metric.recoverable.detail"),
                             tone: .success,
                             systemImage: "arrow.uturn.backward.circle"
                         )
+                        AtlasMetricCard(
+                            title: AtlasL10n.string("apps.preview.metric.reviewOnly.title"),
+                            value: "\(reviewOnlyItems.count)",
+                            detail: AtlasL10n.string("apps.preview.metric.reviewOnly.detail"),
+                            tone: reviewOnlyItems.isEmpty ? .neutral : .warning,
+                            systemImage: "doc.text.magnifyingglass"
+                        )
                     }
 
-                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                        ForEach(previewPlan.items) { item in
-                            AtlasDetailRow(
-                                title: item.title,
-                                subtitle: item.detail,
-                                footnote: item.recoverable ? AtlasL10n.string("apps.preview.row.recoverable") : AtlasL10n.string("apps.preview.row.review"),
-                                systemImage: item.kind.atlasSystemImage,
-                                tone: item.recoverable ? .success : .warning
-                            ) {
-                                AtlasStatusChip(
-                                    item.recoverable ? AtlasL10n.string("common.recoverable") : AtlasL10n.string("common.manualReview"),
-                                    tone: item.recoverable ? .success : .warning
-                                )
+                    AtlasCallout(
+                        title: AtlasL10n.string(
+                            reviewOnlyItems.isEmpty
+                                ? "apps.preview.callout.safe.title"
+                                : "apps.preview.callout.review.title"
+                        ),
+                        detail: AtlasL10n.string(
+                            reviewOnlyItems.isEmpty
+                                ? "apps.preview.callout.safe.detail"
+                                : "apps.preview.callout.review.detail"
+                        ),
+                        tone: reviewOnlyItems.isEmpty ? .success : .warning,
+                        systemImage: reviewOnlyItems.isEmpty ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                    )
+
+                    if !recoverableItems.isEmpty {
+                        VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                            ForEach(recoverableItems) { item in
+                                AtlasDetailRow(
+                                    title: item.title,
+                                    subtitle: item.detail,
+                                    footnote: AtlasL10n.string("apps.preview.row.recoverable"),
+                                    systemImage: item.kind.atlasSystemImage,
+                                    tone: .success
+                                ) {
+                                    AtlasStatusChip(
+                                        AtlasL10n.string("common.recoverable"),
+                                        tone: .success
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if !reviewOnlyItems.isEmpty {
+                        AtlasInfoCard(
+                            title: AtlasL10n.string("apps.preview.reviewOnly.title"),
+                            subtitle: AtlasL10n.string(
+                                reviewOnlyItems.count == 1
+                                    ? "apps.preview.reviewOnly.subtitle.one"
+                                    : "apps.preview.reviewOnly.subtitle.other",
+                                reviewOnlyItems.count
+                            ),
+                            tone: .neutral
+                        ) {
+                            VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                                ForEach(reviewOnlyItems) { item in
+                                    VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
+                                        AtlasDetailRow(
+                                            title: item.title,
+                                            subtitle: item.detail,
+                                            footnote: AtlasL10n.string("apps.preview.reviewOnly.footnote"),
+                                            systemImage: item.kind.atlasSystemImage,
+                                            tone: .neutral
+                                        ) {
+                                            AtlasStatusChip(
+                                                AtlasL10n.string("common.manualReview"),
+                                                tone: .warning
+                                            )
+                                        }
+
+                                        if let evidencePaths = item.evidencePaths, !evidencePaths.isEmpty {
+                                            AtlasMachineTextBlock(
+                                                title: AtlasL10n.string("apps.preview.reviewOnly.paths.title"),
+                                                value: evidencePaths.joined(separator: "\n"),
+                                                detail: AtlasL10n.string(
+                                                    evidencePaths.count == 1
+                                                        ? "apps.preview.reviewOnly.paths.detail.one"
+                                                        : "apps.preview.reviewOnly.paths.detail.other",
+                                                    evidencePaths.count
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

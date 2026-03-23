@@ -63,9 +63,9 @@ private struct AtlasReadmeAssetExporter {
         AtlasL10n.setCurrentLanguage(screenshotLanguage)
 
         let state = AtlasScaffoldWorkspace.state(language: screenshotLanguage)
-        let canExecuteSmartCleanPlan = state.currentPlan.items.contains(where: { $0.kind != .inspectPermission })
+        let canExecuteSmartCleanPlan = state.currentPlan.items.contains(where: { $0.kind != .inspectPermission && $0.kind != .reviewEvidence })
             && state.currentPlan.items
-                .filter { $0.kind != .inspectPermission }
+                .filter { $0.kind != .inspectPermission && $0.kind != .reviewEvidence }
                 .allSatisfy { !($0.targetPaths ?? []).isEmpty }
 
         try exportAppIcon()

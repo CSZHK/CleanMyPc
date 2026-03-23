@@ -303,7 +303,7 @@ public struct SmartCleanFeatureView: View {
     }
 
     private func isPhysicallyExecutable(_ item: ActionItem) -> Bool {
-        guard item.kind != .inspectPermission else {
+        guard item.kind != .inspectPermission, item.kind != .reviewEvidence else {
             return false
         }
         if let targetPaths = item.targetPaths, !targetPaths.isEmpty {
@@ -474,6 +474,8 @@ public struct SmartCleanFeatureView: View {
             return AtlasL10n.string("smartclean.support.archiveFile")
         case .inspectPermission:
             return AtlasL10n.string("smartclean.support.inspectPermission")
+        case .reviewEvidence:
+            return AtlasL10n.string("smartclean.support.archiveFile")
         }
     }
 

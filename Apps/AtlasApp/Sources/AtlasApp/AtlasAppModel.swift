@@ -236,7 +236,7 @@ final class AtlasAppModel: ObservableObject {
     }
 
     var currentSmartCleanPlanHasExecutableTargets: Bool {
-        let executableItems = currentPlan.items.filter { $0.kind != .inspectPermission }
+        let executableItems = currentPlan.items.filter { $0.kind != .inspectPermission && $0.kind != .reviewEvidence }
         guard !executableItems.isEmpty else {
             return false
         }

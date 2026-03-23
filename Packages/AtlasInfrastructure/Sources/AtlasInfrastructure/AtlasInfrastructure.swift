@@ -33,22 +33,6 @@ public actor AtlasAuditStore {
     }
 }
 
-public struct AtlasCapabilityStatus: Hashable, Sendable {
-    public var workerConnected: Bool
-    public var helperInstalled: Bool
-    public var protocolVersion: String
-
-    public init(
-        workerConnected: Bool = false,
-        helperInstalled: Bool = false,
-        protocolVersion: String = AtlasProtocolVersion.current
-    ) {
-        self.workerConnected = workerConnected
-        self.helperInstalled = helperInstalled
-        self.protocolVersion = protocolVersion
-    }
-}
-
 public struct AtlasPermissionInspector: Sendable {
     private let fullDiskAccessProbeURLs: [URL]
     private let protectedLocationReader: @Sendable (URL) -> Bool
@@ -249,6 +233,10 @@ public enum AtlasSmartCleanExecutionSupport {
             return true
         }
 
+        if isSupportedContainerCleanupPath(path, homeDirectoryURL: homeDirectoryURL) {
+            return true
+        }
+
         let safeFragments = [
             "/__pycache__",
             "/.next/cache",
@@ -277,6 +265,24 @@ public enum AtlasSmartCleanExecutionSupport {
             ".zsh_history.bak",
         ]
         return safeBasenamePrefixes.contains(where: { basename.hasPrefix($0) })
+    }
+
+    private static func isSupportedContainerCleanupPath(_ path: String, homeDirectoryURL: URL) -> Bool {
+        let containerRoot = homeDirectoryURL.appendingPathComponent("Library/Containers", isDirectory: true).path
+        guard path == containerRoot || path.hasPrefix(containerRoot + "/") else {
+            return false
+        }
+
+        let allowedContainerFragments = [
+            "/Data/Library/Caches",
+            "/Data/Library/Logs",
+            "/Data/tmp",
+            "/Data/Library/tmp",
+        ]
+
+        return allowedContainerFragments.contains(where: { fragment in
+            path == containerRoot + fragment || path.contains(fragment + "/") || path.hasSuffix(fragment)
+        })
     }
 
     public static func isSupportedExecutionTarget(_ targetURL: URL, homeDirectoryURL: URL = FileManager.default.homeDirectoryForCurrentUser) -> Bool {
@@ -423,6 +429,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     private let smartCleanScanProvider: (any AtlasSmartCleanScanProviding)?
     private let appsInventoryProvider: (any AtlasAppInventoryProviding)?
     private let helperExecutor: (any AtlasPrivilegedActionExecuting)?
+    private let appUninstallEvidenceAnalyzer: AtlasAppUninstallEvidenceAnalyzer
     private let nowProvider: @Sendable () -> Date
     private let allowProviderFailureFallback: Bool
     private let allowStateOnlyCleanExecution: Bool
@@ -435,6 +442,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         smartCleanScanProvider: (any AtlasSmartCleanScanProviding)? = nil,
         appsInventoryProvider: (any AtlasAppInventoryProviding)? = nil,
         helperExecutor: (any AtlasPrivilegedActionExecuting)? = nil,
+        appUninstallEvidenceAnalyzer: AtlasAppUninstallEvidenceAnalyzer = AtlasAppUninstallEvidenceAnalyzer(),
         auditStore: AtlasAuditStore = AtlasAuditStore(),
         nowProvider: @escaping @Sendable () -> Date = { Date() },
         allowProviderFailureFallback: Bool = ProcessInfo.processInfo.environment["ATLAS_ALLOW_PROVIDER_FAILURE_FALLBACK"] == "1",
@@ -447,6 +455,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         self.smartCleanScanProvider = smartCleanScanProvider
         self.appsInventoryProvider = appsInventoryProvider
         self.helperExecutor = helperExecutor
+        self.appUninstallEvidenceAnalyzer = appUninstallEvidenceAnalyzer
         self.nowProvider = nowProvider
         self.allowProviderFailureFallback = allowProviderFailureFallback
         self.allowStateOnlyCleanExecution = allowStateOnlyCleanExecution
@@ -632,7 +641,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         }
 
         let executableSelections = selectedItems.compactMap { item -> SmartCleanExecutableSelection? in
-            guard item.kind != .inspectPermission, let finding = findingsByID[item.id] else {
+            guard item.kind != .inspectPermission, item.kind != .reviewEvidence, let finding = findingsByID[item.id] else {
                 return nil
             }
             return SmartCleanExecutableSelection(
@@ -794,9 +803,13 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
                 if !state.snapshot.findings.contains(where: { $0.id == finding.id }) {
                     state.snapshot.findings.insert(finding, at: 0)
                 }
-            case let .app(app):
-                if !state.snapshot.apps.contains(where: { $0.id == app.id }) {
-                    state.snapshot.apps.insert(app, at: 0)
+            case let .app(payload):
+                var restoredApp = payload.app
+                if payload.uninstallEvidence.reviewOnlyItemCount > 0 {
+                    restoredApp.leftoverItems = payload.uninstallEvidence.reviewOnlyItemCount
+                }
+                if !state.snapshot.apps.contains(where: { $0.id == restoredApp.id }) {
+                    state.snapshot.apps.insert(restoredApp, at: 0)
                 }
             case nil:
                 break
@@ -874,6 +887,13 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             )
         }
 
+        let uninstallEvidence = appUninstallEvidenceAnalyzer.analyze(
+            appName: app.name,
+            bundleIdentifier: app.bundleIdentifier,
+            bundlePath: app.bundlePath,
+            bundleBytes: app.bytes
+        )
+
         var appRestoreMappings: [RecoveryPathMapping]?
         if !app.bundlePath.isEmpty, FileManager.default.fileExists(atPath: app.bundlePath) {
             guard let helperExecutor else {
@@ -901,13 +921,16 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
 
         let taskID = UUID()
         state.snapshot.apps.removeAll { $0.id == appID }
-        state.snapshot.recoveryItems.insert(makeRecoveryItem(for: app, deletedAt: Date(), restoreMappings: appRestoreMappings), at: 0)
+        state.snapshot.recoveryItems.insert(
+            makeRecoveryItem(for: app, uninstallEvidence: uninstallEvidence, deletedAt: Date(), restoreMappings: appRestoreMappings),
+            at: 0
+        )
 
         let completedRun = TaskRun(
             id: taskID,
             kind: .uninstallApp,
             status: .completed,
-            summary: AtlasL10n.string("infrastructure.apps.uninstall.summary", language: state.settings.language, app.name),
+            summary: appUninstallSummary(for: app, uninstallEvidence: uninstallEvidence),
             startedAt: request.issuedAt,
             finishedAt: Date()
         )
@@ -1263,16 +1286,67 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     }
 
     private func makeRecoveryItem(for app: AppFootprint, deletedAt: Date, restoreMappings: [RecoveryPathMapping]? = nil) -> RecoveryItem {
-        RecoveryItem(
+        makeRecoveryItem(
+            for: app,
+            uninstallEvidence: AtlasAppUninstallEvidence(bundlePath: app.bundlePath, bundleBytes: app.bytes, reviewOnlyGroups: []),
+            deletedAt: deletedAt,
+            restoreMappings: restoreMappings
+        )
+    }
+
+    private func makeRecoveryItem(
+        for app: AppFootprint,
+        uninstallEvidence: AtlasAppUninstallEvidence,
+        deletedAt: Date,
+        restoreMappings: [RecoveryPathMapping]? = nil
+    ) -> RecoveryItem {
+        let reviewOnlyItemCount = uninstallEvidence.reviewOnlyItemCount > 0 ? uninstallEvidence.reviewOnlyItemCount : app.leftoverItems
+        let baseDetail = AtlasL10n.string(
+            reviewOnlyItemCount == 1 ? "infrastructure.recovery.app.detail.one" : "infrastructure.recovery.app.detail.other",
+            language: state.settings.language,
+            reviewOnlyItemCount
+        )
+        return RecoveryItem(
             title: app.name,
-            detail: AtlasL10n.string(app.leftoverItems == 1 ? "infrastructure.recovery.app.detail.one" : "infrastructure.recovery.app.detail.other", language: state.settings.language, app.leftoverItems),
+            detail: appReviewOnlyEvidenceDetail(baseDetail: baseDetail, uninstallEvidence: uninstallEvidence),
             originalPath: app.bundlePath,
             bytes: app.bytes,
             deletedAt: deletedAt,
             expiresAt: recoveryExpiryDate(from: deletedAt),
-            payload: .app(app),
+            payload: .app(AtlasAppRecoveryPayload(app: app, uninstallEvidence: uninstallEvidence)),
             restoreMappings: restoreMappings
         )
+    }
+
+    private func appUninstallSummary(for app: AppFootprint, uninstallEvidence: AtlasAppUninstallEvidence) -> String {
+        let reviewOnlyGroupCount = uninstallEvidence.reviewOnlyGroupCount
+        guard reviewOnlyGroupCount > 0 else {
+            return AtlasL10n.string("infrastructure.apps.uninstall.summary", language: state.settings.language, app.name)
+        }
+
+        let baseSummary = AtlasL10n.string(
+            reviewOnlyGroupCount == 1 ? "infrastructure.apps.uninstall.summary.review.one" : "infrastructure.apps.uninstall.summary.review.other",
+            language: state.settings.language,
+            app.name,
+            reviewOnlyGroupCount
+        )
+        return appReviewOnlyEvidenceDetail(baseDetail: baseSummary, uninstallEvidence: uninstallEvidence)
+    }
+
+    private func appReviewOnlyEvidenceDetail(baseDetail: String, uninstallEvidence: AtlasAppUninstallEvidence) -> String {
+        let categorySummary = appReviewOnlyEvidenceCategorySummary(for: uninstallEvidence.reviewOnlyGroups)
+        guard !categorySummary.isEmpty else {
+            return baseDetail
+        }
+        return baseDetail + " " + AtlasL10n.string(
+            "infrastructure.apps.uninstall.reviewCategories",
+            language: state.settings.language,
+            categorySummary
+        )
+    }
+
+    private func appReviewOnlyEvidenceCategorySummary(for groups: [AtlasAppFootprintEvidenceGroup]) -> String {
+        groups.map { appReviewOnlyEvidenceLabel(for: $0.category) }.joined(separator: ", ")
     }
 
     private func inferredPath(for finding: Finding) -> String {
@@ -1324,26 +1398,72 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     }
 
     private func makeAppUninstallPreview(for app: AppFootprint) -> ActionPlan {
-        ActionPlan(
+        let uninstallEvidence = appUninstallEvidenceAnalyzer.analyze(
+            appName: app.name,
+            bundleIdentifier: app.bundleIdentifier,
+            bundlePath: app.bundlePath,
+            bundleBytes: app.bytes
+        )
+
+        var items: [ActionItem] = [
+            ActionItem(
+                id: app.id,
+                title: AtlasL10n.string("infrastructure.plan.uninstall.moveBundle.title", language: state.settings.language, app.name),
+                detail: AtlasL10n.string("infrastructure.plan.uninstall.moveBundle.detail", language: state.settings.language, app.bundlePath),
+                kind: .removeApp,
+                recoverable: true,
+                targetPaths: [app.bundlePath]
+            ),
+        ]
+
+        items.append(contentsOf: uninstallEvidence.reviewOnlyGroups.map { group in
+            ActionItem(
+                title: appReviewOnlyEvidenceTitle(for: group),
+                detail: AtlasL10n.string(
+                    "infrastructure.plan.uninstall.review.detail",
+                    language: state.settings.language,
+                    formattedByteCount(group.totalBytes),
+                    group.items.count
+                ),
+                kind: .reviewEvidence,
+                recoverable: false,
+                evidencePaths: group.items.map(\.path)
+            )
+        })
+
+        return ActionPlan(
             title: AtlasL10n.string("infrastructure.plan.uninstall.title", language: state.settings.language, app.name),
-            items: [
-                ActionItem(
-                    id: app.id,
-                    title: AtlasL10n.string("infrastructure.plan.uninstall.moveBundle.title", language: state.settings.language, app.name),
-                    detail: AtlasL10n.string("infrastructure.plan.uninstall.moveBundle.detail", language: state.settings.language, app.bundlePath),
-                    kind: .removeApp,
-                    recoverable: true,
-                    targetPaths: [app.bundlePath]
-                ),
-                ActionItem(
-                    title: AtlasL10n.string(app.leftoverItems == 1 ? "infrastructure.plan.uninstall.archive.one" : "infrastructure.plan.uninstall.archive.other", language: state.settings.language, app.leftoverItems),
-                    detail: AtlasL10n.string("infrastructure.plan.uninstall.archive.detail", language: state.settings.language),
-                    kind: .removeCache,
-                    recoverable: true
-                ),
-            ],
+            items: items,
             estimatedBytes: app.bytes
         )
+    }
+
+    private func appReviewOnlyEvidenceTitle(for group: AtlasAppFootprintEvidenceGroup) -> String {
+        AtlasL10n.string(
+            "infrastructure.plan.uninstall.review.title",
+            language: state.settings.language,
+            appReviewOnlyEvidenceLabel(for: group.category),
+            group.items.count
+        )
+    }
+
+    private func appReviewOnlyEvidenceLabel(for category: AtlasAppFootprintEvidenceCategory) -> String {
+        switch category {
+        case .supportFiles:
+            return AtlasL10n.string("infrastructure.plan.uninstall.review.supportFiles", language: state.settings.language)
+        case .caches:
+            return AtlasL10n.string("infrastructure.plan.uninstall.review.caches", language: state.settings.language)
+        case .preferences:
+            return AtlasL10n.string("infrastructure.plan.uninstall.review.preferences", language: state.settings.language)
+        case .logs:
+            return AtlasL10n.string("infrastructure.plan.uninstall.review.logs", language: state.settings.language)
+        case .launchItems:
+            return AtlasL10n.string("infrastructure.plan.uninstall.review.launchItems", language: state.settings.language)
+        }
+    }
+
+    private func formattedByteCount(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
     private func actionTitle(for finding: Finding) -> String {
@@ -1351,6 +1471,8 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         case .removeApp:
             return AtlasL10n.string("infrastructure.action.reviewUninstall", language: state.settings.language, finding.title)
         case .inspectPermission:
+            return AtlasL10n.string("infrastructure.action.inspectPrivileged", language: state.settings.language, finding.title)
+        case .reviewEvidence:
             return AtlasL10n.string("infrastructure.action.inspectPrivileged", language: state.settings.language, finding.title)
         case .archiveFile:
             return AtlasL10n.string("infrastructure.action.archiveRecovery", language: state.settings.language, finding.title)

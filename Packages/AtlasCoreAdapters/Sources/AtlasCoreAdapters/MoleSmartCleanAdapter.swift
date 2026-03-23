@@ -146,12 +146,24 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
         let path = displayPath.lowercased()
         let last = url.lastPathComponent
         let parent = url.deletingLastPathComponent().lastPathComponent
+        let containerIdentifier = appContainerIdentifier(from: url)
 
         if path.contains("/google/chrome/default") { return "Chrome cache" }
         if path.contains("component_crx_cache") { return "Chrome component cache" }
         if path.contains("googleupdater") { return "Google Updater cache" }
         if path.contains("deriveddata") { return "Xcode DerivedData" }
         if path.contains("/library/pnpm/store") { return "pnpm store" }
+        if path.contains("/library/containers/"), let containerIdentifier {
+            if path.contains("/data/library/caches") {
+                return "\(containerIdentifier) container cache"
+            }
+            if path.contains("/data/tmp") || path.contains("/data/library/tmp") {
+                return "\(containerIdentifier) container temp files"
+            }
+            if path.contains("/data/library/logs") || path.contains("/data/logs") {
+                return "\(containerIdentifier) container logs"
+            }
+        }
         if path.contains("/__pycache__") || last == "__pycache__" { return "Python bytecode cache" }
         if path.contains("/.next/cache") { return "Next.js build cache" }
         if path.contains("/.npm/") || path.hasSuffix("/.npm") || path.contains("_cacache") { return "npm cache" }
@@ -313,6 +325,15 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
     private static func stripANSI(from text: String) -> String {
         let pattern = String("\u{001B}") + "\\[[0-9;]*m"
         return text.replacingOccurrences(of: pattern, with: "", options: .regularExpression)
+    }
+
+    private static func appContainerIdentifier(from url: URL) -> String? {
+        let components = url.pathComponents
+        guard let containersIndex = components.firstIndex(of: "Containers"),
+              containersIndex + 1 < components.count else {
+            return nil
+        }
+        return components[containersIndex + 1]
     }
 
     private static var defaultCleanScriptURL: URL {

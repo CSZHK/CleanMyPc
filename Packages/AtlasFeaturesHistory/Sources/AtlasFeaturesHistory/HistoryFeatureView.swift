@@ -981,6 +981,30 @@ private struct HistoryRecoveryDetailView: View {
                     .strokeBorder(AtlasColor.border, lineWidth: 1)
             )
 
+            if let payload = appRecoveryPayload, payload.uninstallEvidence.reviewOnlyItemCount > 0 {
+                AtlasInfoCard(
+                    title: AtlasL10n.string("history.detail.recovery.reviewOnly.title"),
+                    subtitle: AtlasL10n.string(
+                        payload.uninstallEvidence.reviewOnlyItemCount == 1
+                            ? "history.detail.recovery.reviewOnly.subtitle.one"
+                            : "history.detail.recovery.reviewOnly.subtitle.other",
+                        payload.uninstallEvidence.reviewOnlyItemCount
+                    ),
+                    tone: .neutral
+                ) {
+                    AtlasCallout(
+                        title: AtlasL10n.string("history.detail.recovery.reviewOnly.callout.title"),
+                        detail: AtlasL10n.string(
+                            item.hasPhysicalRestorePath
+                                ? "history.detail.recovery.reviewOnly.callout.detail.fileBacked"
+                                : "history.detail.recovery.reviewOnly.callout.detail.stateOnly"
+                        ),
+                        tone: .neutral,
+                        systemImage: "doc.text.magnifyingglass"
+                    )
+                }
+            }
+
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .center, spacing: AtlasSpacing.md) {
                     Spacer(minLength: 0)
@@ -1021,6 +1045,20 @@ private struct HistoryRecoveryDetailView: View {
                 .font(AtlasTypography.label)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private var appPayload: AppFootprint? {
+        guard case let .app(payload)? = item.payload else {
+            return nil
+        }
+        return payload.app
+    }
+
+    private var appRecoveryPayload: AtlasAppRecoveryPayload? {
+        guard case let .app(payload)? = item.payload else {
+            return nil
+        }
+        return payload
     }
 
     private var restoreButton: some View {

@@ -171,6 +171,7 @@ public struct ActionItem: Identifiable, Codable, Hashable, Sendable {
         case removeApp
         case archiveFile
         case inspectPermission
+        case reviewEvidence
     }
 
     public var id: UUID
@@ -179,6 +180,7 @@ public struct ActionItem: Identifiable, Codable, Hashable, Sendable {
     public var kind: Kind
     public var recoverable: Bool
     public var targetPaths: [String]?
+    public var evidencePaths: [String]?
 
     public init(
         id: UUID = UUID(),
@@ -186,7 +188,8 @@ public struct ActionItem: Identifiable, Codable, Hashable, Sendable {
         detail: String,
         kind: Kind,
         recoverable: Bool,
-        targetPaths: [String]? = nil
+        targetPaths: [String]? = nil,
+        evidencePaths: [String]? = nil
     ) {
         self.id = id
         self.title = title
@@ -194,6 +197,7 @@ public struct ActionItem: Identifiable, Codable, Hashable, Sendable {
         self.kind = kind
         self.recoverable = recoverable
         self.targetPaths = targetPaths
+        self.evidencePaths = evidencePaths
     }
 }
 
@@ -287,9 +291,135 @@ public struct TaskRun: Identifiable, Codable, Hashable, Sendable {
     }
 }
 
+public enum AtlasAppFootprintEvidenceCategory: String, CaseIterable, Codable, Hashable, Sendable {
+    case supportFiles
+    case caches
+    case preferences
+    case logs
+    case launchItems
+}
+
+public struct AtlasAppFootprintEvidenceItem: Identifiable, Codable, Hashable, Sendable {
+    public var path: String
+    public var bytes: Int64
+
+    public var id: String { path }
+
+    public init(path: String, bytes: Int64) {
+        self.path = path
+        self.bytes = bytes
+    }
+}
+
+public struct AtlasAppFootprintEvidenceGroup: Identifiable, Codable, Hashable, Sendable {
+    public var category: AtlasAppFootprintEvidenceCategory
+    public var items: [AtlasAppFootprintEvidenceItem]
+
+    public var id: AtlasAppFootprintEvidenceCategory { category }
+
+    public var totalBytes: Int64 {
+        items.map(\.bytes).reduce(0, +)
+    }
+
+    public init(category: AtlasAppFootprintEvidenceCategory, items: [AtlasAppFootprintEvidenceItem]) {
+        self.category = category
+        self.items = items
+    }
+}
+
+public struct AtlasAppUninstallEvidence: Codable, Hashable, Sendable {
+    public var bundlePath: String
+    public var bundleBytes: Int64
+    public var reviewOnlyGroups: [AtlasAppFootprintEvidenceGroup]
+
+    public var reviewOnlyGroupCount: Int {
+        reviewOnlyGroups.count
+    }
+
+    public var reviewOnlyItemCount: Int {
+        reviewOnlyGroups.reduce(0) { partial, group in
+            partial + group.items.count
+        }
+    }
+
+    public var reviewOnlyBytes: Int64 {
+        reviewOnlyGroups.reduce(0) { partial, group in
+            partial + group.totalBytes
+        }
+    }
+
+    public init(bundlePath: String, bundleBytes: Int64, reviewOnlyGroups: [AtlasAppFootprintEvidenceGroup]) {
+        self.bundlePath = bundlePath
+        self.bundleBytes = bundleBytes
+        self.reviewOnlyGroups = reviewOnlyGroups
+    }
+}
+
+public struct AtlasAppRecoveryPayload: Codable, Hashable, Sendable {
+    public var app: AppFootprint
+    public var uninstallEvidence: AtlasAppUninstallEvidence
+
+    public init(app: AppFootprint, uninstallEvidence: AtlasAppUninstallEvidence) {
+        self.app = app
+        self.uninstallEvidence = uninstallEvidence
+    }
+}
+
 public enum RecoveryPayload: Codable, Hashable, Sendable {
     case finding(Finding)
-    case app(AppFootprint)
+    case app(AtlasAppRecoveryPayload)
+
+    private enum CodingKeys: String, CodingKey {
+        case finding
+        case app
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        if container.contains(.finding) {
+            self = .finding(try container.decode(Finding.self, forKey: .finding))
+            return
+        }
+
+        if container.contains(.app) {
+            if let payload = try? container.decode(AtlasAppRecoveryPayload.self, forKey: .app) {
+                self = .app(payload)
+                return
+            }
+
+            let legacyApp = try container.decode(AppFootprint.self, forKey: .app)
+            self = .app(
+                AtlasAppRecoveryPayload(
+                    app: legacyApp,
+                    uninstallEvidence: AtlasAppUninstallEvidence(
+                        bundlePath: legacyApp.bundlePath,
+                        bundleBytes: legacyApp.bytes,
+                        reviewOnlyGroups: []
+                    )
+                )
+            )
+            return
+        }
+
+        throw DecodingError.dataCorrupted(
+            DecodingError.Context(
+                codingPath: decoder.codingPath,
+                debugDescription: "RecoveryPayload must contain either a finding or app payload."
+            )
+        )
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        switch self {
+        case let .finding(finding):
+            try container.encode(finding, forKey: .finding)
+        case let .app(payload):
+            try container.encode(payload, forKey: .app)
+        }
+    }
 }
 
 public struct RecoveryPathMapping: Codable, Hashable, Sendable {

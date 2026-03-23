@@ -5,6 +5,22 @@ public enum AtlasProtocolVersion {
     public static let current = "0.3.1"
 }
 
+public struct AtlasCapabilityStatus: Codable, Hashable, Sendable {
+    public var workerConnected: Bool
+    public var helperInstalled: Bool
+    public var protocolVersion: String
+
+    public init(
+        workerConnected: Bool = false,
+        helperInstalled: Bool = false,
+        protocolVersion: String = AtlasProtocolVersion.current
+    ) {
+        self.workerConnected = workerConnected
+        self.helperInstalled = helperInstalled
+        self.protocolVersion = protocolVersion
+    }
+}
+
 public enum AtlasCommand: Codable, Hashable, Sendable {
     case healthSnapshot
     case inspectPermissions

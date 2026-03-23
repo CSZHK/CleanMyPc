@@ -50,7 +50,7 @@ let package = Package(
         ),
         .target(
             name: "AtlasCoreAdapters",
-            dependencies: ["AtlasApplication", "AtlasDomain", "AtlasInfrastructure", "AtlasProtocol"],
+            dependencies: ["AtlasApplication", "AtlasDomain", "AtlasProtocol"],
             path: "AtlasCoreAdapters/Sources/AtlasCoreAdapters",
             resources: [.copy("Resources/MoleRuntime")]
         ),

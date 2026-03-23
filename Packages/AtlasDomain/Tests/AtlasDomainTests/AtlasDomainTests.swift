@@ -43,4 +43,32 @@ final class AtlasDomainTests: XCTestCase {
         XCTAssertFalse(PermissionKind.notifications.isRequiredForCurrentWorkflows)
     }
 
+    func testRecoveryPayloadDecodesLegacyAppShape() throws {
+        let data = Data(
+            """
+            {
+              "app": {
+                "id": "10000000-0000-0000-0000-000000000111",
+                "name": "Legacy App",
+                "bundleIdentifier": "com.example.legacy",
+                "bundlePath": "/Applications/Legacy App.app",
+                "bytes": 1024,
+                "leftoverItems": 2
+              }
+            }
+            """.utf8
+        )
+
+        let payload = try JSONDecoder().decode(RecoveryPayload.self, from: data)
+
+        guard case let .app(appPayload) = payload else {
+            return XCTFail("Expected app payload")
+        }
+
+        XCTAssertEqual(appPayload.app.name, "Legacy App")
+        XCTAssertEqual(appPayload.app.leftoverItems, 2)
+        XCTAssertEqual(appPayload.uninstallEvidence.reviewOnlyGroupCount, 0)
+        XCTAssertEqual(appPayload.uninstallEvidence.bundlePath, "/Applications/Legacy App.app")
+    }
+
 }

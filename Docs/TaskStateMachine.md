@@ -65,6 +65,6 @@
 - `scan` emits monotonic progress and finishes with a preview-ready plan when the upstream scan adapter succeeds; otherwise the request should fail rather than silently fabricate findings.
 - `execute_clean` must not report completion in release-facing flows unless real cleanup side effects have been applied. Fresh preview plans now carry structured execution targets, and unsupported or unstructured targets should fail closed.
 - `execute_uninstall` removes an app from the current workspace view and creates a recovery entry.
-- `restore` can physically restore items when structured recovery mappings are present, and can still rehydrate a `Finding` or an `AppFootprint` into Atlas state from the recovery payload.
+- `restore` can physically restore items when structured recovery mappings are present, and can still rehydrate a `Finding` or an app payload into Atlas state from the recovery payload.
 - `restore` must reject expired recovery items before side effects and must fail closed when the original destination already exists.
 - User-visible task summaries and settings-driven text should reflect the persisted app-language preference when generated.

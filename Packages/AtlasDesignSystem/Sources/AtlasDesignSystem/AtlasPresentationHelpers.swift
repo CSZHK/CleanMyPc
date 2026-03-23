@@ -63,6 +63,8 @@ public extension ActionItem.Kind {
             return "archivebox"
         case .inspectPermission:
             return "lock.shield"
+        case .reviewEvidence:
+            return "doc.text.magnifyingglass"
         }
     }
 }

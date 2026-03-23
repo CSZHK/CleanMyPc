@@ -439,6 +439,57 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertTrue(AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(finding))
     }
 
+    func testContainerCacheTargetIsSupportedExecutionTarget() {
+        let targetURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Containers/com.example.preview/Data/Library/Caches/cache.db")
+        let finding = Finding(
+            id: UUID(),
+            title: "Container cache",
+            detail: targetURL.path,
+            bytes: 1,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: [targetURL.path]
+        )
+
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isSupportedExecutionTarget(targetURL))
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(finding))
+    }
+
+    func testContainerLogsTargetIsSupportedExecutionTarget() {
+        let targetURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Containers/com.example.preview/Data/Library/Logs/runtime.log")
+        let finding = Finding(
+            id: UUID(),
+            title: "Container logs",
+            detail: targetURL.path,
+            bytes: 1,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: [targetURL.path]
+        )
+
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isSupportedExecutionTarget(targetURL))
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(finding))
+    }
+
+    func testContainerTempTargetIsSupportedExecutionTarget() {
+        let targetURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Containers/com.example.preview/Data/tmp/runtime.tmp")
+        let finding = Finding(
+            id: UUID(),
+            title: "Container temp",
+            detail: targetURL.path,
+            bytes: 1,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: [targetURL.path]
+        )
+
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isSupportedExecutionTarget(targetURL))
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(finding))
+    }
+
     func testExecutePlanTrashesRealTargetsWhenAvailable() async throws {
         let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
         let home = FileManager.default.homeDirectoryForCurrentUser
@@ -604,6 +655,39 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: targetFile.path))
         XCTAssertEqual(execute.snapshot.recoveryItems.count, initialRecoveryCount + 1)
         XCTAssertTrue(execute.snapshot.recoveryItems.contains(where: { $0.title == "pnpm store" }))
+
+        let secondScan = try await worker.submit(AtlasRequestEnvelope(command: .startScan(taskID: UUID())))
+        XCTAssertEqual(secondScan.snapshot.findings.count, 0)
+        XCTAssertEqual(secondScan.snapshot.reclaimableSpaceBytes, 0)
+    }
+
+    func testScanExecuteRescanRemovesExecutedContainerCacheTargetFromRealResults() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let targetDirectory = home.appendingPathComponent("Library/Containers/com.example.atlas-fixture/Data/Library/Caches/" + UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: targetDirectory, withIntermediateDirectories: true)
+        let targetFile = targetDirectory.appendingPathComponent("cache.db")
+        try Data("container-cache".utf8).write(to: targetFile)
+
+        let provider = FileBackedSmartCleanProvider(targetFileURL: targetFile, title: "com.example.atlas-fixture container cache")
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            smartCleanScanProvider: provider,
+            allowProviderFailureFallback: false,
+            allowStateOnlyCleanExecution: false
+        )
+
+        let firstScan = try await worker.submit(AtlasRequestEnvelope(command: .startScan(taskID: UUID())))
+        XCTAssertEqual(firstScan.snapshot.findings.count, 1)
+        let planID = try XCTUnwrap(firstScan.previewPlan?.id)
+
+        let execute = try await worker.submit(AtlasRequestEnvelope(command: .executePlan(planID: planID)))
+        if case let .accepted(task) = execute.response.response {
+            XCTAssertEqual(task.kind, .executePlan)
+        } else {
+            XCTFail("Expected accepted execute-plan response")
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: targetFile.path))
 
         let secondScan = try await worker.submit(AtlasRequestEnvelope(command: .startScan(taskID: UUID())))
         XCTAssertEqual(secondScan.snapshot.findings.count, 0)
@@ -1057,7 +1141,16 @@ final class AtlasInfrastructureTests: XCTestCase {
             bytes: helperApp.bytes,
             deletedAt: Date(),
             expiresAt: Date().addingTimeInterval(3600),
-            payload: .app(helperApp),
+            payload: .app(
+                AtlasAppRecoveryPayload(
+                    app: helperApp,
+                    uninstallEvidence: AtlasAppUninstallEvidence(
+                        bundlePath: helperApp.bundlePath,
+                        bundleBytes: helperApp.bytes,
+                        reviewOnlyGroups: []
+                    )
+                )
+            ),
             restoreMappings: [RecoveryPathMapping(originalPath: helperApp.bundlePath, trashedPath: appTrashedPath)]
         )
         let state = AtlasWorkspaceState(
@@ -1119,6 +1212,166 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertFalse(result.snapshot.apps.contains(where: { $0.id == app.id }))
         XCTAssertTrue(result.snapshot.recoveryItems.contains(where: { $0.title == app.name }))
         XCTAssertEqual(result.snapshot.taskRuns.first?.kind, .uninstallApp)
+        XCTAssertEqual(
+            result.snapshot.taskRuns.first?.summary,
+            AtlasL10n.string("infrastructure.apps.uninstall.summary", language: initialState.settings.language, app.name)
+        )
+    }
+
+    func testExecuteAppUninstallSummaryMentionsReviewOnlyEvidenceGroupsWhenPresent() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let fileManager = FileManager.default
+        let sandboxRoot = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let homeRoot = sandboxRoot.appendingPathComponent("Home", isDirectory: true)
+        let cacheURL = homeRoot.appendingPathComponent("Library/Caches/com.example.execute", isDirectory: true)
+        let logsURL = homeRoot.appendingPathComponent("Library/Logs/Execute Preview", isDirectory: true)
+
+        try fileManager.createDirectory(at: cacheURL, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: logsURL, withIntermediateDirectories: true)
+        try Data(repeating: 0x1, count: 64).write(to: cacheURL.appendingPathComponent("cache.bin"))
+        try Data(repeating: 0x2, count: 64).write(to: logsURL.appendingPathComponent("run.log"))
+
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: sandboxRoot)
+        }
+
+        let appRoot = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Applications/AtlasExecutionTests/" + UUID().uuidString, isDirectory: true)
+        let appBundleURL = appRoot.appendingPathComponent("Execute Preview.app", isDirectory: true)
+        try fileManager.createDirectory(at: appBundleURL, withIntermediateDirectories: true)
+        let executableURL = appBundleURL.appendingPathComponent("Contents/MacOS/ExecutePreview")
+        try fileManager.createDirectory(at: executableURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executableURL)
+
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: appRoot)
+        }
+
+        let app = AppFootprint(
+            id: UUID(),
+            name: "Execute Preview",
+            bundleIdentifier: "com.example.execute",
+            bundlePath: appBundleURL.path,
+            bytes: 17,
+            leftoverItems: 2
+        )
+        var settings = AtlasScaffoldWorkspace.state().settings
+        settings.language = .en
+        settings.acknowledgementText = AtlasL10n.acknowledgement(language: .en)
+        settings.thirdPartyNoticesText = AtlasL10n.thirdPartyNotices(language: .en)
+
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: app.bytes,
+                findings: [],
+                apps: [app],
+                taskRuns: [],
+                recoveryItems: [],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "Review 0 selected findings", items: [], estimatedBytes: 0),
+            settings: settings
+        )
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            helperExecutor: StubPrivilegedHelperExecutor(),
+            appUninstallEvidenceAnalyzer: AtlasAppUninstallEvidenceAnalyzer(homeDirectoryURL: homeRoot),
+            allowStateOnlyCleanExecution: false
+        )
+
+        let result = try await worker.submit(
+            AtlasRequestEnvelope(command: .executeAppUninstall(appID: app.id))
+        )
+
+        XCTAssertEqual(
+            result.snapshot.taskRuns.first?.summary,
+            AtlasL10n.string("infrastructure.apps.uninstall.summary.review.other", language: .en, app.name, 2)
+                + " "
+                + AtlasL10n.string("infrastructure.apps.uninstall.reviewCategories", language: .en, "caches, logs")
+        )
+        XCTAssertEqual(
+            result.snapshot.recoveryItems.first?.detail,
+            AtlasL10n.string("infrastructure.recovery.app.detail.other", language: .en, 2)
+                + " "
+                + AtlasL10n.string("infrastructure.apps.uninstall.reviewCategories", language: .en, "caches, logs")
+        )
+    }
+
+    func testPreviewAppUninstallBuildsReviewOnlyEvidenceItems() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let fileManager = FileManager.default
+        let sandboxRoot = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let homeRoot = sandboxRoot.appendingPathComponent("Home", isDirectory: true)
+        let appSupportURL = homeRoot.appendingPathComponent("Library/Application Support/Atlas Preview", isDirectory: true)
+        let cacheURL = homeRoot.appendingPathComponent("Library/Caches/com.example.preview", isDirectory: true)
+        let launchAgentURL = homeRoot.appendingPathComponent("Library/LaunchAgents/com.example.preview.plist")
+
+        try fileManager.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: cacheURL, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: launchAgentURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(repeating: 0x1, count: 256).write(to: appSupportURL.appendingPathComponent("state.db"))
+        try Data(repeating: 0x2, count: 128).write(to: cacheURL.appendingPathComponent("cache.bin"))
+        try Data("<?xml version=\"1.0\"?><plist></plist>".utf8).write(to: launchAgentURL)
+
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: sandboxRoot)
+        }
+
+        let app = AppFootprint(
+            id: UUID(),
+            name: "Atlas Preview",
+            bundleIdentifier: "com.example.preview",
+            bundlePath: "/Applications/Atlas Preview.app",
+            bytes: 2_048,
+            leftoverItems: 3
+        )
+
+        var settings = AtlasScaffoldWorkspace.state().settings
+        settings.language = .en
+        settings.acknowledgementText = AtlasL10n.acknowledgement(language: .en)
+        settings.thirdPartyNoticesText = AtlasL10n.thirdPartyNotices(language: .en)
+
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: app.bytes,
+                findings: [],
+                apps: [app],
+                taskRuns: [],
+                recoveryItems: [],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "Review 0 selected findings", items: [], estimatedBytes: 0),
+            settings: settings
+        )
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            appUninstallEvidenceAnalyzer: AtlasAppUninstallEvidenceAnalyzer(homeDirectoryURL: homeRoot),
+            allowStateOnlyCleanExecution: true
+        )
+
+        let result = try await worker.submit(
+            AtlasRequestEnvelope(command: .previewAppUninstall(appID: app.id))
+        )
+
+        guard case let .preview(plan) = result.response.response else {
+            return XCTFail("Expected preview response")
+        }
+
+        XCTAssertEqual(plan.estimatedBytes, app.bytes)
+        XCTAssertEqual(plan.items.first?.kind, .removeApp)
+        XCTAssertEqual(plan.items.first?.targetPaths, [app.bundlePath])
+        XCTAssertEqual(plan.items.count, 4)
+        let supportFilesItem = try XCTUnwrap(plan.items.first(where: { $0.title == "Review support files (1)" && !$0.recoverable }))
+        let cachesItem = try XCTUnwrap(plan.items.first(where: { $0.title == "Review caches (1)" && !$0.recoverable }))
+        let launchItemsItem = try XCTUnwrap(plan.items.first(where: { $0.title == "Review launch items (1)" && !$0.recoverable }))
+        XCTAssertEqual(supportFilesItem.evidencePaths, [appSupportURL.path])
+        XCTAssertEqual(cachesItem.evidencePaths, [cacheURL.path])
+        XCTAssertEqual(launchItemsItem.evidencePaths, [launchAgentURL.path])
     }
 
     func testExecuteAppUninstallRestorePhysicallyRestoresAppBundle() async throws {
@@ -1197,6 +1450,78 @@ final class AtlasInfrastructureTests: XCTestCase {
             restore.snapshot.taskRuns.first?.summary,
             AtlasL10n.string("infrastructure.restore.summary.disk.one", language: state.settings.language)
         )
+    }
+
+    func testRestoreAppUsesPersistedUninstallEvidenceCountWhenAvailable() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let app = AppFootprint(
+            id: UUID(),
+            name: "Atlas Restore Evidence",
+            bundleIdentifier: "com.example.restore-evidence",
+            bundlePath: "/Applications/Atlas Restore Evidence.app",
+            bytes: 42,
+            leftoverItems: 1
+        )
+        let recoveryItem = RecoveryItem(
+            id: UUID(),
+            title: app.name,
+            detail: app.bundlePath,
+            originalPath: app.bundlePath,
+            bytes: app.bytes,
+            deletedAt: Date(),
+            expiresAt: Date().addingTimeInterval(3600),
+            payload: .app(
+                AtlasAppRecoveryPayload(
+                    app: app,
+                    uninstallEvidence: AtlasAppUninstallEvidence(
+                        bundlePath: app.bundlePath,
+                        bundleBytes: app.bytes,
+                        reviewOnlyGroups: [
+                            AtlasAppFootprintEvidenceGroup(
+                                category: .caches,
+                                items: [
+                                    AtlasAppFootprintEvidenceItem(path: "/Users/test/Library/Caches/com.example.restore-evidence", bytes: 12),
+                                    AtlasAppFootprintEvidenceItem(path: "/Users/test/Library/Caches/com.example.restore-evidence-2", bytes: 12),
+                                ]
+                            ),
+                            AtlasAppFootprintEvidenceGroup(
+                                category: .logs,
+                                items: [
+                                    AtlasAppFootprintEvidenceItem(path: "/Users/test/Library/Logs/Atlas Restore Evidence", bytes: 8)
+                                ]
+                            )
+                        ]
+                    )
+                )
+            ),
+            restoreMappings: nil
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 0,
+                findings: [],
+                apps: [],
+                taskRuns: [],
+                recoveryItems: [recoveryItem],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "Review 0 selected findings", items: [], estimatedBytes: 0),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            allowStateOnlyCleanExecution: true
+        )
+
+        let restore = try await worker.submit(
+            AtlasRequestEnvelope(command: .restoreItems(taskID: UUID(), itemIDs: [recoveryItem.id]))
+        )
+
+        let restoredApp = try XCTUnwrap(restore.snapshot.apps.first(where: { $0.id == app.id }))
+        XCTAssertEqual(restoredApp.leftoverItems, 3)
     }
 
     private func temporaryStateFileURL() -> URL {
