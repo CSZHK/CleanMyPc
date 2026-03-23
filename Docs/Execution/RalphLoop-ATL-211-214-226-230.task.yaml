@@ -1,0 +1,22 @@
+task_id: atl-211-214-226-230
+goal: >
+  按 Docs/Execution/Implementation-Plan-ATL-211-214-226-230-2026-03-21.md
+  实现第一阶段 selective parity 开发切片：提升 Smart Clean 在高置信安全清理类目上的竞争可信度，
+  并增强 Apps 卸载预览、完成态与审计/恢复线索。必须保持 MVP 冻结，不引入新产品面。
+constraints:
+  - 不要扩展出 frozen MVP 范围之外的新模块或新表面。
+  - 不要引入 Storage treemap、Menu Bar、Automation、重复文件/相似照片/隐私清理新模块。
+  - 不要在 UI、文档或完成态中暗示 Atlas 已与 Mole、Lemon、Pearcleaner 全面同等。
+  - unsupported 或 review-only 路径必须保持 fail-closed 和明确提示。
+verify_commands:
+  - swift test --package-path Packages --filter AtlasInfrastructureTests
+  - swift test --package-path Packages --filter AtlasApplicationTests
+  - swift test --package-path Apps --filter AtlasAppModelTests
+adapter: codex_cli
+adapter_config:
+  sandbox: workspace-write
+  full_auto: true
+  timeout_seconds: 600
+max_iterations: 5
+timeout_minutes: 45
+rollback_on_fail: false

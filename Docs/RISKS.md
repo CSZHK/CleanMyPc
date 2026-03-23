@@ -120,3 +120,27 @@
 - Owner: `Product Agent`
 - Risk: A future landing page or custom-domain launch surface may overstate release readiness, signed-install status, recovery behavior, or permission expectations relative to the actual downloadable build.
 - Mitigation: Make release-channel state and install guidance dynamic, keep prerelease warnings visible, and gate launch-surface copy review with the same trust standards used for README and release materials.
+
+## R-016 Competitive Breadth Perception Gap
+
+- Impact: High
+- Probability: High
+- Owner: `Product Agent`
+- Risk: Users comparing Atlas with `Mole` or `Tencent Lemon Cleaner` may conclude Atlas is cleaner in presentation but weaker in practical cleanup breadth if `Smart Clean` execution coverage stays too narrow or too invisible.
+- Mitigation: Expand only the highest-value safe target classes inside frozen MVP, and make supported-vs-unsupported execution scope explicit in product copy and UI states.
+
+## R-017 Apps Depth Comparison Gap
+
+- Impact: High
+- Probability: Medium
+- Owner: `Mac App Agent`
+- Risk: Users comparing Atlas with `Pearcleaner` or `Tencent Lemon Cleaner` may find the `Apps` module less credible if uninstall preview taxonomy, leftover visibility, and completion evidence remain too shallow.
+- Mitigation: Add fixture-based uninstall benchmarking, deepen supported footprint categories, and surface recoverability/audit cues directly in the `Apps` flow.
+
+## R-018 License Contamination From Competitor Reuse
+
+- Impact: High
+- Probability: Medium
+- Owner: `Docs Agent`
+- Risk: Competitive pressure may tempt reuse of code or assets from `Tencent Lemon Cleaner`, `GrandPerspective`, or GPL-constrained `Czkawka` components, creating license conflict with Atlas's shipping posture. `Pearcleaner` also remains unsuitable for monetized derivative reuse due `Commons Clause`.
+- Mitigation: Treat these projects as product and technical references only, require explicit license review before adapting any third-party implementation, and prefer MIT-compatible upstream or original Atlas implementations for shipped code.

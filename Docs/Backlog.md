@@ -232,13 +232,15 @@
 - Run bilingual manual QA on a clean machine
 - Validate packaged first-launch behavior with a fresh state file
 - Tighten release-facing copy where execution or recovery is overstated
+- Map competitor pressure from `Mole`, `Lemon`, and `Pearcleaner` into frozen-MVP parity work only
 
 #### Next
 
-- Expand real `Smart Clean` execute coverage for the highest-value safe targets
+- Expand real `Smart Clean` execute coverage for the highest-value safe targets most likely compared to `Mole` and `Lemon`
 - Add stronger `scan -> execute -> rescan` contract coverage
 - Implement physical restore for file-backed recoverable actions, or narrow product claims
 - Freeze recovery-related copy only after behavior is proven
+- Deepen the `Apps` module against the most obvious `Pearcleaner` and `Lemon` comparison points without expanding beyond MVP
 
 #### Later
 
@@ -260,7 +262,7 @@
 
 #### Release Phase 2: Smart Clean Execution Credibility
 
-- `ATL-211` Expand real `Smart Clean` execute coverage for top safe target classes — `System Agent`
+- `ATL-211` Expand real `Smart Clean` execute coverage for top safe target classes most likely compared to `Mole` and `Lemon` — `System Agent`
 - `ATL-212` Carry executable structured targets through the worker path — `Core Agent`
 - `ATL-213` Add stronger `scan -> execute -> rescan` contract coverage — `QA Agent`
 - `ATL-214` Make history and completion states reflect real side effects only — `Mac App Agent`
@@ -274,7 +276,15 @@
 - `ATL-224` Freeze recovery contract and acceptance evidence — `Product Agent`
 - `ATL-225` Recovery credibility gate review — `Product Agent`
 
-#### Conditional Release Phase 4: Signed Distribution and External Beta
+#### Release Phase 4: Apps Competitive Depth
+
+- `ATL-226` Build a competitor-pressure matrix for `Apps` using representative `Pearcleaner` and `Lemon` uninstall scenarios — `Product Agent` + `QA Agent`
+- `ATL-227` Expand uninstall preview taxonomy and leftover evidence for supported app footprint categories — `Core Agent` + `Mac App Agent`
+- `ATL-228` Surface recoverability, auditability, and supported-vs-review-only cues directly in the `Apps` flow — `UX Agent` + `Mac App Agent`
+- `ATL-229` Validate uninstall depth on mainstream and developer-heavy fixture apps — `QA Agent`
+- `ATL-230` Apps competitive depth gate review — `Product Agent`
+
+#### Conditional Release Phase 5: Signed Distribution and External Beta
 
 - `ATL-231` Obtain Apple release signing credentials — `Release Agent`
 - `ATL-232` Pass `signing-preflight.sh` on the release machine — `Release Agent`
@@ -283,7 +293,7 @@
 - `ATL-235` Run a trusted hardware-diverse signed beta cohort — `Product Agent`
 - `ATL-236` Triage public-beta issues before any GA candidate naming — `Product Agent`
 
-#### Launch Surface Phase 5: Landing Page and Domain
+#### Launch Surface Phase 6: Landing Page and Domain
 
 - `ATL-241` Finalize landing-page PRD, CTA policy, and bilingual information architecture — `Product Agent`
 - `ATL-242` Design and implement the marketing site in `Apps/LandingSite/` — `Mac App Agent`

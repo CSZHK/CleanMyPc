@@ -45,6 +45,7 @@ temp/
 .agents/
 .gemini/
 .kiro/
+.ralph-loop/
 CLAUDE.md
 GEMINI.md
 ANTIGRAVITY.md

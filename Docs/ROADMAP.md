@@ -9,6 +9,7 @@
   - remove silent XPC fallback from release-facing trust assumptions
   - make `Smart Clean` execution honesty match real filesystem behavior
   - make `Recovery` claims match shipped restore behavior
+  - convert competitor research into a selective parity plan against `Mole`, `Lemon`, and `Pearcleaner` without reopening MVP scope
 - Release-path blocker:
   - no Apple signing and notarization credentials are available on the current machine
 
@@ -23,9 +24,21 @@
   - `Permissions`
   - `Settings`
 - Do not pull `Storage treemap`, `Menu Bar`, or `Automation` into this roadmap.
+- Respond to competitor pressure by deepening the frozen MVP flows rather than adding new surfaces for parity theater.
 - Treat trust and recovery honesty as release-critical product work, not polish.
 - Keep direct distribution as the only eventual release route.
 - Do not plan around public beta dates until signing credentials exist.
+
+## Competitive Strategy Overlay
+
+- Primary breadth comparison pressure comes from `Mole` and `Tencent Lemon Cleaner`.
+- Primary `Apps` comparison pressure comes from `Pearcleaner` and `Tencent Lemon Cleaner`.
+- Atlas should compete as an `explainable, recovery-first Mac maintenance workspace`, not as a generic all-in-one cleaner.
+- The roadmap response is:
+  - preserve trust as the primary release gate
+  - close the most visible `Smart Clean` coverage gaps users compare against `Mole` and `Lemon`
+  - deepen the `Apps` module where `Pearcleaner` and `Lemon` set expectations
+  - keep `Storage treemap`, `Menu Bar`, and `Automation` out of scope
 
 ## Active Milestones
 
@@ -49,7 +62,7 @@
 - Dates: `2026-03-31` to `2026-04-18`
 - Goal: prove that the highest-value safe cleanup paths have real disk-backed side effects.
 - Focus:
-  - expand real `Smart Clean` execute coverage for top safe target classes
+  - expand real `Smart Clean` execute coverage for top safe target classes most likely compared to `Mole` and `Lemon`
   - carry executable structured targets through the worker path
   - add stronger `scan -> execute -> rescan` contract coverage
   - make history and completion states reflect real side effects only
@@ -72,6 +85,20 @@
   - file-backed recoverable actions either restore physically or are no longer described as if they do
   - QA has explicit evidence for restore behavior on the candidate build
 
+### Milestone 4: Apps Competitive Depth
+
+- Dates: `2026-05-12` to `2026-05-30`
+- Goal: close the highest-value `Apps` depth gaps versus `Pearcleaner` and `Lemon` without reopening MVP scope.
+- Focus:
+  - deepen uninstall preview taxonomy and leftover visibility
+  - improve clarity around launch items, service artifacts, and other app-adjacent footprint categories where Atlas can safely reason about them
+  - surface recoverability and audit cues directly in the uninstall flow
+  - validate uninstall flows against mainstream and developer-heavy fixture apps
+- Exit criteria:
+  - `Apps` uninstall preview clearly explains footprint scope, leftovers, and recovery implications for supported flows
+  - supported uninstall fixtures show better uninstall depth and clearer completion evidence than the current baseline
+  - release-facing product copy can describe the `Apps` module as a trust-differentiated uninstall workflow, not just an app list with delete actions
+
 ## Conditional Release Branch
 
 These milestones do not start until Apple release credentials are available.
@@ -79,6 +106,7 @@ These milestones do not start until Apple release credentials are available.
 ### Conditional Milestone A: Signed Public Beta Candidate
 
 - Trigger:
+  - Milestones `1` through `4` are complete
   - `Developer ID Application` is available
   - `Developer ID Installer` is available
   - `ATLAS_NOTARY_PROFILE` is available

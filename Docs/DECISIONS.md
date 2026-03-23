@@ -58,6 +58,15 @@
 - Atlas must not silently fall back to scaffold behavior for release-facing cleanup execution
 - Smart Clean execute must not claim success until real filesystem side effects are implemented
 
+### D-010 Competitive Response Stays Inside Frozen MVP
+
+- Atlas responds to competitor pressure through `selective parity`, not breadth racing
+- `Mole` and `Tencent Lemon Cleaner` set the main comparison pressure for `Smart Clean`
+- `Pearcleaner` and `Tencent Lemon Cleaner` set the main comparison pressure for `Apps`
+- Competitor response work must deepen existing MVP flows rather than reopen deferred scope
+- `Storage treemap`, `Menu Bar`, and `Automation` remain out of scope unless the decision log is updated explicitly
+- Atlas should compete as an `explainable, recovery-first Mac maintenance workspace`, not as a generic all-in-one cleaner
+
 ## Update Rule
 
 Add a new decision entry whenever product scope, protocol, privilege boundaries, release route, or recovery model changes.
