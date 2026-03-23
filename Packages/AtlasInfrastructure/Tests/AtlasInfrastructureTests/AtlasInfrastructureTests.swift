@@ -18,6 +18,35 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertEqual(loaded.snapshot.apps.count, state.snapshot.apps.count)
     }
 
+    func testRepositoryPersistsVersionedWorkspaceEnvelope() throws {
+        let fileURL = temporaryStateFileURL()
+        let repository = AtlasWorkspaceRepository(stateFileURL: fileURL)
+
+        XCTAssertNoThrow(try repository.saveState(AtlasScaffoldWorkspace.state()))
+
+        let data = try Data(contentsOf: fileURL)
+        let persisted = try JSONDecoder().decode(AtlasPersistedWorkspaceState.self, from: data)
+
+        XCTAssertEqual(persisted.schemaVersion, AtlasWorkspaceStateSchemaVersion.current)
+        XCTAssertFalse(persisted.snapshot.apps.isEmpty)
+    }
+
+    func testRepositoryLoadsLegacyWorkspaceStateAndRewritesEnvelope() throws {
+        let fileURL = temporaryStateFileURL()
+        let legacyState = AtlasScaffoldWorkspace.state()
+        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try JSONEncoder().encode(legacyState).write(to: fileURL)
+
+        let repository = AtlasWorkspaceRepository(stateFileURL: fileURL)
+        let loaded = repository.loadState()
+
+        XCTAssertEqual(loaded.snapshot.apps.count, legacyState.snapshot.apps.count)
+
+        let migratedData = try Data(contentsOf: fileURL)
+        let persisted = try JSONDecoder().decode(AtlasPersistedWorkspaceState.self, from: migratedData)
+        XCTAssertEqual(persisted.schemaVersion, AtlasWorkspaceStateSchemaVersion.current)
+        XCTAssertEqual(persisted.snapshot.apps.count, legacyState.snapshot.apps.count)
+    }
 
     func testRepositorySaveStateThrowsForInvalidParentURL() {
         let repository = AtlasWorkspaceRepository(
@@ -439,6 +468,40 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertTrue(AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(finding))
     }
 
+    func testGradleCacheTargetIsSupportedExecutionTarget() {
+        let targetURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".gradle/caches/modules-2/files-2.1/atlas-fixture.bin")
+        let finding = Finding(
+            id: UUID(),
+            title: "Gradle cache",
+            detail: targetURL.path,
+            bytes: 1,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: [targetURL.path]
+        )
+
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isSupportedExecutionTarget(targetURL))
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(finding))
+    }
+
+    func testCoreSimulatorCacheTargetIsSupportedExecutionTarget() {
+        let targetURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Developer/CoreSimulator/Caches/atlas-fixture/device-cache.db")
+        let finding = Finding(
+            id: UUID(),
+            title: "CoreSimulator cache",
+            detail: targetURL.path,
+            bytes: 1,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: [targetURL.path]
+        )
+
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isSupportedExecutionTarget(targetURL))
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(finding))
+    }
+
     func testContainerCacheTargetIsSupportedExecutionTarget() {
         let targetURL = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Containers/com.example.preview/Data/Library/Caches/cache.db")
@@ -655,6 +718,39 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: targetFile.path))
         XCTAssertEqual(execute.snapshot.recoveryItems.count, initialRecoveryCount + 1)
         XCTAssertTrue(execute.snapshot.recoveryItems.contains(where: { $0.title == "pnpm store" }))
+
+        let secondScan = try await worker.submit(AtlasRequestEnvelope(command: .startScan(taskID: UUID())))
+        XCTAssertEqual(secondScan.snapshot.findings.count, 0)
+        XCTAssertEqual(secondScan.snapshot.reclaimableSpaceBytes, 0)
+    }
+
+    func testScanExecuteRescanRemovesExecutedGradleCacheTargetFromRealResults() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let targetDirectory = home.appendingPathComponent(".gradle/caches/AtlasExecutionTests/" + UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: targetDirectory, withIntermediateDirectories: true)
+        let targetFile = targetDirectory.appendingPathComponent("modules.bin")
+        try Data("gradle-cache".utf8).write(to: targetFile)
+
+        let provider = FileBackedSmartCleanProvider(targetFileURL: targetFile, title: "Gradle cache")
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            smartCleanScanProvider: provider,
+            allowProviderFailureFallback: false,
+            allowStateOnlyCleanExecution: false
+        )
+
+        let firstScan = try await worker.submit(AtlasRequestEnvelope(command: .startScan(taskID: UUID())))
+        XCTAssertEqual(firstScan.snapshot.findings.count, 1)
+        let planID = try XCTUnwrap(firstScan.previewPlan?.id)
+
+        let execute = try await worker.submit(AtlasRequestEnvelope(command: .executePlan(planID: planID)))
+        if case let .accepted(task) = execute.response.response {
+            XCTAssertEqual(task.kind, .executePlan)
+        } else {
+            XCTFail("Expected accepted execute-plan response")
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: targetFile.path))
 
         let secondScan = try await worker.submit(AtlasRequestEnvelope(command: .startScan(taskID: UUID())))
         XCTAssertEqual(secondScan.snapshot.findings.count, 0)

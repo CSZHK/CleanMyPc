@@ -189,10 +189,14 @@ public enum AtlasSmartCleanExecutionSupport {
             home + "/Library/Logs",
             home + "/Library/Suggestions",
             home + "/Library/Messages/Caches",
+            home + "/Library/Developer/CoreSimulator/Caches",
+            home + "/Library/Developer/CoreSimulator/tmp",
             home + "/Library/Developer/Xcode/DerivedData",
             home + "/Library/pnpm/store",
             home + "/.npm",
             home + "/.npm_cache",
+            home + "/.gradle/caches",
+            home + "/.ivy2/cache",
             home + "/.oh-my-zsh/cache",
             home + "/.cache",
             home + "/.pytest_cache",
@@ -220,6 +224,7 @@ public enum AtlasSmartCleanExecutionSupport {
             home + "/.android/build-cache",
             home + "/.android/cache",
             home + "/.cache/swift-package-manager",
+            home + "/.swiftpm/cache",
             home + "/.expo/expo-go",
             home + "/.expo/android-apk-cache",
             home + "/.expo/ios-simulator-app-cache",
@@ -319,9 +324,10 @@ public struct AtlasWorkspaceRepository: Sendable {
         if FileManager.default.fileExists(atPath: stateFileURL.path) {
             do {
                 let data = try Data(contentsOf: stateFileURL)
-                let decoded = try decoder.decode(AtlasWorkspaceState.self, from: data)
+                let decodedResult = try decodePersistedState(from: data, using: decoder)
+                let decoded = decodedResult.state
                 let normalized = normalizedState(decoded)
-                if normalized != decoded {
+                if decodedResult.usedLegacyShape || normalized != decoded {
                     _ = try? saveState(normalized)
                 }
                 return normalized
@@ -361,7 +367,12 @@ public struct AtlasWorkspaceRepository: Sendable {
 
         let data: Data
         do {
-            data = try encoder.encode(normalizedState)
+            data = try encoder.encode(
+                AtlasPersistedWorkspaceState(
+                    savedAt: nowProvider(),
+                    state: normalizedState
+                )
+            )
         } catch {
             throw AtlasWorkspaceRepositoryError.encodeFailed(error.localizedDescription)
         }
@@ -401,6 +412,14 @@ public struct AtlasWorkspaceRepository: Sendable {
             item.isExpired(asOf: now)
         }
         return normalized
+    }
+
+    private func decodePersistedState(from data: Data, using decoder: JSONDecoder) throws -> (state: AtlasWorkspaceState, usedLegacyShape: Bool) {
+        if let persisted = try? decoder.decode(AtlasPersistedWorkspaceState.self, from: data) {
+            return (persisted.workspaceState, false)
+        }
+
+        return (try decoder.decode(AtlasWorkspaceState.self, from: data), true)
     }
 
     private static var defaultStateFileURL: URL {

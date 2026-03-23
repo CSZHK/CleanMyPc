@@ -42,6 +42,50 @@ public struct AtlasWorkspaceState: Codable, Hashable, Sendable {
     }
 }
 
+public enum AtlasWorkspaceStateSchemaVersion {
+    public static let current = 1
+}
+
+public struct AtlasPersistedWorkspaceState: Codable, Hashable, Sendable {
+    public var schemaVersion: Int
+    public var savedAt: Date
+    public var snapshot: AtlasWorkspaceSnapshot
+    public var currentPlan: ActionPlan
+    public var settings: AtlasSettings
+
+    public init(
+        schemaVersion: Int = AtlasWorkspaceStateSchemaVersion.current,
+        savedAt: Date = Date(),
+        snapshot: AtlasWorkspaceSnapshot,
+        currentPlan: ActionPlan,
+        settings: AtlasSettings
+    ) {
+        self.schemaVersion = schemaVersion
+        self.savedAt = savedAt
+        self.snapshot = snapshot
+        self.currentPlan = currentPlan
+        self.settings = settings
+    }
+
+    public init(
+        schemaVersion: Int = AtlasWorkspaceStateSchemaVersion.current,
+        savedAt: Date = Date(),
+        state: AtlasWorkspaceState
+    ) {
+        self.init(
+            schemaVersion: schemaVersion,
+            savedAt: savedAt,
+            snapshot: state.snapshot,
+            currentPlan: state.currentPlan,
+            settings: state.settings
+        )
+    }
+
+    public var workspaceState: AtlasWorkspaceState {
+        AtlasWorkspaceState(snapshot: snapshot, currentPlan: currentPlan, settings: settings)
+    }
+}
+
 public enum AtlasScaffoldWorkspace {
     public static func state(language: AtlasLanguage = AtlasL10n.currentLanguage) -> AtlasWorkspaceState {
         let snapshot = AtlasWorkspaceSnapshot(

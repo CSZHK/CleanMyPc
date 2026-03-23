@@ -494,6 +494,16 @@
 "history.detail.recovery.deleted" = "删除时间";
 "history.detail.recovery.window" = "保留窗口";
 "history.detail.recovery.window.open" = "仍可恢复";
+"history.detail.recovery.evidence.title" = "恢复证据记录";
+"history.detail.recovery.evidence.subtitle" = "Atlas 会把这条恢复项的应用载荷、仅供复核分组和恢复路径记录一起保留下来。";
+"history.detail.recovery.evidence.payload" = "已记录载荷";
+"history.detail.recovery.evidence.schema" = "载荷版本";
+"history.detail.recovery.evidence.reviewGroups" = "仅供复核分组";
+"history.detail.recovery.evidence.reviewGroups.detail.one" = "%@ · 1 项";
+"history.detail.recovery.evidence.reviewGroups.detail.other" = "%1$@ · %2$d 项";
+"history.detail.recovery.evidence.restorePaths" = "恢复路径记录";
+"history.detail.recovery.evidence.restorePaths.detail.one" = "这条恢复项记录了 1 组原路径与废纸篓路径映射。";
+"history.detail.recovery.evidence.restorePaths.detail.other" = "这条恢复项记录了 %d 组原路径与废纸篓路径映射。";
 "history.detail.recovery.reviewOnly.title" = "仅供复核的残留证据";
 "history.detail.recovery.reviewOnly.subtitle.one" = "这次卸载还记录了 1 个相关残留项目。";
 "history.detail.recovery.reviewOnly.subtitle.other" = "这次卸载还记录了 %d 个相关残留项目。";

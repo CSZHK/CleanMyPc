@@ -34,35 +34,40 @@ run_ui_acceptance() {
     return 1
 }
 
-echo "[1/10] Shared package tests"
+echo "[1/11] Shared package tests"
 swift test --package-path Packages
 
-echo "[2/10] App package tests"
+echo "[2/11] App package tests"
 swift test --package-path Apps
 
-echo "[3/10] Worker and helper builds"
+echo "[3/11] Worker and helper builds"
 swift build --package-path XPC
 swift test --package-path Helpers
 swift build --package-path Testing
 
-echo "[4/10] Native packaging"
+echo "[4/11] Fixture automation scripts"
+bash -n ./scripts/atlas/smart-clean-manual-fixtures.sh
+bash -n ./scripts/atlas/apps-manual-fixtures.sh
+bash -n ./scripts/atlas/apps-evidence-acceptance.sh
+
+echo "[5/11] Native packaging"
 ./scripts/atlas/package-native.sh
 
-echo "[5/10] Bundle structure verification"
+echo "[6/11] Bundle structure verification"
 ./scripts/atlas/verify-bundle-contents.sh
 
-echo "[6/10] DMG install verification"
+echo "[7/11] DMG install verification"
 KEEP_INSTALLED_APP=1 ./scripts/atlas/verify-dmg-install.sh
 
-echo "[7/10] Installed app launch smoke"
+echo "[8/11] Installed app launch smoke"
 ./scripts/atlas/verify-app-launch.sh
 
-echo "[8/10] Native UI automation"
+echo "[9/11] Native UI automation"
 run_ui_acceptance
 
-echo "[9/10] Signing preflight"
+echo "[10/11] Signing preflight"
 ./scripts/atlas/signing-preflight.sh || true
 
-echo "[10/10] Acceptance summary"
+echo "[11/11] Acceptance summary"
 echo "Artifacts available in dist/native"
 ls -lah dist/native

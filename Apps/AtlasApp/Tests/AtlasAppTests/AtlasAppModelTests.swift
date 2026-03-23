@@ -284,6 +284,72 @@ final class AtlasAppModelTests: XCTestCase {
         XCTAssertNil(model.smartCleanExecutionIssue)
     }
 
+    func testRestoreAppRecoveryItemClearsPreviewAndRefreshesInventoryWithoutLeavingHistory() async throws {
+        let repository = makeRepository()
+        let app = AppFootprint(
+            id: UUID(),
+            name: "Recovered App",
+            bundleIdentifier: "com.example.recovered",
+            bundlePath: "/Applications/Recovered App.app",
+            bytes: 2_048,
+            leftoverItems: 9
+        )
+        let recoveryItem = RecoveryItem(
+            id: UUID(),
+            title: app.name,
+            detail: "Restorable app payload",
+            originalPath: app.bundlePath,
+            bytes: app.bytes,
+            deletedAt: Date(),
+            expiresAt: Date().addingTimeInterval(3600),
+            payload: .app(
+                AtlasAppRecoveryPayload(
+                    app: app,
+                    uninstallEvidence: AtlasAppUninstallEvidence(
+                        bundlePath: app.bundlePath,
+                        bundleBytes: app.bytes,
+                        reviewOnlyGroups: []
+                    )
+                )
+            ),
+            restoreMappings: nil
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 0,
+                findings: [],
+                apps: [app],
+                taskRuns: [],
+                recoveryItems: [recoveryItem],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "Review 0 selected findings", items: [], estimatedBytes: 0),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            appsInventoryProvider: RestoredInventoryProvider()
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker)
+
+        await model.previewAppUninstall(appID: app.id)
+        XCTAssertNotNil(model.currentAppPreview)
+        XCTAssertEqual(model.currentPreviewedAppID, app.id)
+
+        model.navigate(to: .history)
+        await model.restoreRecoveryItem(recoveryItem.id)
+
+        XCTAssertEqual(model.selection, .history)
+        XCTAssertNil(model.currentAppPreview)
+        XCTAssertNil(model.currentPreviewedAppID)
+        XCTAssertEqual(model.snapshot.apps.first?.leftoverItems, 1)
+        XCTAssertEqual(model.latestAppsSummary, AtlasL10n.string("application.apps.loaded.one"))
+        XCTAssertFalse(model.snapshot.recoveryItems.contains(where: { $0.id == recoveryItem.id }))
+    }
+
     func testRestoreExpiredRecoveryItemReloadsPersistedState() async throws {
         let baseDate = Date(timeIntervalSince1970: 1_710_000_000)
         let clock = TestClock(now: baseDate)
@@ -491,6 +557,20 @@ private struct FakeInventoryProvider: AtlasAppInventoryProviding {
                 bundlePath: "/Applications/Sample App.app",
                 bytes: 2_048_000_000,
                 leftoverItems: 3
+            )
+        ]
+    }
+}
+
+private struct RestoredInventoryProvider: AtlasAppInventoryProviding {
+    func collectInstalledApps() async throws -> [AppFootprint] {
+        [
+            AppFootprint(
+                name: "Recovered App",
+                bundleIdentifier: "com.example.recovered",
+                bundlePath: "/Applications/Recovered App.app",
+                bytes: 2_048,
+                leftoverItems: 1
             )
         ]
     }

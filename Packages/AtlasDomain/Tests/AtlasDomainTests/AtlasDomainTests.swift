@@ -65,6 +65,7 @@ final class AtlasDomainTests: XCTestCase {
             return XCTFail("Expected app payload")
         }
 
+        XCTAssertEqual(appPayload.schemaVersion, AtlasRecoveryPayloadSchemaVersion.current)
         XCTAssertEqual(appPayload.app.name, "Legacy App")
         XCTAssertEqual(appPayload.app.leftoverItems, 2)
         XCTAssertEqual(appPayload.uninstallEvidence.reviewOnlyGroupCount, 0)

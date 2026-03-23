@@ -355,13 +355,44 @@ public struct AtlasAppUninstallEvidence: Codable, Hashable, Sendable {
     }
 }
 
+public enum AtlasRecoveryPayloadSchemaVersion {
+    public static let current = 1
+}
+
 public struct AtlasAppRecoveryPayload: Codable, Hashable, Sendable {
+    public var schemaVersion: Int
     public var app: AppFootprint
     public var uninstallEvidence: AtlasAppUninstallEvidence
 
-    public init(app: AppFootprint, uninstallEvidence: AtlasAppUninstallEvidence) {
+    public init(
+        schemaVersion: Int = AtlasRecoveryPayloadSchemaVersion.current,
+        app: AppFootprint,
+        uninstallEvidence: AtlasAppUninstallEvidence
+    ) {
+        self.schemaVersion = schemaVersion
         self.app = app
         self.uninstallEvidence = uninstallEvidence
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion
+        case app
+        case uninstallEvidence
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion)
+            ?? AtlasRecoveryPayloadSchemaVersion.current
+        self.app = try container.decode(AppFootprint.self, forKey: .app)
+        self.uninstallEvidence = try container.decode(AtlasAppUninstallEvidence.self, forKey: .uninstallEvidence)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(app, forKey: .app)
+        try container.encode(uninstallEvidence, forKey: .uninstallEvidence)
     }
 }
 

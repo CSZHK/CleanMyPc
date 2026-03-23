@@ -981,6 +981,54 @@ private struct HistoryRecoveryDetailView: View {
                     .strokeBorder(AtlasColor.border, lineWidth: 1)
             )
 
+            if appRecoveryPayload != nil || item.hasPhysicalRestorePath {
+                AtlasInfoCard(
+                    title: AtlasL10n.string("history.detail.recovery.evidence.title"),
+                    subtitle: AtlasL10n.string("history.detail.recovery.evidence.subtitle"),
+                    tone: item.hasPhysicalRestorePath ? .success : .neutral
+                ) {
+                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                        if let payload = appRecoveryPayload {
+                            AtlasKeyValueRow(
+                                title: AtlasL10n.string("history.detail.recovery.evidence.payload"),
+                                value: payload.app.name,
+                                detail: payload.app.bundleIdentifier
+                            )
+                            AtlasKeyValueRow(
+                                title: AtlasL10n.string("history.detail.recovery.evidence.schema"),
+                                value: "\(payload.schemaVersion)",
+                                detail: item.hasPhysicalRestorePath
+                                    ? AtlasL10n.string("history.detail.recovery.callout.available.fileBacked.title")
+                                    : AtlasL10n.string("history.detail.recovery.callout.available.stateOnly.title")
+                            )
+
+                            if payload.uninstallEvidence.reviewOnlyGroupCount > 0 {
+                                AtlasKeyValueRow(
+                                    title: AtlasL10n.string("history.detail.recovery.evidence.reviewGroups"),
+                                    value: "\(payload.uninstallEvidence.reviewOnlyGroupCount)",
+                                    detail: appReviewOnlyGroupSummary(for: payload)
+                                )
+                            }
+                        }
+
+                        if let restoreMappings = item.restoreMappings, !restoreMappings.isEmpty {
+                            AtlasMachineTextBlock(
+                                title: AtlasL10n.string("history.detail.recovery.evidence.restorePaths"),
+                                value: restoreMappings
+                                    .map { "\($0.originalPath)\n-> \($0.trashedPath)" }
+                                    .joined(separator: "\n\n"),
+                                detail: AtlasL10n.string(
+                                    restoreMappings.count == 1
+                                        ? "history.detail.recovery.evidence.restorePaths.detail.one"
+                                        : "history.detail.recovery.evidence.restorePaths.detail.other",
+                                    restoreMappings.count
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
             if let payload = appRecoveryPayload, payload.uninstallEvidence.reviewOnlyItemCount > 0 {
                 AtlasInfoCard(
                     title: AtlasL10n.string("history.detail.recovery.reviewOnly.title"),
@@ -1127,6 +1175,32 @@ private struct HistoryRecoveryDetailView: View {
         item.hasPhysicalRestorePath
             ? AtlasL10n.string("history.restore.hint.fileBacked")
             : AtlasL10n.string("history.restore.hint.stateOnly")
+    }
+
+    private func appReviewOnlyGroupSummary(for payload: AtlasAppRecoveryPayload) -> String {
+        payload.uninstallEvidence.reviewOnlyGroups.map { group in
+            let categoryLabel: String
+            switch group.category {
+            case .supportFiles:
+                categoryLabel = AtlasL10n.string("infrastructure.plan.uninstall.review.supportFiles")
+            case .caches:
+                categoryLabel = AtlasL10n.string("infrastructure.plan.uninstall.review.caches")
+            case .preferences:
+                categoryLabel = AtlasL10n.string("infrastructure.plan.uninstall.review.preferences")
+            case .logs:
+                categoryLabel = AtlasL10n.string("infrastructure.plan.uninstall.review.logs")
+            case .launchItems:
+                categoryLabel = AtlasL10n.string("infrastructure.plan.uninstall.review.launchItems")
+            }
+            return AtlasL10n.string(
+                group.items.count == 1
+                    ? "history.detail.recovery.evidence.reviewGroups.detail.one"
+                    : "history.detail.recovery.evidence.reviewGroups.detail.other",
+                categoryLabel,
+                group.items.count
+            )
+        }
+        .joined(separator: " • ")
     }
 }
 

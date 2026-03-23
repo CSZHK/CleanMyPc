@@ -494,6 +494,16 @@
 "history.detail.recovery.deleted" = "Deleted";
 "history.detail.recovery.window" = "Retention window";
 "history.detail.recovery.window.open" = "Still recoverable";
+"history.detail.recovery.evidence.title" = "Recorded Recovery Evidence";
+"history.detail.recovery.evidence.subtitle" = "Atlas keeps the app payload, review-only groups, and restore path records together for this recovery item.";
+"history.detail.recovery.evidence.payload" = "Recorded payload";
+"history.detail.recovery.evidence.schema" = "Payload schema";
+"history.detail.recovery.evidence.reviewGroups" = "Review-only groups";
+"history.detail.recovery.evidence.reviewGroups.detail.one" = "%@ · 1 item";
+"history.detail.recovery.evidence.reviewGroups.detail.other" = "%1$@ · %2$d items";
+"history.detail.recovery.evidence.restorePaths" = "Restore path records";
+"history.detail.recovery.evidence.restorePaths.detail.one" = "1 original-path to Trash-path record was saved for this item.";
+"history.detail.recovery.evidence.restorePaths.detail.other" = "%d original-path to Trash-path records were saved for this item.";
 "history.detail.recovery.reviewOnly.title" = "Review-Only Leftover Evidence";
 "history.detail.recovery.reviewOnly.subtitle.one" = "1 related leftover item was recorded during uninstall.";
 "history.detail.recovery.reviewOnly.subtitle.other" = "%d related leftover items were recorded during uninstall.";

@@ -391,29 +391,7 @@ final class AtlasAppModel: ObservableObject {
     }
 
     func refreshApps() async {
-        guard !isAppActionRunning else {
-            return
-        }
-
-        selection = .apps
-        isAppActionRunning = true
-        activePreviewAppID = nil
-        activeUninstallAppID = nil
-        currentAppPreview = nil
-        currentPreviewedAppID = nil
-        latestAppsSummary = AtlasL10n.string("model.apps.refreshing")
-
-        do {
-            let output = try await workspaceController.listApps()
-            withAnimation(.snappy(duration: 0.24)) {
-                snapshot = output.snapshot
-                latestAppsSummary = output.summary
-            }
-        } catch {
-            latestAppsSummary = error.localizedDescription
-        }
-
-        isAppActionRunning = false
+        await reloadAppsInventory(navigateToApps: true, resetPreview: true)
     }
 
     func previewAppUninstall(appID: UUID) async {
@@ -473,6 +451,8 @@ final class AtlasAppModel: ObservableObject {
             return
         }
 
+        let restoredItem = snapshot.recoveryItems.first(where: { $0.id == itemID })
+        let shouldRefreshAppsAfterRestore = restoredItem?.isAppPayload == true
         restoringRecoveryItemID = itemID
 
         do {
@@ -481,8 +461,21 @@ final class AtlasAppModel: ObservableObject {
                 snapshot = output.snapshot
                 latestScanSummary = output.summary
                 smartCleanExecutionIssue = nil
+                if shouldRefreshAppsAfterRestore {
+                    currentAppPreview = nil
+                    currentPreviewedAppID = nil
+                    latestAppsSummary = output.summary
+                }
             }
-            await refreshPlanPreview()
+            if shouldRefreshAppsAfterRestore {
+                await reloadAppsInventory(
+                    navigateToApps: false,
+                    resetPreview: true,
+                    loadingSummary: output.summary
+                )
+            } else {
+                await refreshPlanPreview()
+            }
         } catch {
             let persistedState = repository.loadState()
             withAnimation(.snappy(duration: 0.24)) {
@@ -605,6 +598,40 @@ final class AtlasAppModel: ObservableObject {
         }
     }
 
+    private func reloadAppsInventory(
+        navigateToApps: Bool,
+        resetPreview: Bool,
+        loadingSummary: String? = nil
+    ) async {
+        guard !isAppActionRunning else {
+            return
+        }
+
+        if navigateToApps {
+            selection = .apps
+        }
+        isAppActionRunning = true
+        activePreviewAppID = nil
+        activeUninstallAppID = nil
+        if resetPreview {
+            currentAppPreview = nil
+            currentPreviewedAppID = nil
+        }
+        latestAppsSummary = loadingSummary ?? AtlasL10n.string("model.apps.refreshing")
+
+        do {
+            let output = try await workspaceController.listApps()
+            withAnimation(.snappy(duration: 0.24)) {
+                snapshot = output.snapshot
+                latestAppsSummary = output.summary
+            }
+        } catch {
+            latestAppsSummary = error.localizedDescription
+        }
+
+        isAppActionRunning = false
+    }
+
     private func filter<Element>(
         _ elements: [Element],
         route: AtlasRoute,
@@ -624,6 +651,15 @@ final class AtlasAppModel: ObservableObject {
                 .lowercased()
                 .contains(query)
         }
+    }
+}
+
+private extension RecoveryItem {
+    var isAppPayload: Bool {
+        if case .app = payload {
+            return true
+        }
+        return false
     }
 }
 
