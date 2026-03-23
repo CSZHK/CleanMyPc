@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 CHANGELOG_FILE="$ROOT_DIR/CHANGELOG.md"
 
 usage() {
-    cat <<'EOF'
+    cat << 'EOF'
 Usage:
   ./scripts/atlas/generate-release-body.sh <version> <packaging-mode> [output-file]
 
@@ -56,7 +56,7 @@ extract_changelog_section() {
 
 CHANGELOG_SECTION="$(extract_changelog_section "$VERSION")"
 
-if [[ -z "${CHANGELOG_SECTION//[$'\n\r\t ']}" ]]; then
+if [[ -z "${CHANGELOG_SECTION//[$'\n\r\t ']/}" ]]; then
     {
         echo "# Atlas for Mac $VERSION"
         echo
