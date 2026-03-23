@@ -49,13 +49,13 @@ If preflight passes, the current machine is ready for signed packaging.
 Before pushing a release tag, align the app version, build number, and changelog skeleton:
 
 ```bash
-./scripts/atlas/prepare-release.sh 1.0.2
+./scripts/atlas/prepare-release.sh 1.0.3
 ```
 
 Optional arguments:
 
 ```bash
-./scripts/atlas/prepare-release.sh 1.0.2 3 2026-03-14
+./scripts/atlas/prepare-release.sh 1.0.3 4 2026-03-23
 ```
 
 This updates:
@@ -64,7 +64,7 @@ This updates:
 - `Apps/AtlasApp/Sources/AtlasApp/AtlasAppModel.swift`
 - `CHANGELOG.md`
 
-The script increments `CURRENT_PROJECT_VERSION` automatically when you omit the build number. Review the new changelog section before creating the `V1.0.2` tag.
+The script increments `CURRENT_PROJECT_VERSION` automatically when you omit the build number. Review the new changelog section before creating the `V1.0.3` tag.
 
 ## Signed Packaging
 
@@ -120,8 +120,8 @@ If those secrets are missing, the workflow automatically falls back to:
 Release flow:
 
 ```bash
-git tag -a V1.0.2 -m "Release V1.0.2"
-git push origin V1.0.2
+git tag -a V1.0.3 -m "Release V1.0.3"
+git push origin V1.0.3
 ```
 
 That tag creates one GitHub Release containing:

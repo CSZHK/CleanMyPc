@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-03-23
+
+### Added
+
+- `Apps` uninstall preview now records structured review-only evidence groups, including observed paths for support files, caches, preferences, logs, and launch items.
+- Added scripted fixture baselines for `Apps` evidence and `Smart Clean` verification through `scripts/atlas/apps-manual-fixtures.sh`, `scripts/atlas/apps-evidence-acceptance.sh`, and the expanded Smart Clean fixture script.
+- Added versioned workspace-state persistence and schema-versioned app recovery payloads so future recovery hardening can evolve without immediately dropping older local state.
+- Expanded real `Smart Clean` execution coverage for additional high-confidence user-owned roots, including CoreSimulator caches and common developer cache locations such as Gradle, Ivy, and SwiftPM caches.
+
+### Changed
+
+- App restore now clears stale uninstall preview state and refreshes app inventory before the `Apps` surface reuses footprint counts.
+- `History` recovery detail now surfaces recorded recovery evidence, including payload schema version, review-only uninstall groups, and restore-path mappings when available.
+- `full-acceptance` now treats fixture-script validation as a routine release-readiness gate alongside packaging, install, launch, and UI automation checks.
+- Local protocol and persistence contracts were tightened to distinguish versioned workspace-state storage from legacy compatibility fallback, while keeping review-only evidence explicitly non-executable.
+
+### Fixed
+
+- Legacy unversioned workspace-state files now migrate forward into the current persisted envelope instead of breaking on the newer persistence shape.
+- Revalidated the `1.0.3` release candidate with package tests, app tests, native packaging, DMG install verification, installed-app launch smoke, and native UI automation.
+- Fixed the post-restore `Apps` trust gap where recovered app payloads could leave stale uninstall preview or stale footprint evidence visible until a manual refresh.
+
+
 ## [1.0.2] - 2026-03-14
 
 ### Added
