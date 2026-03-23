@@ -67,4 +67,5 @@
 - `execute_uninstall` removes an app from the current workspace view and creates a recovery entry.
 - `restore` can physically restore items when structured recovery mappings are present, and can still rehydrate a `Finding` or an app payload into Atlas state from the recovery payload.
 - `restore` must reject expired recovery items before side effects and must fail closed when the original destination already exists.
+- When `restore` rehydrates an app payload, the `Apps` surface should refresh inventory before presenting footprint counts or a new uninstall preview.
 - User-visible task summaries and settings-driven text should reflect the persisted app-language preference when generated.

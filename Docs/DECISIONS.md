@@ -67,6 +67,13 @@
 - `Storage treemap`, `Menu Bar`, and `Automation` remain out of scope unless the decision log is updated explicitly
 - Atlas should compete as an `explainable, recovery-first Mac maintenance workspace`, not as a generic all-in-one cleaner
 
+### D-011 Versioned Workspace State and Recovery Payload Compatibility
+
+- Persisted workspace state uses a versioned JSON envelope instead of an unversioned top-level payload
+- Atlas must continue decoding older top-level workspace-state files and rewrite them into the current envelope when possible
+- App recovery payloads carry an explicit schema version and must remain backward-compatible with legacy app-only recovery payload shapes
+- App payload restores must refresh app inventory before `Apps` reuses footprint counts or uninstall preview state
+
 ## Update Rule
 
 Add a new decision entry whenever product scope, protocol, privilege boundaries, release route, or recovery model changes.

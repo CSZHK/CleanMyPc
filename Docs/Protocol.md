@@ -8,7 +8,7 @@
 
 ## Protocol Version
 
-- Current implementation version: `0.3.1`
+- Current implementation version: `0.3.2`
 
 ## UI ↔ Worker Commands
 
@@ -127,8 +127,25 @@
 
 ### AppRecoveryPayload
 
+- `schemaVersion`
 - `app`
 - `uninstallEvidence`
+
+## Workspace State Persistence
+
+Atlas persists local workspace state in a versioned JSON envelope:
+
+- `schemaVersion`
+- `savedAt`
+- `snapshot`
+- `currentPlan`
+- `settings`
+
+Compatibility rules:
+
+- legacy top-level `AtlasWorkspaceState` files must still decode on load
+- after a successful legacy decode, Atlas may rewrite the file into the current versioned envelope
+- legacy app recovery payloads that stored a raw `AppFootprint` must still decode into the current `AppRecoveryPayload` shape
 
 ### AtlasSettings
 
@@ -154,7 +171,8 @@
 - `health.snapshot` is backed by `lib/check/health_json.sh` through `MoleHealthAdapter`.
 - `scan.start` is backed by `bin/clean.sh --dry-run` through `MoleSmartCleanAdapter` when the upstream workflow succeeds. If it cannot complete, the worker now rejects the request instead of silently fabricating scan results.
 - `apps.list` is backed by `MacAppsInventoryAdapter`, which scans local app bundles and derives lightweight leftover counts suitable for interactive refresh.
-- The worker persists a local JSON-backed workspace state containing the latest snapshot, current Smart Clean plan, and settings, including the persisted app-language preference.
+- The worker persists a versioned local JSON workspace state containing the latest snapshot, current Smart Clean plan, and settings, including the persisted app-language preference.
+- Legacy top-level workspace-state files are migrated on load into the current versioned envelope when possible.
 - The repository and worker normalize recovery state by pruning expired `RecoveryItem`s and rejecting restore requests that arrive after the retention window has closed.
 - Atlas localizes user-facing shell copy through a package-scoped resource bundle and uses the persisted language to keep summaries and settings text aligned.
 - App uninstall can invoke the packaged or development helper executable through structured JSON actions.
@@ -166,3 +184,4 @@
 - `executePlan` is fail-closed for unsupported targets, but now supports a real Trash-based execution path for a safe structured subset of Smart Clean items.
 - `recovery.restore` can physically restore items when `restoreMappings` are present; otherwise it falls back to model rehydration only.
 - `recovery.restore` rejects expired recovery items with `restoreExpired` and rejects destination collisions with `restoreConflict`.
+- App payload restores should be followed by app-inventory refresh so the `Apps` surface does not reuse stale uninstall preview or stale footprint counts after recovery.
