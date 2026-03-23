@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="Docs/Media/README/atlas-overview.png" alt="Atlas for Mac overview screen" width="1000" />
+  <img src="Docs/Media/README/atlas-smart-clean.png" alt="Atlas for Mac Smart Clean screen" width="1000" />
 </p>
 
 Atlas for Mac is a native macOS application for people who need to understand why their Mac is slow, full, or disorganized, then take safe and reversible action. The current MVP unifies system overview, Smart Clean, app uninstall workflows, permissions guidance, history, and recovery into a single desktop workspace.

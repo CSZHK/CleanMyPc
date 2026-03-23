@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="Docs/Media/README/atlas-overview.png" alt="Atlas for Mac 概览界面" width="1000" />
+  <img src="Docs/Media/README/atlas-smart-clean.png" alt="Atlas for Mac 智能清理界面" width="1000" />
 </p>
 
 Atlas for Mac 是一款原生 macOS 应用，面向需要弄清楚 Mac 为什么变慢、磁盘为什么变满、系统为什么变得杂乱的用户，并在此基础上提供安全、可恢复的处理操作。当前 MVP 将系统概览、Smart Clean、应用卸载流程、权限指引、历史记录和恢复能力整合到一个桌面工作台中。
