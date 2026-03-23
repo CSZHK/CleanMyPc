@@ -30,7 +30,7 @@ write_info_plist() {
     local plist_path="$1"
     local bundle_id="$2"
     local app_name="$3"
-    cat > "$plist_path" <<EOF
+    cat > "$plist_path" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -85,7 +85,7 @@ create_leftovers() {
                 ;;
             launch)
                 mkdir -p "$LAUNCH_AGENTS_ROOT"
-                cat > "$LAUNCH_AGENTS_ROOT/$bundle_id.plist" <<EOF
+                cat > "$LAUNCH_AGENTS_ROOT/$bundle_id.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">

@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FIXTURE_SCRIPT="$SCRIPT_DIR/apps-manual-fixtures.sh"
 
 print_guide() {
-    cat <<'EOF'
+    cat << 'EOF'
 Apps Evidence Acceptance Guide
 
 1. Run Atlas and open the Apps screen.
