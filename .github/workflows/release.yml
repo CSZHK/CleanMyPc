@@ -171,15 +171,7 @@ jobs:
 
       - name: Generate release body
         run: |
-          if [[ "${{ needs.native.outputs.packaging_mode }}" == "development" ]]; then
-            {
-              echo "Native macOS assets in this tag were packaged in development mode because Developer ID release-signing credentials were not configured for this run."
-              echo
-              echo "These \`.zip\`, \`.dmg\`, and \`.pkg\` files are intended for internal testing or developer use. macOS Gatekeeper may require \`Open Anyway\` or a right-click \`Open\` flow before launch."
-            } > RELEASE_BODY.md
-          else
-            echo "Native macOS assets in this tag were packaged in CI using Developer ID signing and notarization, then uploaded alongside the existing command-line release artifacts." > RELEASE_BODY.md
-          fi
+          ./scripts/atlas/generate-release-body.sh "${GITHUB_REF_NAME#V}" "${{ needs.native.outputs.packaging_mode }}" RELEASE_BODY.md
 
       - name: Display structure of downloaded files
         run: ls -R bin/

@@ -97,6 +97,13 @@ KEEP_INSTALLED_APP=1 ./scripts/atlas/verify-dmg-install.sh
 
 Tagged pushes matching `V*` now reuse the same packaging flow in CI and attach native release assets to the GitHub Release created by `.github/workflows/release.yml`.
 
+The GitHub Release body is generated from the matching version section in `CHANGELOG.md`, then appends the actual packaging mode note:
+
+- `developer-id` -> signed/notarized packaging note
+- `development` -> prerelease fallback note
+
+If a changelog section is missing for the pushed tag version, the workflow falls back to a short placeholder instead of publishing an empty body.
+
 Required GitHub Actions secrets:
 
 - `ATLAS_RELEASE_APP_CERT_P12_BASE64`
