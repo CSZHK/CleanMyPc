@@ -44,8 +44,37 @@ const items = [
     font-weight: 500;
     color: var(--atlas-color-text-secondary);
     padding: var(--atlas-space-xs) var(--atlas-space-lg);
-    border: 1px solid var(--atlas-color-border);
+    background: var(--atlas-glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--atlas-glass-border);
     border-radius: var(--atlas-radius-full);
     white-space: nowrap;
+    transition: box-shadow var(--atlas-motion-standard);
+    position: relative;
+  }
+
+  .trust-strip__pill::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--atlas-gradient-brand);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.2;
+    transition: opacity var(--atlas-motion-standard);
+  }
+
+  .trust-strip__pill:hover {
+    box-shadow: 0 0 20px rgba(20, 144, 133, 0.08);
+  }
+
+  .trust-strip__pill:hover::before {
+    opacity: 0.4;
   }
 </style>

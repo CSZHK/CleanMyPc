@@ -18,7 +18,7 @@ const altUrl = new URL(altPath, Astro.site);
 ---
 
 <!doctype html>
-<html lang={htmlLang}>
+<html lang={htmlLang} data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -69,11 +69,21 @@ const altUrl = new URL(altPath, Astro.site);
       "description": description,
       "url": canonicalUrl.href
     })} />
+
+    <!-- Theme initialization (prevent flash) -->
+    <script is:inline>
+      (function() {
+        const stored = localStorage.getItem('atlas-theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = stored || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
   </head>
   <body>
     <slot />
 
-    <!-- Scroll-reveal observer -->
+    <!-- Scroll-reveal observer with stagger support -->
     <script>
       const observer = new IntersectionObserver(
         (entries) => {
@@ -88,6 +98,16 @@ const altUrl = new URL(altPath, Astro.site);
       );
 
       document.querySelectorAll('.fade-in').forEach((el) => observer.observe(el));
+
+      // Stagger animation support
+      document.querySelectorAll('.stagger-parent').forEach((parent) => {
+        const children = parent.querySelectorAll('.fade-in');
+        children.forEach((child, i) => {
+          child.style.setProperty('--stagger-index', String(i));
+          child.style.transitionDelay = `calc(var(--atlas-stagger-delay) * ${i})`;
+          observer.observe(child);
+        });
+      });
     </script>
   </body>
 </html>

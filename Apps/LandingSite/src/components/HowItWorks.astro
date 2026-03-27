@@ -13,12 +13,14 @@ const copy = t(locale);
   <div class="how__inner container">
     <h2 class="how__title">{copy.howItWorks.sectionTitle}</h2>
 
-    <div class="how__steps">
+    <div class="how__steps stagger-parent">
       {copy.howItWorks.steps.map((step, i) => (
-        <div class="how__step">
-          <div class="how__step-number" aria-hidden="true">{String(i + 1).padStart(2, '0')}</div>
-          <h3 class="how__step-label">{step.label}</h3>
-          <p class="how__step-desc">{step.description}</p>
+        <div class="how__step fade-in">
+          <div class="how__step-card">
+            <div class="how__step-number" aria-hidden="true">{String(i + 1).padStart(2, '0')}</div>
+            <h3 class="how__step-label">{step.label}</h3>
+            <p class="how__step-desc">{step.description}</p>
+          </div>
           {i < copy.howItWorks.steps.length - 1 && (
             <div class="how__connector" aria-hidden="true" />
           )}
@@ -54,12 +56,32 @@ const copy = t(locale);
     position: relative;
   }
 
+  .how__step-card {
+    padding: var(--atlas-space-xl);
+    background: var(--atlas-glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--atlas-glass-border);
+    border-radius: var(--atlas-radius-xl);
+    position: relative;
+    transition: box-shadow var(--atlas-motion-standard),
+                transform var(--atlas-motion-fast);
+  }
+
+  .how__step-card:hover {
+    box-shadow: var(--atlas-glow-card-hover);
+    transform: translateY(-2px);
+  }
+
   .how__step-number {
     font-family: var(--atlas-font-mono);
     font-size: var(--atlas-text-section);
     font-weight: 700;
-    color: var(--atlas-color-brand);
-    opacity: 0.3;
+    background: var(--atlas-gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    opacity: 0.5;
     margin-bottom: var(--atlas-space-md);
   }
 
@@ -85,11 +107,12 @@ const copy = t(locale);
     .how__connector {
       display: block;
       position: absolute;
-      top: 28px;
+      top: 50%;
       right: -12px;
       width: 24px;
       height: 2px;
-      background: var(--atlas-color-border-emphasis);
+      background: var(--atlas-gradient-brand);
+      opacity: 0.3;
     }
   }
 </style>

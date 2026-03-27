@@ -79,9 +79,18 @@ const manifest = getRelease();
 
   .safety__card {
     padding: var(--atlas-space-xl);
-    background: var(--atlas-color-bg-surface);
-    border: 1px solid var(--atlas-color-border);
+    background: var(--atlas-glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--atlas-glass-border);
     border-radius: var(--atlas-radius-xl);
+    transition: box-shadow var(--atlas-motion-standard),
+                transform var(--atlas-motion-fast);
+  }
+
+  .safety__card:hover {
+    box-shadow: var(--atlas-glow-card-hover);
+    transform: translateY(-2px);
   }
 
   .safety__card-title {

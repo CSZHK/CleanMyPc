@@ -38,6 +38,22 @@ const navItems = [
     </ul>
 
     <div class="navbar__actions">
+      <button class="navbar__theme-toggle" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+        <svg class="navbar__theme-icon navbar__theme-icon--sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="navbar__theme-icon navbar__theme-icon--moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
       <a href={altPath} class="navbar__lang" aria-label={`Switch to ${altLabel}`}>
         {altLabel}
       </a>
@@ -83,6 +99,18 @@ const navItems = [
       ticking = true;
     }
   });
+
+  // Theme toggle
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('atlas-theme', next);
+    });
+  }
 </script>
 
 <style>
@@ -98,9 +126,9 @@ const navItems = [
   }
 
   .navbar.is-scrolled {
-    background-color: rgba(13, 15, 17, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background-color: var(--atlas-navbar-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--atlas-color-border);
   }
 
@@ -157,6 +185,33 @@ const navItems = [
     flex-shrink: 0;
   }
 
+  .navbar__theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--atlas-radius-sm);
+    border: 1px solid var(--atlas-color-border);
+    background: transparent;
+    color: var(--atlas-color-text-secondary);
+    cursor: pointer;
+    transition: color var(--atlas-motion-fast),
+                border-color var(--atlas-motion-fast);
+  }
+
+  .navbar__theme-toggle:hover {
+    color: var(--atlas-color-text-primary);
+    border-color: var(--atlas-color-border-emphasis);
+  }
+
+  /* Show sun in dark mode, moon in light mode */
+  .navbar__theme-icon--moon { display: none; }
+  .navbar__theme-icon--sun { display: block; }
+
+  [data-theme="light"] .navbar__theme-icon--sun { display: none; }
+  [data-theme="light"] .navbar__theme-icon--moon { display: block; }
+
   .navbar__lang {
     font-family: var(--atlas-font-mono);
     font-size: var(--atlas-text-caption);
@@ -189,7 +244,7 @@ const navItems = [
       right: 0;
       flex-direction: column;
       padding: var(--atlas-space-xl);
-      background-color: rgba(13, 15, 17, 0.95);
+      background-color: var(--atlas-mobile-menu-bg);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--atlas-color-border);
       gap: var(--atlas-space-lg);

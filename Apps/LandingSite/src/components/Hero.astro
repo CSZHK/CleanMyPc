@@ -37,6 +37,11 @@ const publishedDate = formatDate(manifest.publishedAt, locale);
 ---
 
 <section class="hero band--dark" id="hero">
+  <!-- Background glow orbs -->
+  <div class="hero__glow-orb hero__glow-orb--1" aria-hidden="true"></div>
+  <div class="hero__glow-orb hero__glow-orb--2" aria-hidden="true"></div>
+  <div class="hero__glow-orb hero__glow-orb--3" aria-hidden="true"></div>
+
   <div class="hero__inner container">
     <div class="hero__content">
       <ChannelBadge
@@ -103,6 +108,42 @@ const publishedDate = formatDate(manifest.publishedAt, locale);
     padding-top: calc(80px + var(--atlas-space-section-gap));
     padding-bottom: var(--atlas-space-section-gap);
     overflow: hidden;
+    position: relative;
+  }
+
+  /* Glow orbs — aurora-like background effect */
+  .hero__glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    animation: pulse-glow 8s ease-in-out infinite;
+  }
+
+  .hero__glow-orb--1 {
+    width: 500px;
+    height: 500px;
+    top: -100px;
+    left: -100px;
+    background: radial-gradient(circle, rgba(20, 144, 133, 0.2) 0%, transparent 70%);
+  }
+
+  .hero__glow-orb--2 {
+    width: 400px;
+    height: 400px;
+    top: 50%;
+    right: -80px;
+    background: radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, transparent 70%);
+    animation-delay: -3s;
+  }
+
+  .hero__glow-orb--3 {
+    width: 300px;
+    height: 300px;
+    bottom: -50px;
+    left: 30%;
+    background: radial-gradient(circle, rgba(20, 144, 133, 0.12) 0%, transparent 70%);
+    animation-delay: -5s;
   }
 
   .hero__inner {
@@ -123,6 +164,8 @@ const publishedDate = formatDate(manifest.publishedAt, locale);
     display: flex;
     flex-direction: column;
     gap: var(--atlas-space-lg);
+    position: relative;
+    z-index: 1;
   }
 
   .hero__headline {
@@ -130,7 +173,17 @@ const publishedDate = formatDate(manifest.publishedAt, locale);
     font-weight: var(--atlas-text-hero-weight);
     line-height: var(--atlas-leading-tight);
     letter-spacing: var(--atlas-tracking-tight);
-    color: var(--atlas-color-text-primary);
+    background: linear-gradient(135deg, #F1F5F9 0%, #34D399 50%, #149085 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  [data-theme="light"] .hero__headline {
+    background: linear-gradient(135deg, #0F172A 0%, #149085 50%, #0F766E 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .hero__subheadline {
@@ -170,15 +223,21 @@ const publishedDate = formatDate(manifest.publishedAt, locale);
     display: flex;
     justify-content: center;
     min-width: 0;
+    position: relative;
+    z-index: 1;
   }
 
   .hero__frame {
     position: relative;
     border-radius: var(--atlas-radius-xxl);
     overflow: hidden;
-    box-shadow: var(--atlas-shadow-prominent);
-    border: 1px solid var(--atlas-color-border-emphasis);
+    background: var(--atlas-glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--atlas-glass-border);
     max-width: 100%;
+    box-shadow: var(--atlas-shadow-prominent), var(--atlas-glow-brand);
+    animation: float var(--atlas-duration-float) ease-in-out infinite;
   }
 
   .hero__screenshot {

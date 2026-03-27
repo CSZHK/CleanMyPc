@@ -24,17 +24,40 @@ const { title, value, example, trustCue } = Astro.props;
 <style>
   .feature-card {
     padding: var(--atlas-space-xl);
-    background: var(--atlas-color-bg-surface);
-    border: 1px solid var(--atlas-color-border);
+    background: var(--atlas-glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--atlas-glass-border);
     border-radius: var(--atlas-radius-xl);
     box-shadow: var(--atlas-shadow-raised);
+    position: relative;
     transition: transform var(--atlas-motion-fast),
-                box-shadow var(--atlas-motion-fast);
+                box-shadow var(--atlas-motion-standard);
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--atlas-gradient-brand);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--atlas-motion-standard);
   }
 
   .feature-card:hover {
-    transform: scale(1.008);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    transform: scale(1.02);
+    box-shadow: var(--atlas-glow-card-hover);
+  }
+
+  .feature-card:hover::before {
+    opacity: 0.4;
   }
 
   .feature-card__title {

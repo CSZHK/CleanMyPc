@@ -50,9 +50,37 @@ const copy = t(locale);
     text-align: center;
     gap: var(--atlas-space-lg);
     padding: var(--atlas-space-xxl);
-    background: var(--atlas-color-bg-surface);
-    border: 1px solid var(--atlas-color-border);
+    background: var(--atlas-glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--atlas-glass-border);
     border-radius: var(--atlas-radius-xl);
+    position: relative;
+    transition: box-shadow var(--atlas-motion-standard);
+  }
+
+  .problem__card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--atlas-gradient-brand);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--atlas-motion-standard);
+  }
+
+  .problem__card:hover::before {
+    opacity: 0.3;
+  }
+
+  .problem__card:hover {
+    box-shadow: var(--atlas-glow-card-hover);
   }
 
   .problem__before {
@@ -63,7 +91,10 @@ const copy = t(locale);
 
   .problem__arrow {
     color: var(--atlas-color-brand);
-    opacity: 0.6;
+  }
+
+  .problem__arrow svg {
+    stroke: currentColor;
   }
 
   .problem__after {

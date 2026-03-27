@@ -69,16 +69,20 @@ const REPO_URL = 'https://github.com/CSZHK/CleanMyPc';
     flex-direction: column;
     gap: var(--atlas-space-xxs);
     padding: var(--atlas-space-xl);
-    background: var(--atlas-color-bg-surface);
-    border: 1px solid var(--atlas-color-border);
+    background: var(--atlas-glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--atlas-glass-border);
     border-radius: var(--atlas-radius-lg);
     text-decoration: none;
     position: relative;
-    transition: border-color var(--atlas-motion-fast);
+    transition: box-shadow var(--atlas-motion-standard),
+                transform var(--atlas-motion-fast);
   }
 
   a.oss__card:hover {
-    border-color: var(--atlas-color-border-emphasis);
+    box-shadow: var(--atlas-glow-card-hover);
+    transform: translateY(-2px);
   }
 
   .oss__card-label {

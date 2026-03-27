@@ -29,6 +29,9 @@ const { channel, label, version, date } = Astro.props;
     padding: var(--atlas-space-xxs) var(--atlas-space-sm);
     border-radius: var(--atlas-radius-sm);
     line-height: 1.4;
+    background: var(--atlas-glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .badge__dot {
@@ -47,27 +50,26 @@ const { channel, label, version, date } = Astro.props;
   }
 
   .badge--stable {
-    background: rgba(20, 144, 133, 0.15);
     color: var(--atlas-color-accent);
     border: 1px solid rgba(20, 144, 133, 0.3);
   }
 
   .badge--stable .badge__dot {
     background-color: var(--atlas-color-accent);
+    animation: pulse-dot 2s ease-in-out infinite;
   }
 
   .badge--prerelease {
-    background: rgba(245, 158, 11, 0.15);
     color: var(--atlas-color-warning);
     border: 1px solid rgba(245, 158, 11, 0.3);
   }
 
   .badge--prerelease .badge__dot {
     background-color: var(--atlas-color-warning);
+    animation: pulse-dot 2s ease-in-out infinite;
   }
 
   .badge--none {
-    background: rgba(148, 163, 184, 0.1);
     color: var(--atlas-color-text-secondary);
     border: 1px solid rgba(148, 163, 184, 0.2);
   }

@@ -15,7 +15,7 @@ const downloadUrl = getDownloadUrl(manifest);
 const REPO_URL = 'https://github.com/CSZHK/CleanMyPc';
 ---
 
-<footer class="footer band--dark">
+<footer class="footer">
   <div class="footer__inner container">
     <div class="footer__top">
       <div class="footer__brand">
@@ -49,8 +49,24 @@ const REPO_URL = 'https://github.com/CSZHK/CleanMyPc';
 
 <style>
   .footer {
-    border-top: 1px solid var(--atlas-color-border);
+    background: var(--atlas-glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid transparent;
+    background-clip: padding-box;
+    position: relative;
     padding-block: var(--atlas-space-section-gap);
+  }
+
+  .footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--atlas-gradient-brand);
+    opacity: 0.3;
   }
 
   .footer__inner {

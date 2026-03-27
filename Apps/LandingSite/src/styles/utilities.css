@@ -23,10 +23,20 @@
 
 .band--dark {
   background-color: var(--atlas-color-bg-base);
+  position: relative;
+}
+
+.band--dark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 50%, rgba(20, 144, 133, 0.04) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .band--surface {
   background-color: var(--atlas-color-bg-surface);
+  position: relative;
 }
 
 /* ── Accessibility ─────────────────────────────────── */
@@ -84,4 +94,92 @@
 .fade-in.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* ── Glass Card ──────────────────────────────────── */
+
+.glass-card {
+  background: var(--atlas-glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--atlas-glass-border);
+  border-radius: var(--atlas-radius-xl);
+}
+
+/* ── Gradient Text ───────────────────────────────── */
+
+.gradient-text {
+  background: var(--atlas-gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Glow Hover ──────────────────────────────────── */
+
+.glow-hover {
+  transition: box-shadow var(--atlas-motion-standard),
+              transform var(--atlas-motion-fast);
+}
+
+.glow-hover:hover {
+  box-shadow: var(--atlas-glow-card-hover);
+}
+
+/* ── Stagger Delays ──────────────────────────────── */
+
+.stagger-1 { transition-delay: calc(var(--atlas-stagger-delay) * 0); }
+.stagger-2 { transition-delay: calc(var(--atlas-stagger-delay) * 1); }
+.stagger-3 { transition-delay: calc(var(--atlas-stagger-delay) * 2); }
+.stagger-4 { transition-delay: calc(var(--atlas-stagger-delay) * 3); }
+.stagger-5 { transition-delay: calc(var(--atlas-stagger-delay) * 4); }
+.stagger-6 { transition-delay: calc(var(--atlas-stagger-delay) * 5); }
+
+/* ── Float Animation ─────────────────────────────── */
+
+.float-animation {
+  animation: float var(--atlas-duration-float) ease-in-out infinite;
+}
+
+/* ── Gradient Border ─────────────────────────────── */
+
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--atlas-gradient-brand);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Keyframe Animations ─────────────────────────── */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.25; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }

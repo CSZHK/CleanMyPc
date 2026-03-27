@@ -61,9 +61,18 @@ const copy = t(locale);
 
   .dev__card {
     padding: var(--atlas-space-xl);
-    background: var(--atlas-color-bg-base);
-    border: 1px solid var(--atlas-color-border);
+    background: var(--atlas-glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--atlas-glass-border);
     border-radius: var(--atlas-radius-lg);
+    transition: box-shadow var(--atlas-motion-standard),
+                transform var(--atlas-motion-fast);
+  }
+
+  .dev__card:hover {
+    box-shadow: var(--atlas-glow-card-hover);
+    transform: translateY(-2px);
   }
 
   .dev__card-title {
