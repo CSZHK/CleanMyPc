@@ -90,3 +90,42 @@ DerivedData/
 *.xcresult/
 
 dist/
+
+# BEGIN ATOMSTORM ITERATION GOVERNANCE
+.agent
+!.agent/
+.agent/*
+!.agent/*.md
+!bin/
+!bin/ato-iter
+!iterations/
+!iterations/**
+!scripts/
+!scripts/iteration-governance/
+!scripts/iteration-governance/*.mjs
+!.harness/
+.harness/*
+!.harness/README.md
+!.harness/plans/
+!.harness/plans/**
+!.harness/acceptance/
+!.harness/acceptance/**
+!.harness/state/
+!.harness/state/**
+!.harness/eval_feedback/
+!.harness/eval_feedback/**
+!.harness/progress/
+!.harness/progress/**
+!.harness/baseline/
+!.harness/baseline/**
+.harness/tool_outputs/**
+.harness/terminals/**
+.harness/agents/**
+.harness/history/**
+/task_plan.md
+/findings.md
+/progress.md
+/investigation.md
+/live-map.md
+
+# END ATOMSTORM ITERATION GOVERNANCE

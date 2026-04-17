@@ -85,7 +85,7 @@ public struct HistoryFeatureView: View {
                     ViewThatFits(in: .horizontal) {
                         HStack(alignment: .center, spacing: AtlasSpacing.lg) {
                             browserSectionPicker
-                                .frame(maxWidth: 320)
+                                .frame(maxWidth: 400)
 
                             Spacer(minLength: AtlasSpacing.lg)
 
@@ -556,9 +556,15 @@ public struct HistoryFeatureView: View {
             .animation(.easeInOut(duration: 0.2), value: selectedSection)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(AtlasSpacing.xl)
-        .background(detailBackground)
-        .overlay(detailBorder)
+        .padding(AtlasSpacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
+                .fill(AtlasColor.cardRaised)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
+                .strokeBorder(AtlasColor.border, lineWidth: 1)
+        )
     }
 
     private var sidebarBackground: some View {
@@ -994,12 +1000,25 @@ private struct HistoryRecoveryDetailView: View {
                                 value: payload.app.name,
                                 detail: payload.app.bundleIdentifier
                             )
+                            AtlasMachineTextBlock(
+                                title: AtlasL10n.string("history.detail.recovery.evidence.bundle.title"),
+                                value: payload.uninstallEvidence.bundlePath,
+                                detail: AtlasL10n.string(
+                                    "history.detail.recovery.evidence.bundle.detail",
+                                    AtlasFormatters.byteCount(payload.uninstallEvidence.bundleBytes)
+                                )
+                            )
                             AtlasKeyValueRow(
                                 title: AtlasL10n.string("history.detail.recovery.evidence.schema"),
                                 value: "\(payload.schemaVersion)",
                                 detail: item.hasPhysicalRestorePath
                                     ? AtlasL10n.string("history.detail.recovery.callout.available.fileBacked.title")
                                     : AtlasL10n.string("history.detail.recovery.callout.available.stateOnly.title")
+                            )
+                            AtlasKeyValueRow(
+                                title: AtlasL10n.string("history.detail.recovery.evidence.refresh.title"),
+                                value: AtlasL10n.string("history.detail.recovery.evidence.refresh.value"),
+                                detail: AtlasL10n.string("history.detail.recovery.evidence.refresh.detail")
                             )
 
                             if payload.uninstallEvidence.reviewOnlyGroupCount > 0 {

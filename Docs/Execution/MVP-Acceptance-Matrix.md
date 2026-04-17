@@ -21,6 +21,7 @@ Track the frozen Atlas for Mac MVP against user-visible acceptance criteria, aut
 | `Overview` | Shows health snapshot, reclaimable space, permissions summary, and recent activity | `swift test --package-path Packages`, `AtlasApplicationTests`, native build | Launch app and confirm overview renders without crash | covered |
 | `Smart Clean` | User can scan, preview, and execute a recovery-first cleanup plan | `AtlasApplicationTests`, `AtlasInfrastructureTests`, `AtlasAppTests` | Launch app, run scan, review lanes, execute preview | covered |
 | `Smart Clean` competitive readiness | Supported high-confidence safe cleanup classes are explicit, disk-backed where claimed, and unsupported paths fail closed visibly | focused `AtlasInfrastructureTests`, `AtlasAppTests`, `scan -> execute -> rescan` tests | Validate one supported and one unsupported scenario against current comparison targets | partial |
+| `Smart Clean` boundary clarity | Preview clearly distinguishes direct execution, helper-backed execution, and review-only steps without relying on ambiguous CTA state | `AtlasDomainTests`, `AtlasAppTests` | Open Smart Clean preview and confirm boundary cues remain explicit | covered |
 | `Apps` | User can refresh apps, preview uninstall, and execute uninstall through worker flow | `AtlasApplicationTests`, `AtlasInfrastructureTests`, `AtlasAppTests`, `MacAppsInventoryAdapterTests` | Launch app, preview uninstall, execute uninstall, confirm history updates | covered |
 | `Apps` competitive readiness | Uninstall preview explains supported footprint categories, concrete leftover evidence paths, and recoverability/audit implications clearly enough to stand against open-source uninstall specialists | `AtlasApplicationTests`, `AtlasInfrastructureTests`, `AtlasAppTests` plus fixture validation | Preview uninstall for fixture apps, confirm category clarity, observed paths, and completion/history evidence | partial |
 | `History` | User can inspect runs and restore recovery items | `AtlasInfrastructureTests`, `AtlasAppTests` | Launch app, restore an item, verify it disappears from recovery list | covered |
@@ -58,6 +59,14 @@ Track the frozen Atlas for Mac MVP against user-visible acceptance criteria, aut
 6. Confirm completion and history/recovery surfaces describe what Atlas actually removed and recorded.
 7. Confirm recovery detail distinguishes the recoverable bundle from review-only leftover evidence.
 
+### Scenario 2c: App restore evidence refresh verification
+1. Use the fixture matrix in `Docs/Execution/Apps-Evidence-Fixture-Baseline-2026-03-24.md`.
+2. Restore the app recovery entry created in Scenario `2b`.
+3. Confirm the recovery item disappears from `Recovery`.
+4. Return to `Apps`.
+5. Confirm Atlas either shows a refreshed post-restore evidence state or an explicit stale-evidence state.
+6. Confirm Atlas does not silently reuse the pre-uninstall leftover count without one of those states being visible.
+
 ### Scenario 3: DMG install verification
 1. Build distribution artifacts.
 2. Open `Atlas-for-Mac.dmg`.
@@ -73,7 +82,10 @@ Track the frozen Atlas for Mac MVP against user-visible acceptance criteria, aut
 
 ## Selective Parity Validating Fixtures
 
+Reference: `Docs/Execution/Apps-Evidence-Fixture-Baseline-2026-03-24.md`
+
 - `Smart Clean` supported fixture: app-container cache or temp data under `~/Library/Containers/<bundle-id>/Data/Library/Caches` or `~/Library/Containers/<bundle-id>/Data/tmp`, validated with `scan -> execute -> rescan`.
+- `Smart Clean` additional user-home developer cache fixtures: `~/.swiftpm/cache/*`, `~/.cache/swift-package-manager/*`, `~/.pytest_cache/*`, or `~/.aws/cli/cache/*`, validated with `scan -> execute -> rescan`.
 - `Smart Clean` fail-closed fixture: launch-agent, service-adjacent, or otherwise unsupported target such as `~/Library/LaunchAgents/<bundle-id>.plist`, validated as review-only or rejected.
 - `Apps` mainstream GUI fixture: one large GUI app with visible support files and caches, such as `Final Cut Pro`.
 - `Apps` developer-heavy fixture: one developer-oriented app with larger support/caches footprint, such as `Xcode`.

@@ -70,11 +70,21 @@ public struct SmartCleanFeatureView: View {
                 tone: statusTone
             ) {
                 if isScanning || isExecutingPlan {
-                    AtlasLoadingState(
-                        title: isScanning ? AtlasL10n.string("smartclean.loading.scan") : AtlasL10n.string("smartclean.loading.execute"),
-                        detail: scanSummary,
-                        progress: scanProgress == 0 ? nil : scanProgress
-                    )
+                    VStack(spacing: AtlasSpacing.lg) {
+                        AtlasCircularProgress(
+                            progress: scanProgress == 0 ? (isScanning ? 0.15 : 0.5) : scanProgress,
+                            tone: isScanning ? .neutral : .warning,
+                            lineWidth: 8,
+                            icon: isScanning ? "sparkles" : "play.circle.fill"
+                        )
+                        .frame(width: 80, height: 80)
+
+                        AtlasLoadingState(
+                            title: isScanning ? AtlasL10n.string("smartclean.loading.scan") : AtlasL10n.string("smartclean.loading.execute"),
+                            detail: scanSummary,
+                            progress: scanProgress == 0 ? nil : scanProgress
+                        )
+                    }
                 } else {
                     VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
                         Text(scanSummary)
@@ -189,22 +199,18 @@ public struct SmartCleanFeatureView: View {
                 } else {
                     VStack(alignment: .leading, spacing: AtlasSpacing.md) {
                         ForEach(plan.items) { item in
+                            let executionBoundary = effectiveExecutionBoundary(for: item)
                             AtlasDetailRow(
                                 title: item.title,
                                 subtitle: item.detail,
-                                footnote: supportText(for: item.kind),
+                                footnote: supportText(for: item, boundary: executionBoundary),
                                 systemImage: item.kind.atlasSystemImage,
                                 tone: item.recoverable ? .success : .warning
                             ) {
-                                VStack(alignment: .trailing, spacing: AtlasSpacing.xs) {
-                                    AtlasStatusChip(
-                                        isPhysicallyExecutable(item)
-                                            ? AtlasL10n.string("smartclean.execution.real")
-                                            : AtlasL10n.string("smartclean.execution.reviewOnly"),
-                                        tone: isPhysicallyExecutable(item) ? .success : .warning
-                                    )
-                                    AtlasStatusChip(item.recoverable ? AtlasL10n.string("common.recoverable") : AtlasL10n.string("common.manualReview"), tone: item.recoverable ? .success : .warning)
-                                }
+                                AtlasStatusChip(
+                                    executionBoundaryTitle(for: executionBoundary),
+                                    tone: executionBoundary.isExecutable ? .success : .warning
+                                )
                             }
                         }
                     }
@@ -237,26 +243,24 @@ public struct SmartCleanFeatureView: View {
         let items = findings.filter { $0.risk == risk }
 
         if !items.isEmpty {
-            AtlasInfoCard(
+            AtlasSectionDisclosure(
                 title: risk.title,
-                subtitle: sectionDetail(for: risk),
-                tone: risk.atlasTone
+                count: items.count,
+                defaultExpanded: risk == .safe
             ) {
-                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                        ForEach(items) { finding in
-                            AtlasDetailRow(
-                                title: finding.title,
+                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                    ForEach(items) { finding in
+                        AtlasDetailRow(
+                            title: finding.title,
                             subtitle: finding.detail,
                             footnote: "\(AtlasL10n.localizedCategory(finding.category)) • \(actionExpectation(for: finding.risk))",
                             systemImage: AtlasCategoryIcon.systemImage(for: finding.category),
                             tone: risk.atlasTone
                         ) {
-                            VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
-                                AtlasStatusChip(AtlasL10n.localizedCategory(finding.category), tone: risk.atlasTone)
-                                Text(AtlasFormatters.byteCount(finding.bytes))
-                                    .font(AtlasTypography.label)
-                                    .foregroundStyle(.secondary)
-                            }
+                            AtlasStatusChip(
+                                "\(AtlasL10n.localizedCategory(finding.category)) · \(AtlasFormatters.byteCount(finding.bytes))",
+                                tone: risk.atlasTone
+                            )
                         }
                     }
                 }
@@ -281,7 +285,7 @@ public struct SmartCleanFeatureView: View {
     }
 
     private var executablePlanItemCount: Int {
-        plan.items.filter(isPhysicallyExecutable).count
+        plan.items.filter { effectiveExecutionBoundary(for: $0).isExecutable }.count
     }
 
     private var reviewOnlyPlanItemCount: Int {
@@ -303,16 +307,11 @@ public struct SmartCleanFeatureView: View {
     }
 
     private func isPhysicallyExecutable(_ item: ActionItem) -> Bool {
-        guard item.kind != .inspectPermission, item.kind != .reviewEvidence else {
-            return false
-        }
-        if let targetPaths = item.targetPaths, !targetPaths.isEmpty {
-            return true
-        }
-        guard let finding = findings.first(where: { $0.id == item.id }) else {
-            return false
-        }
-        return !((finding.targetPaths ?? []).isEmpty)
+        item.effectiveExecutionBoundary(findings: findings).isExecutable
+    }
+
+    private func effectiveExecutionBoundary(for item: ActionItem) -> ActionItem.ExecutionBoundary {
+        item.effectiveExecutionBoundary(findings: findings)
     }
 
     private var manualReviewCount: Int {
@@ -464,18 +463,39 @@ public struct SmartCleanFeatureView: View {
         }
     }
 
-    private func supportText(for kind: ActionItem.Kind) -> String {
-        switch kind {
-        case .removeCache:
-            return AtlasL10n.string("smartclean.support.removeCache")
-        case .removeApp:
-            return AtlasL10n.string("smartclean.support.removeApp")
-        case .archiveFile:
-            return AtlasL10n.string("smartclean.support.archiveFile")
-        case .inspectPermission:
-            return AtlasL10n.string("smartclean.support.inspectPermission")
-        case .reviewEvidence:
-            return AtlasL10n.string("smartclean.support.archiveFile")
+    private func supportText(for item: ActionItem, boundary: ActionItem.ExecutionBoundary) -> String {
+        switch boundary {
+        case .direct:
+            switch item.kind {
+            case .removeCache:
+                return AtlasL10n.string("smartclean.support.removeCache")
+            case .removeApp:
+                return AtlasL10n.string("smartclean.support.removeApp")
+            case .archiveFile:
+                return AtlasL10n.string("smartclean.support.archiveFile")
+            case .inspectPermission:
+                return AtlasL10n.string("smartclean.support.inspectPermission")
+            case .reviewEvidence:
+                return AtlasL10n.string("smartclean.support.archiveFile")
+            }
+        case .helper:
+            return AtlasL10n.string("smartclean.support.helper")
+        case .reviewOnly:
+            if item.kind == .inspectPermission {
+                return AtlasL10n.string("smartclean.support.inspectPermission")
+            }
+            return AtlasL10n.string("smartclean.support.reviewOnly")
+        }
+    }
+
+    private func executionBoundaryTitle(for boundary: ActionItem.ExecutionBoundary) -> String {
+        switch boundary {
+        case .direct:
+            return AtlasL10n.string("smartclean.execution.real")
+        case .helper:
+            return AtlasL10n.string("smartclean.execution.helper")
+        case .reviewOnly:
+            return AtlasL10n.string("smartclean.execution.reviewOnly")
         }
     }
 

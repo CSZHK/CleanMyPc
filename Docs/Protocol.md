@@ -131,6 +131,11 @@
 - `app`
 - `uninstallEvidence`
 
+App uninstall evidence rules:
+
+- `uninstallEvidence.bundlePath` and `uninstallEvidence.bundleBytes` are the recoverable bundle evidence reused by preview, completion, and history.
+- `uninstallEvidence.reviewOnlyGroups` are structured review-only leftover evidence groups that remain informational and auditable.
+
 ## Workspace State Persistence
 
 Atlas persists local workspace state in a versioned JSON envelope:
@@ -165,6 +170,7 @@ Compatibility rules:
 - Helper actions must remain allowlisted structured actions, never arbitrary command strings.
 - Fresh Smart Clean preview plans should carry `ActionItem.targetPaths` for executable items so execution does not have to reconstruct destructive intent from UI state.
 - Review-only uninstall evidence may carry `ActionItem.evidencePaths`, which are informational only and must not be treated as execution targets.
+- App restore flows must refresh app inventory before `Apps` reuses leftover counts. If refresh cannot confirm current evidence, `Apps` must show an explicit stale-evidence state.
 
 ## Current Implementation Note
 
@@ -184,4 +190,4 @@ Compatibility rules:
 - `executePlan` is fail-closed for unsupported targets, but now supports a real Trash-based execution path for a safe structured subset of Smart Clean items.
 - `recovery.restore` can physically restore items when `restoreMappings` are present; otherwise it falls back to model rehydration only.
 - `recovery.restore` rejects expired recovery items with `restoreExpired` and rejects destination collisions with `restoreConflict`.
-- App payload restores should be followed by app-inventory refresh so the `Apps` surface does not reuse stale uninstall preview or stale footprint counts after recovery.
+- App payload restores now surface post-restore evidence refresh state in `Apps`. Atlas either shows refreshed current evidence or an explicit stale-evidence state after the app-inventory refresh attempt.

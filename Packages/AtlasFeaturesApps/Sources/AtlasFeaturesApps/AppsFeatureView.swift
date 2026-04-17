@@ -8,6 +8,7 @@ public struct AppsFeatureView: View {
     private let apps: [AppFootprint]
     private let previewPlan: ActionPlan?
     private let currentPreviewedAppID: UUID?
+    private let restoreRefreshStatus: AtlasAppPostRestoreRefreshStatus?
     private let summary: String
     private let isRunning: Bool
     private let activePreviewAppID: UUID?
@@ -23,6 +24,7 @@ public struct AppsFeatureView: View {
         apps: [AppFootprint] = AtlasScaffoldFixtures.apps,
         previewPlan: ActionPlan? = nil,
         currentPreviewedAppID: UUID? = nil,
+        restoreRefreshStatus: AtlasAppPostRestoreRefreshStatus? = nil,
         summary: String = AtlasL10n.string("model.apps.ready"),
         isRunning: Bool = false,
         activePreviewAppID: UUID? = nil,
@@ -34,6 +36,7 @@ public struct AppsFeatureView: View {
         self.apps = apps
         self.previewPlan = previewPlan
         self.currentPreviewedAppID = currentPreviewedAppID
+        self.restoreRefreshStatus = restoreRefreshStatus
         self.summary = summary
         self.isRunning = isRunning
         self.activePreviewAppID = activePreviewAppID
@@ -51,12 +54,10 @@ public struct AppsFeatureView: View {
             maxContentWidth: AtlasLayout.maxWorkspaceWidth
         ) {
             AtlasCallout(
-                title: previewPlan == nil ? AtlasL10n.string("apps.callout.default.title") : AtlasL10n.string("apps.callout.preview.title"),
-                detail: previewPlan == nil
-                    ? AtlasL10n.string("apps.callout.default.detail")
-                    : AtlasL10n.string("apps.callout.preview.detail"),
-                tone: previewPlan == nil ? .neutral : .warning,
-                systemImage: previewPlan == nil ? "app.badge.minus" : "list.clipboard.fill"
+                title: screenCalloutTitle,
+                detail: screenCalloutDetail,
+                tone: screenCalloutTone,
+                systemImage: screenCalloutSystemImage
             )
 
             AtlasInfoCard(
@@ -208,6 +209,49 @@ public struct AppsFeatureView: View {
         return previewPlan
     }
 
+    private var selectedAppRestoreRefreshStatus: AtlasAppPostRestoreRefreshStatus? {
+        guard let selectedApp, let restoreRefreshStatus else {
+            return nil
+        }
+        guard restoreRefreshStatus.bundlePath == selectedApp.bundlePath
+            || restoreRefreshStatus.bundleIdentifier == selectedApp.bundleIdentifier else {
+            return nil
+        }
+        return restoreRefreshStatus
+    }
+
+    private var screenCalloutTitle: String {
+        guard let restoreRefreshStatus else {
+            return previewPlan == nil
+                ? AtlasL10n.string("apps.callout.default.title")
+                : AtlasL10n.string("apps.callout.preview.title")
+        }
+        return restoreRefreshStatus.state.calloutTitle
+    }
+
+    private var screenCalloutDetail: String {
+        guard let restoreRefreshStatus else {
+            return previewPlan == nil
+                ? AtlasL10n.string("apps.callout.default.detail")
+                : AtlasL10n.string("apps.callout.preview.detail")
+        }
+        return restoreRefreshStatus.state.calloutDetail(status: restoreRefreshStatus)
+    }
+
+    private var screenCalloutTone: AtlasTone {
+        guard let restoreRefreshStatus else {
+            return previewPlan == nil ? .neutral : .warning
+        }
+        return restoreRefreshStatus.state.tone
+    }
+
+    private var screenCalloutSystemImage: String {
+        guard let restoreRefreshStatus else {
+            return previewPlan == nil ? "app.badge.minus" : "list.clipboard.fill"
+        }
+        return restoreRefreshStatus.state.systemImage
+    }
+
     private var appsSidebar: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.md) {
             Text(AtlasL10n.string("apps.list.title"))
@@ -266,6 +310,7 @@ public struct AppsFeatureView: View {
                             AppDetailView(
                                 app: selectedApp,
                                 previewPlan: selectedAppMatchingPreview,
+                                restoreRefreshStatus: selectedAppRestoreRefreshStatus,
                                 metricColumns: detailMetricColumns,
                                 isBuildingPreview: activePreviewAppID == selectedApp.id,
                                 isUninstalling: activeUninstallAppID == selectedApp.id,
@@ -288,14 +333,14 @@ public struct AppsFeatureView: View {
             .animation(.easeInOut(duration: 0.2), value: selectedAppID)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(AtlasSpacing.xl)
+        .padding(AtlasSpacing.lg)
         .background(
             RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
-                .fill(Color.primary.opacity(0.03))
+                .fill(AtlasColor.cardRaised)
         )
         .overlay(
             RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                .strokeBorder(AtlasColor.border, lineWidth: 1)
         )
     }
 
@@ -387,6 +432,7 @@ private struct AppSidebarSectionHeader: View {
 private struct AppDetailView: View {
     let app: AppFootprint
     let previewPlan: ActionPlan?
+    let restoreRefreshStatus: AtlasAppPostRestoreRefreshStatus?
     let metricColumns: [GridItem]
     let isBuildingPreview: Bool
     let isUninstalling: Bool
@@ -439,6 +485,37 @@ private struct AppDetailView: View {
                     value: app.bundlePath,
                     detail: app.bucket.title
                 )
+            }
+
+            if let restoreRefreshStatus {
+                AtlasInfoCard(
+                    title: AtlasL10n.string("apps.restore.refresh.card.title"),
+                    subtitle: AtlasL10n.string("apps.restore.refresh.card.subtitle"),
+                    tone: restoreRefreshTone
+                ) {
+                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                        AtlasCallout(
+                            title: restoreRefreshTitle,
+                            detail: restoreRefreshDetail,
+                            tone: restoreRefreshTone,
+                            systemImage: restoreRefreshSystemImage
+                        )
+
+                        AtlasKeyValueRow(
+                            title: AtlasL10n.string("apps.restore.refresh.recorded.title"),
+                            value: "\(restoreRefreshStatus.recordedLeftoverItems)",
+                            detail: AtlasL10n.string("apps.restore.refresh.recorded.detail")
+                        )
+
+                        if let refreshedLeftoverItems = restoreRefreshStatus.refreshedLeftoverItems {
+                            AtlasKeyValueRow(
+                                title: AtlasL10n.string("apps.restore.refresh.current.title"),
+                                value: "\(refreshedLeftoverItems)",
+                                detail: AtlasL10n.string("apps.restore.refresh.current.detail")
+                            )
+                        }
+                    }
+                }
             }
 
             if let previewPlan {
@@ -642,6 +719,76 @@ private struct AppDetailView: View {
         }
     }
 
+    private var restoreRefreshTitle: String {
+        if let state = restoreRefreshStatus?.state {
+            return state.calloutTitle
+        }
+        return AtlasL10n.string("apps.restore.refresh.card.title")
+    }
+
+    private var restoreRefreshDetail: String {
+        guard let restoreRefreshStatus else {
+            return AtlasL10n.string("apps.restore.refresh.card.subtitle")
+        }
+        return restoreRefreshStatus.state.calloutDetail(status: restoreRefreshStatus)
+    }
+
+    private var restoreRefreshTone: AtlasTone {
+        restoreRefreshStatus?.state.tone ?? .neutral
+    }
+
+    private var restoreRefreshSystemImage: String {
+        restoreRefreshStatus?.state.systemImage ?? "arrow.triangle.2.circlepath"
+    }
+
+}
+
+// MARK: - Shared Restore Refresh UI Mapping
+
+extension AtlasAppPostRestoreRefreshState {
+    var calloutTitle: String {
+        switch self {
+        case .refreshing: return AtlasL10n.string("apps.restore.refresh.pending.title")
+        case .refreshed:  return AtlasL10n.string("apps.restore.refresh.refreshed.title")
+        case .stale:      return AtlasL10n.string("apps.restore.refresh.stale.title")
+        }
+    }
+
+    func calloutDetail(status: AtlasAppPostRestoreRefreshStatus) -> String {
+        switch self {
+        case .refreshing:
+            return AtlasL10n.string("apps.restore.refresh.pending.detail", status.appName)
+        case .refreshed:
+            return AtlasL10n.string(
+                "apps.restore.refresh.refreshed.detail",
+                status.appName,
+                status.refreshedLeftoverItems ?? 0,
+                status.recordedLeftoverItems
+            )
+        case .stale:
+            return AtlasL10n.string(
+                "apps.restore.refresh.stale.detail",
+                status.appName,
+                status.recordedLeftoverItems
+            )
+        }
+    }
+
+    var tone: AtlasTone {
+        switch self {
+        case .refreshing: return .neutral
+        case .refreshed:  return .success
+        case .stale:      return .warning
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .refreshing: return "arrow.triangle.2.circlepath"
+        case .refreshed:  return "checkmark.arrow.trianglehead.clockwise"
+        case .stale:      return "exclamationmark.arrow.trianglehead.clockwise"
+        }
+    }
 }
 
 private struct AppGroup: Identifiable {

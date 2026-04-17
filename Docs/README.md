@@ -33,6 +33,13 @@ This directory contains the working product, design, engineering, and compliance
 - `Execution/Recovery-Contract-2026-03-13.md` — frozen recovery semantics, claim boundaries, and acceptance evidence for ATL-221 through ATL-224
 - `Execution/Recovery-Credibility-Gate-Review-2026-03-13.md` — gate review for ATL-221 through ATL-225 recovery credibility work
 - `Execution/Landing-Page-PRD-2026-03-14.md` — PRD for the public landing page, GitHub Pages deployment, custom domain strategy, and launch-surface requirements
+- `Execution/Apps-Evidence-Execution-Plan-2026-03-24.md` — implementation-ready execution plan for `EPIC-A` `Apps` evidence work
+- `Execution/Apps-Evidence-Fixture-Baseline-2026-03-24.md` — frozen fixture matrix and benchmark rubric for `EPIC-A` uninstall evidence validation
+- `Execution/Apps-Evidence-Gate-Review-2026-03-24.md` — gate review for the `EPIC-A` apps evidence slice
+- `Execution/Smart-Clean-Safe-Coverage-Slice-2026-03-24.md` — bounded `EPIC-B` slice for the next high-confidence Smart Clean roots outside app containers
+- `Execution/Smart-Clean-Safe-Coverage-Gate-Review-2026-03-24.md` — gate review for the current `EPIC-B` Smart Clean safe-root slice
+- `Execution/Smart-Clean-Boundary-Metadata-Slice-2026-03-24.md` — centralized Smart Clean boundary semantics for direct, helper-backed, and review-only plan steps
+- `Execution/Smart-Clean-Boundary-Metadata-Gate-Review-2026-03-24.md` — gate review for the `ATL-257` Smart Clean boundary-metadata slice
 - `Execution/Smart-Clean-Execution-Coverage-2026-03-09.md` — user-facing summary of what Smart Clean can execute for real today
 - `Execution/Smart-Clean-QA-Checklist-2026-03-09.md` — QA checklist for scan, execute, rescan, and physical restore validation
 - `Execution/Smart-Clean-Manual-Verification-2026-03-09.md` — local-machine fixture workflow for validating real Smart Clean execution and restore

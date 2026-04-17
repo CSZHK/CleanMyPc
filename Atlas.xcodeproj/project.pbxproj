@@ -33,6 +33,7 @@
 		D6401099A3147109478204F7 /* AtlasFeaturesHistory in Frameworks */ = {isa = PBXBuildFile; productRef = D2ACE8BE6E790F13FAE97F90 /* AtlasFeaturesHistory */; };
 		D823AD669FF7D35E9967DA9A /* AtlasAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B5E85855AB6534C486F6AB /* AtlasAppUITests.swift */; };
 		F6099542DFD08E63D266956A /* AtlasApplication in Frameworks */ = {isa = PBXBuildFile; productRef = 76722DB4CBBA64B136FB7925 /* AtlasApplication */; };
+		F6C0A69BBF4CA7575BB62FF7 /* AtlasSnapshotFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EE6C93EE8A3740AC6F87F3 /* AtlasSnapshotFilter.swift */; };
 		F7D156229C72B9FC025453F3 /* AtlasFeaturesOverview in Frameworks */ = {isa = PBXBuildFile; productRef = 8E08917C8A3949F62A609030 /* AtlasFeaturesOverview */; };
 /* End PBXBuildFile section */
 
@@ -86,6 +87,7 @@
 		7FF49AAA8C253DBEE96EC8D3 /* AtlasAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AtlasAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		97A2723BA50C375AFC3C9321 /* AtlasWorkerXPC.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = AtlasWorkerXPC.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		9AB1D202267B7A0E93C4D7A4 /* AtlasApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AtlasApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1EE6C93EE8A3740AC6F87F3 /* AtlasSnapshotFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasSnapshotFilter.swift; sourceTree = "<group>"; };
 		A57454A431BBD25C9D9F7ACA /* AtlasAppCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasAppCommands.swift; sourceTree = "<group>"; };
 		D47D886B3961FF355B7634A4 /* AtlasApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasApp.swift; sourceTree = "<group>"; };
 		D49DD35B2A03E408EDF80E69 /* AtlasAppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasAppModel.swift; sourceTree = "<group>"; };
@@ -219,6 +221,7 @@
 				D47D886B3961FF355B7634A4 /* AtlasApp.swift */,
 				A57454A431BBD25C9D9F7ACA /* AtlasAppCommands.swift */,
 				D49DD35B2A03E408EDF80E69 /* AtlasAppModel.swift */,
+				A1EE6C93EE8A3740AC6F87F3 /* AtlasSnapshotFilter.swift */,
 				6A363C421B6DA2EFE09AE3D7 /* ReadmeAssetExporter.swift */,
 				31527C6248CC4F0D354F6593 /* TaskCenterView.swift */,
 			);
@@ -411,6 +414,7 @@
 				BC30CCA25FC8A3EB81BE296A /* AtlasApp.swift in Sources */,
 				B17BB446E0574DB8518951C8 /* AtlasAppCommands.swift in Sources */,
 				74A5A06AD14DA376F908F6C9 /* AtlasAppModel.swift in Sources */,
+				F6C0A69BBF4CA7575BB62FF7 /* AtlasSnapshotFilter.swift in Sources */,
 				0AAC86F28CA878B4829DA4F5 /* ReadmeAssetExporter.swift in Sources */,
 				00FF4F36C92195A962A9F59B /* TaskCenterView.swift in Sources */,
 			);
@@ -458,7 +462,7 @@
 			buildSettings = {
 				AD_HOC_CODE_SIGNING_ALLOWED = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleShortVersionString = "$(MARKETING_VERSION)";
 				INFOPLIST_KEY_CFBundleVersion = "$(CURRENT_PROJECT_VERSION)";
@@ -467,7 +471,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.3;
+				MARKETING_VERSION = 1.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app.worker;
 				PRODUCT_NAME = AtlasWorkerXPC;
 				SDKROOT = macosx;
@@ -535,7 +539,7 @@
 			buildSettings = {
 				AD_HOC_CODE_SIGNING_ALLOWED = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleShortVersionString = "$(MARKETING_VERSION)";
 				INFOPLIST_KEY_CFBundleVersion = "$(CURRENT_PROJECT_VERSION)";
@@ -544,7 +548,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.3;
+				MARKETING_VERSION = 1.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app.worker;
 				PRODUCT_NAME = AtlasWorkerXPC;
 				SDKROOT = macosx;
@@ -557,7 +561,7 @@
 				AD_HOC_CODE_SIGNING_ALLOWED = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Atlas for Mac";
 				INFOPLIST_KEY_CFBundleShortVersionString = "$(MARKETING_VERSION)";
@@ -569,7 +573,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.3;
+				MARKETING_VERSION = 1.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app;
 				PRODUCT_MODULE_NAME = AtlasApp;
 				PRODUCT_NAME = "Atlas for Mac";
@@ -665,7 +669,7 @@
 				AD_HOC_CODE_SIGNING_ALLOWED = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Atlas for Mac";
 				INFOPLIST_KEY_CFBundleShortVersionString = "$(MARKETING_VERSION)";
@@ -677,7 +681,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.3;
+				MARKETING_VERSION = 1.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app;
 				PRODUCT_MODULE_NAME = AtlasApp;
 				PRODUCT_NAME = "Atlas for Mac";

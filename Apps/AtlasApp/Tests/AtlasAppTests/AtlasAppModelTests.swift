@@ -78,6 +78,51 @@ final class AtlasAppModelTests: XCTestCase {
         XCTAssertFalse(model.canExecuteCurrentSmartCleanPlan)
     }
 
+    func testLegacySmartCleanPlanStillUsesFindingTargetsForExecutableBoundary() {
+        let repository = makeRepository()
+        let targetPath = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".swiftpm/cache/repositories/legacy-fixture.bin")
+            .path
+        let finding = Finding(
+            id: UUID(uuidString: "30000000-0000-0000-0000-000000000099") ?? UUID(),
+            title: "Legacy cache",
+            detail: targetPath,
+            bytes: 12,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: [targetPath]
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 12,
+                findings: [finding],
+                apps: [],
+                taskRuns: [],
+                recoveryItems: [],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(
+                title: "Review 1 selected finding",
+                items: [
+                    ActionItem(
+                        id: finding.id,
+                        title: "Move Legacy cache to Trash",
+                        detail: finding.detail,
+                        kind: .removeCache,
+                        recoverable: true
+                    )
+                ],
+                estimatedBytes: 12
+            ),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+        _ = try? repository.saveState(state)
+        let model = AtlasAppModel(repository: repository, workerService: AtlasScaffoldWorkerService(allowStateOnlyCleanExecution: true))
+
+        XCTAssertTrue(model.currentSmartCleanPlanHasExecutableTargets)
+    }
+
     func testRunSmartCleanScanMarksPlanAsFreshForCurrentSession() async throws {
         let repository = makeRepository()
         let worker = AtlasScaffoldWorkerService(
@@ -213,8 +258,6 @@ final class AtlasAppModelTests: XCTestCase {
 
         var settings = AtlasScaffoldWorkspace.state().settings
         settings.language = .en
-        settings.acknowledgementText = AtlasL10n.acknowledgement(language: .en)
-        settings.thirdPartyNoticesText = AtlasL10n.thirdPartyNotices(language: .en)
 
         let state = AtlasWorkspaceState(
             snapshot: AtlasWorkspaceSnapshot(
@@ -348,6 +391,68 @@ final class AtlasAppModelTests: XCTestCase {
         XCTAssertEqual(model.snapshot.apps.first?.leftoverItems, 1)
         XCTAssertEqual(model.latestAppsSummary, AtlasL10n.string("application.apps.loaded.one"))
         XCTAssertFalse(model.snapshot.recoveryItems.contains(where: { $0.id == recoveryItem.id }))
+        XCTAssertEqual(model.latestAppRestoreRefreshStatus?.state, .refreshed)
+        XCTAssertEqual(model.latestAppRestoreRefreshStatus?.recordedLeftoverItems, 9)
+        XCTAssertEqual(model.latestAppRestoreRefreshStatus?.refreshedLeftoverItems, 1)
+    }
+
+    func testRestoreAppRecoveryItemMarksEvidenceStaleWhenInventoryRefreshCannotFindApp() async throws {
+        let repository = makeRepository()
+        let app = AppFootprint(
+            id: UUID(),
+            name: "Recovered App",
+            bundleIdentifier: "com.example.recovered",
+            bundlePath: "/Applications/Recovered App.app",
+            bytes: 2_048,
+            leftoverItems: 4
+        )
+        let recoveryItem = RecoveryItem(
+            id: UUID(),
+            title: app.name,
+            detail: "Restorable app payload",
+            originalPath: app.bundlePath,
+            bytes: app.bytes,
+            deletedAt: Date(),
+            expiresAt: Date().addingTimeInterval(3600),
+            payload: .app(
+                AtlasAppRecoveryPayload(
+                    app: app,
+                    uninstallEvidence: AtlasAppUninstallEvidence(
+                        bundlePath: app.bundlePath,
+                        bundleBytes: app.bytes,
+                        reviewOnlyGroups: []
+                    )
+                )
+            ),
+            restoreMappings: nil
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 0,
+                findings: [],
+                apps: [app],
+                taskRuns: [],
+                recoveryItems: [recoveryItem],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "Review 0 selected findings", items: [], estimatedBytes: 0),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            appsInventoryProvider: MissingRestoredInventoryProvider()
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker)
+
+        await model.restoreRecoveryItem(recoveryItem.id)
+
+        XCTAssertEqual(model.latestAppRestoreRefreshStatus?.state, .stale)
+        XCTAssertEqual(model.latestAppRestoreRefreshStatus?.recordedLeftoverItems, 4)
+        XCTAssertNil(model.latestAppRestoreRefreshStatus?.refreshedLeftoverItems)
+        XCTAssertEqual(model.latestAppsSummary, AtlasL10n.string("application.apps.loaded.one"))
     }
 
     func testRestoreExpiredRecoveryItemReloadsPersistedState() async throws {
@@ -571,6 +676,20 @@ private struct RestoredInventoryProvider: AtlasAppInventoryProviding {
                 bundlePath: "/Applications/Recovered App.app",
                 bytes: 2_048,
                 leftoverItems: 1
+            )
+        ]
+    }
+}
+
+private struct MissingRestoredInventoryProvider: AtlasAppInventoryProviding {
+    func collectInstalledApps() async throws -> [AppFootprint] {
+        [
+            AppFootprint(
+                name: "Different App",
+                bundleIdentifier: "com.example.other",
+                bundlePath: "/Applications/Different App.app",
+                bytes: 1_024,
+                leftoverItems: 0
             )
         ]
     }

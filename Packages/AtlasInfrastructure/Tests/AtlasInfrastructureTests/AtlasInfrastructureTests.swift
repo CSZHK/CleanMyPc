@@ -485,6 +485,57 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertTrue(AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(finding))
     }
 
+    func testSwiftPMCacheTargetIsSupportedExecutionTarget() {
+        let targetURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".swiftpm/cache/repositories/atlas-fixture.bin")
+        let finding = Finding(
+            id: UUID(),
+            title: "SwiftPM cache",
+            detail: targetURL.path,
+            bytes: 1,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: [targetURL.path]
+        )
+
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isSupportedExecutionTarget(targetURL))
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(finding))
+    }
+
+    func testPytestCacheTargetIsSupportedExecutionTarget() {
+        let targetURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".pytest_cache/v/cache/atlas-fixture")
+        let finding = Finding(
+            id: UUID(),
+            title: "pytest cache",
+            detail: targetURL.path,
+            bytes: 1,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: [targetURL.path]
+        )
+
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isSupportedExecutionTarget(targetURL))
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(finding))
+    }
+
+    func testAWSCLICacheTargetIsSupportedExecutionTarget() {
+        let targetURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".aws/cli/cache/atlas-fixture.json")
+        let finding = Finding(
+            id: UUID(),
+            title: "AWS CLI cache",
+            detail: targetURL.path,
+            bytes: 1,
+            risk: .safe,
+            category: "Developer tools",
+            targetPaths: [targetURL.path]
+        )
+
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isSupportedExecutionTarget(targetURL))
+        XCTAssertTrue(AtlasSmartCleanExecutionSupport.isFindingExecutionSupported(finding))
+    }
+
     func testCoreSimulatorCacheTargetIsSupportedExecutionTarget() {
         let targetURL = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Developer/CoreSimulator/Caches/atlas-fixture/device-cache.db")
@@ -733,6 +784,39 @@ final class AtlasInfrastructureTests: XCTestCase {
         try Data("gradle-cache".utf8).write(to: targetFile)
 
         let provider = FileBackedSmartCleanProvider(targetFileURL: targetFile, title: "Gradle cache")
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            smartCleanScanProvider: provider,
+            allowProviderFailureFallback: false,
+            allowStateOnlyCleanExecution: false
+        )
+
+        let firstScan = try await worker.submit(AtlasRequestEnvelope(command: .startScan(taskID: UUID())))
+        XCTAssertEqual(firstScan.snapshot.findings.count, 1)
+        let planID = try XCTUnwrap(firstScan.previewPlan?.id)
+
+        let execute = try await worker.submit(AtlasRequestEnvelope(command: .executePlan(planID: planID)))
+        if case let .accepted(task) = execute.response.response {
+            XCTAssertEqual(task.kind, .executePlan)
+        } else {
+            XCTFail("Expected accepted execute-plan response")
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: targetFile.path))
+
+        let secondScan = try await worker.submit(AtlasRequestEnvelope(command: .startScan(taskID: UUID())))
+        XCTAssertEqual(secondScan.snapshot.findings.count, 0)
+        XCTAssertEqual(secondScan.snapshot.reclaimableSpaceBytes, 0)
+    }
+
+    func testScanExecuteRescanRemovesExecutedSwiftPMCacheTargetFromRealResults() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let targetDirectory = home.appendingPathComponent(".swiftpm/cache/AtlasExecutionTests/" + UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: targetDirectory, withIntermediateDirectories: true)
+        let targetFile = targetDirectory.appendingPathComponent("repositories.bin")
+        try Data("swiftpm-cache".utf8).write(to: targetFile)
+
+        let provider = FileBackedSmartCleanProvider(targetFileURL: targetFile, title: "SwiftPM cache")
         let worker = AtlasScaffoldWorkerService(
             repository: repository,
             smartCleanScanProvider: provider,
@@ -1352,8 +1436,6 @@ final class AtlasInfrastructureTests: XCTestCase {
         )
         var settings = AtlasScaffoldWorkspace.state().settings
         settings.language = .en
-        settings.acknowledgementText = AtlasL10n.acknowledgement(language: .en)
-        settings.thirdPartyNoticesText = AtlasL10n.thirdPartyNotices(language: .en)
 
         let state = AtlasWorkspaceState(
             snapshot: AtlasWorkspaceSnapshot(
@@ -1426,8 +1508,6 @@ final class AtlasInfrastructureTests: XCTestCase {
 
         var settings = AtlasScaffoldWorkspace.state().settings
         settings.language = .en
-        settings.acknowledgementText = AtlasL10n.acknowledgement(language: .en)
-        settings.thirdPartyNoticesText = AtlasL10n.thirdPartyNotices(language: .en)
 
         let state = AtlasWorkspaceState(
             snapshot: AtlasWorkspaceSnapshot(
@@ -1620,6 +1700,52 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertEqual(restoredApp.leftoverItems, 3)
     }
 
+    // MARK: - AtlasAuditStore
+
+    func testAuditStoreAppendsAndRetrieves() async {
+        let store = AtlasAuditStore()
+        await store.append("first")
+        await store.append("second")
+        let entries = await store.allEntries()
+        XCTAssertEqual(entries.count, 2)
+        XCTAssertEqual(entries[0].message, "second")
+        XCTAssertEqual(entries[1].message, "first")
+    }
+
+    func testAuditStoreTrimsOldEntriesWhenExceedingMaxEntries() async {
+        let maxEntries = 5
+        let store = AtlasAuditStore(maxEntries: maxEntries)
+        for i in 0..<10 {
+            await store.append("entry-\(i)")
+        }
+        let entries = await store.allEntries()
+        XCTAssertEqual(entries.count, maxEntries)
+        // Most recent entries should be kept (inserted at index 0)
+        XCTAssertEqual(entries[0].message, "entry-9")
+        XCTAssertEqual(entries[4].message, "entry-5")
+    }
+
+    func testAuditStoreRespectsCustomMaxEntries() async {
+        let store = AtlasAuditStore(entries: [], maxEntries: 2)
+        await store.append("a")
+        await store.append("b")
+        await store.append("c")
+        let entries = await store.allEntries()
+        XCTAssertEqual(entries.count, 2)
+        XCTAssertEqual(entries[0].message, "c")
+        XCTAssertEqual(entries[1].message, "b")
+    }
+
+    func testAuditStoreInitializesWithExistingEntries() async {
+        let existing = [
+            AuditEntry(id: UUID(), createdAt: Date(), message: "old-1"),
+            AuditEntry(id: UUID(), createdAt: Date(), message: "old-2"),
+        ]
+        let store = AtlasAuditStore(entries: existing, maxEntries: 512)
+        let entries = await store.allEntries()
+        XCTAssertEqual(entries.count, 2)
+    }
+
     private func temporaryStateFileURL() -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -1697,6 +1823,123 @@ private actor RestoreConflictPrivilegedHelperExecutor: AtlasPrivilegedActionExec
             success: false,
             message: "Restore destination already exists: \(action.destinationPath ?? "<missing>")"
         )
+    }
+}
+
+// MARK: - AtlasPathValidator Tests
+
+final class AtlasPathValidatorTests: XCTestCase {
+    private let homeURL = URL(fileURLWithPath: "/Users/testuser")
+
+    // MARK: - Valid paths
+
+    func testValidHomeSubdirectory() throws {
+        let url = try AtlasPathValidator.validate("/Users/testuser/Library/Caches/test", homeDirectoryURL: homeURL)
+        XCTAssertEqual(url.path, "/Users/testuser/Library/Caches/test")
+    }
+
+    func testValidApplicationsPath() throws {
+        let url = try AtlasPathValidator.validate("/Applications/TestApp.app", homeDirectoryURL: homeURL)
+        XCTAssertTrue(url.path.hasPrefix("/Applications/"))
+    }
+
+    func testValidLaunchAgentsPath() throws {
+        let url = try AtlasPathValidator.validate("/Library/LaunchAgents/com.test.agent.plist", homeDirectoryURL: homeURL)
+        XCTAssertTrue(url.path.hasPrefix("/Library/LaunchAgents/"))
+    }
+
+    func testValidLaunchDaemonsPath() throws {
+        let url = try AtlasPathValidator.validate("/Library/LaunchDaemons/com.test.daemon.plist", homeDirectoryURL: homeURL)
+        XCTAssertTrue(url.path.hasPrefix("/Library/LaunchDaemons/"))
+    }
+
+    func testHomeDirectoryItselfIsValid() throws {
+        let url = try AtlasPathValidator.validate("/Users/testuser", homeDirectoryURL: homeURL)
+        XCTAssertEqual(url.path, "/Users/testuser")
+    }
+
+    func testApplicationsRootItselfIsValid() throws {
+        let url = try AtlasPathValidator.validate("/Applications", homeDirectoryURL: homeURL)
+        XCTAssertEqual(url.path, "/Applications")
+    }
+
+    // MARK: - Invalid paths
+
+    func testRelativePathRejected() {
+        XCTAssertThrowsError(try AtlasPathValidator.validate("relative/path", homeDirectoryURL: homeURL)) { error in
+            XCTAssertTrue(error is AtlasPathValidationError)
+            if let pathError = error as? AtlasPathValidationError,
+               case .relativePath = pathError { } else {
+                XCTFail("Expected relativePath error")
+            }
+        }
+    }
+
+    func testNullByteRejected() {
+        XCTAssertThrowsError(try AtlasPathValidator.validate("/Users/test\0user/test", homeDirectoryURL: homeURL)) { error in
+            XCTAssertTrue(error is AtlasPathValidationError)
+            if let pathError = error as? AtlasPathValidationError,
+               case .nullByte = pathError { } else {
+                XCTFail("Expected nullByte error")
+            }
+        }
+    }
+
+    func testPathTooLongRejected() {
+        let longPath = "/Users/testuser/" + String(repeating: "a", count: 1200)
+        XCTAssertThrowsError(try AtlasPathValidator.validate(longPath, homeDirectoryURL: homeURL)) { error in
+            XCTAssertTrue(error is AtlasPathValidationError)
+            if let pathError = error as? AtlasPathValidationError,
+               case .pathTooLong = pathError { } else {
+                XCTFail("Expected pathTooLong error")
+            }
+        }
+    }
+
+    func testOutsideSafeRootsRejected() {
+        XCTAssertThrowsError(try AtlasPathValidator.validate("/etc/passwd", homeDirectoryURL: homeURL)) { error in
+            XCTAssertTrue(error is AtlasPathValidationError)
+            if let pathError = error as? AtlasPathValidationError,
+               case .outsideSafeRoots = pathError { } else {
+                XCTFail("Expected outsideSafeRoots error")
+            }
+        }
+    }
+
+    func testSystemPrivateDirRejected() {
+        XCTAssertThrowsError(try AtlasPathValidator.validate("/private/var/log/test.log", homeDirectoryURL: homeURL)) { error in
+            XCTAssertTrue(error is AtlasPathValidationError)
+        }
+    }
+
+    func testRootPathRejected() {
+        XCTAssertThrowsError(try AtlasPathValidator.validate("/", homeDirectoryURL: homeURL)) { error in
+            XCTAssertTrue(error is AtlasPathValidationError)
+        }
+    }
+
+    // MARK: - validateAll
+
+    func testValidateAllSucceedsForValidPaths() throws {
+        let paths = [
+            "/Users/testuser/Library/Caches/a",
+            "/Applications/Test.app",
+        ]
+        let urls = try AtlasPathValidator.validateAll(paths, homeDirectoryURL: homeURL)
+        XCTAssertEqual(urls.count, 2)
+    }
+
+    func testValidateAllThrowsOnFirstInvalid() {
+        let paths = [
+            "/Users/testuser/Library/Caches/ok",
+            "relative/bad",
+        ]
+        XCTAssertThrowsError(try AtlasPathValidator.validateAll(paths, homeDirectoryURL: homeURL))
+    }
+
+    func testValidateAllEmptyArray() throws {
+        let urls = try AtlasPathValidator.validateAll([], homeDirectoryURL: homeURL)
+        XCTAssertTrue(urls.isEmpty)
     }
 }
 

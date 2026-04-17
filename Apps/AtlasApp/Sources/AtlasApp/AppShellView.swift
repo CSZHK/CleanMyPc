@@ -11,6 +11,7 @@ import SwiftUI
 
 struct AppShellView: View {
     @ObservedObject var model: AtlasAppModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         NavigationSplitView {
@@ -96,11 +97,11 @@ struct AppShellView: View {
         case .settings, .about:
             detailView(for: route)
                 .id(route)
-                .transition(.opacity)
+                .transition(reduceMotion ? .opacity : AtlasTransition.fadeSlide)
         default:
             detailView(for: route)
                 .id(route)
-                .transition(.opacity)
+                .transition(reduceMotion ? .opacity : AtlasTransition.fadeSlide)
                 .searchable(
                     text: Binding(
                         get: { model.searchText(for: route) },
@@ -161,6 +162,7 @@ struct AppShellView: View {
                 apps: model.filteredApps,
                 previewPlan: model.currentAppPreview,
                 currentPreviewedAppID: model.currentPreviewedAppID,
+                restoreRefreshStatus: model.latestAppRestoreRefreshStatus,
                 summary: model.latestAppsSummary,
                 isRunning: model.isAppActionRunning,
                 activePreviewAppID: model.activePreviewAppID,
@@ -256,13 +258,23 @@ private struct SidebarRouteRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: AtlasSpacing.md) {
             ZStack {
+                // Blurred gradient circle with per-route theme color
                 RoundedRectangle(cornerRadius: AtlasRadius.sm, style: .continuous)
-                    .fill(AtlasColor.brand.opacity(0.1))
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                route.themeColor.opacity(0.18),
+                                route.themeColor.opacity(0.06),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .frame(width: AtlasLayout.sidebarIconSize, height: AtlasLayout.sidebarIconSize)
 
                 Image(systemName: route.systemImage)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AtlasColor.brand)
+                    .foregroundStyle(route.themeColor)
                     .accessibilityHidden(true)
             }
 
@@ -288,6 +300,19 @@ private struct SidebarRouteRow: View {
 }
 
 private extension AtlasRoute {
+    /// Per-route theme color for sidebar icon gradients and visual accents.
+    var themeColor: Color {
+        switch self {
+        case .overview:    return AtlasColor.brand
+        case .smartClean:  return AtlasColor.success
+        case .apps:        return AtlasColor.accent
+        case .history:     return AtlasColor.info
+        case .permissions: return AtlasColor.warning
+        case .settings:    return AtlasColor.textSecondary
+        case .about:       return AtlasColor.brand
+        }
+    }
+
     var searchPromptLabel: String {
         title
     }

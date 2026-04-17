@@ -89,14 +89,20 @@ Reference: `Docs/Execution/Smart-Clean-Manual-Verification-2026-03-09.md` for di
 - Scan, preview, and execute complete without crash and leave history/recovery evidence.
 
 ### SOP-03 Apps Workflow
+Reference: `Docs/Execution/Apps-Evidence-Fixture-Baseline-2026-03-24.md`
+
 1. Open `Apps`.
 2. Click `Refresh App Footprints`.
-3. Pick one app and click `Preview`.
-4. Review the uninstall preview.
-5. Click `Uninstall` for the selected app.
+3. Choose a validating fixture app from the frozen fixture matrix.
+4. Click `Preview`.
+5. Confirm the preview shows the recoverable bundle action.
+6. Confirm the preview groups review-only evidence by category rather than only showing a leftover total.
+7. Confirm at least one review-only group shows concrete observed paths.
+8. Click `Uninstall` for the selected app.
 6. Open `History`.
-7. Confirm an uninstall task run exists.
-8. Confirm `Recovery` includes the app recovery entry.
+9. Confirm an uninstall task run exists.
+10. Confirm `Recovery` includes the app recovery entry.
+11. Confirm recovery detail distinguishes the recoverable bundle from review-only leftover evidence.
 
 **Pass condition**
 - Preview and uninstall flow complete through worker-backed behavior.
@@ -107,6 +113,10 @@ Reference: `Docs/Execution/Smart-Clean-Manual-Verification-2026-03-09.md` for di
 3. Click `Restore`.
 4. Confirm the item disappears from the recovery list.
 5. Return to the relevant screen (`Smart Clean` or `Apps`) and confirm state reflects the restore.
+6. If the restored item is an app payload, confirm `Apps` shows either:
+   - a refreshed post-restore evidence state, or
+   - an explicit stale-evidence state
+7. Confirm Atlas does not silently reuse pre-uninstall leftover counts without one of those states.
 
 **Pass condition**
 - Recovery restore succeeds and updates visible state.

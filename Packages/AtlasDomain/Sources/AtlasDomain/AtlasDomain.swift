@@ -174,6 +174,21 @@ public struct ActionItem: Identifiable, Codable, Hashable, Sendable {
         case reviewEvidence
     }
 
+    public enum ExecutionBoundary: String, Codable, Hashable, Sendable {
+        case direct
+        case helper
+        case reviewOnly
+
+        public var isExecutable: Bool {
+            switch self {
+            case .direct, .helper:
+                return true
+            case .reviewOnly:
+                return false
+            }
+        }
+    }
+
     public var id: UUID
     public var title: String
     public var detail: String
@@ -198,6 +213,96 @@ public struct ActionItem: Identifiable, Codable, Hashable, Sendable {
         self.recoverable = recoverable
         self.targetPaths = targetPaths
         self.evidencePaths = evidencePaths
+    }
+
+    public var executionBoundary: ExecutionBoundary {
+        Self.derivedExecutionBoundary(
+            kind: kind,
+            targetPaths: targetPaths,
+            evidencePaths: evidencePaths
+        )
+    }
+
+    /// Resolves the effective execution boundary by first checking the item's own boundary,
+    /// then falling back to target paths discovered from an associated finding.
+    public func effectiveExecutionBoundary(
+        findings: [Finding],
+        homeDirectoryPath: String = FileManager.default.homeDirectoryForCurrentUser.path
+    ) -> ExecutionBoundary {
+        if executionBoundary.isExecutable {
+            return executionBoundary
+        }
+
+        guard kind != .inspectPermission, kind != .reviewEvidence else {
+            return .reviewOnly
+        }
+
+        let paths = resolvedTargetPaths(findings: findings)
+        guard !paths.isEmpty else {
+            return executionBoundary
+        }
+
+        return Self.derivedExecutionBoundary(
+            kind: kind,
+            targetPaths: paths,
+            evidencePaths: evidencePaths,
+            homeDirectoryPath: homeDirectoryPath
+        )
+    }
+
+    /// Resolves target paths by checking the item's own paths first, then falling back
+    /// to paths from an associated finding matched by ID.
+    public func resolvedTargetPaths(findings: [Finding]) -> [String] {
+        if let targetPaths, !targetPaths.isEmpty {
+            return targetPaths
+        }
+
+        guard let finding = findings.first(where: { $0.id == id }) else {
+            return []
+        }
+
+        return finding.targetPaths ?? []
+    }
+
+    public static func derivedExecutionBoundary(
+        kind: Kind,
+        targetPaths: [String]?,
+        evidencePaths: [String]?,
+        homeDirectoryPath: String = FileManager.default.homeDirectoryForCurrentUser.path
+    ) -> ExecutionBoundary {
+        switch kind {
+        case .inspectPermission, .reviewEvidence:
+            return .reviewOnly
+        case .removeApp:
+            return .helper
+        case .removeCache, .archiveFile:
+            break
+        }
+
+        let resolvedTargetPaths = Array(Set((targetPaths ?? []).filter { !$0.isEmpty })).sorted()
+        if resolvedTargetPaths.isEmpty {
+            return .reviewOnly
+        }
+
+        if resolvedTargetPaths.contains(where: { requiresHelper(path: $0, homeDirectoryPath: homeDirectoryPath) }) {
+            return .helper
+        }
+
+        return .direct
+    }
+
+    private static func requiresHelper(path: String, homeDirectoryPath: String) -> Bool {
+        let helperRoots = [
+            "/Applications",
+            homeDirectoryPath + "/Applications",
+            homeDirectoryPath + "/Library/LaunchAgents",
+            "/Library/LaunchAgents",
+            "/Library/LaunchDaemons",
+        ]
+
+        return helperRoots.contains { root in
+            path == root || path.hasPrefix(root + "/")
+        }
     }
 }
 
@@ -332,6 +437,10 @@ public struct AtlasAppUninstallEvidence: Codable, Hashable, Sendable {
     public var bundleBytes: Int64
     public var reviewOnlyGroups: [AtlasAppFootprintEvidenceGroup]
 
+    public var bundleItem: AtlasAppFootprintEvidenceItem {
+        AtlasAppFootprintEvidenceItem(path: bundlePath, bytes: bundleBytes)
+    }
+
     public var reviewOnlyGroupCount: Int {
         reviewOnlyGroups.count
     }
@@ -348,10 +457,56 @@ public struct AtlasAppUninstallEvidence: Codable, Hashable, Sendable {
         }
     }
 
+    public var trackedGroupCount: Int {
+        1 + reviewOnlyGroupCount
+    }
+
+    public var trackedItemCount: Int {
+        1 + reviewOnlyItemCount
+    }
+
+    public var trackedBytes: Int64 {
+        bundleBytes + reviewOnlyBytes
+    }
+
     public init(bundlePath: String, bundleBytes: Int64, reviewOnlyGroups: [AtlasAppFootprintEvidenceGroup]) {
         self.bundlePath = bundlePath
         self.bundleBytes = bundleBytes
         self.reviewOnlyGroups = reviewOnlyGroups
+    }
+}
+
+public enum AtlasAppPostRestoreRefreshState: String, Hashable, Sendable {
+    case refreshing
+    case refreshed
+    case stale
+}
+
+public struct AtlasAppPostRestoreRefreshStatus: Hashable, Sendable {
+    public var appName: String
+    public var bundleIdentifier: String
+    public var bundlePath: String
+    public var state: AtlasAppPostRestoreRefreshState
+    public var recordedLeftoverItems: Int
+    public var refreshedLeftoverItems: Int?
+    public var issueDescription: String?
+
+    public init(
+        appName: String,
+        bundleIdentifier: String,
+        bundlePath: String,
+        state: AtlasAppPostRestoreRefreshState,
+        recordedLeftoverItems: Int,
+        refreshedLeftoverItems: Int? = nil,
+        issueDescription: String? = nil
+    ) {
+        self.appName = appName
+        self.bundleIdentifier = bundleIdentifier
+        self.bundlePath = bundlePath
+        self.state = state
+        self.recordedLeftoverItems = recordedLeftoverItems
+        self.refreshedLeftoverItems = refreshedLeftoverItems
+        self.issueDescription = issueDescription
     }
 }
 
@@ -647,23 +802,25 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
     public var notificationsEnabled: Bool
     public var excludedPaths: [String]
     public var language: AtlasLanguage
-    public var acknowledgementText: String
-    public var thirdPartyNoticesText: String
+
+    public var acknowledgementText: String {
+        AtlasL10n.acknowledgement(language: language)
+    }
+
+    public var thirdPartyNoticesText: String {
+        AtlasL10n.thirdPartyNotices(language: language)
+    }
 
     public init(
         recoveryRetentionDays: Int,
         notificationsEnabled: Bool,
         excludedPaths: [String],
-        language: AtlasLanguage = .default,
-        acknowledgementText: String? = nil,
-        thirdPartyNoticesText: String? = nil
+        language: AtlasLanguage = .default
     ) {
         self.recoveryRetentionDays = recoveryRetentionDays
         self.notificationsEnabled = notificationsEnabled
         self.excludedPaths = excludedPaths
         self.language = language
-        self.acknowledgementText = acknowledgementText ?? AtlasL10n.acknowledgement(language: language)
-        self.thirdPartyNoticesText = thirdPartyNoticesText ?? AtlasL10n.thirdPartyNotices(language: language)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -671,8 +828,6 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         case notificationsEnabled
         case excludedPaths
         case language
-        case acknowledgementText
-        case thirdPartyNoticesText
     }
 
     public init(from decoder: Decoder) throws {
@@ -682,10 +837,6 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         self.notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
         self.excludedPaths = try container.decodeIfPresent([String].self, forKey: .excludedPaths) ?? []
         self.language = language
-        self.acknowledgementText = try container.decodeIfPresent(String.self, forKey: .acknowledgementText)
-            ?? AtlasL10n.acknowledgement(language: language)
-        self.thirdPartyNoticesText = try container.decodeIfPresent(String.self, forKey: .thirdPartyNoticesText)
-            ?? AtlasL10n.thirdPartyNotices(language: language)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -694,8 +845,6 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         try container.encode(notificationsEnabled, forKey: .notificationsEnabled)
         try container.encode(excludedPaths, forKey: .excludedPaths)
         try container.encode(language, forKey: .language)
-        try container.encode(acknowledgementText, forKey: .acknowledgementText)
-        try container.encode(thirdPartyNoticesText, forKey: .thirdPartyNoticesText)
     }
 }
 

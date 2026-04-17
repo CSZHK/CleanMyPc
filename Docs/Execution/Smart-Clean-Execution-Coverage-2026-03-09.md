@@ -35,6 +35,10 @@ These user-owned targets can be moved to Trash directly by the worker when they 
 - `~/Library/pnpm/store/*`
 - `~/.npm/*`
 - `~/.npm_cache/*`
+- `~/.swiftpm/cache/*`
+- `~/.cache/swift-package-manager/*`
+- `~/.pytest_cache/*`
+- `~/.aws/cli/cache/*`
 - `~/.oh-my-zsh/cache/*`
 - selected developer cache roots under the current user home, including `~/.yarn/cache/*`, `~/.bun/install/cache/*`, `~/.cargo/registry/cache/*`, `~/.cargo/git/*`, `~/.docker/buildx/cache/*`, `~/.turbo/cache/*`, `~/.vite/cache/*`, `~/.parcel-cache/*`, and `~/.node-gyp/*`
 - paths containing:
@@ -85,7 +89,7 @@ The UI now makes this explicit by:
 
 - marking cached plans as previous results
 - disabling `Run Plan` until the plan is revalidated
-- showing which plan steps can run directly and which remain review-only
+- showing which plan steps can run directly, which run through the helper boundary, and which remain review-only
 
 The worker contract now also makes this explicit:
 

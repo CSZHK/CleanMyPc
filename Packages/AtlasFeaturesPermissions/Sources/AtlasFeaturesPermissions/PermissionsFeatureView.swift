@@ -32,6 +32,19 @@ public struct PermissionsFeatureView: View {
             title: AtlasL10n.string("permissions.screen.title"),
             subtitle: AtlasL10n.string("permissions.screen.subtitle")
         ) {
+            // Hero card with permission progress ring
+            AtlasHeroCard(
+                progress: Double(grantedRequiredCount) / max(Double(requiredCount), 1.0),
+                value: "\(grantedRequiredCount)/\(max(requiredCount, 1))",
+                subtitle: corePermissionsReady
+                    ? AtlasL10n.string("permissions.callout.ready.detail")
+                    : AtlasL10n.string("permissions.callout.limited.detail"),
+                tone: corePermissionsReady ? .success : .warning,
+                icon: "lock.shield",
+                ringSize: 120,
+                lineWidth: 10
+            )
+
             AtlasCallout(
                 title: corePermissionsReady ? AtlasL10n.string("permissions.callout.ready.title") : AtlasL10n.string("permissions.callout.limited.title"),
                 detail: corePermissionsReady

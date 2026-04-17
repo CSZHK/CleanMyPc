@@ -18,6 +18,7 @@
 //   - Semantic tones keep green/orange/red for system states
 
 import AppKit
+import AtlasDomain
 import SwiftUI
 
 // MARK: - Color Tokens
@@ -53,6 +54,7 @@ public enum AtlasColor {
     }
 
     /// Raised card overlay — glassmorphic tint.
+    @MainActor
     public static var cardRaised: Color {
         if NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua {
             return Color.white.opacity(0.06)
@@ -76,6 +78,27 @@ public enum AtlasColor {
     public static let border = Color.primary.opacity(0.08)
     /// Emphasis border — used on prominent cards and focus states.
     public static let borderEmphasis = Color.primary.opacity(0.14)
+
+    // ── Brand Gradient ─────────────────────────────────
+
+    /// Brand → Accent linear gradient for hero areas.
+    public static var brandGradient: LinearGradient {
+        LinearGradient(
+            colors: [brand, accent],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    /// Hero area surface — deeper than canvas for visual contrast.
+    @MainActor
+    public static var heroSurface: Color {
+        if NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua {
+            return Color.white.opacity(0.04)
+        } else {
+            return Color.black.opacity(0.02)
+        }
+    }
 }
 
 // MARK: - Typography Tokens
@@ -404,12 +427,16 @@ public extension View {
 }
 
 /// Hover + press microinteraction for interactive cards.
+/// Multi-layered effect: border transition, background brightness, and gentle scale.
 public struct AtlasHoverModifier: ViewModifier {
     @State private var isHovered = false
 
+    public init() {}
+
     public func body(content: Content) -> some View {
         content
-            .scaleEffect(isHovered ? 1.008 : 1.0)
+            .scaleEffect(isHovered ? 1.012 : 1.0)
+            .brightness(isHovered ? 0.02 : 0)
             .shadow(
                 color: Color.black.opacity(isHovered ? 0.08 : 0),
                 radius: isHovered ? 24 : 0,
@@ -422,18 +449,53 @@ public struct AtlasHoverModifier: ViewModifier {
     }
 }
 
+/// Card-level hover effect with border emphasis and background tint.
+public struct AtlasCardHoverModifier: ViewModifier {
+    @State private var isHovered = false
+
+    public init() {}
+
+    public func body(content: Content) -> some View {
+        content
+            .scaleEffect(isHovered ? 1.012 : 1.0)
+            .overlay(
+                RoundedRectangle(cornerRadius: AtlasRadius.xl, style: .continuous)
+                    .strokeBorder(
+                        isHovered ? AtlasColor.borderEmphasis : AtlasColor.border,
+                        lineWidth: 1
+                    )
+                    .animation(AtlasMotion.fast, value: isHovered)
+            )
+            .shadow(
+                color: Color.black.opacity(isHovered ? 0.06 : 0),
+                radius: isHovered ? 20 : 0,
+                y: isHovered ? 10 : 0
+            )
+            .onHover { hovering in
+                isHovered = hovering
+            }
+    }
+}
+
 public extension View {
     /// Adds subtle hover lift effect to the view.
     func atlasHover() -> some View {
         modifier(AtlasHoverModifier())
+    }
+
+    /// Adds card-level hover with border emphasis transition.
+    func atlasCardHover() -> some View {
+        modifier(AtlasCardHoverModifier())
     }
 }
 
 // MARK: - Button Styles
 
 /// Primary filled button — the single most important action on screen.
+/// Features glow shadow, press microinteraction, and motion accessibility.
 public struct AtlasPrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init() {}
 
@@ -453,7 +515,7 @@ public struct AtlasPrimaryButtonStyle: ButtonStyle {
                 y: configuration.isPressed ? 2 : 6
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(AtlasMotion.fast, value: configuration.isPressed)
+            .animation(reduceMotion ? nil : AtlasMotion.fast, value: configuration.isPressed)
     }
 }
 

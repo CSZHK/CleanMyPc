@@ -362,6 +362,19 @@ Reason:
 - `ATL-254` Script the manual acceptance flow for uninstall evidence, restore, and post-restore refresh verification — `QA Agent`
 - `ATL-255` Apps evidence execution gate review — `Product Agent`
 
+#### EPIC-A Execution Window
+
+- Planned window: `2026-03-31` to `2026-04-11`
+- Detailed execution doc: `Docs/Execution/Apps-Evidence-Execution-Plan-2026-03-24.md`
+
+#### EPIC-A Ordered Execution Sequence
+
+1. `ATL-251` Freeze the fixture matrix and benchmark rubric before implementation starts.
+2. `ATL-252` Freeze one uninstall evidence model shared by preview, completion, and history.
+3. `ATL-253` Freeze restore refresh and stale-evidence behavior before restore-facing polish.
+4. `ATL-254` Turn the fixture flow into a repeatable acceptance script.
+5. `ATL-255` Hold a trust-focused gate review before `EPIC-B` starts.
+
 #### EPIC-B: Smart Clean Safe Coverage Expansion
 
 - `ATL-256` Define the next batch of high-confidence safe roots outside app containers and freeze the no-go boundaries — `System Agent`
@@ -369,6 +382,16 @@ Reason:
 - `ATL-258` Add `scan -> execute -> rescan` evidence capture and contract coverage for the expanded safe roots — `QA Agent`
 - `ATL-259` Implement and validate the next safe-root execution slice without widening into high-risk cleanup paths — `System Agent`
 - `ATL-260` Smart Clean safe coverage gate review — `Product Agent`
+
+#### EPIC-B Current Slice
+
+- Detailed execution doc: `Docs/Execution/Smart-Clean-Safe-Coverage-Slice-2026-03-24.md`
+- Boundary metadata doc: `Docs/Execution/Smart-Clean-Boundary-Metadata-Slice-2026-03-24.md`
+- Current bounded roots:
+  - `~/.swiftpm/cache/*`
+  - `~/.cache/swift-package-manager/*`
+  - `~/.pytest_cache/*`
+  - `~/.aws/cli/cache/*`
 
 #### EPIC-C: Recovery Payload Hardening
 

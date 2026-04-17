@@ -274,6 +274,7 @@
 "overview.risk.advanced" = "建议高级检查";
 "overview.actions.viewAll" = "查看全部 %d 项发现";
 "overview.activity.viewAll" = "查看全部活动";
+"overview.snapshot.optimizations.title" = "优化建议";
 "overview.snapshot.viewAllOptimizations" = "展开全部 %d 条建议";
 "overview.snapshot.collapseOptimizations" = "收起建议";
 "overview.action.smartClean" = "运行智能清理";
@@ -308,6 +309,7 @@
 "smartclean.metric.review.some" = "这些项目在执行前值得再看一眼。";
 "smartclean.preview.title" = "当前清理计划";
 "smartclean.execution.real" = "可直接执行";
+"smartclean.execution.helper" = "需要辅助工具";
 "smartclean.execution.reviewOnly" = "仅供复核";
 "smartclean.execution.coverage.full" = "这份计划中的 %d 个步骤都可直接执行";
 "smartclean.execution.coverage.partial" = "这份计划中有 %d/%d 个步骤可直接执行";
@@ -339,7 +341,9 @@
 "smartclean.support.removeCache" = "适合作为可恢复的清理步骤。";
 "smartclean.support.removeApp" = "卸载前先复核占用和残留，更容易形成可预期结果。";
 "smartclean.support.archiveFile" = "在支持的情况下，Atlas 会将此类项目保留在可恢复路径中。";
+"smartclean.support.helper" = "这个目标位于受保护路径下，因此会通过辅助工具边界执行。";
 "smartclean.support.inspectPermission" = "在 Atlas 能安全继续之前，需要额外确认。";
+"smartclean.support.reviewOnly" = "Atlas 当前可以展示这一步，但在存在受支持执行路径之前，它仍会保持为仅供复核。";
 "smartclean.section.safe" = "高置信度的清理候选项，通常也更容易恢复。";
 "smartclean.section.review" = "建议删除前快速复核一次。";
 "smartclean.section.advanced" = "可能较敏感的项目，值得做更审慎的决定。";
@@ -416,6 +420,18 @@
 "apps.detail.callout.preview.detail" = "为了让卸载更可控，Atlas 会先展示准确步骤，再决定是否真正移除。";
 "apps.detail.callout.ready.title" = "这个应用已经可以在复核后卸载";
 "apps.detail.callout.ready.detail" = "下面的计划会区分 Atlas 现在能删除什么，以及哪些内容仍然只是复核证据。";
+"apps.restore.refresh.card.title" = "恢复后的证据状态";
+"apps.restore.refresh.card.subtitle" = "应用恢复后，Atlas 会先刷新应用清单，再把残留计数视为当前值。";
+"apps.restore.refresh.pending.title" = "正在刷新已恢复应用的证据";
+"apps.restore.refresh.pending.detail" = "Atlas 已恢复 %@，正在刷新当前应用清单，然后才会重用残留计数。";
+"apps.restore.refresh.refreshed.title" = "已刷新恢复后证据";
+"apps.restore.refresh.refreshed.detail" = "Atlas 在恢复 %@ 后已刷新应用清单。当前清单显示有 %2$d 个残留项目，而 Atlas 在记录卸载证据时保存的是 %3$d 个。";
+"apps.restore.refresh.stale.title" = "恢复后的证据仍需再次刷新";
+"apps.restore.refresh.stale.detail" = "Atlas 已恢复 %@，但当前应用清单还无法确认最新的残留证据。Atlas 会继续在历史中保留这次卸载记录，并暂时把之前记录的 %d 个残留项目视为陈旧证据。";
+"apps.restore.refresh.recorded.title" = "卸载时记录";
+"apps.restore.refresh.recorded.detail" = "Atlas 在采集卸载证据时记录的仅供复核残留项目数量。";
+"apps.restore.refresh.current.title" = "当前清单";
+"apps.restore.refresh.current.detail" = "最近一次应用清单刷新报告的残留项目数量。";
 
 "history.screen.title" = "历史";
 "history.screen.subtitle" = "查看执行过的任务、发生的变更，以及在恢复窗口关闭前仍可找回的项目。";
@@ -497,7 +513,12 @@
 "history.detail.recovery.evidence.title" = "恢复证据记录";
 "history.detail.recovery.evidence.subtitle" = "Atlas 会把这条恢复项的应用载荷、仅供复核分组和恢复路径记录一起保留下来。";
 "history.detail.recovery.evidence.payload" = "已记录载荷";
+"history.detail.recovery.evidence.bundle.title" = "可恢复的应用包";
+"history.detail.recovery.evidence.bundle.detail" = "当恢复映射仍然有效时，Atlas 可以恢复的应用包路径。大小：%@。";
 "history.detail.recovery.evidence.schema" = "载荷版本";
+"history.detail.recovery.evidence.refresh.title" = "恢复后刷新";
+"history.detail.recovery.evidence.refresh.value" = "需要刷新应用清单";
+"history.detail.recovery.evidence.refresh.detail" = "恢复后，Atlas 会先刷新 `Apps` 清单，再重用残留计数。如果刷新无法确认当前证据，`Apps` 会把之前的卸载证据标记为陈旧。";
 "history.detail.recovery.evidence.reviewGroups" = "仅供复核分组";
 "history.detail.recovery.evidence.reviewGroups.detail.one" = "%@ · 1 项";
 "history.detail.recovery.evidence.reviewGroups.detail.other" = "%1$@ · %2$d 项";

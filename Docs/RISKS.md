@@ -152,3 +152,27 @@
 - Owner: `Product Agent`
 - Risk: The team may over-rotate toward release mechanics because the packaging chain mostly works, even though the real public-release blocker is still missing signing materials and the sharper product pressure is in `Apps` and `Smart Clean`.
 - Mitigation: Keep the active mainline order at `Apps -> Smart Clean -> Recovery -> Release`, and treat the `Developer ID + notarization` switch as the final convergence step once product-path evidence and credentials both exist.
+
+## R-020 Apps Evidence Surface Drift
+
+- Impact: High
+- Probability: Medium
+- Owner: `Core Agent`
+- Risk: `Apps` preview, completion, and history may evolve separate evidence summaries, causing the same uninstall to appear trustworthy in one surface and vague or contradictory in another.
+- Mitigation: Freeze one structured uninstall evidence model before UI polish, and verify the same fixture outputs across preview, completion, and history.
+
+## R-021 Restore Refresh Ambiguity for App Evidence
+
+- Impact: High
+- Probability: Medium
+- Owner: `System Agent`
+- Risk: Restore flows may leave app-footprint evidence stale or partially refreshed, making Atlas look inconsistent immediately after recovery.
+- Mitigation: Define a restore-triggered refresh path plus explicit stale-evidence states before restore-facing acceptance or copy work proceeds.
+
+## R-022 Fixture Bias in Apps Benchmarking
+
+- Impact: Medium
+- Probability: Medium
+- Owner: `QA Agent`
+- Risk: If the `EPIC-A` fixture set is too narrow, the team may optimize for a small happy-path benchmark and miss the artifact patterns users actually compare against in `Pearcleaner` or `Tencent Lemon Cleaner`.
+- Mitigation: Freeze a balanced fixture set that includes mainstream, developer-heavy, launch-item/service-adjacent, and sparse-leftover uninstall scenarios, then reuse it in acceptance and gate review.

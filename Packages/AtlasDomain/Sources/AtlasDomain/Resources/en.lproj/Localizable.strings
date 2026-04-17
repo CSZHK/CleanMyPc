@@ -274,6 +274,7 @@
 "overview.risk.advanced" = "Advanced inspection recommended";
 "overview.actions.viewAll" = "View all %d findings";
 "overview.activity.viewAll" = "View all activity";
+"overview.snapshot.optimizations.title" = "Optimization Suggestions";
 "overview.snapshot.viewAllOptimizations" = "Show all %d suggestions";
 "overview.snapshot.collapseOptimizations" = "Collapse suggestions";
 "overview.action.smartClean" = "Run Smart Clean";
@@ -308,6 +309,7 @@
 "smartclean.metric.review.some" = "These items deserve a closer look before execution.";
 "smartclean.preview.title" = "Current Cleanup Plan";
 "smartclean.execution.real" = "Can Run";
+"smartclean.execution.helper" = "Needs Helper";
 "smartclean.execution.reviewOnly" = "Review Only";
 "smartclean.execution.coverage.full" = "All %d steps in this plan can run directly";
 "smartclean.execution.coverage.partial" = "Only %d of %d steps in this plan can run directly";
@@ -339,7 +341,9 @@
 "smartclean.support.removeCache" = "Good candidate for a reversible cleanup step.";
 "smartclean.support.removeApp" = "Review the footprint before you uninstall so leftovers are expected.";
 "smartclean.support.archiveFile" = "Atlas will keep this in a reversible path when possible.";
+"smartclean.support.helper" = "Runs through the helper boundary because the target lives in a protected path.";
 "smartclean.support.inspectPermission" = "Requires extra attention before Atlas can safely proceed.";
+"smartclean.support.reviewOnly" = "Atlas can show this step, but it will stay review-only until a supported execution path exists.";
 "smartclean.section.safe" = "High-confidence cleanup candidates that should stay easy to recover.";
 "smartclean.section.review" = "Worth a quick review before you remove them.";
 "smartclean.section.advanced" = "Potentially sensitive items that deserve an informed decision.";
@@ -416,6 +420,18 @@
 "apps.detail.callout.preview.detail" = "Atlas keeps uninstall confidence high by showing the exact steps before anything is removed.";
 "apps.detail.callout.ready.title" = "This app is ready for reviewed uninstall";
 "apps.detail.callout.ready.detail" = "The plan below shows what Atlas can remove now and what stays review-only.";
+"apps.restore.refresh.card.title" = "Post-restore evidence";
+"apps.restore.refresh.card.subtitle" = "Atlas refreshes the app inventory after restore before it treats leftover counts as current again.";
+"apps.restore.refresh.pending.title" = "Refreshing restored app evidence";
+"apps.restore.refresh.pending.detail" = "Atlas restored %@ and is refreshing the current app inventory before it reuses leftover counts.";
+"apps.restore.refresh.refreshed.title" = "Restored app evidence refreshed";
+"apps.restore.refresh.refreshed.detail" = "Atlas refreshed %@ after restore. The current inventory shows %2$d leftover item(s), and Atlas had recorded %3$d item(s) when the uninstall evidence was captured.";
+"apps.restore.refresh.stale.title" = "Restored app evidence needs another refresh";
+"apps.restore.refresh.stale.detail" = "Atlas restored %@, but the current app inventory could not confirm fresh leftover evidence. Atlas keeps the recorded uninstall evidence in History and treats the old count of %d item(s) as stale for now.";
+"apps.restore.refresh.recorded.title" = "Recorded at uninstall";
+"apps.restore.refresh.recorded.detail" = "Review-only leftover items recorded when Atlas captured the uninstall evidence.";
+"apps.restore.refresh.current.title" = "Current inventory";
+"apps.restore.refresh.current.detail" = "Leftover items reported by the latest app inventory refresh.";
 
 "history.screen.title" = "History";
 "history.screen.subtitle" = "See what ran, what changed, and what you can still restore before recovery retention expires.";
@@ -497,7 +513,12 @@
 "history.detail.recovery.evidence.title" = "Recorded Recovery Evidence";
 "history.detail.recovery.evidence.subtitle" = "Atlas keeps the app payload, review-only groups, and restore path records together for this recovery item.";
 "history.detail.recovery.evidence.payload" = "Recorded payload";
+"history.detail.recovery.evidence.bundle.title" = "Recoverable bundle";
+"history.detail.recovery.evidence.bundle.detail" = "Bundle path Atlas can recover when the restore mapping remains valid. Size: %@.";
 "history.detail.recovery.evidence.schema" = "Payload schema";
+"history.detail.recovery.evidence.refresh.title" = "Post-restore refresh";
+"history.detail.recovery.evidence.refresh.value" = "Inventory refresh required";
+"history.detail.recovery.evidence.refresh.detail" = "After restore, Atlas refreshes the Apps inventory before it reuses leftover counts. If refresh cannot confirm current evidence, Apps marks the previous uninstall evidence as stale.";
 "history.detail.recovery.evidence.reviewGroups" = "Review-only groups";
 "history.detail.recovery.evidence.reviewGroups.detail.one" = "%@ · 1 item";
 "history.detail.recovery.evidence.reviewGroups.detail.other" = "%1$@ · %2$d items";

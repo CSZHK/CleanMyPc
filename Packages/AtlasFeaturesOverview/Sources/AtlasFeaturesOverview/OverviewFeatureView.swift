@@ -12,7 +12,6 @@ public struct OverviewFeatureView: View {
     private let onNavigateToPermissions: (() -> Void)?
 
     @Environment(\.atlasContentWidth) private var contentWidth
-    @State private var showAllOptimizations = false
 
     public init(
         snapshot: AtlasWorkspaceSnapshot = AtlasScaffoldWorkspace.snapshot(),
@@ -42,14 +41,15 @@ public struct OverviewFeatureView: View {
                 systemImage: overviewCalloutTone.symbol
             )
 
-            // MARK: - Hero metric — full width
-            AtlasMetricCard(
-                title: AtlasL10n.string("overview.metric.reclaimable.title"),
+            // MARK: - Hero metric — AtlasHeroCard with progress ring
+            AtlasHeroCard(
+                progress: heroDiskProgress,
                 value: AtlasFormatters.byteCount(snapshot.reclaimableSpaceBytes),
-                detail: AtlasL10n.string("overview.metric.reclaimable.detail"),
+                subtitle: AtlasL10n.string("overview.metric.reclaimable.detail"),
                 tone: .success,
-                systemImage: "sparkles",
-                elevation: .prominent
+                icon: "sparkles",
+                ringSize: 120,
+                lineWidth: 10
             )
 
             // MARK: - Secondary metrics — adaptive 2/1 columns
@@ -268,37 +268,23 @@ public struct OverviewFeatureView: View {
                     systemImage: healthSnapshot.diskUsedPercent > 80 ? "exclamationmark.triangle.fill" : "checkmark.circle.fill"
                 )
 
-                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                    let optimizations = healthSnapshot.optimizations
-                    let visibleOptimizations = showAllOptimizations ? optimizations : Array(optimizations.prefix(4))
-
-                    ForEach(Array(visibleOptimizations)) { optimization in
-                        AtlasDetailRow(
-                            title: optimization.name,
-                            subtitle: optimization.detail,
-                            footnote: AtlasL10n.localizedCategory(optimization.category).capitalized,
-                            systemImage: optimization.isSafe ? "checkmark.shield" : "slider.horizontal.3",
-                            tone: optimization.isSafe ? .success : .warning
-                        ) {
-                            AtlasStatusChip(optimization.isSafe ? AtlasL10n.string("risk.safe") : AtlasL10n.string("risk.review"), tone: optimization.isSafe ? .success : .warning)
-                        }
-                    }
-
-                    if optimizations.count > 4 {
-                        Button {
-                            withAnimation(AtlasMotion.standard) {
-                                showAllOptimizations.toggle()
+                AtlasSectionDisclosure(
+                    title: AtlasL10n.string("overview.snapshot.optimizations.title"),
+                    count: healthSnapshot.optimizations.count,
+                    defaultExpanded: healthSnapshot.optimizations.count <= 4
+                ) {
+                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                        ForEach(healthSnapshot.optimizations) { optimization in
+                            AtlasDetailRow(
+                                title: optimization.name,
+                                subtitle: optimization.detail,
+                                footnote: AtlasL10n.localizedCategory(optimization.category).capitalized,
+                                systemImage: optimization.isSafe ? "checkmark.shield" : "slider.horizontal.3",
+                                tone: optimization.isSafe ? .success : .warning
+                            ) {
+                                AtlasStatusChip(optimization.isSafe ? AtlasL10n.string("risk.safe") : AtlasL10n.string("risk.review"), tone: optimization.isSafe ? .success : .warning)
                             }
-                        } label: {
-                            Label(
-                                showAllOptimizations
-                                    ? AtlasL10n.string("overview.snapshot.collapseOptimizations")
-                                    : AtlasL10n.string("overview.snapshot.viewAllOptimizations", optimizations.count),
-                                systemImage: showAllOptimizations ? "chevron.up" : "chevron.down"
-                            )
                         }
-                        .buttonStyle(.atlasGhost)
-                        .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
             } else {
@@ -361,6 +347,11 @@ public struct OverviewFeatureView: View {
 
     private var overviewCalloutTone: AtlasTone {
         requiredPermissionsReady ? .success : .warning
+    }
+
+    private var heroDiskProgress: Double {
+        guard let health = snapshot.healthSnapshot else { return 0 }
+        return min(max(health.diskUsedPercent / 100.0, 0), 1)
     }
 
     private func formatted(_ value: Double) -> String {

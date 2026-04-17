@@ -16,6 +16,7 @@ Without an explicit persistence envelope, Atlas can only rely on best-effort sha
 - Atlas continues to decode legacy top-level `AtlasWorkspaceState` files and rewrites them into the current envelope after a successful load when possible.
 - `AppRecoveryPayload` carries an explicit `schemaVersion` and remains backward-compatible with the older raw-`AppFootprint` recovery payload shape.
 - App restore flows clear stale uninstall preview state and refresh app inventory before the `Apps` surface reuses footprint counts.
+- After app restore, `Apps` surfaces the refresh outcome explicitly so Atlas does not silently reuse stale leftover evidence.
 
 ## Consequences
 
@@ -23,6 +24,7 @@ Without an explicit persistence envelope, Atlas can only rely on best-effort sha
 - Older state files remain loadable while the repo transitions to the versioned envelope.
 - App recovery payloads become safer to evolve because compatibility is now a stated requirement.
 - The `Apps` surface becomes more trustworthy after restore because it no longer depends only on stale pre-uninstall preview state.
+- Post-restore app evidence now has an explicit UI outcome: refreshed or stale, instead of an implicit silent fallback.
 
 ## Alternatives Considered
 

@@ -58,9 +58,10 @@ Before starting beta acceptance, confirm all of the following:
 - [ ] Execution updates `History`
 - [ ] Execution creates `Recovery` entries for recoverable items
 - [ ] Supported cleanup classes are explicit
+- [ ] Smart Clean preview distinguishes direct execution, helper-backed execution, and review-only steps
 - [ ] Unsupported or review-only cleanup paths fail closed visibly
 - [ ] `scan -> execute -> rescan` proof exists for the validating supported fixture
-- [ ] The validating supported fixture is an app-container cache or temp target under `~/Library/Containers/...`
+- [ ] The validating supported fixture is either an app-container cache/temp target under `~/Library/Containers/...` or a validated user-home developer cache root such as `~/.swiftpm/cache`, `~/.cache/swift-package-manager`, `~/.pytest_cache`, or `~/.aws/cli/cache`
 - [ ] The validating unsupported fixture is a launch-agent, service-adjacent, or otherwise review-only target
 
 ### Apps
@@ -74,6 +75,7 @@ Before starting beta acceptance, confirm all of the following:
 - [ ] Review-only evidence displays concrete observed paths for at least one validating fixture
 - [ ] Completion state explains what Atlas actually removed and what was recorded for recovery/history
 - [ ] History / Recovery detail distinguishes the recoverable bundle from review-only leftover evidence
+- [ ] After restore, `Apps` shows either a refreshed post-restore evidence state or an explicit stale-evidence state
 - [ ] Fixture coverage includes one mainstream GUI app, one developer-heavy app, one launch-item/service-adjacent app, and one sparse-leftover app
 
 ### History / Recovery
@@ -81,6 +83,7 @@ Before starting beta acceptance, confirm all of the following:
 - [ ] Recovery shows recoverable items after destructive flows
 - [ ] User can restore a recovery item
 - [ ] Restored item disappears from recovery list
+- [ ] App recovery restore does not silently reuse stale leftover counts in `Apps`
 
 ### Permissions
 - [ ] Permissions screen opens without crash

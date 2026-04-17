@@ -120,5 +120,35 @@ let package = Package(
             dependencies: ["AtlasInfrastructure", "AtlasApplication", "AtlasDomain", "AtlasProtocol"],
             path: "AtlasInfrastructure/Tests/AtlasInfrastructureTests"
         ),
+        .testTarget(
+            name: "AtlasFeaturesSmartCleanTests",
+            dependencies: ["AtlasFeaturesSmartClean", "AtlasDesignSystem", "AtlasDomain"],
+            path: "AtlasFeaturesSmartClean/Tests/AtlasFeaturesSmartCleanTests"
+        ),
+        .testTarget(
+            name: "AtlasFeaturesAppsTests",
+            dependencies: ["AtlasFeaturesApps", "AtlasDesignSystem", "AtlasDomain"],
+            path: "AtlasFeaturesApps/Tests/AtlasFeaturesAppsTests"
+        ),
+        .testTarget(
+            name: "AtlasFeaturesHistoryTests",
+            dependencies: ["AtlasFeaturesHistory", "AtlasDesignSystem", "AtlasDomain"],
+            path: "AtlasFeaturesHistory/Tests/AtlasFeaturesHistoryTests"
+        ),
+        .testTarget(
+            name: "AtlasFeaturesOverviewTests",
+            dependencies: ["AtlasFeaturesOverview", "AtlasDesignSystem", "AtlasDomain", "AtlasApplication"],
+            path: "AtlasFeaturesOverview/Tests/AtlasFeaturesOverviewTests"
+        ),
+        .testTarget(
+            name: "AtlasFeaturesPermissionsTests",
+            dependencies: ["AtlasFeaturesPermissions", "AtlasDesignSystem", "AtlasDomain"],
+            path: "AtlasFeaturesPermissions/Tests/AtlasFeaturesPermissionsTests"
+        ),
+        .testTarget(
+            name: "AtlasDesignSystemTests",
+            dependencies: ["AtlasDesignSystem", "AtlasDomain"],
+            path: "AtlasDesignSystem/Tests/AtlasDesignSystemTests"
+        ),
     ]
 )

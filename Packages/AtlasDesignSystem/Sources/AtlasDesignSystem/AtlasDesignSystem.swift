@@ -62,11 +62,13 @@ public enum AtlasFormatters {
     }
 }
 
-public struct AtlasScreen<Content: View>: View {
+public struct AtlasScreen<HeroContent: View, Content: View>: View {
     private let title: String
     private let subtitle: String
     private let useScrollView: Bool
     private let maxContentWidth: CGFloat?
+    private let hasHero: Bool
+    private let heroContent: HeroContent
     private let content: Content
 
     public init(
@@ -74,12 +76,16 @@ public struct AtlasScreen<Content: View>: View {
         subtitle: String,
         useScrollView: Bool = true,
         maxContentWidth: CGFloat? = AtlasLayout.maxReadingWidth,
+        hasHero: Bool = false,
+        @ViewBuilder heroContent: () -> HeroContent = { EmptyView() },
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.subtitle = subtitle
         self.useScrollView = useScrollView
         self.maxContentWidth = maxContentWidth
+        self.hasHero = hasHero
+        self.heroContent = heroContent()
         self.content = content()
     }
 
@@ -111,9 +117,16 @@ public struct AtlasScreen<Content: View>: View {
     private func contentStack(horizontalPadding: CGFloat, containerWidth: CGFloat) -> some View {
         let availableWidth = max(containerWidth - horizontalPadding * 2, 0)
         let contentWidth = min(maxContentWidth ?? availableWidth, availableWidth)
+        let hasHeroContent = hasHero
 
         return VStack(alignment: .leading, spacing: AtlasSpacing.xxl) {
             header
+
+            if hasHeroContent {
+                heroContent
+                    .transition(AtlasTransition.heroEntrance)
+            }
+
             content
         }
         .frame(maxWidth: maxContentWidth ?? .infinity, maxHeight: .infinity, alignment: .topLeading)

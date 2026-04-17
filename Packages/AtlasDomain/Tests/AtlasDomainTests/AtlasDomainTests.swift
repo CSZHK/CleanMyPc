@@ -72,4 +72,34 @@ final class AtlasDomainTests: XCTestCase {
         XCTAssertEqual(appPayload.uninstallEvidence.bundlePath, "/Applications/Legacy App.app")
     }
 
+    func testActionItemExecutionBoundaryDetectsHelperAndReviewOnlyCases() {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+
+        let direct = ActionItem(
+            title: "Direct cache",
+            detail: "User cache",
+            kind: .removeCache,
+            recoverable: true,
+            targetPaths: [home + "/.swiftpm/cache/repositories/direct.bin"]
+        )
+        XCTAssertEqual(direct.executionBoundary, .direct)
+
+        let helper = ActionItem(
+            title: "Launch agent cleanup",
+            detail: "Protected path",
+            kind: .removeCache,
+            recoverable: true,
+            targetPaths: [home + "/Library/LaunchAgents/com.example.fixture.plist"]
+        )
+        XCTAssertEqual(helper.executionBoundary, .helper)
+
+        let reviewOnly = ActionItem(
+            title: "Review first",
+            detail: "No supported targets",
+            kind: .inspectPermission,
+            recoverable: false
+        )
+        XCTAssertEqual(reviewOnly.executionBoundary, .reviewOnly)
+    }
+
 }

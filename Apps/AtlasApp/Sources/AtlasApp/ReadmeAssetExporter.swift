@@ -1,5 +1,6 @@
 import AppKit
 import AtlasApplication
+import AtlasDesignSystem
 import AtlasDomain
 import AtlasFeaturesApps
 import AtlasFeaturesHistory
@@ -48,10 +49,132 @@ struct ReadmeAssetExportView: View {
     }
 }
 
+// MARK: - Screenshot Shell
+
+/// Lightweight recreation of `AppShellView` layout for screenshot rendering.
+/// Replicates the sidebar + content split without requiring live `AtlasAppModel`.
+private struct AtlasScreenshotShell<Content: View>: View {
+    let activeRoute: AtlasRoute
+    let content: Content
+
+    init(activeRoute: AtlasRoute, @ViewBuilder content: () -> Content) {
+        self.activeRoute = activeRoute
+        self.content = content()
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            sidebarColumn
+                .frame(width: 220)
+
+            Rectangle()
+                .fill(Color.primary.opacity(0.08))
+                .frame(width: 1)
+
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    // MARK: - Sidebar
+
+    private var sidebarColumn: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Navigation title area
+            Text(AtlasL10n.string("app.name"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(AtlasRoute.SidebarSection.allCases) { section in
+                        sectionView(section)
+                    }
+
+                    // Settings & About section (no section header, matching AppShellView)
+                    VStack(alignment: .leading, spacing: 0) {
+                        sidebarRow(for: .settings)
+                        sidebarRow(for: .about)
+                    }
+                }
+                .padding(.horizontal, 10)
+            }
+            Spacer()
+        }
+        .background(Color(nsColor: .underPageBackgroundColor))
+    }
+
+    private func sectionView(_ section: AtlasRoute.SidebarSection) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(section.title)
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .textCase(.uppercase)
+                .padding(.horizontal, 8)
+                .padding(.top, 12)
+                .padding(.bottom, 4)
+
+            ForEach(section.routes) { route in
+                sidebarRow(for: route)
+            }
+        }
+    }
+
+    private func sidebarRow(for route: AtlasRoute) -> some View {
+        let isSelected = route == activeRoute
+        let themeColor = route.themeColor
+
+        return HStack(alignment: .center, spacing: AtlasSpacing.md) {
+            ZStack {
+                RoundedRectangle(cornerRadius: AtlasRadius.sm, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                themeColor.opacity(0.18),
+                                themeColor.opacity(0.06),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: AtlasLayout.sidebarIconSize, height: AtlasLayout.sidebarIconSize)
+
+                Image(systemName: route.systemImage)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(themeColor)
+            }
+
+            VStack(alignment: .leading, spacing: AtlasSpacing.xxs) {
+                Text(route.title)
+                    .font(AtlasTypography.rowTitle)
+                    .foregroundStyle(isSelected ? .primary : .secondary)
+
+                Text(route.subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+        }
+        .padding(.vertical, AtlasSpacing.sm)
+        .padding(.horizontal, 6)
+        .background(
+            RoundedRectangle(cornerRadius: AtlasRadius.sm, style: .continuous)
+                .fill(isSelected ? AtlasColor.brand.opacity(0.08) : .clear)
+        )
+    }
+}
+
+// MARK: - Exporter
+
 @MainActor
 private struct AtlasReadmeAssetExporter {
     private let outputDirectory: URL
-    private let screenshotSize = CGSize(width: 1600, height: 1100)
+    private let screenshotSize = CGSize(width: 2880, height: 1800)
     private let screenshotLanguage: AtlasLanguage = .en
 
     init(outputDirectory: URL) {
@@ -70,41 +193,50 @@ private struct AtlasReadmeAssetExporter {
 
         try exportAppIcon()
         try renderView(
-            OverviewFeatureView(snapshot: state.snapshot, isRefreshingHealthSnapshot: false),
+            AtlasScreenshotShell(activeRoute: .overview) {
+                OverviewFeatureView(snapshot: state.snapshot, isRefreshingHealthSnapshot: false)
+            },
             fileName: "atlas-overview.png"
         )
         try renderView(
-            SmartCleanFeatureView(
-                findings: state.snapshot.findings,
-                plan: state.currentPlan,
-                scanSummary: AtlasL10n.string("model.scan.ready"),
-                scanProgress: 1,
-                isScanning: false,
-                isExecutingPlan: false,
-                isCurrentPlanFresh: true,
-                canExecutePlan: canExecuteSmartCleanPlan,
-                planIssue: nil
-            ),
+            AtlasScreenshotShell(activeRoute: .smartClean) {
+                SmartCleanFeatureView(
+                    findings: state.snapshot.findings,
+                    plan: state.currentPlan,
+                    scanSummary: AtlasL10n.string("model.scan.ready"),
+                    scanProgress: 1,
+                    isScanning: false,
+                    isExecutingPlan: false,
+                    isCurrentPlanFresh: true,
+                    canExecutePlan: canExecuteSmartCleanPlan,
+                    planIssue: nil
+                )
+            },
             fileName: "atlas-smart-clean.png"
         )
         try renderView(
-            AppsFeatureView(
-                apps: state.snapshot.apps,
-                previewPlan: nil,
-                currentPreviewedAppID: nil,
-                summary: AtlasL10n.string("model.apps.ready"),
-                isRunning: false,
-                activePreviewAppID: nil,
-                activeUninstallAppID: nil
-            ),
+            AtlasScreenshotShell(activeRoute: .apps) {
+                AppsFeatureView(
+                    apps: state.snapshot.apps,
+                    previewPlan: nil,
+                    currentPreviewedAppID: nil,
+                    restoreRefreshStatus: nil,
+                    summary: AtlasL10n.string("model.apps.ready"),
+                    isRunning: false,
+                    activePreviewAppID: nil,
+                    activeUninstallAppID: nil
+                )
+            },
             fileName: "atlas-apps.png"
         )
         try renderView(
-            HistoryFeatureView(
-                taskRuns: state.snapshot.taskRuns,
-                recoveryItems: state.snapshot.recoveryItems,
-                restoringItemID: nil
-            ),
+            AtlasScreenshotShell(activeRoute: .history) {
+                HistoryFeatureView(
+                    taskRuns: state.snapshot.taskRuns,
+                    recoveryItems: state.snapshot.recoveryItems,
+                    restoringItemID: nil
+                )
+            },
             fileName: "atlas-history.png"
         )
 
@@ -148,6 +280,21 @@ private struct AtlasReadmeAssetExporter {
         }
 
         try pngData.write(to: destinationURL, options: .atomic)
+    }
+}
+
+private extension AtlasRoute {
+    /// Per-route theme color for sidebar icon gradients and visual accents.
+    var themeColor: Color {
+        switch self {
+        case .overview:    return AtlasColor.brand
+        case .smartClean:  return AtlasColor.success
+        case .apps:        return AtlasColor.accent
+        case .history:     return AtlasColor.info
+        case .permissions: return AtlasColor.warning
+        case .settings:    return AtlasColor.textSecondary
+        case .about:       return AtlasColor.brand
+        }
     }
 }
 

@@ -10,12 +10,13 @@ import UserNotifications
 @MainActor
 final class AtlasAppModel: ObservableObject {
     @Published var selection: AtlasRoute? = .overview
-    @Published private var searchTextByRoute: [AtlasRoute: String] = [:]
+    let snapshotFilter = AtlasSnapshotFilter()
     @Published var isTaskCenterPresented = false
     @Published private(set) var snapshot: AtlasWorkspaceSnapshot
     @Published private(set) var currentPlan: ActionPlan
     @Published private(set) var currentAppPreview: ActionPlan?
     @Published private(set) var currentPreviewedAppID: UUID?
+    @Published private(set) var latestAppRestoreRefreshStatus: AtlasAppPostRestoreRefreshStatus?
     @Published private(set) var settings: AtlasSettings
     @Published private(set) var isHealthSnapshotRefreshing = false
     @Published private(set) var isScanRunning = false
@@ -41,6 +42,7 @@ final class AtlasAppModel: ObservableObject {
     private let workspaceController: AtlasWorkspaceController
     private let updateChecker = AtlasUpdateChecker()
     private let notificationPermissionRequester: @Sendable () async -> Bool
+    private var filterCancellationToken: AnyCancellable?
     private var didRequestInitialHealthSnapshot = false
     private var didRequestInitialPermissionSnapshot = false
 
@@ -61,6 +63,7 @@ final class AtlasAppModel: ObservableObject {
         AtlasL10n.setCurrentLanguage(state.settings.language)
         self.latestScanSummary = AtlasL10n.string("model.scan.ready")
         self.latestAppsSummary = AtlasL10n.string("model.apps.ready")
+        self.latestAppRestoreRefreshStatus = nil
         self.latestPermissionsSummary = AtlasL10n.string("model.permissions.ready")
         self.isCurrentSmartCleanPlanFresh = false
         self.smartCleanPlanIssue = nil
@@ -93,6 +96,11 @@ final class AtlasAppModel: ObservableObject {
                 }
             }
         }
+        self.filterCancellationToken = snapshotFilter.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
     }
 
     var appLanguage: AtlasLanguage {
@@ -140,69 +148,35 @@ final class AtlasAppModel: ObservableObject {
     }
 
     func searchText(for route: AtlasRoute) -> String {
-        searchTextByRoute[route, default: ""]
+        snapshotFilter.searchText(for: route)
     }
 
     func setSearchText(_ text: String, for route: AtlasRoute) {
-        searchTextByRoute[route] = text
+        snapshotFilter.setSearchText(text, for: route)
     }
 
     var filteredSnapshot: AtlasWorkspaceSnapshot {
-        var filtered = snapshot
-        filtered.findings = filter(snapshot.findings, route: .overview) { finding in
-            [finding.title, finding.detail, AtlasL10n.localizedCategory(finding.category), finding.risk.title]
-        }
-        filtered.apps = filter(snapshot.apps, route: .overview) { app in
-            [app.name, app.bundleIdentifier, app.bundlePath, "\(app.leftoverItems)"]
-        }
-        filtered.taskRuns = filter(snapshot.taskRuns, route: .overview) { task in
-            [task.kind.title, task.status.title, task.summary]
-        }
-        filtered.recoveryItems = filter(snapshot.recoveryItems, route: .overview) { item in
-            [item.title, item.detail, item.originalPath]
-        }
-        filtered.permissions = filter(snapshot.permissions, route: .overview) { permission in
-            [
-                permission.kind.title,
-                permission.rationale,
-                permissionStatusText(for: permission)
-            ]
-        }
-        return filtered
+        snapshotFilter.filteredSnapshot(from: snapshot)
     }
 
     var filteredFindings: [Finding] {
-        filter(snapshot.findings, route: .smartClean) { finding in
-            [finding.title, finding.detail, AtlasL10n.localizedCategory(finding.category), finding.risk.title]
-        }
+        snapshotFilter.filteredFindings(from: snapshot)
     }
 
     var filteredApps: [AppFootprint] {
-        filter(snapshot.apps, route: .apps) { app in
-            [app.name, app.bundleIdentifier, app.bundlePath, "\(app.leftoverItems)"]
-        }
+        snapshotFilter.filteredApps(from: snapshot)
     }
 
     var filteredTaskRuns: [TaskRun] {
-        filter(snapshot.taskRuns, route: .history) { task in
-            [task.kind.title, task.status.title, task.summary]
-        }
+        snapshotFilter.filteredTaskRuns(from: snapshot)
     }
 
     var filteredRecoveryItems: [RecoveryItem] {
-        filter(snapshot.recoveryItems, route: .history) { item in
-            [item.title, item.detail, item.originalPath]
-        }
+        snapshotFilter.filteredRecoveryItems(from: snapshot)
     }
 
     var filteredPermissionStates: [PermissionState] {
-        filter(snapshot.permissions, route: .permissions) { permission in
-            [
-                permission.kind.title,
-                permission.rationale,
-                permissionStatusText(for: permission)
-            ]
-        }
+        snapshotFilter.filteredPermissionStates(from: snapshot)
     }
 
     var taskCenterTaskRuns: [TaskRun] {
@@ -236,11 +210,11 @@ final class AtlasAppModel: ObservableObject {
     }
 
     var currentSmartCleanPlanHasExecutableTargets: Bool {
-        let executableItems = currentPlan.items.filter { $0.kind != .inspectPermission && $0.kind != .reviewEvidence }
+        let executableItems = currentPlan.items.filter { $0.effectiveExecutionBoundary(findings: snapshot.findings).isExecutable }
         guard !executableItems.isEmpty else {
             return false
         }
-        return executableItems.allSatisfy { !resolvedTargetPaths(for: $0).isEmpty }
+        return executableItems.allSatisfy { !$0.resolvedTargetPaths(findings: snapshot.findings).isEmpty }
     }
 
     func refreshHealthSnapshotIfNeeded() async {
@@ -391,7 +365,11 @@ final class AtlasAppModel: ObservableObject {
     }
 
     func refreshApps() async {
-        await reloadAppsInventory(navigateToApps: true, resetPreview: true)
+        await reloadAppsInventory(
+            navigateToApps: true,
+            resetPreview: true,
+            restoreStatus: latestAppRestoreRefreshStatus
+        )
     }
 
     func previewAppUninstall(appID: UUID) async {
@@ -403,6 +381,7 @@ final class AtlasAppModel: ObservableObject {
         isAppActionRunning = true
         activePreviewAppID = appID
         activeUninstallAppID = nil
+        latestAppRestoreRefreshStatus = nil
 
         do {
             let output = try await workspaceController.previewAppUninstall(appID: appID)
@@ -429,6 +408,7 @@ final class AtlasAppModel: ObservableObject {
         isAppActionRunning = true
         activePreviewAppID = nil
         activeUninstallAppID = appID
+        latestAppRestoreRefreshStatus = nil
 
         do {
             let output = try await workspaceController.executeAppUninstall(appID: appID)
@@ -452,8 +432,20 @@ final class AtlasAppModel: ObservableObject {
         }
 
         let restoredItem = snapshot.recoveryItems.first(where: { $0.id == itemID })
-        let shouldRefreshAppsAfterRestore = restoredItem?.isAppPayload == true
+        let restoreStatus = restoredItem?.appRecoveryPayload.map { payload in
+            AtlasAppPostRestoreRefreshStatus(
+                appName: payload.app.name,
+                bundleIdentifier: payload.app.bundleIdentifier,
+                bundlePath: payload.app.bundlePath,
+                state: .refreshing,
+                recordedLeftoverItems: max(payload.uninstallEvidence.reviewOnlyItemCount, payload.app.leftoverItems)
+            )
+        }
+        let shouldRefreshAppsAfterRestore = restoreStatus != nil
         restoringRecoveryItemID = itemID
+        if let restoreStatus {
+            latestAppRestoreRefreshStatus = restoreStatus
+        }
 
         do {
             let output = try await workspaceController.restoreItems(itemIDs: [itemID])
@@ -471,7 +463,8 @@ final class AtlasAppModel: ObservableObject {
                 await reloadAppsInventory(
                     navigateToApps: false,
                     resetPreview: true,
-                    loadingSummary: output.summary
+                    loadingSummary: output.summary,
+                    restoreStatus: restoreStatus
                 )
             } else {
                 await refreshPlanPreview()
@@ -517,8 +510,6 @@ final class AtlasAppModel: ObservableObject {
 
         await updateSettings { settings in
             settings.language = language
-            settings.acknowledgementText = AtlasL10n.acknowledgement(language: language)
-            settings.thirdPartyNoticesText = AtlasL10n.thirdPartyNotices(language: language)
         }
 
         AtlasL10n.setCurrentLanguage(language)
@@ -528,6 +519,7 @@ final class AtlasAppModel: ObservableObject {
         }
         currentAppPreview = nil
         currentPreviewedAppID = nil
+        latestAppRestoreRefreshStatus = nil
     }
 
     func refreshCurrentRoute() async {
@@ -601,7 +593,8 @@ final class AtlasAppModel: ObservableObject {
     private func reloadAppsInventory(
         navigateToApps: Bool,
         resetPreview: Bool,
-        loadingSummary: String? = nil
+        loadingSummary: String? = nil,
+        restoreStatus: AtlasAppPostRestoreRefreshStatus? = nil
     ) async {
         guard !isAppActionRunning else {
             return
@@ -624,66 +617,71 @@ final class AtlasAppModel: ObservableObject {
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = output.snapshot
                 latestAppsSummary = output.summary
+                latestAppRestoreRefreshStatus = refreshedAppRestoreStatus(
+                    from: restoreStatus ?? latestAppRestoreRefreshStatus,
+                    apps: output.apps
+                )
             }
         } catch {
             latestAppsSummary = error.localizedDescription
+            if let existingStatus = restoreStatus ?? latestAppRestoreRefreshStatus {
+                latestAppRestoreRefreshStatus = AtlasAppPostRestoreRefreshStatus(
+                    appName: existingStatus.appName,
+                    bundleIdentifier: existingStatus.bundleIdentifier,
+                    bundlePath: existingStatus.bundlePath,
+                    state: .stale,
+                    recordedLeftoverItems: existingStatus.recordedLeftoverItems,
+                    refreshedLeftoverItems: nil,
+                    issueDescription: error.localizedDescription
+                )
+            }
         }
 
         isAppActionRunning = false
     }
 
-    private func filter<Element>(
-        _ elements: [Element],
-        route: AtlasRoute,
-        fields: (Element) -> [String]
-    ) -> [Element] {
-        let query = searchText(for: route)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-
-        guard !query.isEmpty else {
-            return elements
-        }
-
-        return elements.filter { element in
-            fields(element)
-                .joined(separator: " ")
-                .lowercased()
-                .contains(query)
-        }
-    }
 }
 
 private extension RecoveryItem {
-    var isAppPayload: Bool {
-        if case .app = payload {
-            return true
+    var appRecoveryPayload: AtlasAppRecoveryPayload? {
+        guard case let .app(payload)? = payload else {
+            return nil
         }
-        return false
+        return payload
     }
 }
 
 private extension AtlasAppModel {
-    func resolvedTargetPaths(for item: ActionItem) -> [String] {
-        if let targetPaths = item.targetPaths, !targetPaths.isEmpty {
-            return targetPaths
+    func refreshedAppRestoreStatus(
+        from status: AtlasAppPostRestoreRefreshStatus?,
+        apps: [AppFootprint]
+    ) -> AtlasAppPostRestoreRefreshStatus? {
+        guard let status else {
+            return nil
         }
 
-        guard let finding = snapshot.findings.first(where: { $0.id == item.id }) else {
-            return []
+        guard let refreshedApp = apps.first(where: {
+            $0.bundlePath == status.bundlePath || $0.bundleIdentifier == status.bundleIdentifier
+        }) else {
+            return AtlasAppPostRestoreRefreshStatus(
+                appName: status.appName,
+                bundleIdentifier: status.bundleIdentifier,
+                bundlePath: status.bundlePath,
+                state: .stale,
+                recordedLeftoverItems: status.recordedLeftoverItems,
+                refreshedLeftoverItems: nil,
+                issueDescription: status.issueDescription
+            )
         }
 
-        return finding.targetPaths ?? []
-    }
-}
-
-private extension AtlasAppModel {
-    func permissionStatusText(for permission: PermissionState) -> String {
-        if permission.isGranted {
-            return AtlasL10n.string("common.granted")
-        }
-        return permission.kind.isRequiredForCurrentWorkflows
-            ? AtlasL10n.string("permissions.status.required")
-            : AtlasL10n.string("permissions.status.optional")
+        return AtlasAppPostRestoreRefreshStatus(
+            appName: refreshedApp.name,
+            bundleIdentifier: refreshedApp.bundleIdentifier,
+            bundlePath: refreshedApp.bundlePath,
+            state: .refreshed,
+            recordedLeftoverItems: status.recordedLeftoverItems,
+            refreshedLeftoverItems: refreshedApp.leftoverItems,
+            issueDescription: nil
+        )
     }
 }
