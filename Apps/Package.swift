@@ -20,6 +20,7 @@ let package = Package(
                 .product(name: "AtlasDomain", package: "Packages"),
                 .product(name: "AtlasFeaturesAbout", package: "Packages"),
                 .product(name: "AtlasFeaturesApps", package: "Packages"),
+                .product(name: "AtlasFeaturesFileOrganizer", package: "Packages"),
                 .product(name: "AtlasFeaturesHistory", package: "Packages"),
                 .product(name: "AtlasFeaturesOverview", package: "Packages"),
                 .product(name: "AtlasFeaturesPermissions", package: "Packages"),

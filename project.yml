@@ -90,6 +90,8 @@ targets:
       - package: Packages
         product: AtlasFeaturesApps
       - package: Packages
+        product: AtlasFeaturesFileOrganizer
+      - package: Packages
         product: AtlasFeaturesHistory
       - package: Packages
         product: AtlasFeaturesOverview

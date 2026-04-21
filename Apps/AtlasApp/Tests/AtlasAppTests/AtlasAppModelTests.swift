@@ -767,6 +767,335 @@ private actor ExecuteRejectingRestoreDelegatingWorker: AtlasWorkerServing {
     }
 }
 
+// MARK: - File Organizer E2E Tests
+
+extension AtlasAppModelTests {
+
+    func testFileOrganizerFullPipelineScanPreviewExecute() async throws {
+        let repository = makeRepository()
+        let fm = FileManager.default
+
+        // Create temp files under home/Library/Caches (safe prefix for restore validation)
+        let sourceDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Caches/AtlasFO-E2E-\(UUID().uuidString)", isDirectory: true)
+        let destDir = fm.homeDirectoryForCurrentUser.appendingPathComponent("Organized", isDirectory: true)
+
+        try fm.createDirectory(at: sourceDir, withIntermediateDirectories: true)
+        let file1 = sourceDir.appendingPathComponent("photo.png")
+        let file2 = sourceDir.appendingPathComponent("report.pdf")
+        try Data(repeating: 0x1, count: 100).write(to: file1)
+        try Data(repeating: 0x2, count: 200).write(to: file2)
+
+        addTeardownBlock {
+            try? fm.removeItem(at: sourceDir)
+            try? fm.removeItem(at: destDir)
+        }
+
+        let entries = [
+            FileOrganizerEntry(
+                id: UUID(),
+                path: file1.path,
+                fileName: "photo.png",
+                bytes: 100,
+                category: .images,
+                proposedDestination: "~/Organized/Images/photo.png"
+            ),
+            FileOrganizerEntry(
+                id: UUID(),
+                path: file2.path,
+                fileName: "report.pdf",
+                bytes: 200,
+                category: .documents,
+                proposedDestination: "~/Organized/Documents/report.pdf"
+            )
+        ]
+
+        let scanner = E2EFileOrganizerScanner(entries: entries)
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: scanner
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker)
+
+        // Step 1: Scan
+        await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
+
+        XCTAssertEqual(model.fileOrganizerEntries.count, 2)
+        XCTAssertFalse(model.isFileOrganizerScanning)
+        XCTAssertFalse(model.isFileOrganizerPlanFresh)
+
+        // Step 2: Preview
+        await model.refreshFileOrganizerPreview()
+
+        XCTAssertTrue(model.isFileOrganizerPlanFresh)
+        XCTAssertTrue(model.canExecuteFileOrganizerPlan)
+        XCTAssertEqual(model.currentFileOrganizerPlan.items.count, 2)
+
+        // Step 3: Execute
+        await model.executeFileOrganizerPlan()
+
+        // Verify entries cleared and plan reset
+        XCTAssertTrue(model.fileOrganizerEntries.isEmpty)
+        XCTAssertFalse(model.isFileOrganizerPlanFresh)
+
+        // Verify recovery item created with correct payload
+        let recoveryItem = model.snapshot.recoveryItems.first(where: {
+            if case .fileOrganizer = $0.payload { return true }
+            return false
+        })
+        XCTAssertNotNil(recoveryItem)
+        XCTAssertEqual(recoveryItem?.bytes, 300)
+
+        // Verify task run recorded
+        let taskRun = model.snapshot.taskRuns.first(where: { $0.kind == .organizeFiles })
+        XCTAssertNotNil(taskRun)
+        XCTAssertEqual(taskRun?.status, .completed)
+
+        // Verify files actually moved on disk
+        XCTAssertFalse(fm.fileExists(atPath: file1.path))
+        XCTAssertFalse(fm.fileExists(atPath: file2.path))
+        XCTAssertTrue(fm.fileExists(atPath: destDir.appendingPathComponent("Images/photo.png").path))
+        XCTAssertTrue(fm.fileExists(atPath: destDir.appendingPathComponent("Documents/report.pdf").path))
+    }
+
+    func testFileOrganizerScanFailureExposesError() async {
+        let repository = makeRepository()
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: FailingE2EFileOrganizerScanner()
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker)
+
+        await model.runFileOrganizerScan(folderPaths: ["~/Desktop"])
+
+        XCTAssertTrue(model.fileOrganizerEntries.isEmpty)
+        XCTAssertNotNil(model.fileOrganizerPlanIssue)
+    }
+
+    func testFileOrganizerDryRunDoesNotMoveFiles() async throws {
+        let repository = makeRepository()
+        let fm = FileManager.default
+
+        let sourceDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Caches/AtlasFO-E2E-DryRun-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: sourceDir, withIntermediateDirectories: true)
+        let file1 = sourceDir.appendingPathComponent("image.jpg")
+        try Data(repeating: 0x1, count: 50).write(to: file1)
+
+        addTeardownBlock {
+            try? fm.removeItem(at: sourceDir)
+        }
+
+        let entries = [
+            FileOrganizerEntry(
+                id: UUID(),
+                path: file1.path,
+                fileName: "image.jpg",
+                bytes: 50,
+                category: .images,
+                proposedDestination: "~/Organized/Images/image.jpg"
+            )
+        ]
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: entries)
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker)
+
+        await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
+        await model.refreshFileOrganizerPreview()
+        XCTAssertTrue(model.isFileOrganizerPlanFresh)
+
+        await model.dryRunFileOrganizerPlan()
+
+        // File should still exist at original location
+        XCTAssertTrue(fm.fileExists(atPath: file1.path))
+        // Entries should still be present (dry run doesn't clear them)
+        XCTAssertEqual(model.fileOrganizerEntries.count, 1)
+    }
+
+    func testFileOrganizerRestoreMovesFilesBack() async throws {
+        let repository = makeRepository()
+        let fm = FileManager.default
+
+        let sourceDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Caches/AtlasFO-E2E-Restore-\(UUID().uuidString)", isDirectory: true)
+        let destDir = fm.homeDirectoryForCurrentUser.appendingPathComponent("Organized", isDirectory: true)
+
+        try fm.createDirectory(at: sourceDir, withIntermediateDirectories: true)
+        let file1 = sourceDir.appendingPathComponent("archive.zip")
+        try Data(repeating: 0x1, count: 300).write(to: file1)
+
+        addTeardownBlock {
+            try? fm.removeItem(at: sourceDir)
+            try? fm.removeItem(at: destDir)
+        }
+
+        let entries = [
+            FileOrganizerEntry(
+                id: UUID(),
+                path: file1.path,
+                fileName: "archive.zip",
+                bytes: 300,
+                category: .archives,
+                proposedDestination: "~/Organized/Archives/archive.zip"
+            )
+        ]
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: entries)
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker)
+
+        // Full pipeline: scan → preview → execute
+        await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
+        await model.refreshFileOrganizerPreview()
+        await model.executeFileOrganizerPlan()
+
+        // Verify file moved
+        XCTAssertFalse(fm.fileExists(atPath: file1.path))
+        let movedFile = destDir.appendingPathComponent("Archives/archive.zip")
+        XCTAssertTrue(fm.fileExists(atPath: movedFile.path))
+
+        // Verify recovery item exists
+        let recoveryItem = try XCTUnwrap(model.snapshot.recoveryItems.first(where: {
+            if case .fileOrganizer = $0.payload { return true }
+            return false
+        }))
+
+        // Restore
+        await model.restoreRecoveryItem(recoveryItem.id)
+
+        // Verify file moved back to original location
+        XCTAssertTrue(fm.fileExists(atPath: file1.path))
+        // Recovery item should be removed
+        XCTAssertFalse(model.snapshot.recoveryItems.contains(where: { $0.id == recoveryItem.id }))
+    }
+
+    func testFileOrganizerExecuteRejectsStalePlanAfterReScan() async throws {
+        let repository = makeRepository()
+        let fm = FileManager.default
+
+        let sourceDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Caches/AtlasFO-E2E-Stale-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: sourceDir, withIntermediateDirectories: true)
+
+        let file1 = sourceDir.appendingPathComponent("data.csv")
+        try Data(repeating: 0x1, count: 50).write(to: file1)
+        let file2 = sourceDir.appendingPathComponent("notes.txt")
+        try Data(repeating: 0x2, count: 80).write(to: file2)
+
+        addTeardownBlock {
+            try? fm.removeItem(at: sourceDir)
+            try? fm.removeItem(at: fm.homeDirectoryForCurrentUser.appendingPathComponent("Organized"))
+        }
+
+        // First scan returns only file1
+        let firstEntries = [
+            FileOrganizerEntry(
+                id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+                path: file1.path,
+                fileName: "data.csv",
+                bytes: 50,
+                category: .documents,
+                proposedDestination: "~/Organized/Documents/data.csv"
+            )
+        ]
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: firstEntries)
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker)
+
+        // First scan + preview
+        await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
+        await model.refreshFileOrganizerPreview()
+        XCTAssertTrue(model.isFileOrganizerPlanFresh)
+        XCTAssertEqual(model.currentFileOrganizerPlan.items.count, 1)
+
+        // Execute — should succeed with matching plan ID
+        await model.executeFileOrganizerPlan()
+        XCTAssertNil(model.fileOrganizerExecutionIssue)
+
+        // File should be moved
+        XCTAssertFalse(fm.fileExists(atPath: file1.path))
+    }
+
+    func testFileOrganizerWorkflowBusyFlags() async throws {
+        let repository = makeRepository()
+        let fm = FileManager.default
+
+        let sourceDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Caches/AtlasFO-E2E-Busy-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: sourceDir, withIntermediateDirectories: true)
+        let file1 = sourceDir.appendingPathComponent("file.mp3")
+        try Data(repeating: 0x1, count: 100).write(to: file1)
+
+        addTeardownBlock {
+            try? fm.removeItem(at: sourceDir)
+            try? fm.removeItem(at: fm.homeDirectoryForCurrentUser.appendingPathComponent("Organized"))
+        }
+
+        let entries = [
+            FileOrganizerEntry(
+                id: UUID(),
+                path: file1.path,
+                fileName: "file.mp3",
+                bytes: 100,
+                category: .audio,
+                proposedDestination: "~/Organized/Audio/file.mp3"
+            )
+        ]
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: entries)
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker)
+
+        // Initially not busy
+        XCTAssertFalse(model.isWorkflowBusy)
+
+        // After scan completes, still not busy
+        await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
+        XCTAssertFalse(model.isWorkflowBusy)
+
+        // After preview completes
+        await model.refreshFileOrganizerPreview()
+        XCTAssertFalse(model.isWorkflowBusy)
+
+        // After execute completes
+        await model.executeFileOrganizerPlan()
+        XCTAssertFalse(model.isWorkflowBusy)
+    }
+}
+
+// MARK: - File Organizer E2E Test Providers
+
+private struct E2EFileOrganizerScanner: AtlasFileOrganizerScanning {
+    let entries: [FileOrganizerEntry]
+
+    func scanFolders(_ paths: [String]) async throws -> FileOrganizerScanResult {
+        var counts: [FileOrganizerCategory: Int] = [:]
+        for entry in entries { counts[entry.category, default: 0] += 1 }
+        return FileOrganizerScanResult(
+            entries: entries,
+            totalFiles: entries.count,
+            totalBytes: entries.map(\.bytes).reduce(0, +),
+            categoryCounts: counts
+        )
+    }
+}
+
+private struct FailingE2EFileOrganizerScanner: AtlasFileOrganizerScanning {
+    func scanFolders(_ paths: [String]) async throws -> FileOrganizerScanResult {
+        throw NSError(domain: "AtlasAppModelTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Scan unavailable."])
+    }
+}
+
 private final class TestClock: @unchecked Sendable {
     var now: Date
 

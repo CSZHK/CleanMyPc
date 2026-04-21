@@ -287,13 +287,14 @@ private extension AtlasRoute {
     /// Per-route theme color for sidebar icon gradients and visual accents.
     var themeColor: Color {
         switch self {
-        case .overview:    return AtlasColor.brand
-        case .smartClean:  return AtlasColor.success
-        case .apps:        return AtlasColor.accent
-        case .history:     return AtlasColor.info
-        case .permissions: return AtlasColor.warning
-        case .settings:    return AtlasColor.textSecondary
-        case .about:       return AtlasColor.brand
+        case .overview:       return AtlasColor.brand
+        case .smartClean:     return AtlasColor.success
+        case .fileOrganizer:  return AtlasColor.accent
+        case .apps:           return AtlasColor.info
+        case .history:        return AtlasColor.textSecondary
+        case .permissions:    return AtlasColor.warning
+        case .settings:       return AtlasColor.textSecondary
+        case .about:          return AtlasColor.brand
         }
     }
 }

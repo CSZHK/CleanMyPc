@@ -3,6 +3,7 @@ import Foundation
 public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, Sendable {
     case overview
     case smartClean
+    case fileOrganizer
     case apps
     case history
     case permissions
@@ -31,7 +32,7 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
         public var routes: [AtlasRoute] {
             switch self {
             case .core:
-                return [.overview, .smartClean, .apps]
+                return [.overview, .smartClean, .fileOrganizer, .apps]
             case .manage:
                 return [.history, .permissions]
             }
@@ -53,7 +54,7 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
 
     public var sidebarSection: SidebarSection? {
         switch self {
-        case .overview, .smartClean, .apps:
+        case .overview, .smartClean, .fileOrganizer, .apps:
             return .core
         case .history, .permissions:
             return .manage
@@ -68,6 +69,8 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
             return AtlasL10n.string("route.overview.title")
         case .smartClean:
             return AtlasL10n.string("route.smartclean.title")
+        case .fileOrganizer:
+            return AtlasL10n.string("route.fileorganizer.title")
         case .apps:
             return AtlasL10n.string("route.apps.title")
         case .history:
@@ -87,6 +90,8 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
             return AtlasL10n.string("route.overview.subtitle")
         case .smartClean:
             return AtlasL10n.string("route.smartclean.subtitle")
+        case .fileOrganizer:
+            return AtlasL10n.string("route.fileorganizer.subtitle")
         case .apps:
             return AtlasL10n.string("route.apps.subtitle")
         case .history:
@@ -106,6 +111,8 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
             return "rectangle.grid.2x2"
         case .smartClean:
             return "sparkles"
+        case .fileOrganizer:
+            return "folder.badge.gearshape"
         case .apps:
             return "square.stack.3d.up"
         case .history:
@@ -229,6 +236,7 @@ public struct ActionItem: Identifiable, Codable, Hashable, Sendable {
         case archiveFile
         case inspectPermission
         case reviewEvidence
+        case organizeFile
     }
 
     public enum ExecutionBoundary: String, Codable, Hashable, Sendable {
@@ -332,7 +340,7 @@ public struct ActionItem: Identifiable, Codable, Hashable, Sendable {
             return .reviewOnly
         case .removeApp:
             return .helper
-        case .removeCache, .archiveFile:
+        case .removeCache, .archiveFile, .organizeFile:
             break
         }
 
@@ -388,6 +396,7 @@ public enum TaskKind: String, Codable, Hashable, Sendable {
     case uninstallApp
     case restore
     case inspectPermissions
+    case organizeFiles
 
     public var title: String {
         switch self {
@@ -401,6 +410,8 @@ public enum TaskKind: String, Codable, Hashable, Sendable {
             return AtlasL10n.string("taskkind.restore")
         case .inspectPermissions:
             return AtlasL10n.string("taskkind.inspectPermissions")
+        case .organizeFiles:
+            return AtlasL10n.string("taskkind.organizeFiles")
         }
     }
 }
@@ -611,10 +622,12 @@ public struct AtlasAppRecoveryPayload: Codable, Hashable, Sendable {
 public enum RecoveryPayload: Codable, Hashable, Sendable {
     case finding(Finding)
     case app(AtlasAppRecoveryPayload)
+    case fileOrganizer(FileOrganizerRecoveryPayload)
 
     private enum CodingKeys: String, CodingKey {
         case finding
         case app
+        case fileOrganizer
     }
 
     public init(from decoder: Decoder) throws {
@@ -645,10 +658,15 @@ public enum RecoveryPayload: Codable, Hashable, Sendable {
             return
         }
 
+        if container.contains(.fileOrganizer) {
+            self = .fileOrganizer(try container.decode(FileOrganizerRecoveryPayload.self, forKey: .fileOrganizer))
+            return
+        }
+
         throw DecodingError.dataCorrupted(
             DecodingError.Context(
                 codingPath: decoder.codingPath,
-                debugDescription: "RecoveryPayload must contain either a finding or app payload."
+                debugDescription: "RecoveryPayload must contain a finding, app, or fileOrganizer payload."
             )
         )
     }
@@ -661,6 +679,8 @@ public enum RecoveryPayload: Codable, Hashable, Sendable {
             try container.encode(finding, forKey: .finding)
         case let .app(payload):
             try container.encode(payload, forKey: .app)
+        case let .fileOrganizer(payload):
+            try container.encode(payload, forKey: .fileOrganizer)
         }
     }
 }
@@ -851,6 +871,153 @@ public struct StorageInsight: Identifiable, Codable, Hashable, Sendable {
         self.path = path
         self.bytes = bytes
         self.ageDescription = ageDescription
+    }
+}
+
+// MARK: - File Organizer Types
+
+public enum FileOrganizerCategory: String, Codable, CaseIterable, Hashable, Sendable {
+    case images
+    case documents
+    case videos
+    case audio
+    case archives
+    case code
+    case installers
+    case other
+
+    public var title: String {
+        switch self {
+        case .images: return AtlasL10n.string("fileorganizer.category.images")
+        case .documents: return AtlasL10n.string("fileorganizer.category.documents")
+        case .videos: return AtlasL10n.string("fileorganizer.category.videos")
+        case .audio: return AtlasL10n.string("fileorganizer.category.audio")
+        case .archives: return AtlasL10n.string("fileorganizer.category.archives")
+        case .code: return AtlasL10n.string("fileorganizer.category.code")
+        case .installers: return AtlasL10n.string("fileorganizer.category.installers")
+        case .other: return AtlasL10n.string("fileorganizer.category.other")
+        }
+    }
+
+    public var systemImage: String {
+        switch self {
+        case .images: return "photo"
+        case .documents: return "doc"
+        case .videos: return "film"
+        case .audio: return "music.note"
+        case .archives: return "doc.zipper"
+        case .code: return "chevron.left.forwardslash.chevron.right"
+        case .installers: return "internaldrive"
+        case .other: return "doc.badge.ellipsis"
+        }
+    }
+
+    public var folderName: String {
+        switch self {
+        case .images: return "Images"
+        case .documents: return "Documents"
+        case .videos: return "Videos"
+        case .audio: return "Audio"
+        case .archives: return "Archives"
+        case .code: return "Code"
+        case .installers: return "Installers"
+        case .other: return "Other"
+        }
+    }
+}
+
+public struct FileOrganizerEntry: Identifiable, Codable, Hashable, Sendable {
+    public var id: UUID
+    public var path: String
+    public var fileName: String
+    public var bytes: Int64
+    public var category: FileOrganizerCategory
+    public var proposedDestination: String
+
+    public init(
+        id: UUID = UUID(),
+        path: String,
+        fileName: String,
+        bytes: Int64,
+        category: FileOrganizerCategory,
+        proposedDestination: String
+    ) {
+        self.id = id
+        self.path = path
+        self.fileName = fileName
+        self.bytes = bytes
+        self.category = category
+        self.proposedDestination = proposedDestination
+    }
+}
+
+public struct FileOrganizerScanResult: Codable, Hashable, Sendable {
+    public var entries: [FileOrganizerEntry]
+    public var totalFiles: Int
+    public var totalBytes: Int64
+    public var categoryCounts: [FileOrganizerCategory: Int]
+
+    public init(
+        entries: [FileOrganizerEntry],
+        totalFiles: Int,
+        totalBytes: Int64,
+        categoryCounts: [FileOrganizerCategory: Int]
+    ) {
+        self.entries = entries
+        self.totalFiles = totalFiles
+        self.totalBytes = totalBytes
+        self.categoryCounts = categoryCounts
+    }
+}
+
+public struct FileOrganizerMoveMapping: Codable, Hashable, Sendable {
+    public var originalPath: String
+    public var destinationPath: String
+
+    public init(originalPath: String, destinationPath: String) {
+        self.originalPath = originalPath
+        self.destinationPath = destinationPath
+    }
+}
+
+public struct FileOrganizerRule: Identifiable, Codable, Hashable, Sendable {
+    public var id: UUID
+    public var name: String
+    public var extensionPatterns: [String]
+    public var namePatterns: [String]
+    public var category: FileOrganizerCategory
+    public var destinationSubfolder: String?
+    public var minSizeBytes: Int64?
+    public var maxSizeBytes: Int64?
+
+    public init(
+        id: UUID = UUID(),
+        name: String,
+        extensionPatterns: [String],
+        namePatterns: [String] = [],
+        category: FileOrganizerCategory,
+        destinationSubfolder: String? = nil,
+        minSizeBytes: Int64? = nil,
+        maxSizeBytes: Int64? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.extensionPatterns = extensionPatterns
+        self.namePatterns = namePatterns
+        self.category = category
+        self.destinationSubfolder = destinationSubfolder
+        self.minSizeBytes = minSizeBytes
+        self.maxSizeBytes = maxSizeBytes
+    }
+}
+
+public struct FileOrganizerRecoveryPayload: Codable, Hashable, Sendable {
+    public var moveMappings: [FileOrganizerMoveMapping]
+    public var sourceFolder: String
+
+    public init(moveMappings: [FileOrganizerMoveMapping], sourceFolder: String) {
+        self.moveMappings = moveMappings
+        self.sourceFolder = sourceFolder
     }
 }
 
@@ -1199,5 +1366,99 @@ public enum AtlasScaffoldFixtures {
             ],
             language: language
         )
+    }
+
+    // MARK: - File Organizer Fixtures
+
+    public static var fileOrganizerEntries: [FileOrganizerEntry] {
+        fileOrganizerEntries(language: AtlasL10n.currentLanguage)
+    }
+
+    public static func fileOrganizerEntries(language: AtlasLanguage) -> [FileOrganizerEntry] {
+        [
+            FileOrganizerEntry(
+                id: uuid("00000000-0000-0000-0000-000000000060"),
+                path: "~/Desktop/screenshot.png",
+                fileName: "screenshot.png",
+                bytes: 2_400_000,
+                category: .images,
+                proposedDestination: "~/Organized/Images/screenshot.png"
+            ),
+            FileOrganizerEntry(
+                id: uuid("00000000-0000-0000-0000-000000000061"),
+                path: "~/Desktop/report.pdf",
+                fileName: "report.pdf",
+                bytes: 850_000,
+                category: .documents,
+                proposedDestination: "~/Organized/Documents/report.pdf"
+            ),
+            FileOrganizerEntry(
+                id: uuid("00000000-0000-0000-0000-000000000062"),
+                path: "~/Desktop/clip.mp4",
+                fileName: "clip.mp4",
+                bytes: 45_000_000,
+                category: .videos,
+                proposedDestination: "~/Organized/Videos/clip.mp4"
+            ),
+            FileOrganizerEntry(
+                id: uuid("00000000-0000-0000-0000-000000000063"),
+                path: "~/Downloads/archive.zip",
+                fileName: "archive.zip",
+                bytes: 12_000_000,
+                category: .archives,
+                proposedDestination: "~/Organized/Archives/archive.zip"
+            ),
+        ]
+    }
+
+    public static var fileOrganizerRules: [FileOrganizerRule] {
+        fileOrganizerRules(language: AtlasL10n.currentLanguage)
+    }
+
+    public static func fileOrganizerRules(language: AtlasLanguage) -> [FileOrganizerRule] {
+        [
+            FileOrganizerRule(
+                id: uuid("00000000-0000-0000-0000-000000000070"),
+                name: "Image Files",
+                extensionPatterns: ["png", "jpg", "jpeg", "gif", "bmp", "tiff", "webp", "svg", "heic"],
+                category: .images
+            ),
+            FileOrganizerRule(
+                id: uuid("00000000-0000-0000-0000-000000000071"),
+                name: "Video Files",
+                extensionPatterns: ["mp4", "mov", "avi", "mkv", "wmv", "flv", "webm"],
+                category: .videos
+            ),
+            FileOrganizerRule(
+                id: uuid("00000000-0000-0000-0000-000000000072"),
+                name: "Audio Files",
+                extensionPatterns: ["mp3", "wav", "aac", "flac", "ogg", "m4a", "wma"],
+                category: .audio
+            ),
+            FileOrganizerRule(
+                id: uuid("00000000-0000-0000-0000-000000000073"),
+                name: "Document Files",
+                extensionPatterns: ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "csv"],
+                category: .documents
+            ),
+            FileOrganizerRule(
+                id: uuid("00000000-0000-0000-0000-000000000074"),
+                name: "Archive Files",
+                extensionPatterns: ["zip", "tar", "gz", "bz2", "xz", "rar", "7z"],
+                category: .archives
+            ),
+            FileOrganizerRule(
+                id: uuid("00000000-0000-0000-0000-000000000075"),
+                name: "Code Files",
+                extensionPatterns: ["swift", "py", "js", "ts", "go", "rs", "java", "c", "cpp", "h", "html", "css", "json", "xml", "yaml", "yml", "sh"],
+                category: .code
+            ),
+            FileOrganizerRule(
+                id: uuid("00000000-0000-0000-0000-000000000076"),
+                name: "Installer Files",
+                extensionPatterns: ["dmg", "pkg", "deb", "rpm", "msi", "app"],
+                category: .installers
+            ),
+        ]
     }
 }

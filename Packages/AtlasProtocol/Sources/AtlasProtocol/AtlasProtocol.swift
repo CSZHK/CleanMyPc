@@ -33,6 +33,11 @@ public enum AtlasCommand: Codable, Hashable, Sendable {
     case executeAppUninstall(appID: UUID)
     case settingsGet
     case settingsSet(AtlasSettings)
+    case fileOrganizerScan(taskID: UUID, folderPaths: [String])
+    case fileOrganizerClassify(taskID: UUID, entryIDs: [UUID])
+    case fileOrganizerPreviewPlan(taskID: UUID, entryIDs: [UUID])
+    case fileOrganizerExecutePlan(planID: UUID)
+    case fileOrganizerDryRun(planID: UUID)
 }
 
 public struct AtlasRequestEnvelope: Codable, Hashable, Sendable, Identifiable {
@@ -74,6 +79,8 @@ public enum AtlasResponse: Codable, Hashable, Sendable {
     case apps([AppFootprint])
     case preview(ActionPlan)
     case settings(AtlasSettings)
+    case fileOrganizerEntries([FileOrganizerEntry])
+    case fileOrganizerPlan(ActionPlan)
     case rejected(code: AtlasProtocolErrorCode, reason: String)
 }
 

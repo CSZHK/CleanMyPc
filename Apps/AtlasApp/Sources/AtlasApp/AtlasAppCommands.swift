@@ -80,12 +80,14 @@ private extension AtlasRoute {
             return "1"
         case .smartClean:
             return "2"
-        case .apps:
+        case .fileOrganizer:
             return "3"
-        case .history:
+        case .apps:
             return "4"
-        case .permissions:
+        case .history:
             return "5"
+        case .permissions:
+            return "6"
         case .settings, .about:
             preconditionFailure("Non-sidebar routes have no shortcut key")
         }

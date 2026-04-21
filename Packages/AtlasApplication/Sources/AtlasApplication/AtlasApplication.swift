@@ -10,6 +10,7 @@ public struct AtlasWorkspaceSnapshot: Codable, Hashable, Sendable {
     public var recoveryItems: [RecoveryItem]
     public var permissions: [PermissionState]
     public var healthSnapshot: AtlasHealthSnapshot?
+    public var fileOrganizerEntries: [FileOrganizerEntry]
 
     public init(
         reclaimableSpaceBytes: Int64,
@@ -18,7 +19,8 @@ public struct AtlasWorkspaceSnapshot: Codable, Hashable, Sendable {
         taskRuns: [TaskRun],
         recoveryItems: [RecoveryItem],
         permissions: [PermissionState],
-        healthSnapshot: AtlasHealthSnapshot? = nil
+        healthSnapshot: AtlasHealthSnapshot? = nil,
+        fileOrganizerEntries: [FileOrganizerEntry] = []
     ) {
         self.reclaimableSpaceBytes = reclaimableSpaceBytes
         self.findings = findings
@@ -27,6 +29,30 @@ public struct AtlasWorkspaceSnapshot: Codable, Hashable, Sendable {
         self.recoveryItems = recoveryItems
         self.permissions = permissions
         self.healthSnapshot = healthSnapshot
+        self.fileOrganizerEntries = fileOrganizerEntries
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case reclaimableSpaceBytes
+        case findings
+        case apps
+        case taskRuns
+        case recoveryItems
+        case permissions
+        case healthSnapshot
+        case fileOrganizerEntries
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.reclaimableSpaceBytes = try container.decode(Int64.self, forKey: .reclaimableSpaceBytes)
+        self.findings = try container.decode([Finding].self, forKey: .findings)
+        self.apps = try container.decode([AppFootprint].self, forKey: .apps)
+        self.taskRuns = try container.decode([TaskRun].self, forKey: .taskRuns)
+        self.recoveryItems = try container.decode([RecoveryItem].self, forKey: .recoveryItems)
+        self.permissions = try container.decode([PermissionState].self, forKey: .permissions)
+        self.healthSnapshot = try container.decodeIfPresent(AtlasHealthSnapshot.self, forKey: .healthSnapshot)
+        self.fileOrganizerEntries = try container.decodeIfPresent([FileOrganizerEntry].self, forKey: .fileOrganizerEntries) ?? []
     }
 }
 
@@ -477,6 +503,106 @@ public struct AtlasWorkspaceController: Sendable {
         }
     }
 
+    public func fileOrganizerScan(folderPaths: [String], taskID: UUID = UUID()) async throws -> AtlasFileOrganizerScanOutput {
+        let request = FileOrganizerScanUseCase().makeRequest(taskID: taskID, folderPaths: folderPaths)
+        let result = try await worker.submit(request)
+
+        switch result.response.response {
+        case let .fileOrganizerEntries(entries):
+            let scanResult = FileOrganizerScanResult(
+                entries: entries,
+                totalFiles: entries.count,
+                totalBytes: entries.map(\.bytes).reduce(0, +),
+                categoryCounts: Dictionary(grouping: entries, by: \.category).mapValues(\.count)
+            )
+            return AtlasFileOrganizerScanOutput(
+                snapshot: result.snapshot,
+                entries: entries,
+                scanResult: scanResult,
+                events: result.events,
+                progressFraction: progressFraction(from: result.events),
+                summary: summary(from: result.events, fallback: AtlasL10n.string("model.fileorganizer.ready"))
+            )
+        case let .rejected(code, reason):
+            throw AtlasWorkspaceControllerError.rejected(code: code, reason: reason)
+        default:
+            throw AtlasWorkspaceControllerError.unexpectedResponse("Expected fileOrganizerEntries response for fileOrganizerScan.")
+        }
+    }
+
+    public func fileOrganizerClassify(entryIDs: [UUID], taskID: UUID = UUID()) async throws -> AtlasFileOrganizerClassifyOutput {
+        let request = FileOrganizerClassifyUseCase().makeRequest(taskID: taskID, entryIDs: entryIDs)
+        let result = try await worker.submit(request)
+
+        switch result.response.response {
+        case let .fileOrganizerEntries(entries):
+            return AtlasFileOrganizerClassifyOutput(
+                snapshot: result.snapshot,
+                entries: entries,
+                summary: AtlasL10n.string("fileorganizer.status.complete")
+            )
+        case let .rejected(code, reason):
+            throw AtlasWorkspaceControllerError.rejected(code: code, reason: reason)
+        default:
+            throw AtlasWorkspaceControllerError.unexpectedResponse("Expected fileOrganizerEntries response for fileOrganizerClassify.")
+        }
+    }
+
+    public func fileOrganizerPreviewPlan(entryIDs: [UUID], taskID: UUID = UUID()) async throws -> AtlasFileOrganizerPlanOutput {
+        let request = FileOrganizerPreviewPlanUseCase().makeRequest(taskID: taskID, entryIDs: entryIDs)
+        let result = try await worker.submit(request)
+
+        switch result.response.response {
+        case let .fileOrganizerPlan(plan):
+            return AtlasFileOrganizerPlanOutput(
+                snapshot: result.snapshot,
+                actionPlan: plan,
+                summary: AtlasL10n.string(plan.items.count == 1 ? "application.preview.updated.one" : "application.preview.updated.other", plan.items.count)
+            )
+        case let .rejected(code, reason):
+            throw AtlasWorkspaceControllerError.rejected(code: code, reason: reason)
+        default:
+            throw AtlasWorkspaceControllerError.unexpectedResponse("Expected fileOrganizerPlan response for fileOrganizerPreviewPlan.")
+        }
+    }
+
+    public func fileOrganizerExecutePlan(planID: UUID) async throws -> AtlasFileOrganizerExecuteOutput {
+        let request = FileOrganizerExecutePlanUseCase().makeRequest(planID: planID)
+        let result = try await worker.submit(request)
+
+        switch result.response.response {
+        case .accepted:
+            return AtlasFileOrganizerExecuteOutput(
+                snapshot: result.snapshot,
+                events: result.events,
+                progressFraction: progressFraction(from: result.events),
+                summary: summary(from: result.events, fallback: AtlasL10n.string("fileorganizer.status.complete"))
+            )
+        case let .rejected(code, reason):
+            throw AtlasWorkspaceControllerError.rejected(code: code, reason: reason)
+        default:
+            throw AtlasWorkspaceControllerError.unexpectedResponse("Expected accepted response for fileOrganizerExecutePlan.")
+        }
+    }
+
+    public func fileOrganizerDryRun(planID: UUID) async throws -> AtlasFileOrganizerDryRunOutput {
+        let request = FileOrganizerDryRunUseCase().makeRequest(planID: planID)
+        let result = try await worker.submit(request)
+
+        switch result.response.response {
+        case let .fileOrganizerPlan(plan):
+            return AtlasFileOrganizerDryRunOutput(
+                snapshot: result.snapshot,
+                actionPlan: plan,
+                summary: AtlasL10n.string("fileorganizer.status.complete")
+            )
+        case let .rejected(code, reason):
+            throw AtlasWorkspaceControllerError.rejected(code: code, reason: reason)
+        default:
+            throw AtlasWorkspaceControllerError.unexpectedResponse("Expected fileOrganizerPlan response for fileOrganizerDryRun.")
+        }
+    }
+
     public func settings() async throws -> AtlasSettingsOutput {
         let request = SettingsGetUseCase().makeRequest()
         let result = try await worker.submit(request)
@@ -613,5 +739,139 @@ public struct SettingsSetUseCase: Sendable {
 
     public func makeRequest(settings: AtlasSettings) -> AtlasRequestEnvelope {
         AtlasRequestEnvelope(command: .settingsSet(settings))
+    }
+}
+
+// MARK: - File Organizer Protocols
+
+public protocol AtlasFileOrganizerScanning: Sendable {
+    func scanFolders(_ paths: [String]) async throws -> FileOrganizerScanResult
+}
+
+public protocol AtlasFileOrganizerClassifying: Sendable {
+    func classify(_ entries: [FileOrganizerEntry], rules: [FileOrganizerRule]) async -> [FileOrganizerEntry]
+}
+
+// MARK: - File Organizer Output Types
+
+public struct AtlasFileOrganizerScanOutput: Sendable {
+    public var snapshot: AtlasWorkspaceSnapshot
+    public var entries: [FileOrganizerEntry]
+    public var scanResult: FileOrganizerScanResult
+    public var events: [AtlasEventEnvelope]
+    public var progressFraction: Double
+    public var summary: String
+
+    public init(
+        snapshot: AtlasWorkspaceSnapshot,
+        entries: [FileOrganizerEntry],
+        scanResult: FileOrganizerScanResult,
+        events: [AtlasEventEnvelope],
+        progressFraction: Double,
+        summary: String
+    ) {
+        self.snapshot = snapshot
+        self.entries = entries
+        self.scanResult = scanResult
+        self.events = events
+        self.progressFraction = progressFraction
+        self.summary = summary
+    }
+}
+
+public struct AtlasFileOrganizerClassifyOutput: Sendable {
+    public var snapshot: AtlasWorkspaceSnapshot
+    public var entries: [FileOrganizerEntry]
+    public var summary: String
+
+    public init(snapshot: AtlasWorkspaceSnapshot, entries: [FileOrganizerEntry], summary: String) {
+        self.snapshot = snapshot
+        self.entries = entries
+        self.summary = summary
+    }
+}
+
+public struct AtlasFileOrganizerPlanOutput: Sendable {
+    public var snapshot: AtlasWorkspaceSnapshot
+    public var actionPlan: ActionPlan
+    public var summary: String
+
+    public init(snapshot: AtlasWorkspaceSnapshot, actionPlan: ActionPlan, summary: String) {
+        self.snapshot = snapshot
+        self.actionPlan = actionPlan
+        self.summary = summary
+    }
+}
+
+public struct AtlasFileOrganizerExecuteOutput: Sendable {
+    public var snapshot: AtlasWorkspaceSnapshot
+    public var events: [AtlasEventEnvelope]
+    public var progressFraction: Double
+    public var summary: String
+
+    public init(
+        snapshot: AtlasWorkspaceSnapshot,
+        events: [AtlasEventEnvelope],
+        progressFraction: Double,
+        summary: String
+    ) {
+        self.snapshot = snapshot
+        self.events = events
+        self.progressFraction = progressFraction
+        self.summary = summary
+    }
+}
+
+public struct AtlasFileOrganizerDryRunOutput: Sendable {
+    public var snapshot: AtlasWorkspaceSnapshot
+    public var actionPlan: ActionPlan
+    public var summary: String
+
+    public init(snapshot: AtlasWorkspaceSnapshot, actionPlan: ActionPlan, summary: String) {
+        self.snapshot = snapshot
+        self.actionPlan = actionPlan
+        self.summary = summary
+    }
+}
+
+// MARK: - File Organizer Use Cases
+
+public struct FileOrganizerScanUseCase: Sendable {
+    public init() {}
+
+    public func makeRequest(taskID: UUID = UUID(), folderPaths: [String]) -> AtlasRequestEnvelope {
+        AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: taskID, folderPaths: folderPaths))
+    }
+}
+
+public struct FileOrganizerClassifyUseCase: Sendable {
+    public init() {}
+
+    public func makeRequest(taskID: UUID = UUID(), entryIDs: [UUID]) -> AtlasRequestEnvelope {
+        AtlasRequestEnvelope(command: .fileOrganizerClassify(taskID: taskID, entryIDs: entryIDs))
+    }
+}
+
+public struct FileOrganizerPreviewPlanUseCase: Sendable {
+    public init() {}
+
+    public func makeRequest(taskID: UUID = UUID(), entryIDs: [UUID]) -> AtlasRequestEnvelope {
+        AtlasRequestEnvelope(command: .fileOrganizerPreviewPlan(taskID: taskID, entryIDs: entryIDs))
+    }
+}
+
+public struct FileOrganizerExecutePlanUseCase: Sendable {
+    public init() {}
+
+    public func makeRequest(planID: UUID) -> AtlasRequestEnvelope {
+        AtlasRequestEnvelope(command: .fileOrganizerExecutePlan(planID: planID))
+    }
+}
+
+public struct FileOrganizerDryRunUseCase: Sendable {
+    public init() {}
+
+    public func makeRequest(planID: UUID) -> AtlasRequestEnvelope {
+        AtlasRequestEnvelope(command: .fileOrganizerDryRun(planID: planID))
     }
 }

@@ -2,6 +2,7 @@ import AtlasDesignSystem
 import AtlasDomain
 import AtlasFeaturesAbout
 import AtlasFeaturesApps
+import AtlasFeaturesFileOrganizer
 import AtlasFeaturesHistory
 import AtlasFeaturesOverview
 import AtlasFeaturesPermissions
@@ -157,6 +158,40 @@ struct AppShellView: View {
                     Task { await model.executeCurrentPlan() }
                 }
             )
+        case .fileOrganizer:
+            FileOrganizerFeatureView(
+                entries: model.fileOrganizerEntries,
+                plan: model.currentFileOrganizerPlan,
+                scanSummary: model.fileOrganizerScanSummary,
+                scanProgress: model.fileOrganizerProgress,
+                isScanning: model.isFileOrganizerScanning,
+                isClassifying: model.isFileOrganizerClassifying,
+                isExecutingPlan: model.isFileOrganizerExecuting,
+                isPlanFresh: model.isFileOrganizerPlanFresh,
+                canExecutePlan: model.canExecuteFileOrganizerPlan,
+                planIssue: model.fileOrganizerPlanIssue,
+                executionIssue: model.fileOrganizerExecutionIssue,
+                scannedFolders: model.scannedFolders,
+                rules: model.fileOrganizerRules,
+                onStartScan: { folders in
+                    Task { await model.runFileOrganizerScan(folderPaths: folders) }
+                },
+                onClassify: { entryIDs in
+                    Task { await model.classifyFileOrganizerEntries(entryIDs: entryIDs) }
+                },
+                onRefreshPreview: {
+                    Task { await model.refreshFileOrganizerPreview() }
+                },
+                onExecutePlan: {
+                    Task { await model.executeFileOrganizerPlan() }
+                },
+                onDryRun: {
+                    Task { await model.dryRunFileOrganizerPlan() }
+                },
+                onEditRules: {
+                    // Future: open rule editor
+                }
+            )
         case .apps:
             AppsFeatureView(
                 apps: model.filteredApps,
@@ -303,13 +338,14 @@ private extension AtlasRoute {
     /// Per-route theme color for sidebar icon gradients and visual accents.
     var themeColor: Color {
         switch self {
-        case .overview:    return AtlasColor.brand
-        case .smartClean:  return AtlasColor.success
-        case .apps:        return AtlasColor.accent
-        case .history:     return AtlasColor.info
-        case .permissions: return AtlasColor.warning
-        case .settings:    return AtlasColor.textSecondary
-        case .about:       return AtlasColor.brand
+        case .overview:       return AtlasColor.brand
+        case .smartClean:     return AtlasColor.success
+        case .fileOrganizer:  return AtlasColor.accent
+        case .apps:           return AtlasColor.info
+        case .history:        return AtlasColor.textSecondary
+        case .permissions:    return AtlasColor.warning
+        case .settings:       return AtlasColor.textSecondary
+        case .about:          return AtlasColor.brand
         }
     }
 
@@ -323,12 +359,14 @@ private extension AtlasRoute {
             return "1"
         case .smartClean:
             return "2"
-        case .apps:
+        case .fileOrganizer:
             return "3"
-        case .history:
+        case .apps:
             return "4"
-        case .permissions:
+        case .history:
             return "5"
+        case .permissions:
+            return "6"
         case .settings:
             return ","
         case .about:

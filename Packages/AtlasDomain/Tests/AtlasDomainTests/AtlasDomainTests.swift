@@ -12,7 +12,7 @@ final class AtlasDomainTests: XCTestCase {
             AtlasRoute.allCases
                 .filter { $0 != .about }
                 .map(\.title),
-            ["概览", "智能清理", "应用", "历史", "权限", "设置"]
+            ["概览", "智能清理", "文件整理", "应用", "历史", "权限", "设置"]
         )
     }
 

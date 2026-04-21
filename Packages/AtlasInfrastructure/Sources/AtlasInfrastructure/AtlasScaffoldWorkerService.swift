@@ -12,6 +12,8 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     private let appsInventoryProvider: (any AtlasAppInventoryProviding)?
     private let helperExecutor: (any AtlasPrivilegedActionExecuting)?
     private let appUninstallEvidenceAnalyzer: AtlasAppUninstallEvidenceAnalyzer
+    private let fileOrganizerScanProvider: (any AtlasFileOrganizerScanning)?
+    private let fileOrganizerClassifier: (any AtlasFileOrganizerClassifying)?
     private let nowProvider: @Sendable () -> Date
     private let allowProviderFailureFallback: Bool
     private let allowStateOnlyCleanExecution: Bool
@@ -25,6 +27,8 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         appsInventoryProvider: (any AtlasAppInventoryProviding)? = nil,
         helperExecutor: (any AtlasPrivilegedActionExecuting)? = nil,
         appUninstallEvidenceAnalyzer: AtlasAppUninstallEvidenceAnalyzer = AtlasAppUninstallEvidenceAnalyzer(),
+        fileOrganizerScanProvider: (any AtlasFileOrganizerScanning)? = nil,
+        fileOrganizerClassifier: (any AtlasFileOrganizerClassifying)? = nil,
         auditStore: AtlasAuditStore = AtlasAuditStore(),
         nowProvider: @escaping @Sendable () -> Date = { Date() },
         allowProviderFailureFallback: Bool = ProcessInfo.processInfo.environment["ATLAS_ALLOW_PROVIDER_FAILURE_FALLBACK"] == "1",
@@ -38,6 +42,8 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         self.appsInventoryProvider = appsInventoryProvider
         self.helperExecutor = helperExecutor
         self.appUninstallEvidenceAnalyzer = appUninstallEvidenceAnalyzer
+        self.fileOrganizerScanProvider = fileOrganizerScanProvider
+        self.fileOrganizerClassifier = fileOrganizerClassifier
         self.nowProvider = nowProvider
         self.allowProviderFailureFallback = allowProviderFailureFallback
         self.allowStateOnlyCleanExecution = allowStateOnlyCleanExecution
@@ -75,6 +81,16 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             return await settingsGet(using: request)
         case let .settingsSet(settings):
             return await settingsSet(using: request, settings: settings)
+        case let .fileOrganizerScan(taskID, folderPaths):
+            return await fileOrganizerScan(using: request, taskID: taskID, folderPaths: folderPaths)
+        case let .fileOrganizerClassify(taskID, entryIDs):
+            return await fileOrganizerClassify(using: request, taskID: taskID, entryIDs: entryIDs)
+        case let .fileOrganizerPreviewPlan(taskID, entryIDs):
+            return await fileOrganizerPreviewPlan(using: request, taskID: taskID, entryIDs: entryIDs)
+        case let .fileOrganizerExecutePlan(planID):
+            return await fileOrganizerExecutePlan(using: request, planID: planID)
+        case let .fileOrganizerDryRun(planID):
+            return await fileOrganizerDryRun(using: request, planID: planID)
         }
     }
 
@@ -393,6 +409,8 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
                 if !state.snapshot.apps.contains(where: { $0.id == restoredApp.id }) {
                     state.snapshot.apps.insert(restoredApp, at: 0)
                 }
+            case .fileOrganizer:
+                break
             case nil:
                 break
             }
@@ -540,6 +558,336 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         let response = AtlasResponseEnvelope(requestID: request.id, response: .settings(state.settings))
         await auditStore.append("Updated settings for request \(request.id.uuidString)")
         return AtlasWorkerCommandResult(request: request, response: response, events: [], snapshot: state.snapshot)
+    }
+
+    // MARK: - File Organizer
+
+    private func fileOrganizerScan(using request: AtlasRequestEnvelope, taskID: UUID, folderPaths: [String]) async -> AtlasWorkerCommandResult {
+        let entries: [FileOrganizerEntry]
+
+        if let scanProvider = fileOrganizerScanProvider {
+            do {
+                let result = try await scanProvider.scanFolders(folderPaths)
+                entries = result.entries
+            } catch {
+                return rejectedResult(
+                    for: request,
+                    code: .executionUnavailable,
+                    reason: "File Organizer scan failed: \(error.localizedDescription)"
+                )
+            }
+        } else {
+            entries = AtlasScaffoldFixtures.fileOrganizerEntries(language: state.settings.language)
+        }
+
+        state.snapshot.fileOrganizerEntries = entries
+        await persistState(context: "file organizer scan")
+
+        let response = AtlasResponseEnvelope(
+            requestID: request.id,
+            response: .fileOrganizerEntries(entries)
+        )
+
+        let progressEvents = (1 ... 3).map { step in
+            AtlasEventEnvelope(event: .taskProgress(taskID: taskID, completed: step, total: 3))
+        }
+
+        let completedRun = TaskRun(
+            id: taskID,
+            kind: .organizeFiles,
+            status: .completed,
+            summary: AtlasL10n.string(
+                entries.count == 1 ? "infrastructure.scan.completed.one" : "infrastructure.scan.completed.other",
+                entries.count
+            ),
+            startedAt: request.issuedAt,
+            finishedAt: Date()
+        )
+        state.snapshot.taskRuns.removeAll { $0.id == taskID }
+        state.snapshot.taskRuns.insert(completedRun, at: 0)
+        await persistState(context: "file organizer scan complete")
+
+        let events = progressEvents + [AtlasEventEnvelope(event: .taskFinished(completedRun))]
+        await auditStore.append("Completed File Organizer scan \(taskID.uuidString)")
+
+        return AtlasWorkerCommandResult(
+            request: request,
+            response: response,
+            events: events,
+            snapshot: state.snapshot
+        )
+    }
+
+    private func fileOrganizerClassify(using request: AtlasRequestEnvelope, taskID: UUID, entryIDs: [UUID]) async -> AtlasWorkerCommandResult {
+        let currentEntries: [FileOrganizerEntry]
+        if entryIDs.isEmpty {
+            currentEntries = state.snapshot.fileOrganizerEntries
+        } else {
+            currentEntries = state.snapshot.fileOrganizerEntries.filter { entryIDs.contains($0.id) }
+        }
+
+        let classifiedEntries: [FileOrganizerEntry]
+        if let classifier = fileOrganizerClassifier {
+            classifiedEntries = await classifier.classify(currentEntries, rules: AtlasScaffoldFixtures.fileOrganizerRules(language: state.settings.language))
+        } else {
+            classifiedEntries = currentEntries
+        }
+
+        for entry in classifiedEntries {
+            if let idx = state.snapshot.fileOrganizerEntries.firstIndex(where: { $0.id == entry.id }) {
+                state.snapshot.fileOrganizerEntries[idx] = entry
+            }
+        }
+        await persistState(context: "file organizer classify")
+
+        let response = AtlasResponseEnvelope(
+            requestID: request.id,
+            response: .fileOrganizerEntries(classifiedEntries)
+        )
+        await auditStore.append("Classified \(classifiedEntries.count) file organizer entries")
+
+        return AtlasWorkerCommandResult(
+            request: request,
+            response: response,
+            events: [],
+            snapshot: state.snapshot
+        )
+    }
+
+    private func fileOrganizerPreviewPlan(using request: AtlasRequestEnvelope, taskID: UUID, entryIDs: [UUID]) async -> AtlasWorkerCommandResult {
+        let entries: [FileOrganizerEntry]
+        if entryIDs.isEmpty {
+            entries = state.snapshot.fileOrganizerEntries
+        } else {
+            entries = state.snapshot.fileOrganizerEntries.filter { entryIDs.contains($0.id) }
+        }
+
+        let plan = makeFileOrganizerPlan(from: entries)
+        let response = AtlasResponseEnvelope(requestID: request.id, response: .fileOrganizerPlan(plan))
+        await auditStore.append("Prepared file organizer plan \(plan.id.uuidString)")
+        return AtlasWorkerCommandResult(
+            request: request,
+            response: response,
+            events: [],
+            snapshot: state.snapshot
+        )
+    }
+
+    private func fileOrganizerExecutePlan(using request: AtlasRequestEnvelope, planID: UUID) async -> AtlasWorkerCommandResult {
+        let entries = state.snapshot.fileOrganizerEntries
+        guard !entries.isEmpty else {
+            return rejectedResult(
+                for: request,
+                code: .invalidSelection,
+                reason: "No file organizer entries available to execute."
+            )
+        }
+
+        let plan = makeFileOrganizerPlan(from: entries)
+        guard plan.id == planID else {
+            return rejectedResult(
+                for: request,
+                code: .invalidSelection,
+                reason: "The requested file organizer plan is no longer current."
+            )
+        }
+
+        let taskID = UUID()
+        var moveMappings: [FileOrganizerMoveMapping] = []
+        var absoluteDestPaths: [String] = []  // parallel array: absolute paths for restore mappings
+        var totalBytesMoved: Int64 = 0
+        var failedMoves: [(String, String)] = []
+
+        let fm = FileManager.default
+        let homeDir = fm.homeDirectoryForCurrentUser.path
+
+        // Track used destination paths to detect cross-source filename collisions
+        var usedDestPaths: [String: Int] = [:]
+
+        for entry in entries {
+            let sourcePath = (entry.path as NSString).expandingTildeInPath
+            var destPath = (entry.proposedDestination as NSString).expandingTildeInPath
+
+            // Safety: only move files within the user's home directory
+            guard sourcePath.hasPrefix(homeDir), destPath.hasPrefix(homeDir) else {
+                await auditStore.append("Skipped out-of-scope path: \(entry.fileName)")
+                failedMoves.append((entry.fileName, "Path outside home directory"))
+                continue
+            }
+            guard fm.fileExists(atPath: sourcePath) else {
+                await auditStore.append("Source no longer exists: \(entry.fileName)")
+                failedMoves.append((entry.fileName, "Source file no longer exists"))
+                continue
+            }
+
+            // Resolve destination conflicts: append (1), (2), etc.
+            if let count = usedDestPaths[destPath] {
+                let ext = (destPath as NSString).pathExtension
+                let baseName = (destPath as NSString).deletingPathExtension
+                let newName: String
+                if ext.isEmpty {
+                    newName = "\(baseName) (\(count + 1))"
+                } else {
+                    newName = "\(baseName) (\(count + 1)).\(ext)"
+                }
+                // Update the display path to reflect the renamed destination
+                let displayDest = entry.proposedDestination
+                let displayExt = (displayDest as NSString).pathExtension
+                let displayBase = (displayDest as NSString).deletingPathExtension
+                if displayExt.isEmpty {
+                    destPath = newName
+                } else {
+                    let updatedDisplay = "\(displayBase) (\(count + 1)).\(displayExt)"
+                    destPath = (updatedDisplay as NSString).expandingTildeInPath
+                }
+            }
+
+            // Check if destination already exists on disk
+            if fm.fileExists(atPath: destPath) {
+                let ext = (destPath as NSString).pathExtension
+                let baseName = (destPath as NSString).deletingPathExtension
+                var candidate: String = destPath
+                var attempt = 1
+                while fm.fileExists(atPath: candidate) {
+                    if ext.isEmpty {
+                        candidate = "\(baseName) (\(attempt))"
+                    } else {
+                        candidate = "\(baseName) (\(attempt)).\(ext)"
+                    }
+                    attempt += 1
+                }
+                destPath = candidate
+            }
+
+            let destDir = (destPath as NSString).deletingLastPathComponent
+            do {
+                try fm.createDirectory(atPath: destDir, withIntermediateDirectories: true)
+                try fm.moveItem(atPath: sourcePath, toPath: destPath)
+                // Map display path back from resolved destPath
+                let resolvedDisplay: String
+                if destPath.hasPrefix(homeDir) {
+                    resolvedDisplay = "~" + String(destPath.dropFirst(homeDir.count))
+                } else {
+                    resolvedDisplay = destPath
+                }
+                moveMappings.append(FileOrganizerMoveMapping(originalPath: entry.path, destinationPath: resolvedDisplay))
+                absoluteDestPaths.append(destPath)
+                totalBytesMoved += entry.bytes
+                usedDestPaths[destPath, default: 0] += 1
+            } catch {
+                await auditStore.append("Failed to move \(entry.fileName): \(error.localizedDescription)")
+                failedMoves.append((entry.fileName, error.localizedDescription))
+            }
+        }
+
+        if !failedMoves.isEmpty {
+            await auditStore.append("File organizer partial failure: \(failedMoves.count)/\(entries.count) files failed")
+        }
+
+        if !moveMappings.isEmpty {
+            let sourceFolder = entries.first?.path ?? "~/Desktop"
+            let recoveryItem = RecoveryItem(
+                title: AtlasL10n.string("fileorganizer.recovery.title"),
+                detail: AtlasL10n.string("fileorganizer.recovery.detail"),
+                originalPath: sourceFolder,
+                bytes: totalBytesMoved,
+                deletedAt: Date(),
+                payload: .fileOrganizer(FileOrganizerRecoveryPayload(
+                    moveMappings: moveMappings,
+                    sourceFolder: sourceFolder
+                )),
+                restoreMappings: zip(moveMappings, absoluteDestPaths).map { mapping, absoluteDest in
+                    RecoveryPathMapping(originalPath: (mapping.originalPath as NSString).expandingTildeInPath, trashedPath: absoluteDest)
+                }
+            )
+            state.snapshot.recoveryItems.insert(recoveryItem, at: 0)
+        }
+
+        state.snapshot.fileOrganizerEntries = []
+        await persistState(context: "file organizer execute plan")
+
+        let completedRun = TaskRun(
+            id: taskID,
+            kind: .organizeFiles,
+            status: failedMoves.count == entries.count ? .failed : .completed,
+            summary: AtlasL10n.string(
+                moveMappings.count == 1 ? "infrastructure.scan.completed.one" : "infrastructure.scan.completed.other",
+                moveMappings.count
+            ),
+            startedAt: request.issuedAt,
+            finishedAt: Date()
+        )
+        state.snapshot.taskRuns.removeAll { $0.id == taskID }
+        state.snapshot.taskRuns.insert(completedRun, at: 0)
+        await persistState(context: "file organizer execute complete")
+
+        let response = AtlasResponseEnvelope(
+            requestID: request.id,
+            response: .accepted(task: AtlasTaskDescriptor(taskID: taskID, kind: .organizeFiles))
+        )
+        let events = progressEvents(taskID: taskID, total: 3) + [AtlasEventEnvelope(event: .taskFinished(completedRun))]
+        await auditStore.append("Executed file organizer plan: \(moveMappings.count) moved, \(failedMoves.count) failed")
+        return AtlasWorkerCommandResult(request: request, response: response, events: events, snapshot: state.snapshot)
+    }
+
+    private func fileOrganizerDryRun(using request: AtlasRequestEnvelope, planID: UUID) async -> AtlasWorkerCommandResult {
+        let entries = state.snapshot.fileOrganizerEntries
+        let plan = makeFileOrganizerPlan(from: entries)
+        guard plan.id == planID else {
+            return rejectedResult(
+                for: request,
+                code: .invalidSelection,
+                reason: "The requested file organizer plan is no longer current."
+            )
+        }
+        let response = AtlasResponseEnvelope(requestID: request.id, response: .fileOrganizerPlan(plan))
+        await auditStore.append("Dry run file organizer plan \(plan.id.uuidString)")
+        return AtlasWorkerCommandResult(
+            request: request,
+            response: response,
+            events: [],
+            snapshot: state.snapshot
+        )
+    }
+
+    private func makeFileOrganizerPlan(from entries: [FileOrganizerEntry]) -> ActionPlan {
+        let items = entries.map { entry in
+            ActionItem(
+                id: entry.id,
+                title: AtlasL10n.string("application.plan.reviewFinding", entry.fileName),
+                detail: "\(entry.path) → \(entry.proposedDestination)",
+                kind: .organizeFile,
+                recoverable: true,
+                targetPaths: [entry.path]
+            )
+        }
+        // Deterministic plan ID: use first entry's ID as base to produce a stable UUID
+        let base = items.first?.id ?? UUID()
+        let baseString = base.uuidString
+        let planID = UUID(uuid: (
+            baseString.utf8.dropFirst(0).reduce(0, { $0 ^ $1 }),
+            baseString.utf8.dropFirst(1).reduce(0, { $0 ^ $1 }),
+            baseString.utf8.dropFirst(2).reduce(0, { $0 ^ $1 }),
+            baseString.utf8.dropFirst(3).reduce(0, { $0 ^ $1 }),
+            0x40,
+            0x11,
+            0x4F,
+            0x9B,
+            0x8A,
+            0x5B,
+            UInt8(items.count),
+            UInt8(entries.map(\.bytes).reduce(0, +) & 0xFF),
+            baseString.utf8.dropFirst(4).reduce(0, { $0 ^ $1 }),
+            baseString.utf8.dropFirst(5).reduce(0, { $0 ^ $1 }),
+            baseString.utf8.dropFirst(6).reduce(0, { $0 ^ $1 }),
+            baseString.utf8.dropFirst(7).reduce(0, { $0 ^ $1 })
+        ))
+        return ActionPlan(
+            id: planID,
+            title: AtlasL10n.string("fileorganizer.section.plan.title"),
+            items: items,
+            estimatedBytes: entries.map(\.bytes).reduce(0, +)
+        )
     }
 
     private func rejectedResult(
@@ -1060,6 +1408,8 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             return AtlasL10n.string("infrastructure.action.archiveRecovery", language: state.settings.language, finding.title)
         case .removeCache:
             return AtlasL10n.string("infrastructure.action.moveToTrash", language: state.settings.language, finding.title)
+        case .organizeFile:
+            return AtlasL10n.string("infrastructure.action.archiveRecovery", language: state.settings.language, finding.title)
         }
     }
 

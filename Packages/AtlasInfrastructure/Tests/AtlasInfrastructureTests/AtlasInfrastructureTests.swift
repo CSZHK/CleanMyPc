@@ -1826,6 +1826,375 @@ private actor RestoreConflictPrivilegedHelperExecutor: AtlasPrivilegedActionExec
     }
 }
 
+// MARK: - File Organizer Use-Case Tests
+
+extension AtlasInfrastructureTests {
+
+    private func emptyWorkspaceState() -> AtlasWorkspaceState {
+        AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 0,
+                findings: [],
+                apps: [],
+                taskRuns: [],
+                recoveryItems: [],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "", items: [], estimatedBytes: 0),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+    }
+
+    func testFileOrganizerScanReturnsFixtureEntriesWhenNoProvider() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let worker = AtlasScaffoldWorkerService(repository: repository)
+
+        let result = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["~/Desktop"]))
+        )
+
+        if case let .fileOrganizerEntries(entries) = result.response.response {
+            XCTAssertFalse(entries.isEmpty, "Should return fixture entries when no scan provider")
+            XCTAssertEqual(result.snapshot.fileOrganizerEntries.count, entries.count)
+        } else {
+            XCTFail("Expected fileOrganizerEntries response")
+        }
+    }
+
+    func testFileOrganizerScanUsesProviderWhenAvailable() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let stubEntries = [
+            FileOrganizerEntry(path: "~/Desktop/test.png", fileName: "test.png", bytes: 1024, category: .images, proposedDestination: "~/Organized/Images/test.png")
+        ]
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: StubFileOrganizerScanner(entries: stubEntries)
+        )
+
+        let result = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["~/Desktop"]))
+        )
+
+        if case let .fileOrganizerEntries(entries) = result.response.response {
+            XCTAssertEqual(entries.count, 1)
+            XCTAssertEqual(entries.first?.fileName, "test.png")
+        } else {
+            XCTFail("Expected fileOrganizerEntries response")
+        }
+    }
+
+    func testFileOrganizerScanRejectsOnProviderFailure() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: FailingFileOrganizerScanner()
+        )
+
+        let result = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["~/Desktop"]))
+        )
+
+        if case let .rejected(code, _) = result.response.response {
+            XCTAssertEqual(code, .executionUnavailable)
+        } else {
+            XCTFail("Expected rejected response for scan failure")
+        }
+    }
+
+    func testFileOrganizerPreviewPlanGeneratesActionItems() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        _ = try repository.saveState(emptyWorkspaceState())
+
+        let entries = [
+            FileOrganizerEntry(id: UUID(uuidString: "a0000000-0000-0000-0000-000000000001")!, path: "~/Desktop/a.png", fileName: "a.png", bytes: 100, category: .images, proposedDestination: "~/Organized/Images/a.png"),
+            FileOrganizerEntry(id: UUID(uuidString: "a0000000-0000-0000-0000-000000000002")!, path: "~/Desktop/b.pdf", fileName: "b.pdf", bytes: 200, category: .documents, proposedDestination: "~/Organized/Documents/b.pdf"),
+        ]
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: StubFileOrganizerScanner(entries: entries)
+        )
+        _ = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["~/Desktop"]))
+        )
+
+        let result = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerPreviewPlan(taskID: UUID(), entryIDs: []))
+        )
+
+        if case let .fileOrganizerPlan(plan) = result.response.response {
+            XCTAssertEqual(plan.items.count, 2)
+            XCTAssertEqual(plan.estimatedBytes, 300)
+            XCTAssertTrue(plan.items.allSatisfy { $0.kind == .organizeFile })
+            XCTAssertTrue(plan.items.allSatisfy { $0.recoverable })
+        } else {
+            XCTFail("Expected fileOrganizerPlan response")
+        }
+    }
+
+    func testFileOrganizerExecutePlanMovesFilesAndCreatesRecoveryItem() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        _ = try repository.saveState(emptyWorkspaceState())
+        let fm = FileManager.default
+
+        // Create real temp file inside home directory so path traversal guard passes
+        let homeDir = fm.homeDirectoryForCurrentUser.path
+        let sourceDir = (homeDir as NSString).appendingPathComponent("Library/Caches/AtlasFOTest-\(UUID().uuidString)")
+        try fm.createDirectory(atPath: sourceDir, withIntermediateDirectories: true)
+        let sourceFileURL = URL(fileURLWithPath: sourceDir).appendingPathComponent("sample.png")
+        try Data("png-data".utf8).write(to: sourceFileURL)
+        addTeardownBlock {
+            try? fm.removeItem(atPath: sourceDir)
+            try? fm.removeItem(atPath: (homeDir as NSString).appendingPathComponent("Organized"))
+        }
+
+        let displayPath = "~" + String(sourceFileURL.path.dropFirst(homeDir.count))
+        let displayDest = "~/Organized/Images/sample.png"
+
+        let entry = FileOrganizerEntry(
+            path: displayPath,
+            fileName: "sample.png",
+            bytes: 8,
+            category: .images,
+            proposedDestination: displayDest
+        )
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: StubFileOrganizerScanner(entries: [entry])
+        )
+        _ = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["~/Desktop"]))
+        )
+
+        let planResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerPreviewPlan(taskID: UUID(), entryIDs: []))
+        )
+        guard case let .fileOrganizerPlan(plan) = planResult.response.response else {
+            XCTFail("Expected plan"); return
+        }
+
+        let executeResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerExecutePlan(planID: plan.id))
+        )
+
+        if case let .accepted(task) = executeResult.response.response {
+            XCTAssertEqual(task.kind, TaskKind.organizeFiles)
+        } else if case let .rejected(_, reason) = executeResult.response.response {
+            XCTFail("Execute was rejected: \(reason)")
+        } else {
+            XCTFail("Expected accepted response, got \(executeResult.response.response)")
+        }
+
+        XCTAssertFalse(fm.fileExists(atPath: sourceFileURL.path))
+        let destPath = (displayDest as NSString).expandingTildeInPath
+        XCTAssertTrue(fm.fileExists(atPath: destPath))
+
+        // Empty state had 0 recovery items, so after execute should have 1
+        XCTAssertEqual(executeResult.snapshot.recoveryItems.count, 1)
+        XCTAssertEqual(executeResult.snapshot.fileOrganizerEntries.count, 0)
+    }
+
+    func testFileOrganizerExecutePlanRejectsStalePlanID() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        _ = try repository.saveState(emptyWorkspaceState())
+
+        let entries = [
+            FileOrganizerEntry(path: "~/Desktop/test.png", fileName: "test.png", bytes: 100, category: .images, proposedDestination: "~/Organized/Images/test.png")
+        ]
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: StubFileOrganizerScanner(entries: entries)
+        )
+        _ = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["~/Desktop"]))
+        )
+
+        let stalePlanID = UUID()
+        let result = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerExecutePlan(planID: stalePlanID))
+        )
+
+        if case let .rejected(code, _) = result.response.response {
+            XCTAssertEqual(code, .invalidSelection)
+        } else {
+            XCTFail("Expected rejected response for stale plan ID")
+        }
+    }
+
+    func testFileOrganizerDryRunValidatesPlanID() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        _ = try repository.saveState(emptyWorkspaceState())
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: StubFileOrganizerScanner(entries: [
+                FileOrganizerEntry(path: "~/Desktop/test.png", fileName: "test.png", bytes: 100, category: .images, proposedDestination: "~/Organized/Images/test.png")
+            ])
+        )
+        _ = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["~/Desktop"]))
+        )
+
+        let stalePlanID = UUID()
+        let result = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerDryRun(planID: stalePlanID))
+        )
+
+        if case let .rejected(code, _) = result.response.response {
+            XCTAssertEqual(code, .invalidSelection)
+        } else {
+            XCTFail("Expected rejected response for stale plan ID in dry run")
+        }
+    }
+
+    func testFileOrganizerDryRunAcceptsCurrentPlanID() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        _ = try repository.saveState(emptyWorkspaceState())
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: StubFileOrganizerScanner(entries: [
+                FileOrganizerEntry(path: "~/Desktop/test.png", fileName: "test.png", bytes: 100, category: .images, proposedDestination: "~/Organized/Images/test.png")
+            ])
+        )
+        _ = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["~/Desktop"]))
+        )
+
+        let planResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerPreviewPlan(taskID: UUID(), entryIDs: []))
+        )
+        guard case let .fileOrganizerPlan(plan) = planResult.response.response else {
+            XCTFail("Expected plan, got \(planResult.response.response)"); return
+        }
+
+        let dryRunResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerDryRun(planID: plan.id))
+        )
+
+        if case let .fileOrganizerPlan(dryRunPlan) = dryRunResult.response.response {
+            XCTAssertEqual(dryRunPlan.items.count, plan.items.count)
+        } else {
+            XCTFail("Expected fileOrganizerPlan response from dry run, got \(dryRunResult.response.response)")
+        }
+    }
+
+    func testFileOrganizerExecuteHandlesDuplicateFilenames() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        _ = try repository.saveState(emptyWorkspaceState())
+
+        let fm = FileManager.default
+        let homeDir = fm.homeDirectoryForCurrentUser.path
+
+        // Create two source directories with same-named file inside home
+        let testBase = (homeDir as NSString).appendingPathComponent("Library/Caches/AtlasFODupTest-\(UUID().uuidString)")
+        let sourceDir1 = (testBase as NSString).appendingPathComponent("dir1")
+        let sourceDir2 = (testBase as NSString).appendingPathComponent("dir2")
+        try fm.createDirectory(atPath: sourceDir1, withIntermediateDirectories: true)
+        try fm.createDirectory(atPath: sourceDir2, withIntermediateDirectories: true)
+        let file1 = (sourceDir1 as NSString).appendingPathComponent("dup.png")
+        let file2 = (sourceDir2 as NSString).appendingPathComponent("dup.png")
+        try Data("png1".utf8).write(to: URL(fileURLWithPath: file1))
+        try Data("png2".utf8).write(to: URL(fileURLWithPath: file2))
+        addTeardownBlock {
+            try? fm.removeItem(atPath: testBase)
+            try? fm.removeItem(atPath: (homeDir as NSString).appendingPathComponent("Organized"))
+        }
+
+        let displayPath1 = "~" + String(file1.dropFirst(homeDir.count))
+        let displayPath2 = "~" + String(file2.dropFirst(homeDir.count))
+
+        let entries = [
+            FileOrganizerEntry(path: displayPath1, fileName: "dup.png", bytes: 4, category: .images, proposedDestination: "~/Organized/Images/dup.png"),
+            FileOrganizerEntry(path: displayPath2, fileName: "dup.png", bytes: 4, category: .images, proposedDestination: "~/Organized/Images/dup.png"),
+        ]
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: StubFileOrganizerScanner(entries: entries)
+        )
+        _ = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["~/Desktop"]))
+        )
+
+        let planResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerPreviewPlan(taskID: UUID(), entryIDs: []))
+        )
+        guard case let .fileOrganizerPlan(plan) = planResult.response.response else {
+            XCTFail("Expected plan"); return
+        }
+
+        let executeResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerExecutePlan(planID: plan.id))
+        )
+
+        // Both files should be moved (second gets renamed with (1) suffix)
+        XCTAssertEqual(executeResult.snapshot.recoveryItems.first?.restoreMappings?.count, 2)
+        XCTAssertFalse(fm.fileExists(atPath: file1))
+        XCTAssertFalse(fm.fileExists(atPath: file2))
+    }
+
+    func testFileOrganizerExecuteSkipsOutOfHomePath() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        _ = try repository.saveState(emptyWorkspaceState())
+
+        let entry = FileOrganizerEntry(
+            path: "/etc/hosts",
+            fileName: "hosts",
+            bytes: 200,
+            category: .other,
+            proposedDestination: "/etc/Organized/hosts"
+        )
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: StubFileOrganizerScanner(entries: [entry])
+        )
+        _ = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["/etc"]))
+        )
+
+        let planResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerPreviewPlan(taskID: UUID(), entryIDs: []))
+        )
+        guard case let .fileOrganizerPlan(plan) = planResult.response.response else {
+            XCTFail("Expected plan"); return
+        }
+
+        let executeResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerExecutePlan(planID: plan.id))
+        )
+
+        // Should complete but with 0 moves (out-of-scope paths skipped)
+        XCTAssertEqual(executeResult.snapshot.recoveryItems.count, 0)
+        // /etc/hosts should still exist (not moved)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "/etc/hosts"))
+    }
+}
+
+// MARK: - File Organizer Test Stubs
+
+private struct StubFileOrganizerScanner: AtlasFileOrganizerScanning {
+    let entries: [FileOrganizerEntry]
+
+    func scanFolders(_ paths: [String]) async throws -> FileOrganizerScanResult {
+        FileOrganizerScanResult(
+            entries: entries,
+            totalFiles: entries.count,
+            totalBytes: entries.map(\.bytes).reduce(0, +),
+            categoryCounts: Dictionary(grouping: entries, by: \.category).mapValues(\.count)
+        )
+    }
+}
+
+private struct FailingFileOrganizerScanner: AtlasFileOrganizerScanning {
+    func scanFolders(_ paths: [String]) async throws -> FileOrganizerScanResult {
+        struct ScanError: LocalizedError { var errorDescription: String? { "simulated scan failure" } }
+        throw ScanError()
+    }
+}
+
 // MARK: - AtlasPathValidator Tests
 
 final class AtlasPathValidatorTests: XCTestCase {

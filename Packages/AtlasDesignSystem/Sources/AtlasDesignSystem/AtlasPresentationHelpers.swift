@@ -48,6 +48,8 @@ public extension TaskKind {
             return "arrow.uturn.backward.circle"
         case .inspectPermissions:
             return "lock.shield"
+        case .organizeFiles:
+            return "folder.badge.gearshape"
         }
     }
 }
@@ -65,6 +67,8 @@ public extension ActionItem.Kind {
             return "lock.shield"
         case .reviewEvidence:
             return "doc.text.magnifyingglass"
+        case .organizeFile:
+            return "folder.badge.gearshape"
         }
     }
 }

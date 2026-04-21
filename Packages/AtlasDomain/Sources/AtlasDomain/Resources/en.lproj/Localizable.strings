@@ -16,6 +16,8 @@
 "route.settings.subtitle" = "Preferences, exclusions, acknowledgement, and notices.";
 "route.about.title" = "About";
 "route.about.subtitle" = "Meet the developer and explore more products.";
+"route.fileorganizer.title" = "File Organizer";
+"route.fileorganizer.subtitle" = "Automatically organize files on your Desktop and Downloads by type.";
 
 "risk.safe" = "Safe";
 "risk.review" = "Review";
@@ -26,6 +28,7 @@
 "taskkind.uninstallApp" = "Uninstall App";
 "taskkind.restore" = "Restore Item";
 "taskkind.inspectPermissions" = "Check Permission Status";
+"taskkind.organizeFiles" = "File Organizer";
 
 "taskstatus.queued" = "Queued";
 "taskstatus.running" = "Running";
@@ -828,3 +831,71 @@
 
 "smartclean.finding.expand" = "Show more";
 "smartclean.finding.collapse" = "Show less";
+
+// MARK: - File Organizer
+
+"fileorganizer.category.images" = "Images";
+"fileorganizer.category.documents" = "Documents";
+"fileorganizer.category.videos" = "Videos";
+"fileorganizer.category.audio" = "Audio";
+"fileorganizer.category.archives" = "Archives";
+"fileorganizer.category.code" = "Code";
+"fileorganizer.category.installers" = "Installers";
+"fileorganizer.category.other" = "Other";
+
+"fileorganizer.screen.title" = "File Organizer";
+"fileorganizer.screen.subtitle" = "Scan your Desktop and Downloads folders, then automatically organize files by type.";
+"fileorganizer.status.ready" = "Select folders and start scanning";
+"fileorganizer.status.scanning" = "Scanning files…";
+"fileorganizer.status.classifying" = "Classifying files…";
+"fileorganizer.status.complete" = "Scan complete, classification plan generated";
+"fileorganizer.status.executing" = "Organizing files…";
+"fileorganizer.status.empty" = "No files found to organize";
+
+"fileorganizer.action.scan" = "Scan Folders";
+"fileorganizer.action.scan.hint" = "Scan files in selected folders and classify by type.";
+"fileorganizer.action.classify" = "Classify Files";
+"fileorganizer.action.preview" = "Preview Plan";
+"fileorganizer.action.execute" = "Execute Organization";
+"fileorganizer.action.execute.hint" = "Move files to categorized subdirectories based on the plan.";
+"fileorganizer.action.dryRun" = "Dry Run";
+"fileorganizer.action.dryRun.hint" = "Simulate the organization without actually moving files.";
+"fileorganizer.action.editRules" = "Edit Rules";
+
+"fileorganizer.metric.totalFiles.title" = "Total Files";
+"fileorganizer.metric.totalSize.title" = "Total Size";
+"fileorganizer.metric.categories.title" = "Categories";
+"fileorganizer.metric.totalFiles.detail" = "Number of files found that can be organized.";
+"fileorganizer.metric.totalSize.detail" = "Total size of files found during scan.";
+"fileorganizer.metric.categories.detail" = "Number of different file type categories.";
+
+"fileorganizer.section.results.title" = "Classification Results";
+"fileorganizer.section.plan.title" = "Move Plan";
+"fileorganizer.section.rules.title" = "Classification Rules";
+
+"fileorganizer.preview.row.from" = "Original";
+"fileorganizer.preview.row.to" = "Destination";
+"fileorganizer.preview.empty.title" = "No classification plan yet";
+"fileorganizer.preview.empty.detail" = "Scan and classify files first, then preview the move plan.";
+
+"fileorganizer.confirm.execute.title" = "Execute file organization?";
+"fileorganizer.confirm.execute.message" = "Files will be moved according to the classification plan. You can restore original locations from History.";
+
+"fileorganizer.folderpicker.title" = "Select folders to organize";
+"fileorganizer.folderpicker.default.desktop" = "Desktop";
+"fileorganizer.folderpicker.default.downloads" = "Downloads";
+
+"fileorganizer.callout.ready.title" = "Ready to organize files";
+"fileorganizer.callout.ready.detail" = "Select folders to organize. Atlas will scan and classify files by type.";
+"fileorganizer.callout.scanning.title" = "Scanning files";
+"fileorganizer.callout.scanning.detail" = "Atlas is scanning files in the selected folders and determining categories.";
+"fileorganizer.callout.complete.title" = "Classification complete";
+"fileorganizer.callout.complete.detail" = "Found %d files totaling %@. Review the results before executing.";
+
+"fileorganizer.recovery.title" = "File Organization Restore";
+"fileorganizer.recovery.detail" = "Move files back to their original locations.";
+
+"model.fileorganizer.ready" = "Ready to scan and organize files.";
+"model.fileorganizer.scanning" = "Scanning files…";
+"model.fileorganizer.classifying" = "Classifying files…";
+"model.fileorganizer.executing" = "Executing file organization…";

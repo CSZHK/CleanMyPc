@@ -1280,6 +1280,8 @@ private extension RecoveryItem {
             }
         case nil:
             return .other
+        case .fileOrganizer:
+            return .other
         }
     }
 }

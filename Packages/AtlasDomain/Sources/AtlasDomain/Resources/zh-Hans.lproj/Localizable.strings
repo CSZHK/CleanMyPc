@@ -16,6 +16,8 @@
 "route.settings.subtitle" = "偏好、排除项、致谢和通知。";
 "route.about.title" = "关于";
 "route.about.subtitle" = "了解作者，探索更多产品。";
+"route.fileorganizer.title" = "文件整理";
+"route.fileorganizer.subtitle" = "按类型自动归类桌面和下载文件夹中的文件。";
 
 "risk.safe" = "安全";
 "risk.review" = "复核";
@@ -26,6 +28,7 @@
 "taskkind.uninstallApp" = "卸载应用";
 "taskkind.restore" = "恢复项目";
 "taskkind.inspectPermissions" = "检查权限状态";
+"taskkind.organizeFiles" = "文件整理";
 
 "taskstatus.queued" = "排队中";
 "taskstatus.running" = "进行中";
@@ -828,3 +831,71 @@
 
 "smartclean.finding.expand" = "展开";
 "smartclean.finding.collapse" = "收起";
+
+// MARK: - File Organizer
+
+"fileorganizer.category.images" = "图片";
+"fileorganizer.category.documents" = "文档";
+"fileorganizer.category.videos" = "视频";
+"fileorganizer.category.audio" = "音频";
+"fileorganizer.category.archives" = "压缩包";
+"fileorganizer.category.code" = "代码";
+"fileorganizer.category.installers" = "安装包";
+"fileorganizer.category.other" = "其他";
+
+"fileorganizer.screen.title" = "文件整理";
+"fileorganizer.screen.subtitle" = "扫描桌面和下载文件夹，按类型自动归类文件到有序子目录。";
+"fileorganizer.status.ready" = "选择文件夹并开始扫描";
+"fileorganizer.status.scanning" = "正在扫描文件…";
+"fileorganizer.status.classifying" = "正在分类文件…";
+"fileorganizer.status.complete" = "扫描完成，已生成分类计划";
+"fileorganizer.status.executing" = "正在执行文件整理…";
+"fileorganizer.status.empty" = "未发现可整理的文件";
+
+"fileorganizer.action.scan" = "扫描文件夹";
+"fileorganizer.action.scan.hint" = "扫描所选文件夹中的文件并按类型分类。";
+"fileorganizer.action.classify" = "分类文件";
+"fileorganizer.action.preview" = "预览计划";
+"fileorganizer.action.execute" = "执行整理";
+"fileorganizer.action.execute.hint" = "按分类计划将文件移动到对应子目录。";
+"fileorganizer.action.dryRun" = "模拟运行";
+"fileorganizer.action.dryRun.hint" = "模拟整理过程，不实际移动文件。";
+"fileorganizer.action.editRules" = "编辑规则";
+
+"fileorganizer.metric.totalFiles.title" = "文件总数";
+"fileorganizer.metric.totalSize.title" = "总大小";
+"fileorganizer.metric.categories.title" = "分类数量";
+"fileorganizer.metric.totalFiles.detail" = "扫描发现的可整理文件数量。";
+"fileorganizer.metric.totalSize.detail" = "扫描发现的文件总大小。";
+"fileorganizer.metric.categories.detail" = "按类型分成的不同分类数量。";
+
+"fileorganizer.section.results.title" = "分类结果";
+"fileorganizer.section.plan.title" = "移动计划";
+"fileorganizer.section.rules.title" = "分类规则";
+
+"fileorganizer.preview.row.from" = "原始位置";
+"fileorganizer.preview.row.to" = "目标位置";
+"fileorganizer.preview.empty.title" = "还没有分类计划";
+"fileorganizer.preview.empty.detail" = "先扫描并分类文件，再预览移动计划。";
+
+"fileorganizer.confirm.execute.title" = "执行文件整理？";
+"fileorganizer.confirm.execute.message" = "将按分类计划移动文件。可在历史中恢复原始位置。";
+
+"fileorganizer.folderpicker.title" = "选择要整理的文件夹";
+"fileorganizer.folderpicker.default.desktop" = "桌面";
+"fileorganizer.folderpicker.default.downloads" = "下载";
+
+"fileorganizer.callout.ready.title" = "准备开始文件整理";
+"fileorganizer.callout.ready.detail" = "选择要整理的文件夹，Atlas 会扫描并按文件类型自动生成分类计划。";
+"fileorganizer.callout.scanning.title" = "正在扫描文件";
+"fileorganizer.callout.scanning.detail" = "Atlas 正在扫描所选文件夹中的文件并确定分类。";
+"fileorganizer.callout.complete.title" = "分类完成";
+"fileorganizer.callout.complete.detail" = "已发现 %d 个文件，共 %@。请复核分类结果后执行整理。";
+
+"fileorganizer.recovery.title" = "文件整理恢复";
+"fileorganizer.recovery.detail" = "将文件移回原始位置。";
+
+"model.fileorganizer.ready" = "准备扫描并整理文件。";
+"model.fileorganizer.scanning" = "正在扫描文件…";
+"model.fileorganizer.classifying" = "正在分类文件…";
+"model.fileorganizer.executing" = "正在执行文件整理…";

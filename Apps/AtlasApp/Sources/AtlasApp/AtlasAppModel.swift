@@ -38,6 +38,20 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var updateCheckNotice: String?
     @Published private(set) var updateCheckError: String?
 
+    // File Organizer state
+    @Published private(set) var fileOrganizerEntries: [FileOrganizerEntry] = []
+    @Published private(set) var isFileOrganizerScanning = false
+    @Published private(set) var isFileOrganizerClassifying = false
+    @Published private(set) var isFileOrganizerExecuting = false
+    @Published private(set) var fileOrganizerScanSummary: String
+    @Published private(set) var fileOrganizerProgress: Double = 0
+    @Published private(set) var currentFileOrganizerPlan: ActionPlan
+    @Published private(set) var isFileOrganizerPlanFresh = false
+    @Published private(set) var fileOrganizerPlanIssue: String?
+    @Published private(set) var fileOrganizerExecutionIssue: String?
+    @Published private(set) var scannedFolders: [String] = []
+    @Published private(set) var fileOrganizerRules: [FileOrganizerRule]
+
     private let repository: AtlasWorkspaceRepository
     private let workspaceController: AtlasWorkspaceController
     private let updateChecker = AtlasUpdateChecker()
@@ -68,12 +82,17 @@ final class AtlasAppModel: ObservableObject {
         self.isCurrentSmartCleanPlanFresh = false
         self.smartCleanPlanIssue = nil
         self.smartCleanExecutionIssue = nil
+        self.fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.ready")
+        self.currentFileOrganizerPlan = ActionPlan(title: "", items: [], estimatedBytes: 0)
+        self.fileOrganizerRules = AtlasScaffoldFixtures.fileOrganizerRules
         let directWorker = AtlasScaffoldWorkerService(
             repository: repository,
             healthSnapshotProvider: MoleHealthAdapter(),
             smartCleanScanProvider: MoleSmartCleanAdapter(),
             appsInventoryProvider: MacAppsInventoryAdapter(),
-            helperExecutor: AtlasPrivilegedHelperClient()
+            helperExecutor: AtlasPrivilegedHelperClient(),
+            fileOrganizerScanProvider: AtlasFileOrganizerScanner(),
+            fileOrganizerClassifier: AtlasFileOrganizerClassifier()
         )
         let prefersXPCWorker = preferXPCWorker ?? (ProcessInfo.processInfo.environment["ATLAS_PREFER_XPC_WORKER"] == "1")
         let shouldAllowScaffoldFallback = allowScaffoldFallback
@@ -203,6 +222,8 @@ final class AtlasAppModel: ObservableObject {
             || isPermissionsRefreshing
             || isAppActionRunning
             || restoringRecoveryItemID != nil
+            || isFileOrganizerScanning
+            || isFileOrganizerExecuting
     }
 
     var canExecuteCurrentSmartCleanPlan: Bool {
@@ -215,6 +236,10 @@ final class AtlasAppModel: ObservableObject {
             return false
         }
         return executableItems.allSatisfy { !$0.resolvedTargetPaths(findings: snapshot.findings).isEmpty }
+    }
+
+    var canExecuteFileOrganizerPlan: Bool {
+        !currentFileOrganizerPlan.items.isEmpty && isFileOrganizerPlanFresh
     }
 
     func refreshHealthSnapshotIfNeeded() async {
@@ -528,6 +553,8 @@ final class AtlasAppModel: ObservableObject {
             await refreshHealthSnapshot()
         case .smartClean:
             await runSmartCleanScan()
+        case .fileOrganizer:
+            break  // File Organizer requires user to select folders and tap scan; no auto-scan on route change
         case .apps:
             await refreshApps()
         case .history:
@@ -587,6 +614,116 @@ final class AtlasAppModel: ObservableObject {
         }
         if !isPermissionsRefreshing {
             latestPermissionsSummary = AtlasL10n.string("model.permissions.ready")
+        }
+        if !isFileOrganizerScanning && !isFileOrganizerExecuting {
+            fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.ready")
+        }
+    }
+
+    // MARK: - File Organizer
+
+    func runFileOrganizerScan(folderPaths: [String]) async {
+        guard !isFileOrganizerScanning else { return }
+
+        isFileOrganizerScanning = true
+        fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.scanning")
+        fileOrganizerProgress = 0
+        scannedFolders = folderPaths
+        fileOrganizerExecutionIssue = nil
+
+        do {
+            let output = try await workspaceController.fileOrganizerScan(folderPaths: folderPaths)
+            withAnimation(.snappy(duration: 0.24)) {
+                snapshot = output.snapshot
+                fileOrganizerEntries = output.entries
+                fileOrganizerScanSummary = output.summary
+                fileOrganizerProgress = output.progressFraction
+                isFileOrganizerPlanFresh = false
+                fileOrganizerPlanIssue = nil
+            }
+        } catch {
+            fileOrganizerScanSummary = error.localizedDescription
+            fileOrganizerProgress = 0
+            fileOrganizerPlanIssue = error.localizedDescription
+        }
+
+        isFileOrganizerScanning = false
+    }
+
+    func classifyFileOrganizerEntries(entryIDs: [UUID]) async {
+        guard !isFileOrganizerClassifying else { return }
+
+        isFileOrganizerClassifying = true
+        fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.classifying")
+
+        do {
+            let output = try await workspaceController.fileOrganizerClassify(entryIDs: entryIDs)
+            withAnimation(.snappy(duration: 0.24)) {
+                snapshot = output.snapshot
+                fileOrganizerEntries = output.entries
+                fileOrganizerScanSummary = output.summary
+            }
+        } catch {
+            fileOrganizerScanSummary = error.localizedDescription
+        }
+
+        isFileOrganizerClassifying = false
+    }
+
+    func refreshFileOrganizerPreview() async {
+        fileOrganizerExecutionIssue = nil
+        do {
+            let output = try await workspaceController.fileOrganizerPreviewPlan(entryIDs: fileOrganizerEntries.map(\.id))
+            withAnimation(.snappy(duration: 0.24)) {
+                snapshot = output.snapshot
+                currentFileOrganizerPlan = output.actionPlan
+                fileOrganizerScanSummary = output.summary
+                isFileOrganizerPlanFresh = true
+                fileOrganizerPlanIssue = nil
+                fileOrganizerExecutionIssue = nil
+            }
+        } catch {
+            fileOrganizerScanSummary = error.localizedDescription
+            fileOrganizerPlanIssue = error.localizedDescription
+        }
+    }
+
+    func executeFileOrganizerPlan() async {
+        guard !isFileOrganizerExecuting, !currentFileOrganizerPlan.items.isEmpty else { return }
+
+        isFileOrganizerExecuting = true
+        fileOrganizerExecutionIssue = nil
+
+        do {
+            let output = try await workspaceController.fileOrganizerExecutePlan(planID: currentFileOrganizerPlan.id)
+            withAnimation(.snappy(duration: 0.24)) {
+                snapshot = output.snapshot
+                fileOrganizerEntries = []
+                currentFileOrganizerPlan = ActionPlan(title: "", items: [], estimatedBytes: 0)
+                fileOrganizerScanSummary = output.summary
+                fileOrganizerProgress = output.progressFraction
+                isFileOrganizerPlanFresh = false
+                fileOrganizerPlanIssue = nil
+                fileOrganizerExecutionIssue = nil
+            }
+        } catch {
+            fileOrganizerScanSummary = error.localizedDescription
+            fileOrganizerExecutionIssue = error.localizedDescription
+        }
+
+        isFileOrganizerExecuting = false
+    }
+
+    func dryRunFileOrganizerPlan() async {
+        do {
+            let output = try await workspaceController.fileOrganizerDryRun(planID: currentFileOrganizerPlan.id)
+            withAnimation(.snappy(duration: 0.24)) {
+                snapshot = output.snapshot
+                currentFileOrganizerPlan = output.actionPlan
+                fileOrganizerScanSummary = output.summary
+            }
+        } catch {
+            fileOrganizerScanSummary = error.localizedDescription
         }
     }
 

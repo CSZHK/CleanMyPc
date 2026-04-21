@@ -17,6 +17,7 @@ let package = Package(
         .library(name: "AtlasFeaturesAbout", targets: ["AtlasFeaturesAbout"]),
         .library(name: "AtlasFeaturesSettings", targets: ["AtlasFeaturesSettings"]),
         .library(name: "AtlasFeaturesSmartClean", targets: ["AtlasFeaturesSmartClean"]),
+        .library(name: "AtlasFeaturesFileOrganizer", targets: ["AtlasFeaturesFileOrganizer"]),
         .library(name: "AtlasFeaturesStorage", targets: ["AtlasFeaturesStorage"]),
         .library(name: "AtlasInfrastructure", targets: ["AtlasInfrastructure"]),
         .library(name: "AtlasProtocol", targets: ["AtlasProtocol"]),
@@ -63,6 +64,11 @@ let package = Package(
             name: "AtlasFeaturesSmartClean",
             dependencies: ["AtlasApplication", "AtlasDesignSystem", "AtlasDomain"],
             path: "AtlasFeaturesSmartClean/Sources/AtlasFeaturesSmartClean"
+        ),
+        .target(
+            name: "AtlasFeaturesFileOrganizer",
+            dependencies: ["AtlasApplication", "AtlasDesignSystem", "AtlasDomain"],
+            path: "AtlasFeaturesFileOrganizer/Sources/AtlasFeaturesFileOrganizer"
         ),
         .target(
             name: "AtlasFeaturesAbout",
@@ -124,6 +130,11 @@ let package = Package(
             name: "AtlasFeaturesSmartCleanTests",
             dependencies: ["AtlasFeaturesSmartClean", "AtlasDesignSystem", "AtlasDomain"],
             path: "AtlasFeaturesSmartClean/Tests/AtlasFeaturesSmartCleanTests"
+        ),
+        .testTarget(
+            name: "AtlasFeaturesFileOrganizerTests",
+            dependencies: ["AtlasFeaturesFileOrganizer", "AtlasDesignSystem", "AtlasDomain"],
+            path: "AtlasFeaturesFileOrganizer/Tests/AtlasFeaturesFileOrganizerTests"
         ),
         .testTarget(
             name: "AtlasFeaturesAppsTests",

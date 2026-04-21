@@ -77,6 +77,12 @@ final class AtlasSnapshotFilter: ObservableObject {
         }
     }
 
+    func filteredFileOrganizerEntries(from snapshot: AtlasWorkspaceSnapshot) -> [FileOrganizerEntry] {
+        filter(snapshot.fileOrganizerEntries, route: .fileOrganizer) { entry in
+            [entry.fileName, entry.path, entry.proposedDestination, entry.category.title]
+        }
+    }
+
     // MARK: - Private
 
     private func filter<Element>(
