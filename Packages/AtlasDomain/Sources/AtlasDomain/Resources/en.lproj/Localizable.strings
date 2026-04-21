@@ -899,3 +899,11 @@
 "model.fileorganizer.scanning" = "Scanning files…";
 "model.fileorganizer.classifying" = "Classifying files…";
 "model.fileorganizer.executing" = "Executing file organization…";
+
+// File Organizer - execution states
+"fileorganizer.status.executionFailed" = "File organization could not be completed";
+"fileorganizer.callout.empty.title" = "No files found to organize";
+"fileorganizer.callout.empty.detail" = "Try selecting different folders, or make sure the selected folders contain files.";
+"fileorganizer.status.executionComplete" = "File organization completed";
+"fileorganizer.callout.executionComplete.title" = "File organization completed";
+"fileorganizer.callout.executionComplete.detail" = "Successfully moved %d files. You can restore original locations from History.";

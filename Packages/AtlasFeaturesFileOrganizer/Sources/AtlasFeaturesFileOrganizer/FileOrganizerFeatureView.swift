@@ -16,11 +16,14 @@ public struct FileOrganizerFeatureView: View {
     let canExecutePlan: Bool
     let planIssue: String?
     let executionIssue: String?
+    let executionCompleted: Bool
+    let movedCount: Int
     let scannedFolders: [String]
     let rules: [FileOrganizerRule]
 
     @State private var selectedFolders: [String] = ["~/Desktop", "~/Downloads"]
     @State private var isFolderPickerPresented = false
+    @State private var showExecuteConfirmation = false
 
     // Callbacks
     let onStartScan: ([String]) -> Void
@@ -42,6 +45,8 @@ public struct FileOrganizerFeatureView: View {
         canExecutePlan: Bool,
         planIssue: String?,
         executionIssue: String?,
+        executionCompleted: Bool,
+        movedCount: Int,
         scannedFolders: [String],
         rules: [FileOrganizerRule],
         onStartScan: @escaping ([String]) -> Void,
@@ -62,6 +67,8 @@ public struct FileOrganizerFeatureView: View {
         self.canExecutePlan = canExecutePlan
         self.planIssue = planIssue
         self.executionIssue = executionIssue
+        self.executionCompleted = executionCompleted
+        self.movedCount = movedCount
         self.scannedFolders = scannedFolders
         self.rules = rules
         self.onStartScan = onStartScan
@@ -85,12 +92,92 @@ public struct FileOrganizerFeatureView: View {
                     categorySections
                 }
 
-                if !plan.items.isEmpty {
+                if !plan.items.isEmpty && !executionCompleted {
                     planPreviewSection
                 }
 
                 actionButtons
             }
+        }
+        .confirmationDialog(
+            AtlasL10n.string("fileorganizer.confirm.execute.title"),
+            isPresented: $showExecuteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(AtlasL10n.string("fileorganizer.action.execute"), role: .destructive) {
+                onExecutePlan()
+            }
+            Button(AtlasL10n.string("confirm.cancel"), role: .cancel) {}
+        } message: {
+            Text(AtlasL10n.string("fileorganizer.confirm.execute.message"))
+        }
+    }
+
+    // MARK: - Status Callout Computed Properties
+
+    private enum WorkflowPhase {
+        case scanning, classifying, executing
+        case executionFailed, planFailed
+        case executionComplete
+        case ready, empty
+    }
+
+    private var currentPhase: WorkflowPhase {
+        if isScanning { return .scanning }
+        if isClassifying { return .classifying }
+        if isExecutingPlan { return .executing }
+        if executionIssue != nil { return .executionFailed }
+        if planIssue != nil && entries.isEmpty { return .planFailed }
+        if executionCompleted { return .executionComplete }
+        if !entries.isEmpty { return .ready }
+        return .empty
+    }
+
+    private var statusTitle: String {
+        switch currentPhase {
+        case .scanning: return AtlasL10n.string("fileorganizer.callout.scanning.title")
+        case .classifying: return AtlasL10n.string("fileorganizer.status.classifying")
+        case .executing: return AtlasL10n.string("fileorganizer.status.executing")
+        case .executionFailed: return AtlasL10n.string("fileorganizer.status.executionFailed")
+        case .planFailed: return planIssue ?? AtlasL10n.string("fileorganizer.status.executionFailed")
+        case .executionComplete: return AtlasL10n.string("fileorganizer.callout.executionComplete.title")
+        case .ready: return AtlasL10n.string("fileorganizer.callout.complete.title")
+        case .empty: return AtlasL10n.string("fileorganizer.callout.ready.title")
+        }
+    }
+
+    private var statusDetail: String {
+        switch currentPhase {
+        case .scanning: return AtlasL10n.string("fileorganizer.callout.scanning.detail")
+        case .classifying: return AtlasL10n.string("fileorganizer.status.classifying")
+        case .executing: return AtlasL10n.string("fileorganizer.status.executing")
+        case .executionFailed: return executionIssue ?? ""
+        case .planFailed: return planIssue ?? ""
+        case .executionComplete: return AtlasL10n.string("fileorganizer.callout.executionComplete.detail", movedCount)
+        case .ready:
+            let totalSize = ByteCountFormatter.string(fromByteCount: entries.map(\.bytes).reduce(0, +), countStyle: .file)
+            return AtlasL10n.string("fileorganizer.callout.complete.detail", entries.count, totalSize)
+        case .empty: return AtlasL10n.string("fileorganizer.callout.empty.detail")
+        }
+    }
+
+    private var statusTone: AtlasTone {
+        switch currentPhase {
+        case .scanning, .classifying, .empty: return .neutral
+        case .executing: return .warning
+        case .executionFailed, .planFailed: return .danger
+        case .executionComplete, .ready: return .success
+        }
+    }
+
+    private var statusSymbol: String {
+        switch currentPhase {
+        case .scanning, .classifying: return "arrow.triangle.2.circlepath"
+        case .executing: return "gearshape.2"
+        case .executionFailed, .planFailed: return "exclamationmark.triangle"
+        case .executionComplete: return "checkmark.circle.fill"
+        case .ready: return "checkmark.circle"
+        case .empty: return "folder.badge.gearshape"
         }
     }
 
@@ -98,27 +185,28 @@ public struct FileOrganizerFeatureView: View {
 
     @ViewBuilder
     private var statusCallout: some View {
-        if isScanning || isClassifying {
-            AtlasCallout(
-                title: AtlasL10n.string("fileorganizer.callout.scanning.title"),
-                detail: AtlasL10n.string("fileorganizer.callout.scanning.detail"),
-                tone: .neutral,
-                systemImage: "arrow.triangle.2.circlepath"
-            )
-        } else if !entries.isEmpty {
-            let totalSize = ByteCountFormatter.string(fromByteCount: entries.map(\.bytes).reduce(0, +), countStyle: .file)
-            AtlasCallout(
-                title: AtlasL10n.string("fileorganizer.callout.complete.title"),
-                detail: AtlasL10n.string("fileorganizer.callout.complete.detail", entries.count, totalSize),
-                tone: .success,
-                systemImage: "checkmark.circle"
-            )
+        if isScanning || isClassifying || isExecutingPlan {
+            VStack(spacing: AtlasSpacing.lg) {
+                AtlasCircularProgress(
+                    progress: scanProgress == 0 ? (isScanning ? 0.15 : 0.5) : scanProgress,
+                    tone: isExecutingPlan ? .warning : .neutral,
+                    lineWidth: 8,
+                    icon: isScanning ? "sparkles" : (isExecutingPlan ? "play.circle.fill" : "doc.text.magnifyingglass")
+                )
+                .frame(width: 80, height: 80)
+
+                AtlasLoadingState(
+                    title: statusTitle,
+                    detail: scanSummary,
+                    progress: scanProgress == 0 ? nil : scanProgress
+                )
+            }
         } else {
             AtlasCallout(
-                title: AtlasL10n.string("fileorganizer.callout.ready.title"),
-                detail: AtlasL10n.string("fileorganizer.callout.ready.detail"),
-                tone: .neutral,
-                systemImage: "folder.badge.gearshape"
+                title: statusTitle,
+                detail: statusDetail,
+                tone: statusTone,
+                systemImage: statusSymbol
             )
         }
     }
@@ -182,10 +270,45 @@ public struct FileOrganizerFeatureView: View {
 
     // MARK: - Plan Preview
 
+    private var entryCategoryLookup: [UUID: FileOrganizerCategory] {
+        Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0.category) })
+    }
+
+    private var entryNameLookup: [UUID: String] {
+        Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0.fileName) })
+    }
+
+    private struct PlanGroup: Identifiable {
+        let id: FileOrganizerCategory
+        let category: FileOrganizerCategory
+        let items: [ActionItem]
+        let names: [UUID: String]
+    }
+
+    private func planItemsGroupedByCategory() -> [PlanGroup] {
+        let catLookup = entryCategoryLookup
+        let nameLookup = entryNameLookup
+        var groups: [FileOrganizerCategory: [ActionItem]] = [:]
+        for item in plan.items {
+            let cat = catLookup[item.id] ?? .other
+            groups[cat, default: []].append(item)
+        }
+        return FileOrganizerCategory.allCases.compactMap { cat in
+            guard let items = groups[cat], !items.isEmpty else { return nil }
+            return PlanGroup(id: cat, category: cat, items: items, names: nameLookup)
+        }
+    }
+
     private var planPreviewSection: some View {
-        AtlasInfoCard(
+        let groups = planItemsGroupedByCategory()
+        let totalSize = ByteCountFormatter.string(
+            fromByteCount: plan.estimatedBytes,
+            countStyle: .file
+        )
+
+        return AtlasInfoCard(
             title: AtlasL10n.string("fileorganizer.section.plan.title"),
-            subtitle: AtlasL10n.string("smartclean.preview.metric.space.detail.other", plan.items.count)
+            subtitle: "\(plan.items.count) · \(totalSize)"
         ) {
             VStack(spacing: AtlasSpacing.sm) {
                 if let issue = planIssue {
@@ -198,17 +321,37 @@ public struct FileOrganizerFeatureView: View {
                 }
 
                 LazyVStack(spacing: AtlasSpacing.xs) {
-                    ForEach(plan.items) { item in
-                        AtlasDetailRow(
-                            title: item.title,
-                            subtitle: AtlasL10n.string("fileorganizer.preview.row.to"),
-                            footnote: item.detail,
-                            systemImage: "arrow.right.circle"
-                        )
+                    ForEach(groups) { group in
+                        AtlasSectionDisclosure(
+                            title: group.category.title,
+                            count: group.items.count,
+                            defaultExpanded: groups.count <= 3 && group.items.count <= 5
+                        ) {
+                            LazyVStack(spacing: AtlasSpacing.xxs) {
+                                ForEach(group.items) { item in
+                                    AtlasDetailRow(
+                                        title: group.names[item.id] ?? item.title,
+                                        subtitle: AtlasL10n.string("fileorganizer.preview.row.to"),
+                                        footnote: shortenDestination(item.detail),
+                                        systemImage: group.category.systemImage
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+
+    private func shortenDestination(_ detail: String) -> String {
+        // "sourcePath → destPath" → just the dest folder name
+        guard let dest = detail.components(separatedBy: " → ").last else { return detail }
+        let parts = dest.split(separator: "/", omittingEmptySubsequences: false)
+        if parts.count >= 2 {
+            return "~/" + parts.suffix(2).joined(separator: "/")
+        }
+        return dest
     }
 
     // MARK: - Action Buttons
@@ -228,7 +371,7 @@ public struct FileOrganizerFeatureView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(selectedFolders.isEmpty || isScanning || isClassifying || isExecutingPlan)
 
-                    if !entries.isEmpty {
+                    if !entries.isEmpty && !executionCompleted {
                         Button {
                             onRefreshPreview()
                         } label: {
@@ -239,7 +382,7 @@ public struct FileOrganizerFeatureView: View {
                     }
                 }
 
-                if !plan.items.isEmpty {
+                if !plan.items.isEmpty && !executionCompleted {
                     HStack(spacing: AtlasSpacing.sm) {
                         Button {
                             onDryRun()
@@ -250,7 +393,7 @@ public struct FileOrganizerFeatureView: View {
                         .disabled(isScanning || isExecutingPlan)
 
                         Button {
-                            onExecutePlan()
+                            showExecuteConfirmation = true
                         } label: {
                             Label(AtlasL10n.string("fileorganizer.action.execute"), systemImage: "checkmark.circle")
                         }

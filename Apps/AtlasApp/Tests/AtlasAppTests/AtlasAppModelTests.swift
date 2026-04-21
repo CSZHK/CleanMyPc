@@ -834,8 +834,9 @@ extension AtlasAppModelTests {
         // Step 3: Execute
         await model.executeFileOrganizerPlan()
 
-        // Verify entries cleared and plan reset
-        XCTAssertTrue(model.fileOrganizerEntries.isEmpty)
+        // Verify entries preserved and execution completed
+        XCTAssertEqual(model.fileOrganizerEntries.count, 2)
+        XCTAssertTrue(model.fileOrganizerExecutionCompleted)
         XCTAssertFalse(model.isFileOrganizerPlanFresh)
 
         // Verify recovery item created with correct payload
@@ -1019,6 +1020,10 @@ extension AtlasAppModelTests {
         // Execute — should succeed with matching plan ID
         await model.executeFileOrganizerPlan()
         XCTAssertNil(model.fileOrganizerExecutionIssue)
+        XCTAssertTrue(model.fileOrganizerExecutionCompleted)
+
+        // Entries should be preserved after execution (not cleared)
+        XCTAssertEqual(model.fileOrganizerEntries.count, 1)
 
         // File should be moved
         XCTAssertFalse(fm.fileExists(atPath: file1.path))
@@ -1070,6 +1075,11 @@ extension AtlasAppModelTests {
         // After execute completes
         await model.executeFileOrganizerPlan()
         XCTAssertFalse(model.isWorkflowBusy)
+        XCTAssertTrue(model.fileOrganizerExecutionCompleted)
+
+        // Re-scanning resets executionCompleted
+        await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
+        XCTAssertFalse(model.fileOrganizerExecutionCompleted)
     }
 }
 

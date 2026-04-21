@@ -171,6 +171,8 @@ struct AppShellView: View {
                 canExecutePlan: model.canExecuteFileOrganizerPlan,
                 planIssue: model.fileOrganizerPlanIssue,
                 executionIssue: model.fileOrganizerExecutionIssue,
+                executionCompleted: model.fileOrganizerExecutionCompleted,
+                movedCount: model.fileOrganizerMovedCount,
                 scannedFolders: model.scannedFolders,
                 rules: model.fileOrganizerRules,
                 onStartScan: { folders in

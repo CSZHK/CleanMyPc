@@ -51,6 +51,8 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var fileOrganizerExecutionIssue: String?
     @Published private(set) var scannedFolders: [String] = []
     @Published private(set) var fileOrganizerRules: [FileOrganizerRule]
+    @Published private(set) var fileOrganizerExecutionCompleted = false
+    @Published private(set) var fileOrganizerMovedCount = 0
 
     private let repository: AtlasWorkspaceRepository
     private let workspaceController: AtlasWorkspaceController
@@ -223,6 +225,7 @@ final class AtlasAppModel: ObservableObject {
             || isAppActionRunning
             || restoringRecoveryItemID != nil
             || isFileOrganizerScanning
+            || isFileOrganizerClassifying
             || isFileOrganizerExecuting
     }
 
@@ -630,6 +633,8 @@ final class AtlasAppModel: ObservableObject {
         fileOrganizerProgress = 0
         scannedFolders = folderPaths
         fileOrganizerExecutionIssue = nil
+        fileOrganizerExecutionCompleted = false
+        fileOrganizerMovedCount = 0
 
         do {
             let output = try await workspaceController.fileOrganizerScan(folderPaths: folderPaths)
@@ -696,15 +701,16 @@ final class AtlasAppModel: ObservableObject {
 
         do {
             let output = try await workspaceController.fileOrganizerExecutePlan(planID: currentFileOrganizerPlan.id)
+            let movedCount = currentFileOrganizerPlan.items.count
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = output.snapshot
-                fileOrganizerEntries = []
-                currentFileOrganizerPlan = ActionPlan(title: "", items: [], estimatedBytes: 0)
-                fileOrganizerScanSummary = output.summary
+                fileOrganizerMovedCount = movedCount
+                fileOrganizerScanSummary = AtlasL10n.string("fileorganizer.callout.executionComplete.detail", movedCount)
                 fileOrganizerProgress = output.progressFraction
                 isFileOrganizerPlanFresh = false
                 fileOrganizerPlanIssue = nil
                 fileOrganizerExecutionIssue = nil
+                fileOrganizerExecutionCompleted = true
             }
         } catch {
             fileOrganizerScanSummary = error.localizedDescription
