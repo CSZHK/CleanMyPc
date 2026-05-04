@@ -823,3 +823,8 @@
 "smartclean.category.downloadArtifact" = "下载文件";
 "smartclean.category.mailAttachment" = "邮件附件";
 "smartclean.category.oldBackup" = "旧备份";
+
+// MARK: - Finding Row
+
+"smartclean.finding.expand" = "展开";
+"smartclean.finding.collapse" = "收起";

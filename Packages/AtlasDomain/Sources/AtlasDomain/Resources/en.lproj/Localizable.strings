@@ -823,3 +823,8 @@
 "smartclean.category.downloadArtifact" = "Downloads";
 "smartclean.category.mailAttachment" = "Mail Attachments";
 "smartclean.category.oldBackup" = "Old Backups";
+
+// MARK: - Finding Row
+
+"smartclean.finding.expand" = "Show more";
+"smartclean.finding.collapse" = "Show less";
