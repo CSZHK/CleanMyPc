@@ -199,6 +199,29 @@ public struct Finding: Identifiable, Codable, Hashable, Sendable {
     }
 }
 
+// MARK: - Finding Aggregation
+
+extension Array where Element == Finding {
+    /// Computes aggregate summaries grouped by risk level.
+    /// Returns one ``FindingAggregate`` per ``RiskLevel`` case, including
+    /// levels with zero findings so the UI can display complete summaries.
+    public func aggregatesByRisk() -> [FindingAggregate] {
+        RiskLevel.allCases.map { risk in
+            let matching = filter { $0.risk == risk }
+            let totalBytes = matching.reduce(Int64(0)) { $0 + $1.bytes }
+            return FindingAggregate(risk: risk, totalBytes: totalBytes, count: matching.count)
+        }
+    }
+
+    /// Groups findings by their storage category.
+    /// Findings with a `nil` storageCategory are placed under the key "uncategorized".
+    public func groupedByStorageCategory() -> [String: [Finding]] {
+        Dictionary(grouping: self) { finding in
+            finding.storageCategory?.rawValue ?? "uncategorized"
+        }
+    }
+}
+
 public struct ActionItem: Identifiable, Codable, Hashable, Sendable {
     public enum Kind: String, Codable, Hashable, Sendable {
         case removeCache
