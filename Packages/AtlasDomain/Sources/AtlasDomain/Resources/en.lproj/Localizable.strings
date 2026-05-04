@@ -782,3 +782,44 @@
 "fileage.monthsAgo" = "%d months ago";
 "fileage.monthAgo" = "1 month ago";
 "fileage.daysAgo" = "%d days ago";
+
+// MARK: - Smart Clean Risk Level Descriptions
+
+"smartclean.risk.safe.description" = "Safe to remove without review. These items are fully recoverable through History.";
+"smartclean.risk.review.description" = "Worth reviewing before removal. Some items may need your judgment.";
+"smartclean.risk.advanced.description" = "Requires advanced inspection. These items may affect system behavior if removed.";
+
+// MARK: - Smart Clean Explanation Templates
+
+"smartclean.explanation.systemCache" = "System cache files that can be regenerated automatically. %@";
+"smartclean.explanation.appCache" = "Application cache files that will be recreated when needed. %@";
+"smartclean.explanation.developerArtifact" = "Developer build artifacts and indexes from older projects. %@";
+"smartclean.explanation.browserData" = "Browser cache and data files with low recovery risk. %@";
+"smartclean.explanation.logFile" = "Log files that can be safely removed to reclaim space. %@";
+"smartclean.explanation.downloadArtifact" = "Downloaded files that have not been used recently. %@";
+"smartclean.explanation.mailAttachment" = "Cached mail attachments. The originals remain on the mail server. %@";
+"smartclean.explanation.oldBackup" = "Old backup files that have been superseded by newer versions. %@";
+
+// MARK: - Smart Clean File Age Labels
+
+"smartclean.fileage.lastAccessed" = "Last accessed %@";
+"smartclean.fileage.created" = "Created %@";
+"smartclean.fileage.notUsedIn" = "Not used in %@";
+
+// MARK: - Smart Clean Aggregate Summary
+
+"smartclean.aggregate.title" = "Cleanup Summary";
+"smartclean.aggregate.safelyCleanable" = "%@ can be safely cleaned";
+"smartclean.aggregate.needsReview" = "%@ requires review";
+"smartclean.aggregate.requiresAdvanced" = "%@ needs advanced inspection";
+
+// MARK: - Smart Clean Category Display Names
+
+"smartclean.category.systemCache" = "System Cache";
+"smartclean.category.appCache" = "App Cache";
+"smartclean.category.developerArtifact" = "Developer Artifacts";
+"smartclean.category.browserData" = "Browser Data";
+"smartclean.category.logFile" = "Log Files";
+"smartclean.category.downloadArtifact" = "Downloads";
+"smartclean.category.mailAttachment" = "Mail Attachments";
+"smartclean.category.oldBackup" = "Old Backups";
