@@ -323,49 +323,49 @@ func TestExplanationKeyFor(t *testing.T) {
 		want     string
 	}{
 		// System cache at each risk level.
-		{"systemCache.safe", CategorySystemCache, RiskSafe, "smartclean.explanation.systemCache.safe"},
-		{"systemCache.review", CategorySystemCache, RiskReview, "smartclean.explanation.systemCache.review"},
-		{"systemCache.advanced", CategorySystemCache, RiskAdvanced, "smartclean.explanation.systemCache.advanced"},
+		{"systemCache.safe", CategorySystemCache, RiskSafe, "explanation.systemCache.safe"},
+		{"systemCache.review", CategorySystemCache, RiskReview, "explanation.systemCache.review"},
+		{"systemCache.advanced", CategorySystemCache, RiskAdvanced, "explanation.systemCache.advanced"},
 
 		// App cache.
-		{"appCache.safe", CategoryAppCache, RiskSafe, "smartclean.explanation.appCache.safe"},
-		{"appCache.review", CategoryAppCache, RiskReview, "smartclean.explanation.appCache.review"},
-		{"appCache.advanced", CategoryAppCache, RiskAdvanced, "smartclean.explanation.appCache.advanced"},
+		{"appCache.safe", CategoryAppCache, RiskSafe, "explanation.appCache.safe"},
+		{"appCache.review", CategoryAppCache, RiskReview, "explanation.appCache.review"},
+		{"appCache.advanced", CategoryAppCache, RiskAdvanced, "explanation.appCache.advanced"},
 
 		// Developer artifacts.
-		{"developerArtifact.safe", CategoryDeveloperArtifact, RiskSafe, "smartclean.explanation.developerArtifact.safe"},
-		{"developerArtifact.review", CategoryDeveloperArtifact, RiskReview, "smartclean.explanation.developerArtifact.review"},
-		{"developerArtifact.advanced", CategoryDeveloperArtifact, RiskAdvanced, "smartclean.explanation.developerArtifact.advanced"},
+		{"developerArtifact.safe", CategoryDeveloperArtifact, RiskSafe, "explanation.developerArtifact.safe"},
+		{"developerArtifact.review", CategoryDeveloperArtifact, RiskReview, "explanation.developerArtifact.review"},
+		{"developerArtifact.advanced", CategoryDeveloperArtifact, RiskAdvanced, "explanation.developerArtifact.advanced"},
 
 		// Browser data.
-		{"browserData.safe", CategoryBrowserData, RiskSafe, "smartclean.explanation.browserData.safe"},
-		{"browserData.review", CategoryBrowserData, RiskReview, "smartclean.explanation.browserData.review"},
-		{"browserData.advanced", CategoryBrowserData, RiskAdvanced, "smartclean.explanation.browserData.advanced"},
+		{"browserData.safe", CategoryBrowserData, RiskSafe, "explanation.browserData.safe"},
+		{"browserData.review", CategoryBrowserData, RiskReview, "explanation.browserData.review"},
+		{"browserData.advanced", CategoryBrowserData, RiskAdvanced, "explanation.browserData.advanced"},
 
 		// Log files.
-		{"logFile.safe", CategoryLogFile, RiskSafe, "smartclean.explanation.logFile.safe"},
-		{"logFile.review", CategoryLogFile, RiskReview, "smartclean.explanation.logFile.review"},
-		{"logFile.advanced", CategoryLogFile, RiskAdvanced, "smartclean.explanation.logFile.advanced"},
+		{"logFile.safe", CategoryLogFile, RiskSafe, "explanation.logFile.safe"},
+		{"logFile.review", CategoryLogFile, RiskReview, "explanation.logFile.review"},
+		{"logFile.advanced", CategoryLogFile, RiskAdvanced, "explanation.logFile.advanced"},
 
 		// Download artifacts.
-		{"downloadArtifact.safe", CategoryDownloadArtifact, RiskSafe, "smartclean.explanation.downloadArtifact.safe"},
-		{"downloadArtifact.review", CategoryDownloadArtifact, RiskReview, "smartclean.explanation.downloadArtifact.review"},
-		{"downloadArtifact.advanced", CategoryDownloadArtifact, RiskAdvanced, "smartclean.explanation.downloadArtifact.advanced"},
+		{"downloadArtifact.safe", CategoryDownloadArtifact, RiskSafe, "explanation.downloadArtifact.safe"},
+		{"downloadArtifact.review", CategoryDownloadArtifact, RiskReview, "explanation.downloadArtifact.review"},
+		{"downloadArtifact.advanced", CategoryDownloadArtifact, RiskAdvanced, "explanation.downloadArtifact.advanced"},
 
 		// Mail attachments.
-		{"mailAttachment.safe", CategoryMailAttachment, RiskSafe, "smartclean.explanation.mailAttachment.safe"},
-		{"mailAttachment.review", CategoryMailAttachment, RiskReview, "smartclean.explanation.mailAttachment.review"},
-		{"mailAttachment.advanced", CategoryMailAttachment, RiskAdvanced, "smartclean.explanation.mailAttachment.advanced"},
+		{"mailAttachment.safe", CategoryMailAttachment, RiskSafe, "explanation.mailAttachment.safe"},
+		{"mailAttachment.review", CategoryMailAttachment, RiskReview, "explanation.mailAttachment.review"},
+		{"mailAttachment.advanced", CategoryMailAttachment, RiskAdvanced, "explanation.mailAttachment.advanced"},
 
 		// Old backups.
-		{"oldBackup.safe", CategoryOldBackup, RiskSafe, "smartclean.explanation.oldBackup.safe"},
-		{"oldBackup.review", CategoryOldBackup, RiskReview, "smartclean.explanation.oldBackup.review"},
-		{"oldBackup.advanced", CategoryOldBackup, RiskAdvanced, "smartclean.explanation.oldBackup.advanced"},
+		{"oldBackup.safe", CategoryOldBackup, RiskSafe, "explanation.oldBackup.safe"},
+		{"oldBackup.review", CategoryOldBackup, RiskReview, "explanation.oldBackup.review"},
+		{"oldBackup.advanced", CategoryOldBackup, RiskAdvanced, "explanation.oldBackup.advanced"},
 
 		// Unknown category.
-		{"unknown.safe", CategoryUnknown, RiskSafe, "smartclean.explanation.unknown.safe"},
-		{"unknown.review", CategoryUnknown, RiskReview, "smartclean.explanation.unknown.review"},
-		{"unknown.advanced", CategoryUnknown, RiskAdvanced, "smartclean.explanation.unknown.advanced"},
+		{"unknown.safe", CategoryUnknown, RiskSafe, "explanation.unknown.safe"},
+		{"unknown.review", CategoryUnknown, RiskReview, "explanation.unknown.review"},
+		{"unknown.advanced", CategoryUnknown, RiskAdvanced, "explanation.unknown.advanced"},
 	}
 
 	for _, tt := range tests {
@@ -392,7 +392,7 @@ func TestJSONEntryHasNewFields(t *testing.T) {
 		StorageCategory: "developerArtifact",
 		LastAccessed:    "2025-01-01T00:00:00Z",
 		CreatedDate:     "2024-06-15T12:00:00Z",
-		ExplanationKey:  "smartclean.explanation.developerArtifact.safe",
+		ExplanationKey:  "explanation.developerArtifact.safe",
 	}
 
 	data, err := json.Marshal(entry)
@@ -406,7 +406,7 @@ func TestJSONEntryHasNewFields(t *testing.T) {
 		`"storage_category"`:      "developerArtifact",
 		`"last_accessed"`:         "2025-01-01T00:00:00Z",
 		`"created_date"`:          "2024-06-15T12:00:00Z",
-		`"explanation_key"`:       "smartclean.explanation.developerArtifact.safe",
+		`"explanation_key"`:       "explanation.developerArtifact.safe",
 	}
 	for field, val := range fields {
 		if !containsSubstring(string(data), field) {
@@ -461,7 +461,7 @@ func TestJSONOutputStructure(t *testing.T) {
 				IsDir:           true,
 				RiskLevel:       "safe",
 				StorageCategory: "systemCache",
-				ExplanationKey:  "smartclean.explanation.systemCache.safe",
+				ExplanationKey:  "explanation.systemCache.safe",
 			},
 			{
 				Name:            "Documents",
@@ -470,7 +470,7 @@ func TestJSONOutputStructure(t *testing.T) {
 				IsDir:           true,
 				RiskLevel:       "review",
 				StorageCategory: "unknown",
-				ExplanationKey:  "smartclean.explanation.unknown.review",
+				ExplanationKey:  "explanation.unknown.review",
 			},
 		},
 	}

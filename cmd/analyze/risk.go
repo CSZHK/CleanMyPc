@@ -449,6 +449,9 @@ func isDeveloperArtifactName(name string) bool {
 
 // explanationKeyFor returns a localization key for the explanation template
 // based on the storage category and risk level.
+// The key format "explanation.<category>.<risk>" matches the Swift-side
+// AtlasFindingExplanations.explanationKey(for:risk:) convention and the
+// keys defined in en.lproj/Localizable.strings and zh-Hans.lproj/Localizable.strings.
 func explanationKeyFor(category StorageCategory, risk RiskLevel) string {
-	return "smartclean.explanation." + string(category) + "." + string(risk)
+	return "explanation." + string(category) + "." + string(risk)
 }
