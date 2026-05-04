@@ -410,6 +410,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
                     state.snapshot.apps.insert(restoredApp, at: 0)
                 }
             case .fileOrganizer:
+                // File organizer restore is handled by generic restoreMappings below
                 break
             case nil:
                 break
@@ -706,10 +707,10 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
 
         for entry in entries {
             let sourcePath = (entry.path as NSString).expandingTildeInPath
-            var destPath = (entry.proposedDestination as NSString).expandingTildeInPath
+            let proposedDestPath = (entry.proposedDestination as NSString).expandingTildeInPath
 
             // Safety: only move files within the user's home directory
-            guard sourcePath.hasPrefix(homeDir), destPath.hasPrefix(homeDir) else {
+            guard sourcePath.hasPrefix(homeDir), proposedDestPath.hasPrefix(homeDir) else {
                 await auditStore.append("Skipped out-of-scope path: \(entry.fileName)")
                 failedMoves.append((entry.fileName, "Path outside home directory"))
                 continue
@@ -720,41 +721,23 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
                 continue
             }
 
-            // Resolve destination conflicts: append (1), (2), etc.
-            if let count = usedDestPaths[destPath] {
-                let ext = (destPath as NSString).pathExtension
-                let baseName = (destPath as NSString).deletingPathExtension
-                let newName: String
-                if ext.isEmpty {
-                    newName = "\(baseName) (\(count + 1))"
-                } else {
-                    newName = "\(baseName) (\(count + 1)).\(ext)"
-                }
-                // Update the display path to reflect the renamed destination
-                let displayDest = entry.proposedDestination
-                let displayExt = (displayDest as NSString).pathExtension
-                let displayBase = (displayDest as NSString).deletingPathExtension
-                if displayExt.isEmpty {
-                    destPath = newName
-                } else {
-                    let updatedDisplay = "\(displayBase) (\(count + 1)).\(displayExt)"
-                    destPath = (updatedDisplay as NSString).expandingTildeInPath
-                }
-            }
+            // Resolve destination: handle in-memory duplicates + on-disk conflicts
+            let claimIndex = usedDestPaths[proposedDestPath, default: 0]
+            usedDestPaths[proposedDestPath] = claimIndex + 1
 
-            // Check if destination already exists on disk
-            if fm.fileExists(atPath: destPath) {
-                let ext = (destPath as NSString).pathExtension
-                let baseName = (destPath as NSString).deletingPathExtension
-                var candidate: String = destPath
-                var attempt = 1
+            var destPath = proposedDestPath
+            if claimIndex > 0 || fm.fileExists(atPath: destPath) {
+                let ext = (proposedDestPath as NSString).pathExtension
+                let baseName = (proposedDestPath as NSString).deletingPathExtension
+                var attempt = claimIndex > 0 ? claimIndex + 1 : 1
+                var candidate = ext.isEmpty
+                    ? "\(baseName) (\(attempt))"
+                    : "\(baseName) (\(attempt)).\(ext)"
                 while fm.fileExists(atPath: candidate) {
-                    if ext.isEmpty {
-                        candidate = "\(baseName) (\(attempt))"
-                    } else {
-                        candidate = "\(baseName) (\(attempt)).\(ext)"
-                    }
                     attempt += 1
+                    candidate = ext.isEmpty
+                        ? "\(baseName) (\(attempt))"
+                        : "\(baseName) (\(attempt)).\(ext)"
                 }
                 destPath = candidate
             }
@@ -773,7 +756,6 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
                 moveMappings.append(FileOrganizerMoveMapping(originalPath: entry.path, destinationPath: resolvedDisplay))
                 absoluteDestPaths.append(destPath)
                 totalBytesMoved += entry.bytes
-                usedDestPaths[destPath, default: 0] += 1
             } catch {
                 await auditStore.append("Failed to move \(entry.fileName): \(error.localizedDescription)")
                 failedMoves.append((entry.fileName, error.localizedDescription))

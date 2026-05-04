@@ -701,9 +701,10 @@ final class AtlasAppModel: ObservableObject {
 
         do {
             let output = try await workspaceController.fileOrganizerExecutePlan(planID: currentFileOrganizerPlan.id)
-            let movedCount = currentFileOrganizerPlan.items.count
+            let movedCount = output.movedCount
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = output.snapshot
+                fileOrganizerEntries = []
                 fileOrganizerMovedCount = movedCount
                 fileOrganizerScanSummary = AtlasL10n.string("fileorganizer.callout.executionComplete.detail", movedCount)
                 fileOrganizerProgress = output.progressFraction

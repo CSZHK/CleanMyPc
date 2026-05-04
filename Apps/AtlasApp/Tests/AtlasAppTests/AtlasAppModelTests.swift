@@ -834,8 +834,8 @@ extension AtlasAppModelTests {
         // Step 3: Execute
         await model.executeFileOrganizerPlan()
 
-        // Verify entries preserved and execution completed
-        XCTAssertEqual(model.fileOrganizerEntries.count, 2)
+        // Verify entries cleared after execution
+        XCTAssertEqual(model.fileOrganizerEntries.count, 0)
         XCTAssertTrue(model.fileOrganizerExecutionCompleted)
         XCTAssertFalse(model.isFileOrganizerPlanFresh)
 
@@ -1022,8 +1022,8 @@ extension AtlasAppModelTests {
         XCTAssertNil(model.fileOrganizerExecutionIssue)
         XCTAssertTrue(model.fileOrganizerExecutionCompleted)
 
-        // Entries should be preserved after execution (not cleared)
-        XCTAssertEqual(model.fileOrganizerEntries.count, 1)
+        // Entries should be cleared after execution
+        XCTAssertEqual(model.fileOrganizerEntries.count, 0)
 
         // File should be moved
         XCTAssertFalse(fm.fileExists(atPath: file1.path))

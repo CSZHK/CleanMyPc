@@ -572,11 +572,16 @@ public struct AtlasWorkspaceController: Sendable {
 
         switch result.response.response {
         case .accepted:
+            let movedCount = result.snapshot.recoveryItems.first(where: {
+                if case .fileOrganizer = $0.payload { return true }
+                return false
+            })?.restoreMappings?.count ?? 0
             return AtlasFileOrganizerExecuteOutput(
                 snapshot: result.snapshot,
                 events: result.events,
                 progressFraction: progressFraction(from: result.events),
-                summary: summary(from: result.events, fallback: AtlasL10n.string("fileorganizer.status.complete"))
+                summary: summary(from: result.events, fallback: AtlasL10n.string("fileorganizer.status.complete")),
+                movedCount: movedCount
             )
         case let .rejected(code, reason):
             throw AtlasWorkspaceControllerError.rejected(code: code, reason: reason)
@@ -808,17 +813,20 @@ public struct AtlasFileOrganizerExecuteOutput: Sendable {
     public var events: [AtlasEventEnvelope]
     public var progressFraction: Double
     public var summary: String
+    public var movedCount: Int
 
     public init(
         snapshot: AtlasWorkspaceSnapshot,
         events: [AtlasEventEnvelope],
         progressFraction: Double,
-        summary: String
+        summary: String,
+        movedCount: Int = 0
     ) {
         self.snapshot = snapshot
         self.events = events
         self.progressFraction = progressFraction
         self.summary = summary
+        self.movedCount = movedCount
     }
 }
 

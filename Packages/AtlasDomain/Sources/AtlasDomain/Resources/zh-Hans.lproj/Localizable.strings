@@ -344,6 +344,7 @@
 "smartclean.support.removeCache" = "适合作为可恢复的清理步骤。";
 "smartclean.support.removeApp" = "卸载前先复核占用和残留，更容易形成可预期结果。";
 "smartclean.support.archiveFile" = "在支持的情况下，Atlas 会将此类项目保留在可恢复路径中。";
+"smartclean.support.organizeFile" = "Atlas 会将此文件移动到分类子目录中；可在历史中恢复原始位置。";
 "smartclean.support.helper" = "这个目标位于受保护路径下，因此会通过辅助工具边界执行。";
 "smartclean.support.inspectPermission" = "在 Atlas 能安全继续之前，需要额外确认。";
 "smartclean.support.reviewOnly" = "Atlas 当前可以展示这一步，但在存在受支持执行路径之前，它仍会保持为仅供复核。";

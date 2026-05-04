@@ -344,6 +344,7 @@
 "smartclean.support.removeCache" = "Good candidate for a reversible cleanup step.";
 "smartclean.support.removeApp" = "Review the footprint before you uninstall so leftovers are expected.";
 "smartclean.support.archiveFile" = "Atlas will keep this in a reversible path when possible.";
+"smartclean.support.organizeFile" = "Atlas will move this file to an organized subdirectory; you can restore it from History.";
 "smartclean.support.helper" = "Runs through the helper boundary because the target lives in a protected path.";
 "smartclean.support.inspectPermission" = "Requires extra attention before Atlas can safely proceed.";
 "smartclean.support.reviewOnly" = "Atlas can show this step, but it will stay review-only until a supported execution path exists.";

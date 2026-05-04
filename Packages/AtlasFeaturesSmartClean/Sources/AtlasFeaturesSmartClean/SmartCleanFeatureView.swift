@@ -493,7 +493,7 @@ public struct SmartCleanFeatureView: View {
             case .reviewEvidence:
                 return AtlasL10n.string("smartclean.support.archiveFile")
             case .organizeFile:
-                return AtlasL10n.string("smartclean.support.archiveFile")
+                return AtlasL10n.string("smartclean.support.organizeFile")
             }
         case .helper:
             return AtlasL10n.string("smartclean.support.helper")
