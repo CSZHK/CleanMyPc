@@ -227,6 +227,8 @@ public struct SmartCleanFeatureView: View {
                     onAction: onStartScan
                 )
             } else {
+                AggregateSummaryCard(findings: findings)
+
                 ForEach(RiskLevel.allCases, id: \.self) { risk in
                     riskSection(risk)
                 }
@@ -248,19 +250,32 @@ public struct SmartCleanFeatureView: View {
                 count: items.count,
                 defaultExpanded: risk == .safe
             ) {
-                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                    ForEach(items) { finding in
-                        AtlasDetailRow(
-                            title: finding.title,
-                            subtitle: finding.detail,
-                            footnote: "\(AtlasL10n.localizedCategory(finding.category)) • \(actionExpectation(for: finding.risk))",
-                            systemImage: AtlasCategoryIcon.systemImage(for: finding.category),
-                            tone: risk.atlasTone
+                let grouped = Dictionary(grouping: items) { finding in
+                    finding.storageCategory?.title ?? AtlasL10n.localizedCategory(finding.category)
+                }
+
+                let sortedCategories = grouped.keys.sorted()
+
+                ForEach(sortedCategories, id: \.self) { categoryTitle in
+                    let categoryItems = grouped[categoryTitle] ?? []
+
+                    if grouped.count > 1 {
+                        AtlasSectionDisclosure(
+                            title: categoryTitle,
+                            count: categoryItems.count,
+                            defaultExpanded: false
                         ) {
-                            AtlasStatusChip(
-                                "\(AtlasL10n.localizedCategory(finding.category)) · \(AtlasFormatters.byteCount(finding.bytes))",
-                                tone: risk.atlasTone
-                            )
+                            VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                                ForEach(categoryItems) { finding in
+                                    FindingRowView(finding: finding)
+                                }
+                            }
+                        }
+                    } else {
+                        VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                            ForEach(categoryItems) { finding in
+                                FindingRowView(finding: finding)
+                            }
                         }
                     }
                 }
