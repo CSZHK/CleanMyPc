@@ -351,6 +351,13 @@
 "smartclean.expectation.review" = "Review before removal";
 "smartclean.expectation.advanced" = "Inspect carefully";
 
+"smartclean.summary.totalReclaimable" = "Total reclaimable space";
+"smartclean.summary.findingCount" = "%d findings";
+"smartclean.summary.safeSegment" = "%@ can be safely cleaned";
+"smartclean.summary.reviewSegment" = "%@ requires review";
+"smartclean.summary.advancedSegment" = "%@ needs advanced inspection";
+"smartclean.summary.empty" = "No reclaimable space found";
+
 "apps.screen.title" = "Apps";
 "apps.screen.subtitle" = "Review each app's footprint, leftovers, and recovery path before you uninstall it.";
 "apps.callout.default.title" = "Review the uninstall plan before you remove anything";

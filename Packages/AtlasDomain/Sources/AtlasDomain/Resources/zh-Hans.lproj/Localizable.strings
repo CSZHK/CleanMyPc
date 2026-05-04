@@ -351,6 +351,13 @@
 "smartclean.expectation.review" = "删除前先复核";
 "smartclean.expectation.advanced" = "建议谨慎检查";
 
+"smartclean.summary.totalReclaimable" = "预计可释放空间";
+"smartclean.summary.findingCount" = "%d 个发现项";
+"smartclean.summary.safeSegment" = "%@ 可安全清理";
+"smartclean.summary.reviewSegment" = "%@ 需要复核";
+"smartclean.summary.advancedSegment" = "%@ 需高级检查";
+"smartclean.summary.empty" = "未发现可释放空间";
+
 "apps.screen.title" = "应用";
 "apps.screen.subtitle" = "先检查每个应用的占用、残留和恢复路径，再决定是否卸载。";
 "apps.callout.default.title" = "先复核卸载计划，再决定是否移除";
