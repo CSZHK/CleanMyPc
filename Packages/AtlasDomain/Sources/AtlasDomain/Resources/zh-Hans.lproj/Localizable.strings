@@ -712,3 +712,66 @@
 "update.error.title" = "检查更新失败";
 "update.error.detail" = "无法连接到更新服务器，请稍后再试。";
 "update.error.requestFailed" = "无法连接到 GitHub 更新服务器。";
+
+// MARK: - Storage Categories
+
+"storageCategory.systemCache" = "系统缓存";
+"storageCategory.appCache" = "应用缓存";
+"storageCategory.developerArtifact" = "开发者产物";
+"storageCategory.browserData" = "浏览器数据";
+"storageCategory.logFile" = "日志文件";
+"storageCategory.downloadArtifact" = "下载文件";
+"storageCategory.mailAttachment" = "邮件附件";
+"storageCategory.oldBackup" = "旧备份";
+
+// MARK: - Explanation Templates (per StorageCategory × RiskLevel)
+
+"explanation.systemCache.safe" = "系统缓存文件可以安全清理。它们会在需要时自动重建。";
+"explanation.systemCache.review" = "这些系统缓存文件建议在删除前先复核，以避免意外行为。";
+"explanation.systemCache.advanced" = "这些系统缓存文件位于受保护路径下，需要仔细检查后再清理。";
+
+"explanation.appCache.safe" = "应用缓存文件可以安全清理，应用需要时会自动重新创建。";
+"explanation.appCache.review" = "这些应用缓存文件建议先复核，确认关联应用已不再需要。";
+"explanation.appCache.advanced" = "这些应用缓存属于系统关键应用，需要高级审查。";
+
+"explanation.developerArtifact.safe" = "开发者构建产物和索引可以安全清理。它们会在下次构建时自动重新生成。";
+"explanation.developerArtifact.review" = "这些开发者产物建议在删除前先复核，确认已不再需要。";
+"explanation.developerArtifact.advanced" = "这些开发者产物可能正在被活跃项目使用，需要仔细审查。";
+
+"explanation.browserData.safe" = "浏览器缓存文件可以安全清理，恢复风险低。";
+"explanation.browserData.review" = "这些浏览器数据文件建议先复核，确保不会丢失重要的会话或数据。";
+"explanation.browserData.advanced" = "这些浏览器数据包含敏感信息，需要仔细检查。";
+
+"explanation.logFile.safe" = "日志文件可以安全清理以释放空间。新日志会自动创建。";
+"explanation.logFile.review" = "这些日志文件建议在删除前先复核，可能包含有用的诊断信息。";
+"explanation.logFile.advanced" = "这些日志文件属于系统进程，需要高级检查。";
+
+"explanation.downloadArtifact.safe" = "最近未使用的下载文件可以安全归档或清理。";
+"explanation.downloadArtifact.review" = "这些下载文件建议先复核，确认已不再需要。";
+"explanation.downloadArtifact.advanced" = "这些下载文件可能包含重要的安装器或文档，需要仔细审查。";
+
+"explanation.mailAttachment.safe" = "邮件附件缓存可以安全清理。原件仍保留在邮件服务器上。";
+"explanation.mailAttachment.review" = "这些邮件附件缓存建议先复核，确保附件仍可访问。";
+"explanation.mailAttachment.advanced" = "这些邮件附件文件可能是唯一的本地副本，删除前需要仔细审查。";
+
+"explanation.oldBackup.safe" = "已被取代的旧备份文件可以安全清理。";
+"explanation.oldBackup.review" = "这些备份文件建议先复核，确认已不再需要用于恢复。";
+"explanation.oldBackup.advanced" = "这些备份文件可能对系统恢复至关重要，需要高级检查。";
+
+// MARK: - Explanation with Age Context
+
+"explanation.withAge" = "%@（%@）";
+
+// MARK: - File Age Descriptors
+
+"fileage.notUsedIn" = "%@未使用";
+"fileage.years" = "%d 年";
+"fileage.year" = "1 年";
+"fileage.months" = "%d 个月";
+"fileage.month" = "1 个月";
+"fileage.days" = "%d 天";
+"fileage.yearsAgo" = "%d 年前";
+"fileage.yearAgo" = "1 年前";
+"fileage.monthsAgo" = "%d 个月前";
+"fileage.monthAgo" = "1 个月前";
+"fileage.daysAgo" = "%d 天前";
