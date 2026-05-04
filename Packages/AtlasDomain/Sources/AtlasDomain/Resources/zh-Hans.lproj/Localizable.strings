@@ -782,3 +782,44 @@
 "fileage.monthsAgo" = "%d 个月前";
 "fileage.monthAgo" = "1 个月前";
 "fileage.daysAgo" = "%d 天前";
+
+// MARK: - Smart Clean Risk Level Descriptions
+
+"smartclean.risk.safe.description" = "可以安全清理而无需复核。这些项目可通过历史记录完整恢复。";
+"smartclean.risk.review.description" = "建议删除前先复核。部分项目可能需要你的判断。";
+"smartclean.risk.advanced.description" = "需要高级检查。删除这些项目可能会影响系统行为。";
+
+// MARK: - Smart Clean Explanation Templates
+
+"smartclean.explanation.systemCache" = "系统缓存文件，可以自动重建。%@";
+"smartclean.explanation.appCache" = "应用缓存文件，需要时会自动重新创建。%@";
+"smartclean.explanation.developerArtifact" = "来自旧项目的开发者构建产物和索引。%@";
+"smartclean.explanation.browserData" = "浏览器缓存和数据文件，恢复风险低。%@";
+"smartclean.explanation.logFile" = "日志文件，可以安全清理以释放空间。%@";
+"smartclean.explanation.downloadArtifact" = "最近未使用的下载文件。%@";
+"smartclean.explanation.mailAttachment" = "邮件附件缓存。原件仍保留在邮件服务器上。%@";
+"smartclean.explanation.oldBackup" = "已被新版本取代的旧备份文件。%@";
+
+// MARK: - Smart Clean File Age Labels
+
+"smartclean.fileage.lastAccessed" = "上次访问于 %@";
+"smartclean.fileage.created" = "创建于 %@";
+"smartclean.fileage.notUsedIn" = "已 %@ 未使用";
+
+// MARK: - Smart Clean Aggregate Summary
+
+"smartclean.aggregate.title" = "清理摘要";
+"smartclean.aggregate.safelyCleanable" = "%@ 可以安全清理";
+"smartclean.aggregate.needsReview" = "%@ 需要审查";
+"smartclean.aggregate.requiresAdvanced" = "%@ 需要高级检查";
+
+// MARK: - Smart Clean Category Display Names
+
+"smartclean.category.systemCache" = "系统缓存";
+"smartclean.category.appCache" = "应用缓存";
+"smartclean.category.developerArtifact" = "开发者产物";
+"smartclean.category.browserData" = "浏览器数据";
+"smartclean.category.logFile" = "日志文件";
+"smartclean.category.downloadArtifact" = "下载文件";
+"smartclean.category.mailAttachment" = "邮件附件";
+"smartclean.category.oldBackup" = "旧备份";
