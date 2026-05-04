@@ -143,11 +143,12 @@ func scanPathConcurrent(root string, filesScanned, dirsScanned, bytesScanned *in
 			atomic.AddInt64(&total, size)
 
 			trySend(entryChan, dirEntry{
-				Name:       child.Name() + " →",
-				Path:       fullPath,
-				Size:       size,
-				IsDir:      isDir,
-				LastAccess: getLastAccessTimeFromInfo(info),
+				Name:        child.Name() + " →",
+				Path:        fullPath,
+				Size:        size,
+				IsDir:       isDir,
+				LastAccess:  getLastAccessTimeFromInfo(info),
+				CreatedDate: getCreationTimeFromInfo(info),
 			}, 100*time.Millisecond)
 			continue
 
@@ -255,11 +256,12 @@ func scanPathConcurrent(root string, filesScanned, dirsScanned, bytesScanned *in
 		localBytesScanned += size
 
 		trySend(entryChan, dirEntry{
-			Name:       child.Name(),
-			Path:       fullPath,
-			Size:       size,
-			IsDir:      false,
-			LastAccess: getLastAccessTimeFromInfo(info),
+			Name:        child.Name(),
+			Path:        fullPath,
+			Size:        size,
+			IsDir:       false,
+			LastAccess:  getLastAccessTimeFromInfo(info),
+			CreatedDate: getCreationTimeFromInfo(info),
 		}, 100*time.Millisecond)
 
 		// Track large files only.
@@ -739,4 +741,12 @@ func getLastAccessTimeFromInfo(info fs.FileInfo) time.Time {
 		return time.Time{}
 	}
 	return time.Unix(stat.Atimespec.Sec, stat.Atimespec.Nsec)
+}
+
+func getCreationTimeFromInfo(info fs.FileInfo) time.Time {
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !ok {
+		return time.Time{}
+	}
+	return time.Unix(stat.Birthtimespec.Sec, stat.Birthtimespec.Nsec)
 }

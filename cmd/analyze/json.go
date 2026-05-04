@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"sync/atomic"
+	"time"
 )
 
 type jsonOutput struct {
@@ -17,10 +18,15 @@ type jsonOutput struct {
 }
 
 type jsonEntry struct {
-	Name  string `json:"name"`
-	Path  string `json:"path"`
-	Size  int64  `json:"size"`
-	IsDir bool   `json:"is_dir"`
+	Name            string `json:"name"`
+	Path            string `json:"path"`
+	Size            int64  `json:"size"`
+	IsDir           bool   `json:"is_dir"`
+	RiskLevel       string `json:"risk_level,omitempty"`
+	StorageCategory string `json:"storage_category,omitempty"`
+	LastAccessed    string `json:"last_accessed,omitempty"`
+	CreatedDate     string `json:"created_date,omitempty"`
+	ExplanationKey  string `json:"explanation_key,omitempty"`
 }
 
 func runJSONMode(path string, isOverview bool) {
@@ -51,25 +57,45 @@ func performScanForJSON(path string) jsonOutput {
 	for _, item := range items {
 		fullPath := path + "/" + item.Name()
 		var size int64
+		var lastAccess time.Time
+		var createdDate time.Time
 
 		if item.IsDir() {
 			size = calculateDirSizeFast(fullPath, &filesScanned, &dirsScanned, &bytesScanned, currentPath)
 		} else {
-			info, err := item.Info()
-			if err == nil {
+			info, infoErr := item.Info()
+			if infoErr == nil {
 				size = info.Size()
+				lastAccess = getLastAccessTimeFromInfo(info)
+				createdDate = getCreationTimeFromInfo(info)
 				atomic.AddInt64(&filesScanned, 1)
 				atomic.AddInt64(&bytesScanned, size)
 			}
 		}
 
 		totalSize += size
-		entries = append(entries, jsonEntry{
-			Name:  item.Name(),
-			Path:  fullPath,
-			Size:  size,
-			IsDir: item.IsDir(),
-		})
+
+		risk := riskLevelForPath(fullPath)
+		category := categoryForPath(fullPath)
+
+		entry := jsonEntry{
+			Name:            item.Name(),
+			Path:            fullPath,
+			Size:            size,
+			IsDir:           item.IsDir(),
+			RiskLevel:       string(risk),
+			StorageCategory: string(category),
+			ExplanationKey:  explanationKeyFor(category, risk),
+		}
+
+		if !lastAccess.IsZero() {
+			entry.LastAccessed = lastAccess.Format(time.RFC3339)
+		}
+		if !createdDate.IsZero() {
+			entry.CreatedDate = createdDate.Format(time.RFC3339)
+		}
+
+		entries = append(entries, entry)
 	}
 
 	return jsonOutput{
