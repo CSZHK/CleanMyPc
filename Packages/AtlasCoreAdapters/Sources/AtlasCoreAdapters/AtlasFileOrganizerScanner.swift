@@ -76,9 +76,9 @@ public struct AtlasFileOrganizerScanner: AtlasFileOrganizerScanning, Sendable {
         let videoExts: Set<String> = ["mp4", "mov", "avi", "mkv", "wmv", "flv", "webm", "m4v", "mpg", "mpeg", "3gp"]
         let audioExts: Set<String> = ["mp3", "wav", "aac", "flac", "ogg", "m4a", "wma", "aiff", "alac"]
         let docExts: Set<String> = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "csv", "odt", "ods", "odp", "pages", "numbers", "key"]
-        let archiveExts: Set<String> = ["zip", "tar", "gz", "bz2", "xz", "rar", "7z", "tgz", "dmg", "iso"]
+        let archiveExts: Set<String> = ["zip", "tar", "gz", "bz2", "xz", "rar", "7z", "tgz", "iso"]
         let codeExts: Set<String> = ["swift", "py", "js", "ts", "tsx", "jsx", "go", "rs", "java", "c", "cpp", "h", "hpp", "html", "css", "json", "xml", "yaml", "yml", "sh", "bash", "rb", "php", "sql", "md", "toml"]
-        let installerExts: Set<String> = ["pkg", "deb", "rpm", "msi"]
+        let installerExts: Set<String> = ["dmg", "pkg", "deb", "rpm", "msi"]
 
         if imageExts.contains(ext) { return .images }
         if videoExts.contains(ext) { return .videos }

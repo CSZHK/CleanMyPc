@@ -1141,7 +1141,8 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     private func isFileOrganizerRestoreTarget(_ mapping: RecoveryPathMapping) -> Bool {
         let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
         let originalPath = (mapping.originalPath as NSString).expandingTildeInPath
-        return originalPath.hasPrefix(homeDir + "/")
+        let trashedPath = (mapping.trashedPath as NSString).expandingTildeInPath
+        return originalPath.hasPrefix(homeDir + "/") && trashedPath.hasPrefix(homeDir + "/")
     }
 
     private func smartCleanExecutionSummary(executedCount: Int, staleCount: Int, reviewOnlyCount: Int, failedCount: Int) -> String {
