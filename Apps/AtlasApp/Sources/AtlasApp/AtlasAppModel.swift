@@ -704,7 +704,7 @@ final class AtlasAppModel: ObservableObject {
             let movedCount = output.movedCount
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = output.snapshot
-                fileOrganizerEntries = []
+                fileOrganizerEntries = output.snapshot.fileOrganizerEntries
                 fileOrganizerMovedCount = movedCount
                 fileOrganizerScanSummary = AtlasL10n.string("fileorganizer.callout.executionComplete.detail", movedCount)
                 fileOrganizerProgress = output.progressFraction

@@ -707,18 +707,21 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
 
         for entry in entries {
             let rawSourcePath = (entry.path as NSString).expandingTildeInPath
-            let proposedDestPath = (entry.proposedDestination as NSString).expandingTildeInPath
+            let rawDestPath = (entry.proposedDestination as NSString).expandingTildeInPath
 
-            // Resolve symlinks to get the real filesystem path
-            let resolvedSourceURL = URL(fileURLWithPath: rawSourcePath).resolvingSymlinksInPath()
-            let sourcePath = resolvedSourceURL.path
-
-            // Safety: only move files within the user's home directory (after symlink resolution)
-            guard sourcePath.hasPrefix(homeDir), proposedDestPath.hasPrefix(homeDir) else {
-                await auditStore.append("Skipped out-of-scope path: \(entry.fileName)")
-                failedMoves.append((entry.fileName, "Path outside home directory"))
+            let sourceURL: URL
+            let destURL: URL
+            do {
+                sourceURL = try AtlasPathValidator.validate(rawSourcePath)
+                destURL = try AtlasPathValidator.validate(rawDestPath)
+            } catch {
+                await auditStore.append("Skipped invalid path for \(entry.fileName): \(error.localizedDescription)")
+                failedMoves.append((entry.fileName, "Invalid path: \(error.localizedDescription)"))
                 continue
             }
+            let sourcePath = sourceURL.path
+            let proposedDestPath = destURL.path
+
             guard fm.fileExists(atPath: sourcePath) else {
                 await auditStore.append("Source no longer exists: \(entry.fileName)")
                 failedMoves.append((entry.fileName, "Source file no longer exists"))
@@ -772,19 +775,37 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
 
         if !moveMappings.isEmpty {
             let sourceFolder = entries.first?.path ?? "~/Desktop"
+            let newRestoreMappings = zip(moveMappings, absoluteDestPaths).map { mapping, absoluteDest in
+                RecoveryPathMapping(originalPath: (mapping.originalPath as NSString).expandingTildeInPath, trashedPath: absoluteDest)
+            }
+            // Merge with existing file organizer recovery items so undo reverts all moves
+            var allMoveMappings = moveMappings
+            var allRestoreMappings = newRestoreMappings
+            var mergedBytes = totalBytesMoved
+            for existingItem in state.snapshot.recoveryItems {
+                guard case let .fileOrganizer(payload) = existingItem.payload else { continue }
+                allMoveMappings.append(contentsOf: payload.moveMappings)
+                if let existing = existingItem.restoreMappings {
+                    allRestoreMappings.insert(contentsOf: existing, at: 0)
+                }
+                mergedBytes += existingItem.bytes
+            }
+            state.snapshot.recoveryItems.removeAll { item in
+                if case .fileOrganizer = item.payload { return true }
+                return false
+            }
             let recoveryItem = RecoveryItem(
                 title: AtlasL10n.string("fileorganizer.recovery.title"),
                 detail: AtlasL10n.string("fileorganizer.recovery.detail"),
                 originalPath: sourceFolder,
-                bytes: totalBytesMoved,
+                bytes: mergedBytes,
                 deletedAt: Date(),
+                expiresAt: Date().addingTimeInterval(30 * 24 * 3600),
                 payload: .fileOrganizer(FileOrganizerRecoveryPayload(
-                    moveMappings: moveMappings,
+                    moveMappings: allMoveMappings,
                     sourceFolder: sourceFolder
                 )),
-                restoreMappings: zip(moveMappings, absoluteDestPaths).map { mapping, absoluteDest in
-                    RecoveryPathMapping(originalPath: (mapping.originalPath as NSString).expandingTildeInPath, trashedPath: absoluteDest)
-                }
+                restoreMappings: allRestoreMappings
             )
             state.snapshot.recoveryItems.insert(recoveryItem, at: 0)
         }
@@ -823,7 +844,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         )
         let events = progressEvents(taskID: taskID, total: 3) + [AtlasEventEnvelope(event: .taskFinished(completedRun))]
         await auditStore.append("Executed file organizer plan: \(moveMappings.count) moved, \(failedMoves.count) failed")
-        return AtlasWorkerCommandResult(request: request, response: response, events: events, snapshot: state.snapshot)
+        return AtlasWorkerCommandResult(request: request, response: response, events: events, snapshot: state.snapshot, movedCount: moveMappings.count)
     }
 
     private func fileOrganizerDryRun(using request: AtlasRequestEnvelope, planID: UUID) async -> AtlasWorkerCommandResult {

@@ -199,19 +199,22 @@ public struct AtlasWorkerCommandResult: Codable, Hashable, Sendable {
     public var events: [AtlasEventEnvelope]
     public var snapshot: AtlasWorkspaceSnapshot
     public var previewPlan: ActionPlan?
+    public var movedCount: Int?
 
     public init(
         request: AtlasRequestEnvelope,
         response: AtlasResponseEnvelope,
         events: [AtlasEventEnvelope],
         snapshot: AtlasWorkspaceSnapshot,
-        previewPlan: ActionPlan? = nil
+        previewPlan: ActionPlan? = nil,
+        movedCount: Int? = nil
     ) {
         self.request = request
         self.response = response
         self.events = events
         self.snapshot = snapshot
         self.previewPlan = previewPlan
+        self.movedCount = movedCount
     }
 }
 
@@ -572,10 +575,7 @@ public struct AtlasWorkspaceController: Sendable {
 
         switch result.response.response {
         case .accepted:
-            let movedCount = result.snapshot.recoveryItems.first(where: {
-                if case .fileOrganizer = $0.payload { return true }
-                return false
-            })?.restoreMappings?.count ?? 0
+            let movedCount = result.movedCount ?? 0
             return AtlasFileOrganizerExecuteOutput(
                 snapshot: result.snapshot,
                 events: result.events,
