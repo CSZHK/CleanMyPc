@@ -706,10 +706,14 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         var usedDestPaths: [String: Int] = [:]
 
         for entry in entries {
-            let sourcePath = (entry.path as NSString).expandingTildeInPath
+            let rawSourcePath = (entry.path as NSString).expandingTildeInPath
             let proposedDestPath = (entry.proposedDestination as NSString).expandingTildeInPath
 
-            // Safety: only move files within the user's home directory
+            // Resolve symlinks to get the real filesystem path
+            let resolvedSourceURL = URL(fileURLWithPath: rawSourcePath).resolvingSymlinksInPath()
+            let sourcePath = resolvedSourceURL.path
+
+            // Safety: only move files within the user's home directory (after symlink resolution)
             guard sourcePath.hasPrefix(homeDir), proposedDestPath.hasPrefix(homeDir) else {
                 await auditStore.append("Skipped out-of-scope path: \(entry.fileName)")
                 failedMoves.append((entry.fileName, "Path outside home directory"))
@@ -729,7 +733,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             if claimIndex > 0 || fm.fileExists(atPath: destPath) {
                 let ext = (proposedDestPath as NSString).pathExtension
                 let baseName = (proposedDestPath as NSString).deletingPathExtension
-                var attempt = claimIndex > 0 ? claimIndex + 1 : 1
+                var attempt = claimIndex > 0 ? claimIndex : 1
                 var candidate = ext.isEmpty
                     ? "\(baseName) (\(attempt))"
                     : "\(baseName) (\(attempt)).\(ext)"
@@ -785,13 +789,23 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             state.snapshot.recoveryItems.insert(recoveryItem, at: 0)
         }
 
-        state.snapshot.fileOrganizerEntries = []
+        // Keep failed entries for retry; clear only on full success or full failure
+        let movedIDs = Set(moveMappings.compactMap { mapping -> UUID? in
+            entries.first(where: { $0.path == mapping.originalPath })?.id
+        })
+        if failedMoves.isEmpty || failedMoves.count == entries.count {
+            state.snapshot.fileOrganizerEntries = []
+        } else {
+            state.snapshot.fileOrganizerEntries = entries.filter { !movedIDs.contains($0.id) }
+        }
         await persistState(context: "file organizer execute plan")
 
+        let allFailed = failedMoves.count == entries.count
+        let hasPartialSuccess = !moveMappings.isEmpty && !failedMoves.isEmpty
         let completedRun = TaskRun(
             id: taskID,
             kind: .organizeFiles,
-            status: failedMoves.count == entries.count ? .failed : .completed,
+            status: allFailed ? .failed : (hasPartialSuccess ? .completed : .completed),
             summary: AtlasL10n.string(
                 moveMappings.count == 1 ? "infrastructure.scan.completed.one" : "infrastructure.scan.completed.other",
                 moveMappings.count
@@ -843,27 +857,27 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
                 targetPaths: [entry.path]
             )
         }
-        // Deterministic plan ID: use first entry's ID as base to produce a stable UUID
-        let base = items.first?.id ?? UUID()
-        let baseString = base.uuidString
-        let planID = UUID(uuid: (
-            baseString.utf8.dropFirst(0).reduce(0, { $0 ^ $1 }),
-            baseString.utf8.dropFirst(1).reduce(0, { $0 ^ $1 }),
-            baseString.utf8.dropFirst(2).reduce(0, { $0 ^ $1 }),
-            baseString.utf8.dropFirst(3).reduce(0, { $0 ^ $1 }),
-            0x40,
-            0x11,
-            0x4F,
-            0x9B,
-            0x8A,
-            0x5B,
-            UInt8(items.count),
-            UInt8(entries.map(\.bytes).reduce(0, +) & 0xFF),
-            baseString.utf8.dropFirst(4).reduce(0, { $0 ^ $1 }),
-            baseString.utf8.dropFirst(5).reduce(0, { $0 ^ $1 }),
-            baseString.utf8.dropFirst(6).reduce(0, { $0 ^ $1 }),
-            baseString.utf8.dropFirst(7).reduce(0, { $0 ^ $1 })
-        ))
+        // Deterministic plan ID: XOR-fold ALL entry IDs + entry count into a stable 16-byte UUID
+        let planID: UUID = {
+            var s = (UInt8(0), UInt8(0), UInt8(0), UInt8(0),
+                     UInt8(0), UInt8(0), UInt8(0), UInt8(0),
+                     UInt8(0), UInt8(0), UInt8(0), UInt8(0),
+                     UInt8(0), UInt8(0), UInt8(0), UInt8(0))
+            for entry in entries {
+                let u = entry.id.uuid
+                s = (s.0 ^ u.0, s.1 ^ u.1, s.2 ^ u.2, s.3 ^ u.3,
+                     s.4 ^ u.4, s.5 ^ u.5, s.6 ^ u.6, s.7 ^ u.7,
+                     s.8 ^ u.8, s.9 ^ u.9, s.10 ^ u.10, s.11 ^ u.11,
+                     s.12 ^ u.12, s.13 ^ u.13, s.14 ^ u.14, s.15 ^ u.15)
+            }
+            // Mix in entry count to distinguish different-sized sets with overlapping IDs
+            let countBytes = UInt16(entries.count)
+            s = (s.0, s.1 ^ UInt8(truncatingIfNeeded: countBytes >> 8), s.2 ^ UInt8(truncatingIfNeeded: countBytes), s.3,
+                 s.4, s.5, s.6, s.7,
+                 s.8, s.9, s.10, s.11,
+                 s.12, s.13, s.14, s.15)
+            return UUID(uuid: s)
+        }()
         return ActionPlan(
             id: planID,
             title: AtlasL10n.string("fileorganizer.section.plan.title"),
@@ -1043,7 +1057,11 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             guard helperExecutor != nil else {
                 throw RecoveryRestoreFailure.helperUnavailable("Bundled helper unavailable for recovery target: \(destinationURL.path)")
             }
-        } else if !isDirectlyTrashableSmartCleanTarget(destinationURL) {
+        } else if isDirectlyTrashableSmartCleanTarget(destinationURL) {
+            // SmartClean cache paths are valid restore targets
+        } else if isFileOrganizerRestoreTarget(mapping) {
+            // File organizer targets within home directory are valid restore targets
+        } else {
             throw RecoveryRestoreFailure.executionUnavailable("Recovery target is outside the supported execution allowlist: \(destinationURL.path)")
         }
         if FileManager.default.fileExists(atPath: destinationURL.path) {
@@ -1097,6 +1115,12 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
 
     private func isDirectlyTrashableSmartCleanTarget(_ targetURL: URL) -> Bool {
         AtlasSmartCleanExecutionSupport.isDirectlyTrashable(targetURL)
+    }
+
+    private func isFileOrganizerRestoreTarget(_ mapping: RecoveryPathMapping) -> Bool {
+        let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        let originalPath = (mapping.originalPath as NSString).expandingTildeInPath
+        return originalPath.hasPrefix(homeDir + "/")
     }
 
     private func smartCleanExecutionSummary(executedCount: Int, staleCount: Int, reviewOnlyCount: Int, failedCount: Int) -> String {

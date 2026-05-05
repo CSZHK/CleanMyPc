@@ -19,6 +19,12 @@ public struct AtlasFileOrganizerScanner: AtlasFileOrganizerScanning, Sendable {
             ) else { continue }
 
             for case let url as URL in enumerator {
+                // Skip symlinks pointing outside the scanned directory
+                let resolvedPath = url.resolvingSymlinksInPath().path
+                guard resolvedPath.hasPrefix(expandedPath + "/") || resolvedPath == expandedPath else {
+                    continue
+                }
+
                 let resourceValues = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey])
 
                 if let isDir = resourceValues?.isDirectory, isDir {
@@ -41,7 +47,8 @@ public struct AtlasFileOrganizerScanner: AtlasFileOrganizerScanning, Sendable {
                     displayPath = fullPath
                 }
 
-                let proposedDestination = "~/Organized/\(category.folderName)/\(fileName)"
+                let safeFileName = (fileName as NSString).lastPathComponent
+                let proposedDestination = "~/Organized/\(category.folderName)/\(safeFileName)"
 
                 entries.append(FileOrganizerEntry(
                     path: displayPath,

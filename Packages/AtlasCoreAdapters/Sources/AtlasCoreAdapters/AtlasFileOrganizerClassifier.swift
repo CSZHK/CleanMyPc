@@ -10,7 +10,8 @@ public struct AtlasFileOrganizerClassifier: AtlasFileOrganizerClassifying, Senda
             var classified = entry
             let category = classifyEntry(entry, rules: rules)
             classified.category = category
-            classified.proposedDestination = "~/Organized/\(category.folderName)/\(entry.fileName)"
+            let safeFileName = (entry.fileName as NSString).lastPathComponent
+            classified.proposedDestination = "~/Organized/\(category.folderName)/\(safeFileName)"
             return classified
         }
     }
@@ -18,13 +19,17 @@ public struct AtlasFileOrganizerClassifier: AtlasFileOrganizerClassifying, Senda
     private func classifyEntry(_ entry: FileOrganizerEntry, rules: [FileOrganizerRule]) -> FileOrganizerCategory {
         let ext = (entry.fileName as NSString).pathExtension.lowercased()
 
-        // Priority 1: Custom rules
+        // Priority 1: Custom rules (extension or name patterns)
         for rule in rules {
-            if rule.extensionPatterns.contains(where: { $0.lowercased() == ext }) {
-                if let minSize = rule.minSizeBytes, entry.bytes < minSize { continue }
-                if let maxSize = rule.maxSizeBytes, entry.bytes > maxSize { continue }
-                return rule.category
-            }
+            let matchesExtension = rule.extensionPatterns.contains(where: { $0.lowercased() == ext })
+            let matchesName = !rule.namePatterns.isEmpty && rule.namePatterns.contains(where: { pattern in
+                let lowered = pattern.lowercased()
+                return entry.fileName.lowercased().contains(lowered)
+            })
+            guard matchesExtension || matchesName else { continue }
+            if let minSize = rule.minSizeBytes, entry.bytes < minSize { continue }
+            if let maxSize = rule.maxSizeBytes, entry.bytes > maxSize { continue }
+            return rule.category
         }
 
         // Priority 2: UTType fallback
