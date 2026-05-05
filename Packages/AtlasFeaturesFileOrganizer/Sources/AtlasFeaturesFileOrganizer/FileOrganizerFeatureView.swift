@@ -113,6 +113,16 @@ public struct FileOrganizerFeatureView: View {
         }
     }
 
+    // MARK: - Pre-computed Values
+
+    private var totalEntryBytes: Int64 {
+        entries.reduce(Int64(0)) { $0 + $1.bytes }
+    }
+
+    private var entriesByCategory: [FileOrganizerCategory: [FileOrganizerEntry]] {
+        Dictionary(grouping: entries, by: \.category)
+    }
+
     // MARK: - Status Callout Computed Properties
 
     private enum WorkflowPhase {
@@ -155,7 +165,7 @@ public struct FileOrganizerFeatureView: View {
         case .planFailed: return planIssue ?? ""
         case .executionComplete: return AtlasL10n.string("fileorganizer.callout.executionComplete.detail", movedCount)
         case .ready:
-            let totalSize = ByteCountFormatter.string(fromByteCount: entries.map(\.bytes).reduce(0, +), countStyle: .file)
+            let totalSize = ByteCountFormatter.string(fromByteCount: totalEntryBytes, countStyle: .file)
             return AtlasL10n.string("fileorganizer.callout.complete.detail", entries.count, totalSize)
         case .empty: return AtlasL10n.string("fileorganizer.callout.empty.detail")
         }
@@ -224,7 +234,7 @@ public struct FileOrganizerFeatureView: View {
             )
             AtlasMetricCard(
                 title: AtlasL10n.string("fileorganizer.metric.totalSize.title"),
-                value: ByteCountFormatter.string(fromByteCount: entries.map(\.bytes).reduce(0, +), countStyle: .file),
+                value: ByteCountFormatter.string(fromByteCount: totalEntryBytes, countStyle: .file),
                 detail: AtlasL10n.string("fileorganizer.metric.totalSize.detail"),
                 tone: .neutral,
                 systemImage: "internaldrive"
@@ -242,11 +252,11 @@ public struct FileOrganizerFeatureView: View {
     // MARK: - Category Sections
 
     private var categorySections: some View {
-        AtlasInfoCard(title: AtlasL10n.string("fileorganizer.section.results.title")) {
+        let grouped = entriesByCategory
+        return AtlasInfoCard(title: AtlasL10n.string("fileorganizer.section.results.title")) {
             LazyVStack(spacing: AtlasSpacing.xs) {
                 ForEach(FileOrganizerCategory.allCases, id: \.rawValue) { category in
-                    let categoryEntries = entries.filter { $0.category == category }
-                    if !categoryEntries.isEmpty {
+                    if let categoryEntries = grouped[category], !categoryEntries.isEmpty {
                         AtlasSectionDisclosure(
                             title: category.title,
                             count: categoryEntries.count
@@ -278,6 +288,10 @@ public struct FileOrganizerFeatureView: View {
         Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0.fileName) })
     }
 
+    private var entryLookups: (category: [UUID: FileOrganizerCategory], name: [UUID: String]) {
+        (entryCategoryLookup, entryNameLookup)
+    }
+
     private struct PlanGroup: Identifiable {
         let id: FileOrganizerCategory
         let category: FileOrganizerCategory
@@ -286,16 +300,15 @@ public struct FileOrganizerFeatureView: View {
     }
 
     private func planItemsGroupedByCategory() -> [PlanGroup] {
-        let catLookup = entryCategoryLookup
-        let nameLookup = entryNameLookup
+        let lookups = entryLookups
         var groups: [FileOrganizerCategory: [ActionItem]] = [:]
         for item in plan.items {
-            let cat = catLookup[item.id] ?? .other
+            let cat = lookups.category[item.id] ?? .other
             groups[cat, default: []].append(item)
         }
         return FileOrganizerCategory.allCases.compactMap { cat in
             guard let items = groups[cat], !items.isEmpty else { return nil }
-            return PlanGroup(id: cat, category: cat, items: items, names: nameLookup)
+            return PlanGroup(id: cat, category: cat, items: items, names: lookups.name)
         }
     }
 

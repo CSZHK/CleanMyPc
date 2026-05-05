@@ -160,7 +160,7 @@ struct AppShellView: View {
             )
         case .fileOrganizer:
             FileOrganizerFeatureView(
-                entries: model.fileOrganizerEntries,
+                entries: model.filteredFileOrganizerEntries,
                 plan: model.currentFileOrganizerPlan,
                 scanSummary: model.fileOrganizerScanSummary,
                 scanProgress: model.fileOrganizerProgress,

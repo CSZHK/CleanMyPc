@@ -200,6 +200,10 @@ final class AtlasAppModel: ObservableObject {
         snapshotFilter.filteredPermissionStates(from: snapshot)
     }
 
+    var filteredFileOrganizerEntries: [FileOrganizerEntry] {
+        snapshotFilter.filteredFileOrganizerEntries(from: snapshot)
+    }
+
     var taskCenterTaskRuns: [TaskRun] {
         snapshot.taskRuns
     }

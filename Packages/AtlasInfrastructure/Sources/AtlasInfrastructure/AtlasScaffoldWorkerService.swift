@@ -595,7 +595,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
 
         let completedRun = TaskRun(
             id: taskID,
-            kind: .organizeFiles,
+            kind: .scan,
             status: .completed,
             summary: AtlasL10n.string(
                 entries.count == 1 ? "infrastructure.scan.completed.one" : "infrastructure.scan.completed.other",
