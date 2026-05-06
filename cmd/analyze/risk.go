@@ -9,8 +9,8 @@ import (
 type RiskLevel string
 
 const (
-	RiskSafe    RiskLevel = "safe"    // Safe to delete without concern.
-	RiskReview  RiskLevel = "review"  // Should review before deletion.
+	RiskSafe     RiskLevel = "safe"     // Safe to delete without concern.
+	RiskReview   RiskLevel = "review"   // Should review before deletion.
 	RiskAdvanced RiskLevel = "advanced" // Requires advanced knowledge to delete safely.
 )
 
@@ -18,29 +18,29 @@ const (
 type StorageCategory string
 
 const (
-	CategorySystemCache      StorageCategory = "systemCache"
-	CategoryAppCache         StorageCategory = "appCache"
+	CategorySystemCache       StorageCategory = "systemCache"
+	CategoryAppCache          StorageCategory = "appCache"
 	CategoryDeveloperArtifact StorageCategory = "developerArtifact"
-	CategoryBrowserData      StorageCategory = "browserData"
-	CategoryLogFile          StorageCategory = "logFile"
-	CategoryDownloadArtifact StorageCategory = "downloadArtifact"
-	CategoryMailAttachment   StorageCategory = "mailAttachment"
-	CategoryOldBackup        StorageCategory = "oldBackup"
-	CategoryUnknown          StorageCategory = "unknown"
+	CategoryBrowserData       StorageCategory = "browserData"
+	CategoryLogFile           StorageCategory = "logFile"
+	CategoryDownloadArtifact  StorageCategory = "downloadArtifact"
+	CategoryMailAttachment    StorageCategory = "mailAttachment"
+	CategoryOldBackup         StorageCategory = "oldBackup"
+	CategoryUnknown           StorageCategory = "unknown"
 )
 
 // safeDirNames maps directory base names that are safe to delete.
 var safeDirNames = map[string]bool{
 	// System caches.
-	".cache":    true,
-	"Caches":    true,
-	".tmp":      true,
-	".temp":     true,
-	"_temp":     true,
-	"_tmp":      true,
-	"tmp":       true,
-	"temp":      true,
-	".Trash":    true,
+	".cache":       true,
+	"Caches":       true,
+	".tmp":         true,
+	".temp":        true,
+	"_temp":        true,
+	"_tmp":         true,
+	"tmp":          true,
+	"temp":         true,
+	".Trash":       true,
 	"$RECYCLE.BIN": true,
 
 	// macOS system artifacts.
@@ -52,16 +52,16 @@ var safeDirNames = map[string]bool{
 	".TemporaryItems":         true,
 
 	// Developer build outputs.
-	"build":         true,
-	"dist":          true,
-	".output":       true,
-	"coverage":      true,
-	".coverage":     true,
-	".nyc_output":   true,
-	"htmlcov":       true,
-	"out":           true,
-	"target":        true,
-	"DerivedData":   true,
+	"build":       true,
+	"dist":        true,
+	".output":     true,
+	"coverage":    true,
+	".coverage":   true,
+	".nyc_output": true,
+	"htmlcov":     true,
+	"out":         true,
+	"target":      true,
+	"DerivedData": true,
 
 	// Developer dependency caches.
 	"node_modules":     true,
@@ -96,10 +96,10 @@ var safeDirNames = map[string]bool{
 
 	// IDE caches.
 	".idea": true,
-	".vs":  true,
+	".vs":   true,
 
 	// Other safe caches.
-	".Homebrew": true,
+	".Homebrew":  true,
 	".terraform": true,
 	".dart_tool": true,
 }
@@ -116,19 +116,19 @@ var safePathPatterns = []string{
 // reviewDirNames maps directory base names that need review before deletion.
 var reviewDirNames = map[string]bool{
 	// Developer environments (may contain project-specific configurations).
-	"venv":          true,
-	".venv":         true,
-	"virtualenv":    true,
-	".pyenv":        true,
-	".poetry":       true,
-	".pip":          true,
-	".pipx":         true,
-	".rbenv":        true,
-	".nvm":          true,
-	".rustup":       true,
-	".sdkman":       true,
-	".deno":         true,
-	".bun":          true,
+	"venv":       true,
+	".venv":      true,
+	"virtualenv": true,
+	".pyenv":     true,
+	".poetry":    true,
+	".pip":       true,
+	".pipx":      true,
+	".rbenv":     true,
+	".nvm":       true,
+	".rustup":    true,
+	".sdkman":    true,
+	".deno":      true,
+	".bun":       true,
 
 	// Developer build caches (may be expensive to rebuild).
 	".gradle": true,
@@ -138,7 +138,7 @@ var reviewDirNames = map[string]bool{
 	".build":  true,
 
 	// Package manager caches.
-	".npm":    true,
+	".npm":      true,
 	".composer": true,
 
 	// Application data.
@@ -197,15 +197,15 @@ var advancedPathPatterns = []string{
 
 // browserDataDirNames marks directories that contain browser data.
 var browserDataDirNames = map[string]bool{
-	"Safari":             true,
-	"Google":             true,
-	"Chrome":             true,
-	"Chromium":           true,
-	"Firefox":            true,
-	"BraveSoftware":      true,
-	"Microsoft Edge":     true,
-	"com.apple.Safari":   true,
-	"com.google.Chrome":  true,
+	"Safari":              true,
+	"Google":              true,
+	"Chrome":              true,
+	"Chromium":            true,
+	"Firefox":             true,
+	"BraveSoftware":       true,
+	"Microsoft Edge":      true,
+	"com.apple.Safari":    true,
+	"com.google.Chrome":   true,
 	"org.mozilla.firefox": true,
 }
 
@@ -438,9 +438,9 @@ func isDeveloperArtifactName(name string) bool {
 		".dart_tool": true,
 
 		// Other tools.
-		".terraform": true,
-		"coverage":   true,
-		".coverage":  true,
+		".terraform":  true,
+		"coverage":    true,
+		".coverage":   true,
 		".nyc_output": true,
 	}
 
