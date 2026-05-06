@@ -129,3 +129,12 @@ dist/
 /live-map.md
 
 # END ATOMSTORM ITERATION GOVERNANCE
+
+# Auto Claude generated files
+.auto-claude/
+.auto-claude-security.json
+.auto-claude-status
+.claude_settings.json
+.worktrees/
+.security-key
+logs/security/

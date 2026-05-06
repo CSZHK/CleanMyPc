@@ -351,6 +351,13 @@
 "smartclean.expectation.review" = "Review before removal";
 "smartclean.expectation.advanced" = "Inspect carefully";
 
+"smartclean.summary.totalReclaimable" = "Total reclaimable space";
+"smartclean.summary.findingCount" = "%d findings";
+"smartclean.summary.safeSegment" = "%@ can be safely cleaned";
+"smartclean.summary.reviewSegment" = "%@ requires review";
+"smartclean.summary.advancedSegment" = "%@ needs advanced inspection";
+"smartclean.summary.empty" = "No reclaimable space found";
+
 "apps.screen.title" = "Apps";
 "apps.screen.subtitle" = "Review each app's footprint, leftovers, and recovery path before you uninstall it.";
 "apps.callout.default.title" = "Review the uninstall plan before you remove anything";
@@ -712,3 +719,112 @@
 "update.error.title" = "Update check failed";
 "update.error.detail" = "Could not reach the update server. Please try again later.";
 "update.error.requestFailed" = "Could not connect to the GitHub release server.";
+
+// MARK: - Storage Categories
+
+"storageCategory.systemCache" = "System Cache";
+"storageCategory.appCache" = "App Cache";
+"storageCategory.developerArtifact" = "Developer Artifacts";
+"storageCategory.browserData" = "Browser Data";
+"storageCategory.logFile" = "Log Files";
+"storageCategory.downloadArtifact" = "Downloads";
+"storageCategory.mailAttachment" = "Mail Attachments";
+"storageCategory.oldBackup" = "Old Backups";
+
+// MARK: - Explanation Templates (per StorageCategory × RiskLevel)
+
+"explanation.systemCache.safe" = "System cache files can be safely removed. They are automatically regenerated as needed.";
+"explanation.systemCache.review" = "These system cache files should be reviewed before removal to avoid unexpected behavior.";
+"explanation.systemCache.advanced" = "These system cache files are in protected locations and require careful inspection before cleanup.";
+
+"explanation.appCache.safe" = "Application cache files are safe to clean and will be recreated when the apps need them.";
+"explanation.appCache.review" = "These application cache files should be reviewed to ensure the associated app is no longer needed.";
+"explanation.appCache.advanced" = "These application cache files belong to system-critical apps and require advanced review.";
+
+"explanation.developerArtifact.safe" = "Developer build artifacts and indexes can be safely removed. They regenerate on the next build.";
+"explanation.developerArtifact.review" = "These developer artifacts should be reviewed before removal to confirm they are no longer needed.";
+"explanation.developerArtifact.advanced" = "These developer artifacts may be in use by active projects and require careful review.";
+
+"explanation.browserData.safe" = "Browser cache files are safe to remove and have low recovery risk.";
+"explanation.browserData.review" = "These browser data files should be reviewed to ensure no important sessions or data are lost.";
+"explanation.browserData.advanced" = "These browser data files include sensitive data and require careful inspection.";
+
+"explanation.logFile.safe" = "Log files can be safely removed to reclaim space. New logs are created automatically.";
+"explanation.logFile.review" = "These log files should be reviewed before removal in case they contain useful diagnostic information.";
+"explanation.logFile.advanced" = "These log files belong to system processes and require advanced inspection.";
+
+"explanation.downloadArtifact.safe" = "Downloaded files that have not been used recently can be safely archived or removed.";
+"explanation.downloadArtifact.review" = "These download artifacts should be reviewed to confirm they are no longer needed.";
+"explanation.downloadArtifact.advanced" = "These download artifacts may contain important installers or documents and require careful review.";
+
+"explanation.mailAttachment.safe" = "Cached mail attachments can be safely removed. The originals remain on the mail server.";
+"explanation.mailAttachment.review" = "These mail attachment caches should be reviewed to ensure the attachments are still accessible.";
+"explanation.mailAttachment.advanced" = "These mail attachment files may be the only local copy and require careful review before removal.";
+
+"explanation.oldBackup.safe" = "Old backup files that have been superseded can be safely removed.";
+"explanation.oldBackup.review" = "These backup files should be reviewed to confirm they are no longer needed for recovery.";
+"explanation.oldBackup.advanced" = "These backup files may be critical for system recovery and require advanced inspection.";
+
+// MARK: - Explanation with Age Context
+
+"explanation.withAge" = "%@ (%@)";
+
+// MARK: - File Age Descriptors
+
+"fileage.notUsedIn" = "not used in %@";
+"fileage.years" = "%d years";
+"fileage.year" = "1 year";
+"fileage.months" = "%d months";
+"fileage.month" = "1 month";
+"fileage.days" = "%d days";
+"fileage.yearsAgo" = "%d years ago";
+"fileage.yearAgo" = "1 year ago";
+"fileage.monthsAgo" = "%d months ago";
+"fileage.monthAgo" = "1 month ago";
+"fileage.daysAgo" = "%d days ago";
+
+// MARK: - Smart Clean Risk Level Descriptions
+
+"smartclean.risk.safe.description" = "Safe to remove without review. These items are fully recoverable through History.";
+"smartclean.risk.review.description" = "Worth reviewing before removal. Some items may need your judgment.";
+"smartclean.risk.advanced.description" = "Requires advanced inspection. These items may affect system behavior if removed.";
+
+// MARK: - Smart Clean Explanation Templates
+
+"smartclean.explanation.systemCache" = "System cache files that can be regenerated automatically. %@";
+"smartclean.explanation.appCache" = "Application cache files that will be recreated when needed. %@";
+"smartclean.explanation.developerArtifact" = "Developer build artifacts and indexes from older projects. %@";
+"smartclean.explanation.browserData" = "Browser cache and data files with low recovery risk. %@";
+"smartclean.explanation.logFile" = "Log files that can be safely removed to reclaim space. %@";
+"smartclean.explanation.downloadArtifact" = "Downloaded files that have not been used recently. %@";
+"smartclean.explanation.mailAttachment" = "Cached mail attachments. The originals remain on the mail server. %@";
+"smartclean.explanation.oldBackup" = "Old backup files that have been superseded by newer versions. %@";
+
+// MARK: - Smart Clean File Age Labels
+
+"smartclean.fileage.lastAccessed" = "Last accessed %@";
+"smartclean.fileage.created" = "Created %@";
+"smartclean.fileage.notUsedIn" = "Not used in %@";
+
+// MARK: - Smart Clean Aggregate Summary
+
+"smartclean.aggregate.title" = "Cleanup Summary";
+"smartclean.aggregate.safelyCleanable" = "%@ can be safely cleaned";
+"smartclean.aggregate.needsReview" = "%@ requires review";
+"smartclean.aggregate.requiresAdvanced" = "%@ needs advanced inspection";
+
+// MARK: - Smart Clean Category Display Names
+
+"smartclean.category.systemCache" = "System Cache";
+"smartclean.category.appCache" = "App Cache";
+"smartclean.category.developerArtifact" = "Developer Artifacts";
+"smartclean.category.browserData" = "Browser Data";
+"smartclean.category.logFile" = "Log Files";
+"smartclean.category.downloadArtifact" = "Downloads";
+"smartclean.category.mailAttachment" = "Mail Attachments";
+"smartclean.category.oldBackup" = "Old Backups";
+
+// MARK: - Finding Row
+
+"smartclean.finding.expand" = "Show more";
+"smartclean.finding.collapse" = "Show less";

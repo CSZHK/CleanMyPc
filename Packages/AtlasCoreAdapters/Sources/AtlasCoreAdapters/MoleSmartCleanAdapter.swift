@@ -17,9 +17,12 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
         let exportFileURL = stateDirectory.appendingPathComponent("clean-list.txt")
         let detailedExportFileURL = stateDirectory.appendingPathComponent("clean-list-detailed.tsv")
         let output = try runDryRun(stateDirectory: stateDirectory, exportFileURL: exportFileURL, detailedExportFileURL: detailedExportFileURL)
-        let findings = Self.parseDetailedFindings(from: detailedExportFileURL).isEmpty
+        var findings = Self.parseDetailedFindings(from: detailedExportFileURL).isEmpty
             ? Self.parseFindings(from: output)
             : Self.parseDetailedFindings(from: detailedExportFileURL)
+
+        await Self.enrichFindingsWithFileAge(&findings)
+
         let summary = findings.isEmpty
             ? "Smart Clean dry run found no reclaimable items from the upstream clean workflow."
             : "Smart Clean dry run found \(findings.count) reclaimable item\(findings.count == 1 ? "" : "s")."
@@ -67,15 +70,45 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
             let section: String
             let path: String
             let sizeKB: Int64
+            let riskLevel: RiskLevel?
+            let storageCategory: AtlasStorageCategory?
+            let fileAge: FileAgeInfo?
         }
 
         let entries: [Entry] = content
             .split(whereSeparator: \.isNewline)
             .compactMap { rawLine in
                 let parts = rawLine.split(separator: "\t", omittingEmptySubsequences: false)
-                guard parts.count == 3 else { return nil }
-                guard let sizeKB = Int64(parts[2]) else { return nil }
-                return Entry(section: String(parts[0]), path: String(parts[1]), sizeKB: sizeKB)
+                guard parts.count >= 3, let sizeKB = Int64(parts[2]) else { return nil }
+
+                let parsedRisk: RiskLevel? = parts.count > 3 && !parts[3].isEmpty
+                    ? RiskLevel(rawValue: String(parts[3]))
+                    : nil
+                let parsedCategory: AtlasStorageCategory? = parts.count > 4 && !parts[4].isEmpty
+                    ? AtlasStorageCategory(rawValue: String(parts[4]))
+                    : nil
+
+                var ageInfo: FileAgeInfo?
+                if parts.count > 5 {
+                    let lastAccessed = parts.count > 5 && !parts[5].isEmpty
+                        ? ISO8601DateFormatter().date(from: String(parts[5]))
+                        : nil
+                    let createdDate = parts.count > 6 && !parts[6].isEmpty
+                        ? ISO8601DateFormatter().date(from: String(parts[6]))
+                        : nil
+                    if lastAccessed != nil || createdDate != nil {
+                        ageInfo = FileAgeInfo(lastAccessedDate: lastAccessed, creationDate: createdDate)
+                    }
+                }
+
+                return Entry(
+                    section: String(parts[0]),
+                    path: String(parts[1]),
+                    sizeKB: sizeKB,
+                    riskLevel: parsedRisk,
+                    storageCategory: parsedCategory,
+                    fileAge: ageInfo
+                )
             }
 
         guard !entries.isEmpty else {
@@ -97,6 +130,9 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
             var targetPaths: [String]
             var childCount: Int
             var order: Int
+            var riskLevel: RiskLevel?
+            var storageCategory: AtlasStorageCategory?
+            var fileAge: FileAgeInfo?
         }
 
         var groups: [String: Group] = [:]
@@ -115,13 +151,25 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
                     bytes: 0,
                     targetPaths: [],
                     childCount: 0,
-                    order: order
+                    order: order,
+                    riskLevel: entry.riskLevel,
+                    storageCategory: entry.storageCategory,
+                    fileAge: entry.fileAge
                 )
                 order += 1
             }
             groups[groupKey]!.bytes += entry.sizeKB * 1024
             groups[groupKey]!.targetPaths.append(entry.path)
             groups[groupKey]!.childCount += 1
+            if groups[groupKey]!.riskLevel == nil {
+                groups[groupKey]!.riskLevel = entry.riskLevel
+            }
+            if groups[groupKey]!.storageCategory == nil {
+                groups[groupKey]!.storageCategory = entry.storageCategory
+            }
+            if groups[groupKey]!.fileAge == nil {
+                groups[groupKey]!.fileAge = entry.fileAge
+            }
         }
 
         return groups.values
@@ -130,13 +178,25 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
                 return lhs.bytes > rhs.bytes
             }
             .map { group in
-                Finding(
+                let resolvedRisk = group.riskLevel
+                    ?? riskLevel(for: group.section, title: group.displayPath)
+                let resolvedCategory = group.storageCategory
+                    ?? storageCategory(for: group.section, displayPath: group.displayPath)
+                let explanation = AtlasFindingExplanations.explanation(
+                    for: resolvedCategory,
+                    risk: resolvedRisk,
+                    fileAge: group.fileAge
+                )
+                return Finding(
                     title: makeDetailedTitle(for: group.displayPath, section: group.section),
                     detail: makeDetailedDetail(for: group.displayPath, section: group.section, childCount: group.childCount),
                     bytes: group.bytes,
-                    risk: riskLevel(for: group.section, title: group.displayPath),
+                    risk: resolvedRisk,
                     category: group.section,
-                    targetPaths: group.targetPaths
+                    targetPaths: group.targetPaths,
+                    explanation: explanation,
+                    fileAge: group.fileAge,
+                    storageCategory: resolvedCategory
                 )
             }
     }
@@ -239,7 +299,20 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
         guard !title.isEmpty else { return nil }
         let detail = parseDetail(from: content, fallbackSection: section)
         let risk = riskLevel(for: section, title: title)
-        return Finding(title: title, detail: detail, bytes: bytes, risk: risk, category: section)
+        let category = storageCategory(for: section, displayPath: title)
+        let explanation = AtlasFindingExplanations.explanation(
+            for: category,
+            risk: risk
+        )
+        return Finding(
+            title: title,
+            detail: detail,
+            bytes: bytes,
+            risk: risk,
+            category: section,
+            explanation: explanation,
+            storageCategory: category
+        )
     }
 
 
@@ -334,6 +407,136 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
             return nil
         }
         return components[containersIndex + 1]
+    }
+
+    // MARK: - Storage Category Classification
+
+    private static func storageCategory(for section: String, displayPath: String) -> AtlasStorageCategory {
+        let path = displayPath.lowercased()
+        let last = URL(fileURLWithPath: displayPath).lastPathComponent.lowercased()
+
+        // Log files.
+        if last.hasSuffix(".log") || path.contains("/library/logs/") {
+            return .logFile
+        }
+        if last == "logs" {
+            return .logFile
+        }
+
+        // Browser data.
+        let browserPatterns = [
+            "/google/chrome/", "/safari/", "/firefox/", "/bravesoftware/",
+            "/microsoft edge/", "/chromium/", "/com.apple.safari/",
+            "/com.google.chrome/", "/org.mozilla.firefox/",
+        ]
+        for pattern in browserPatterns where path.contains(pattern) {
+            return .browserData
+        }
+
+        // Developer artifacts.
+        let developerPatterns = [
+            "/deriveddata/", "/.npm/", "/.npm_cache/", "/__pycache__",
+            "/.next/cache", "/pnpm/store", "/.oh-my-zsh/cache",
+            "/.gradle/", "/.m2/", "/.cargo/", "/.rustup/",
+            "/.pyenv/", "/.nvm/", "/.poetry/", "/.pip/",
+            "/.composer/", "/.bundle/",
+        ]
+        for pattern in developerPatterns where path.contains(pattern) {
+            return .developerArtifact
+        }
+        let developerNames: Set<String> = [
+            "deriveddata", "node_modules", "__pycache__", "build",
+            "dist", ".next", ".nuxt", ".vite", ".turbo", "pods", "carthage",
+        ]
+        if developerNames.contains(last) {
+            return .developerArtifact
+        }
+        if section.lowercased().contains("developer") {
+            return .developerArtifact
+        }
+
+        // Mail attachments.
+        if path.contains("/library/mail/") || path.contains("/library/messages/")
+            || path.contains("/library/containers/com.apple.mail/") {
+            return .mailAttachment
+        }
+        if last == "attachments" {
+            return .mailAttachment
+        }
+
+        // Download artifacts.
+        if path.contains("/downloads/") {
+            return .downloadArtifact
+        }
+
+        // Old backups.
+        if path.contains("backup") || path.contains(".bak") || path.contains("timemachine")
+            || path.contains(".mobilebackups") {
+            return .oldBackup
+        }
+
+        // System cache.
+        if path.contains("/library/caches/") || path.contains("/library/saved application state/")
+            || path.contains("/library/diagnosticreports/") || path.contains("/.trash/")
+            || path.contains("/.cache/") {
+            return .systemCache
+        }
+        let cacheNames: Set<String> = ["caches", "cache", ".cache", "tmp", "temp"]
+        if cacheNames.contains(last) {
+            return .systemCache
+        }
+
+        // App cache.
+        if path.contains("/library/application support/")
+            || path.contains("/library/containers/")
+            || path.contains("/library/preferences/") {
+            return .appCache
+        }
+
+        return .systemCache
+    }
+
+    // MARK: - File Age Enrichment
+
+    private static func enrichFindingsWithFileAge(_ findings: inout [Finding]) async {
+        for index in findings.indices {
+            guard findings[index].fileAge == nil,
+                  let targetPaths = findings[index].targetPaths,
+                  !targetPaths.isEmpty else {
+                continue
+            }
+
+            var oldestAccessed: Date?
+            var oldestCreated: Date?
+
+            for targetPath in targetPaths {
+                if let attributes = try? FileManager.default.attributesOfItem(atPath: targetPath) {
+                    if let modified = attributes[.modificationDate] as? Date {
+                        if oldestAccessed == nil || modified < oldestAccessed! {
+                            oldestAccessed = modified
+                        }
+                    }
+                    if let created = attributes[.creationDate] as? Date {
+                        if oldestCreated == nil || created < oldestCreated! {
+                            oldestCreated = created
+                        }
+                    }
+                }
+            }
+
+            if oldestAccessed != nil || oldestCreated != nil {
+                findings[index].fileAge = FileAgeInfo(
+                    lastAccessedDate: oldestAccessed,
+                    creationDate: oldestCreated
+                )
+                let category = findings[index].storageCategory ?? .systemCache
+                findings[index].explanation = AtlasFindingExplanations.explanation(
+                    for: category,
+                    risk: findings[index].risk,
+                    fileAge: findings[index].fileAge
+                )
+            }
+        }
     }
 
     private static var defaultCleanScriptURL: URL {

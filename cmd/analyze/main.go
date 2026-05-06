@@ -22,11 +22,12 @@ var (
 )
 
 type dirEntry struct {
-	Name       string
-	Path       string
-	Size       int64
-	IsDir      bool
-	LastAccess time.Time
+	Name        string
+	Path        string
+	Size        int64
+	IsDir       bool
+	LastAccess  time.Time
+	CreatedDate time.Time
 }
 
 type fileEntry struct {

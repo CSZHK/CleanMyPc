@@ -137,6 +137,31 @@ public enum RiskLevel: String, CaseIterable, Codable, Hashable, Sendable {
     }
 }
 
+public struct FileAgeInfo: Codable, Hashable, Sendable {
+    public var lastAccessedDate: Date?
+    public var creationDate: Date?
+
+    public init(
+        lastAccessedDate: Date? = nil,
+        creationDate: Date? = nil
+    ) {
+        self.lastAccessedDate = lastAccessedDate
+        self.creationDate = creationDate
+    }
+}
+
+public struct FindingAggregate: Codable, Hashable, Sendable {
+    public var risk: RiskLevel
+    public var totalBytes: Int64
+    public var count: Int
+
+    public init(risk: RiskLevel, totalBytes: Int64, count: Int) {
+        self.risk = risk
+        self.totalBytes = totalBytes
+        self.count = count
+    }
+}
+
 public struct Finding: Identifiable, Codable, Hashable, Sendable {
     public var id: UUID
     public var title: String
@@ -145,6 +170,9 @@ public struct Finding: Identifiable, Codable, Hashable, Sendable {
     public var risk: RiskLevel
     public var category: String
     public var targetPaths: [String]?
+    public var explanation: String?
+    public var fileAge: FileAgeInfo?
+    public var storageCategory: AtlasStorageCategory?
 
     public init(
         id: UUID = UUID(),
@@ -153,7 +181,10 @@ public struct Finding: Identifiable, Codable, Hashable, Sendable {
         bytes: Int64,
         risk: RiskLevel,
         category: String,
-        targetPaths: [String]? = nil
+        targetPaths: [String]? = nil,
+        explanation: String? = nil,
+        fileAge: FileAgeInfo? = nil,
+        storageCategory: AtlasStorageCategory? = nil
     ) {
         self.id = id
         self.title = title
@@ -162,6 +193,32 @@ public struct Finding: Identifiable, Codable, Hashable, Sendable {
         self.risk = risk
         self.category = category
         self.targetPaths = targetPaths
+        self.explanation = explanation
+        self.fileAge = fileAge
+        self.storageCategory = storageCategory
+    }
+}
+
+// MARK: - Finding Aggregation
+
+extension Array where Element == Finding {
+    /// Computes aggregate summaries grouped by risk level.
+    /// Returns one ``FindingAggregate`` per ``RiskLevel`` case, including
+    /// levels with zero findings so the UI can display complete summaries.
+    public func aggregatesByRisk() -> [FindingAggregate] {
+        RiskLevel.allCases.map { risk in
+            let matching = filter { $0.risk == risk }
+            let totalBytes = matching.reduce(Int64(0)) { $0 + $1.bytes }
+            return FindingAggregate(risk: risk, totalBytes: totalBytes, count: matching.count)
+        }
+    }
+
+    /// Groups findings by their storage category.
+    /// Findings with a `nil` storageCategory are placed under the key "uncategorized".
+    public func groupedByStorageCategory() -> [String: [Finding]] {
+        Dictionary(grouping: self) { finding in
+            finding.storageCategory?.rawValue ?? "uncategorized"
+        }
     }
 }
 
