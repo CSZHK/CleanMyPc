@@ -402,11 +402,11 @@ func TestJSONEntryHasNewFields(t *testing.T) {
 
 	// Verify all new fields are present in the JSON output.
 	fields := map[string]string{
-		`"risk_level"`:            "safe",
-		`"storage_category"`:      "developerArtifact",
-		`"last_accessed"`:         "2025-01-01T00:00:00Z",
-		`"created_date"`:          "2024-06-15T12:00:00Z",
-		`"explanation_key"`:       "explanation.developerArtifact.safe",
+		`"risk_level"`:       "safe",
+		`"storage_category"`: "developerArtifact",
+		`"last_accessed"`:    "2025-01-01T00:00:00Z",
+		`"created_date"`:     "2024-06-15T12:00:00Z",
+		`"explanation_key"`:  "explanation.developerArtifact.safe",
 	}
 	for field, val := range fields {
 		if !containsSubstring(string(data), field) {
@@ -495,7 +495,7 @@ func TestJSONOutputStructure(t *testing.T) {
 
 func TestIsDeveloperArtifactName(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		input string
 		want  bool
 	}{
