@@ -145,14 +145,14 @@ public enum RiskLevel: String, CaseIterable, Codable, Hashable, Sendable {
 }
 
 public struct FileAgeInfo: Codable, Hashable, Sendable {
-    public var lastAccessedDate: Date?
+    public var lastModifiedDate: Date?
     public var creationDate: Date?
 
     public init(
-        lastAccessedDate: Date? = nil,
+        lastModifiedDate: Date? = nil,
         creationDate: Date? = nil
     ) {
-        self.lastAccessedDate = lastAccessedDate
+        self.lastModifiedDate = lastModifiedDate
         self.creationDate = creationDate
     }
 }
@@ -1026,6 +1026,9 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
     public var notificationsEnabled: Bool
     public var excludedPaths: [String]
     public var language: AtlasLanguage
+    public var fileOrganizerDestinationBasePath: String
+    public var fileOrganizerRecursiveScan: Bool
+    public var fileOrganizerCustomRules: [FileOrganizerRule]?
 
     public var acknowledgementText: String {
         AtlasL10n.acknowledgement(language: language)
@@ -1039,12 +1042,18 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         recoveryRetentionDays: Int,
         notificationsEnabled: Bool,
         excludedPaths: [String],
-        language: AtlasLanguage = .default
+        language: AtlasLanguage = .default,
+        fileOrganizerDestinationBasePath: String = "~/Organized",
+        fileOrganizerRecursiveScan: Bool = false,
+        fileOrganizerCustomRules: [FileOrganizerRule]? = nil
     ) {
         self.recoveryRetentionDays = recoveryRetentionDays
         self.notificationsEnabled = notificationsEnabled
         self.excludedPaths = excludedPaths
         self.language = language
+        self.fileOrganizerDestinationBasePath = fileOrganizerDestinationBasePath
+        self.fileOrganizerRecursiveScan = fileOrganizerRecursiveScan
+        self.fileOrganizerCustomRules = fileOrganizerCustomRules
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -1052,6 +1061,9 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         case notificationsEnabled
         case excludedPaths
         case language
+        case fileOrganizerDestinationBasePath
+        case fileOrganizerRecursiveScan
+        case fileOrganizerCustomRules
     }
 
     public init(from decoder: Decoder) throws {
@@ -1061,6 +1073,9 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         self.notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
         self.excludedPaths = try container.decodeIfPresent([String].self, forKey: .excludedPaths) ?? []
         self.language = language
+        self.fileOrganizerDestinationBasePath = try container.decodeIfPresent(String.self, forKey: .fileOrganizerDestinationBasePath) ?? "~/Organized"
+        self.fileOrganizerRecursiveScan = try container.decodeIfPresent(Bool.self, forKey: .fileOrganizerRecursiveScan) ?? false
+        self.fileOrganizerCustomRules = try container.decodeIfPresent([FileOrganizerRule].self, forKey: .fileOrganizerCustomRules)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -1069,6 +1084,9 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         try container.encode(notificationsEnabled, forKey: .notificationsEnabled)
         try container.encode(excludedPaths, forKey: .excludedPaths)
         try container.encode(language, forKey: .language)
+        try container.encode(fileOrganizerDestinationBasePath, forKey: .fileOrganizerDestinationBasePath)
+        try container.encode(fileOrganizerRecursiveScan, forKey: .fileOrganizerRecursiveScan)
+        try container.encodeIfPresent(fileOrganizerCustomRules, forKey: .fileOrganizerCustomRules)
     }
 }
 

@@ -2178,7 +2178,7 @@ extension AtlasInfrastructureTests {
 private struct StubFileOrganizerScanner: AtlasFileOrganizerScanning {
     let entries: [FileOrganizerEntry]
 
-    func scanFolders(_ paths: [String]) async throws -> FileOrganizerScanResult {
+    func scanFolders(_ paths: [String], destinationBasePath: String = "~/Organized", recursive: Bool = false) async throws -> FileOrganizerScanResult {
         FileOrganizerScanResult(
             entries: entries,
             totalFiles: entries.count,
@@ -2189,7 +2189,7 @@ private struct StubFileOrganizerScanner: AtlasFileOrganizerScanning {
 }
 
 private struct FailingFileOrganizerScanner: AtlasFileOrganizerScanning {
-    func scanFolders(_ paths: [String]) async throws -> FileOrganizerScanResult {
+    func scanFolders(_ paths: [String], destinationBasePath: String = "~/Organized", recursive: Bool = false) async throws -> FileOrganizerScanResult {
         struct ScanError: LocalizedError { var errorDescription: String? { "simulated scan failure" } }
         throw ScanError()
     }

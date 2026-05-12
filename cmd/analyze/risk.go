@@ -349,7 +349,7 @@ func categoryForPath(path string) StorageCategory {
 	// Mail attachments.
 	if strings.Contains(path, "/Library/Mail/") ||
 		strings.Contains(path, "/Library/Containers/com.apple.Mail/") ||
-		strings.Contains(path, "/Library/Group Containers/") && strings.Contains(path, "Mail") {
+		(strings.Contains(path, "/Library/Group Containers/") && strings.Contains(path, "Mail")) {
 		return CategoryMailAttachment
 	}
 

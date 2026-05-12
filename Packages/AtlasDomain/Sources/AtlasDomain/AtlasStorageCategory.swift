@@ -9,6 +9,7 @@ public enum AtlasStorageCategory: String, CaseIterable, Codable, Hashable, Senda
     case downloadArtifact
     case mailAttachment
     case oldBackup
+    case unknown
 
     public var title: String {
         switch self {
@@ -28,6 +29,8 @@ public enum AtlasStorageCategory: String, CaseIterable, Codable, Hashable, Senda
             return AtlasL10n.string("storageCategory.mailAttachment")
         case .oldBackup:
             return AtlasL10n.string("storageCategory.oldBackup")
+        case .unknown:
+            return AtlasL10n.string("storageCategory.unknown")
         }
     }
 
@@ -49,6 +52,8 @@ public enum AtlasStorageCategory: String, CaseIterable, Codable, Hashable, Senda
             return "envelope"
         case .oldBackup:
             return "externaldrive"
+        case .unknown:
+            return "questionmark.folder"
         }
     }
 }

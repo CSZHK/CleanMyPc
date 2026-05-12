@@ -141,8 +141,8 @@ public struct FindingRowView: View {
     }
 
     private func ageIndicator(from fileAge: FileAgeInfo) -> String? {
-        if let lastAccessed = fileAge.lastAccessedDate {
-            let relative = AtlasFormatters.relativeDate(lastAccessed)
+        if let lastModified = fileAge.lastModifiedDate {
+            let relative = AtlasFormatters.relativeDate(lastModified)
             return AtlasL10n.string("smartclean.fileage.lastAccessed", relative)
         }
         if let creationDate = fileAge.creationDate {

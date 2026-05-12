@@ -86,7 +86,7 @@ final class AtlasAppModel: ObservableObject {
         self.smartCleanExecutionIssue = nil
         self.fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.ready")
         self.currentFileOrganizerPlan = ActionPlan(title: "", items: [], estimatedBytes: 0)
-        self.fileOrganizerRules = AtlasScaffoldFixtures.fileOrganizerRules
+        self.fileOrganizerRules = state.settings.fileOrganizerCustomRules ?? AtlasScaffoldFixtures.fileOrganizerRules
         let directWorker = AtlasScaffoldWorkerService(
             repository: repository,
             healthSnapshotProvider: MoleHealthAdapter(),
@@ -640,20 +640,76 @@ final class AtlasAppModel: ObservableObject {
         fileOrganizerExecutionCompleted = false
         fileOrganizerMovedCount = 0
 
-        do {
-            let output = try await workspaceController.fileOrganizerScan(folderPaths: folderPaths)
-            withAnimation(.snappy(duration: 0.24)) {
-                snapshot = output.snapshot
-                fileOrganizerEntries = output.entries
-                fileOrganizerScanSummary = output.summary
-                fileOrganizerProgress = output.progressFraction
-                isFileOrganizerPlanFresh = false
-                fileOrganizerPlanIssue = nil
+        if folderPaths.count <= 1 {
+            // Single folder — scan directly, no per-folder progress
+            do {
+                let output = try await workspaceController.fileOrganizerScan(folderPaths: folderPaths)
+                withAnimation(.snappy(duration: 0.24)) {
+                    snapshot = output.snapshot
+                    fileOrganizerEntries = output.entries
+                    fileOrganizerScanSummary = output.summary
+                    fileOrganizerProgress = output.progressFraction
+                    isFileOrganizerPlanFresh = false
+                    fileOrganizerPlanIssue = nil
+                }
+            } catch {
+                fileOrganizerScanSummary = error.localizedDescription
+                fileOrganizerProgress = 0
+                fileOrganizerPlanIssue = error.localizedDescription
             }
-        } catch {
-            fileOrganizerScanSummary = error.localizedDescription
-            fileOrganizerProgress = 0
-            fileOrganizerPlanIssue = error.localizedDescription
+        } else {
+            // Multiple folders — scan sequentially with per-folder progress
+            var allEntries: [FileOrganizerEntry] = []
+            var lastSnapshot: AtlasWorkspaceSnapshot?
+            var firstError: Error?
+            let totalFolders = Double(folderPaths.count)
+
+            for (index, folder) in folderPaths.enumerated() {
+                let folderName = (folder as NSString).lastPathComponent
+                fileOrganizerScanSummary = AtlasL10n.string("fileorganizer.progress.scanningFolder", folderName, index + 1, folderPaths.count)
+                fileOrganizerProgress = Double(index) / totalFolders
+
+                do {
+                    let output = try await workspaceController.fileOrganizerScan(folderPaths: [folder])
+                    allEntries.append(contentsOf: output.entries)
+                    lastSnapshot = output.snapshot
+                } catch {
+                    if firstError == nil { firstError = error }
+                }
+            }
+
+            if var merged = lastSnapshot {
+                // Merge accumulated entries into snapshot
+                merged.fileOrganizerEntries = allEntries
+                // Consolidate scan task runs — keep only one with correct summary
+                let scanRuns = merged.taskRuns.filter { $0.kind == .scan || $0.kind == .organizeFiles }
+                if scanRuns.count > 1 {
+                    merged.taskRuns.removeAll { $0.kind == .scan || $0.kind == .organizeFiles }
+                    if var last = scanRuns.last {
+                        last.summary = AtlasL10n.string(
+                            allEntries.count == 1 ? "infrastructure.scan.completed.one" : "infrastructure.scan.completed.other",
+                            allEntries.count
+                        )
+                        merged.taskRuns.insert(last, at: 0)
+                    }
+                }
+
+                withAnimation(.snappy(duration: 0.24)) {
+                    snapshot = merged
+                    fileOrganizerEntries = allEntries
+                    fileOrganizerScanSummary = AtlasL10n.string(
+                        allEntries.count == 1 ? "infrastructure.scan.completed.one" : "infrastructure.scan.completed.other",
+                        allEntries.count
+                    )
+                    fileOrganizerProgress = 1.0
+                    isFileOrganizerPlanFresh = false
+                    fileOrganizerPlanIssue = nil
+                }
+            } else if let error = firstError {
+                fileOrganizerScanSummary = error.localizedDescription
+                fileOrganizerProgress = 0
+                fileOrganizerPlanIssue = error.localizedDescription
+            }
         }
 
         isFileOrganizerScanning = false
@@ -679,10 +735,10 @@ final class AtlasAppModel: ObservableObject {
         isFileOrganizerClassifying = false
     }
 
-    func refreshFileOrganizerPreview() async {
+    func refreshFileOrganizerPreview(entryIDs: [UUID]) async {
         fileOrganizerExecutionIssue = nil
         do {
-            let output = try await workspaceController.fileOrganizerPreviewPlan(entryIDs: fileOrganizerEntries.map(\.id))
+            let output = try await workspaceController.fileOrganizerPreviewPlan(entryIDs: entryIDs)
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = output.snapshot
                 currentFileOrganizerPlan = output.actionPlan
@@ -695,6 +751,49 @@ final class AtlasAppModel: ObservableObject {
             fileOrganizerScanSummary = error.localizedDescription
             fileOrganizerPlanIssue = error.localizedDescription
         }
+    }
+
+    func updateFileOrganizerDestination(_ path: String) async {
+        await updateSettings { settings in
+            settings.fileOrganizerDestinationBasePath = path
+        }
+    }
+
+    func updateFileOrganizerRecursiveScan(_ recursive: Bool) async {
+        await updateSettings { settings in
+            settings.fileOrganizerRecursiveScan = recursive
+        }
+    }
+
+    func updateFileOrganizerRules(_ rules: [FileOrganizerRule]) async {
+        await updateSettings { settings in
+            settings.fileOrganizerCustomRules = rules
+        }
+        fileOrganizerRules = rules
+    }
+
+    func undoFileOrganizerExecution() async {
+        guard let recoveryItem = snapshot.recoveryItems.first(where: { item in
+            if case .fileOrganizer = item.payload { return true }
+            return false
+        }) else { return }
+
+        restoringRecoveryItemID = recoveryItem.id
+        do {
+            let output = try await workspaceController.restoreItems(itemIDs: [recoveryItem.id])
+            withAnimation(.snappy(duration: 0.24)) {
+                snapshot = output.snapshot
+                fileOrganizerEntries = []
+                currentFileOrganizerPlan = ActionPlan(title: "", items: [], estimatedBytes: 0)
+                isFileOrganizerPlanFresh = false
+                fileOrganizerExecutionCompleted = false
+                fileOrganizerMovedCount = 0
+                fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.ready")
+            }
+        } catch {
+            fileOrganizerExecutionIssue = error.localizedDescription
+        }
+        restoringRecoveryItemID = nil
     }
 
     func executeFileOrganizerPlan() async {

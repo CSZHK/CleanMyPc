@@ -775,7 +775,7 @@
 
 // MARK: - File Age Descriptors
 
-"fileage.notUsedIn" = "%@未使用";
+"fileage.notUsedIn" = "%@未修改";
 "fileage.years" = "%d 年";
 "fileage.year" = "1 年";
 "fileage.months" = "%d 个月";
@@ -806,9 +806,9 @@
 
 // MARK: - Smart Clean File Age Labels
 
-"smartclean.fileage.lastAccessed" = "上次访问于 %@";
+"smartclean.fileage.lastAccessed" = "上次修改于 %@";
 "smartclean.fileage.created" = "创建于 %@";
-"smartclean.fileage.notUsedIn" = "已 %@ 未使用";
+"smartclean.fileage.notUsedIn" = "已 %@ 未修改";
 
 // MARK: - Smart Clean Aggregate Summary
 
@@ -900,6 +900,7 @@
 "model.fileorganizer.scanning" = "正在扫描文件…";
 "model.fileorganizer.classifying" = "正在分类文件…";
 "model.fileorganizer.executing" = "正在执行文件整理…";
+"fileorganizer.progress.scanningFolder" = "正在扫描%@…（%d/%d）";
 
 // File Organizer - execution states
 "fileorganizer.status.executionFailed" = "文件整理未能完成";
@@ -908,3 +909,55 @@
 "fileorganizer.status.executionComplete" = "文件整理已完成";
 "fileorganizer.callout.executionComplete.title" = "文件整理已完成";
 "fileorganizer.callout.executionComplete.detail" = "已成功移动 %d 个文件。可在历史中恢复原始位置。";
+
+"fileorganizer.undo.title" = "已移动 %d 个文件";
+"fileorganizer.undo.detail" = "点击撤销可将文件移回原始位置。";
+"fileorganizer.undo.action" = "撤销";
+
+"fileorganizer.error.scanFailed" = "文件整理扫描失败：%@";
+"fileorganizer.error.noEntries" = "没有可整理的文件条目。";
+"fileorganizer.error.stalePlan" = "请求的文件整理计划已过期，请重新预览。";
+
+"fileorganizer.selection.count" = "已选 %d / %d 项";
+"fileorganizer.action.selectAll" = "全选";
+"fileorganizer.action.deselectAll" = "取消全选";
+
+"fileorganizer.destination.title" = "整理目标";
+"fileorganizer.destination.change" = "更改";
+
+"fileorganizer.recursive.title" = "包含子文件夹";
+
+"fileorganizer.conflict.exists" = "目标位置已存在同名文件：%@";
+"fileorganizer.conflict.callout.title" = "%d 个文件与目标位置冲突";
+"fileorganizer.conflict.callout.detail" = "执行时将自动重命名冲突文件（如 filename (1).png）。取消选中可跳过这些文件。";
+
+"fileorganizer.ruleeditor.title" = "分类规则";
+"fileorganizer.ruleeditor.subtitle" = "自定义文件分类规则，按扩展名或名称模式自动归类。";
+"fileorganizer.ruleeditor.rules.title" = "规则列表";
+"fileorganizer.ruleeditor.empty" = "暂无自定义规则。点击下方按钮添加。";
+"fileorganizer.ruleeditor.untitled" = "未命名规则";
+"fileorganizer.ruleeditor.add" = "添加规则";
+"fileorganizer.ruleeditor.save" = "保存";
+"fileorganizer.ruleeditor.new.title" = "新建规则";
+"fileorganizer.ruleeditor.edit.title" = "编辑规则";
+"fileorganizer.ruleeditor.edit.subtitle" = "设置规则名称、匹配模式和目标分类。";
+"fileorganizer.ruleeditor.section.general" = "基本信息";
+"fileorganizer.ruleeditor.section.size" = "文件大小限制";
+"fileorganizer.ruleeditor.field.name" = "名称";
+"fileorganizer.ruleeditor.field.extensions" = "扩展名";
+"fileorganizer.ruleeditor.field.extensions.hint" = "逗号分隔，如 png, jpg";
+"fileorganizer.ruleeditor.field.category" = "分类";
+"fileorganizer.ruleeditor.field.subfolder" = "子文件夹";
+"fileorganizer.ruleeditor.field.optional" = "可选";
+"fileorganizer.ruleeditor.field.minsize" = "最小大小";
+"fileorganizer.ruleeditor.field.maxsize" = "最大大小";
+"fileorganizer.ruleeditor.field.bytes" = "字节";
+
+"fileorganizer.insight.title" = "文件洞察";
+"fileorganizer.insight.large.summary" = "检测到 %d 个大文件（%@）";
+"fileorganizer.insight.large.badge" = "大文件";
+"fileorganizer.insight.duplicate.summary" = "检测到 %d 个可能重复的文件（同名且同大小）";
+"fileorganizer.insight.duplicate.badge" = "重复文件";
+"fileorganizer.ruleeditor.priority.hint" = "规则从上到下依次匹配，排在前面的优先级更高。";
+"fileorganizer.ruleeditor.import.title" = "导入";
+"fileorganizer.ruleeditor.export.title" = "导出";

@@ -3,6 +3,41 @@ import AtlasDomain
 import SwiftUI
 import UniformTypeIdentifiers
 
+private struct FileThumbnailView: View {
+    let path: String
+    @State private var image: NSImage?
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                Image(systemName: "photo")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AtlasColor.textTertiary)
+            }
+        }
+        .frame(width: 32, height: 32)
+        .background(
+            RoundedRectangle(cornerRadius: AtlasRadius.sm, style: .continuous)
+                .fill(AtlasColor.cardRaised)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: AtlasRadius.sm, style: .continuous))
+        .task(id: path) {
+            let expandedPath = (path as NSString).expandingTildeInPath
+            guard let nsImage = NSImage(contentsOf: URL(fileURLWithPath: expandedPath)) else { return }
+            let size = NSSize(width: 64, height: 64)
+            let resized = NSImage(size: size)
+            resized.lockFocus()
+            nsImage.draw(in: NSRect(origin: .zero, size: size))
+            resized.unlockFocus()
+            image = resized
+        }
+    }
+}
+
 public struct FileOrganizerFeatureView: View {
     // Data
     let entries: [FileOrganizerEntry]
@@ -20,18 +55,27 @@ public struct FileOrganizerFeatureView: View {
     let movedCount: Int
     let scannedFolders: [String]
     let rules: [FileOrganizerRule]
+    let destinationBasePath: String
+    let isRecursiveScan: Bool
 
     @State private var selectedFolders: [String] = ["~/Desktop", "~/Downloads"]
     @State private var isFolderPickerPresented = false
     @State private var showExecuteConfirmation = false
+    @State private var selectedEntryIDs: Set<UUID> = []
+    @State private var isDestinationPickerPresented = false
+    @State private var isRuleEditorPresented = false
 
     // Callbacks
     let onStartScan: ([String]) -> Void
     let onClassify: ([UUID]) -> Void
-    let onRefreshPreview: () -> Void
+    let onRefreshPreview: ([UUID]) -> Void
     let onExecutePlan: () -> Void
     let onDryRun: () -> Void
     let onEditRules: () -> Void
+    let onUpdateDestination: (String) -> Void
+    let onUpdateRecursiveScan: (Bool) -> Void
+    let onUpdateRules: ([FileOrganizerRule]) -> Void
+    let onUndoExecution: () -> Void
 
     public init(
         entries: [FileOrganizerEntry],
@@ -49,12 +93,18 @@ public struct FileOrganizerFeatureView: View {
         movedCount: Int,
         scannedFolders: [String],
         rules: [FileOrganizerRule],
+        destinationBasePath: String,
+        isRecursiveScan: Bool,
         onStartScan: @escaping ([String]) -> Void,
         onClassify: @escaping ([UUID]) -> Void,
-        onRefreshPreview: @escaping () -> Void,
+        onRefreshPreview: @escaping ([UUID]) -> Void,
         onExecutePlan: @escaping () -> Void,
         onDryRun: @escaping () -> Void,
-        onEditRules: @escaping () -> Void
+        onEditRules: @escaping () -> Void,
+        onUpdateDestination: @escaping (String) -> Void,
+        onUpdateRecursiveScan: @escaping (Bool) -> Void,
+        onUpdateRules: @escaping ([FileOrganizerRule]) -> Void,
+        onUndoExecution: @escaping () -> Void
     ) {
         self.entries = entries
         self.plan = plan
@@ -71,12 +121,18 @@ public struct FileOrganizerFeatureView: View {
         self.movedCount = movedCount
         self.scannedFolders = scannedFolders
         self.rules = rules
+        self.destinationBasePath = destinationBasePath
+        self.isRecursiveScan = isRecursiveScan
         self.onStartScan = onStartScan
         self.onClassify = onClassify
         self.onRefreshPreview = onRefreshPreview
         self.onExecutePlan = onExecutePlan
         self.onDryRun = onDryRun
         self.onEditRules = onEditRules
+        self.onUpdateDestination = onUpdateDestination
+        self.onUpdateRecursiveScan = onUpdateRecursiveScan
+        self.onUpdateRules = onUpdateRules
+        self.onUndoExecution = onUndoExecution
     }
 
     public var body: some View {
@@ -88,6 +144,14 @@ public struct FileOrganizerFeatureView: View {
                 statusCallout
                 metricCards
 
+                if executionCompleted && movedCount > 0 {
+                    undoBanner
+                }
+
+                if !entries.isEmpty {
+                    insightsSection
+                }
+
                 if !entries.isEmpty {
                     categorySections
                 }
@@ -98,6 +162,14 @@ public struct FileOrganizerFeatureView: View {
 
                 actionButtons
             }
+        }
+        .onChange(of: entries) { oldEntries, newEntries in
+            let oldIDs = Set(oldEntries.map(\.id))
+            let addedIDs = Set(newEntries.map(\.id)).subtracting(oldIDs)
+            selectedEntryIDs.formUnion(addedIDs)
+            let validIDs = Set(newEntries.map(\.id))
+            selectedEntryIDs.subtract(validIDs.subtracting(Set(newEntries.map(\.id))))
+            selectedEntryIDs = selectedEntryIDs.intersection(validIDs)
         }
         .confirmationDialog(
             AtlasL10n.string("fileorganizer.confirm.execute.title"),
@@ -111,6 +183,12 @@ public struct FileOrganizerFeatureView: View {
         } message: {
             Text(AtlasL10n.string("fileorganizer.confirm.execute.message"))
         }
+        .sheet(isPresented: $isRuleEditorPresented) {
+            FileOrganizerRuleEditorView(rules: rules) { updatedRules in
+                onUpdateRules(updatedRules)
+                isRuleEditorPresented = false
+            }
+        }
     }
 
     // MARK: - Pre-computed Values
@@ -121,6 +199,30 @@ public struct FileOrganizerFeatureView: View {
 
     private var entriesByCategory: [FileOrganizerCategory: [FileOrganizerEntry]] {
         Dictionary(grouping: entries, by: \.category)
+    }
+
+    private var conflictingEntryIDs: Set<UUID> {
+        let fm = FileManager.default
+        return Set(entries.compactMap { entry in
+            let destPath = (entry.proposedDestination as NSString).expandingTildeInPath
+            return fm.fileExists(atPath: destPath) ? entry.id : nil
+        })
+    }
+
+    private static let largeFileThreshold: Int64 = 100 * 1024 * 1024 // 100 MB
+
+    private var largeFileIDs: Set<UUID> {
+        Set(entries.filter { $0.bytes >= Self.largeFileThreshold }.map(\.id))
+    }
+
+    private struct FileNameBytesKey: Hashable {
+        let name: String
+        let bytes: Int64
+    }
+
+    private var duplicateFileIDs: Set<UUID> {
+        let groups = Dictionary(grouping: entries, by: { FileNameBytesKey(name: $0.fileName, bytes: $0.bytes) })
+        return Set(groups.values.filter { $0.count > 1 }.flatMap { $0.map(\.id) })
     }
 
     // MARK: - Status Callout Computed Properties
@@ -221,6 +323,44 @@ public struct FileOrganizerFeatureView: View {
         }
     }
 
+    // MARK: - Undo Banner
+
+    private var undoBanner: some View {
+        HStack(spacing: AtlasSpacing.sm) {
+            Image(systemName: "arrow.uturn.backward.circle")
+                .foregroundStyle(AtlasColor.brand)
+                .font(.system(size: 20))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(AtlasL10n.string("fileorganizer.undo.title", movedCount))
+                    .font(AtlasTypography.body)
+                    .foregroundStyle(AtlasColor.textPrimary)
+                Text(AtlasL10n.string("fileorganizer.undo.detail"))
+                    .font(AtlasTypography.caption)
+                    .foregroundStyle(AtlasColor.textSecondary)
+            }
+
+            Spacer()
+
+            Button {
+                onUndoExecution()
+            } label: {
+                Label(AtlasL10n.string("fileorganizer.undo.action"), systemImage: "arrow.uturn.backward")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(AtlasSpacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: AtlasRadius.md)
+                .fill(AtlasColor.brand.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AtlasRadius.md)
+                .stroke(AtlasColor.brand.opacity(0.2), lineWidth: 1)
+        )
+    }
+
     // MARK: - Metric Cards
 
     private var metricCards: some View {
@@ -255,6 +395,8 @@ public struct FileOrganizerFeatureView: View {
         let grouped = entriesByCategory
         return AtlasInfoCard(title: AtlasL10n.string("fileorganizer.section.results.title")) {
             LazyVStack(spacing: AtlasSpacing.xs) {
+                selectionControls
+
                 ForEach(FileOrganizerCategory.allCases, id: \.rawValue) { category in
                     if let categoryEntries = grouped[category], !categoryEntries.isEmpty {
                         AtlasSectionDisclosure(
@@ -263,12 +405,7 @@ public struct FileOrganizerFeatureView: View {
                         ) {
                             LazyVStack(spacing: AtlasSpacing.xxs) {
                                 ForEach(categoryEntries) { entry in
-                                    AtlasDetailRow(
-                                        title: entry.fileName,
-                                        subtitle: ByteCountFormatter.string(fromByteCount: entry.bytes, countStyle: .file),
-                                        footnote: entry.proposedDestination,
-                                        systemImage: category.systemImage
-                                    )
+                                    entryRow(entry, category: category)
                                 }
                             }
                         }
@@ -276,6 +413,119 @@ public struct FileOrganizerFeatureView: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func entryRow(_ entry: FileOrganizerEntry, category: FileOrganizerCategory) -> some View {
+        let isSelected = selectedEntryIDs.contains(entry.id)
+        let hasConflict = conflictingEntryIDs.contains(entry.id)
+        let isLarge = largeFileIDs.contains(entry.id)
+        let isDuplicate = duplicateFileIDs.contains(entry.id)
+        let showThumbnail = category == .images && !hasConflict && !isLarge && !isDuplicate
+        Button {
+            if isSelected {
+                selectedEntryIDs.remove(entry.id)
+            } else {
+                selectedEntryIDs.insert(entry.id)
+            }
+        } label: {
+            HStack(spacing: AtlasSpacing.xs) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? AtlasColor.brand : AtlasColor.textTertiary)
+                    .font(.system(size: 18))
+
+                if showThumbnail {
+                    FileThumbnailView(path: entry.path)
+                }
+
+                AtlasDetailRow(
+                    title: {
+                        var name = entry.fileName
+                        if hasConflict { name += " ⚠" }
+                        return name
+                    }(),
+                    subtitle: ByteCountFormatter.string(fromByteCount: entry.bytes, countStyle: .file),
+                    footnote: {
+                        if hasConflict {
+                            return AtlasL10n.string("fileorganizer.conflict.exists", entry.proposedDestination)
+                        }
+                        var parts = [entry.proposedDestination]
+                        if isLarge {
+                            parts.append(AtlasL10n.string("fileorganizer.insight.large.badge"))
+                        }
+                        if isDuplicate {
+                            parts.append(AtlasL10n.string("fileorganizer.insight.duplicate.badge"))
+                        }
+                        return parts.joined(separator: " · ")
+                    }(),
+                    systemImage: showThumbnail ? nil : {
+                        if hasConflict { return "exclamationmark.triangle" }
+                        if isLarge { return "exclamationmark.circle" }
+                        if isDuplicate { return "doc.on.doc" }
+                        return category.systemImage
+                    }()
+                )
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Insights
+
+    private var insightsSection: some View {
+        let largeCount = largeFileIDs.count
+        let dupCount = duplicateFileIDs.count
+        if largeCount == 0 && dupCount == 0 {
+            return AnyView(EmptyView())
+        }
+        var items: [String] = []
+        if largeCount > 0 {
+            let totalLargeBytes = entries.filter { largeFileIDs.contains($0.id) }.reduce(Int64(0)) { $0 + $1.bytes }
+            let formatted = ByteCountFormatter.string(fromByteCount: totalLargeBytes, countStyle: .file)
+            items.append(AtlasL10n.string("fileorganizer.insight.large.summary", largeCount, formatted))
+        }
+        if dupCount > 0 {
+            items.append(AtlasL10n.string("fileorganizer.insight.duplicate.summary", dupCount))
+        }
+        return AnyView(
+            AtlasCallout(
+                title: AtlasL10n.string("fileorganizer.insight.title"),
+                detail: items.joined(separator: "\n"),
+                tone: .warning,
+                systemImage: "lightbulb"
+            )
+        )
+    }
+
+    private var selectionControls: some View {
+        HStack(spacing: AtlasSpacing.sm) {
+            Text(AtlasL10n.string("fileorganizer.selection.count", selectedEntryIDs.count, entries.count))
+                .font(AtlasTypography.caption)
+                .foregroundStyle(AtlasColor.textSecondary)
+
+            Spacer()
+
+            Button {
+                selectedEntryIDs = Set(entries.map(\.id))
+            } label: {
+                Text(AtlasL10n.string("fileorganizer.action.selectAll"))
+                    .font(AtlasTypography.caption)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(AtlasColor.brand)
+            .disabled(selectedEntryIDs.count == entries.count)
+
+            Button {
+                selectedEntryIDs.removeAll()
+            } label: {
+                Text(AtlasL10n.string("fileorganizer.action.deselectAll"))
+                    .font(AtlasTypography.caption)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(AtlasColor.textTertiary)
+            .disabled(selectedEntryIDs.isEmpty)
+        }
+        .padding(.horizontal, AtlasSpacing.xs)
     }
 
     // MARK: - Plan Preview
@@ -333,6 +583,16 @@ public struct FileOrganizerFeatureView: View {
                     )
                 }
 
+                let planConflicts = plan.items.filter { conflictingEntryIDs.contains($0.id) }
+                if !planConflicts.isEmpty {
+                    AtlasCallout(
+                        title: AtlasL10n.string("fileorganizer.conflict.callout.title", planConflicts.count),
+                        detail: AtlasL10n.string("fileorganizer.conflict.callout.detail"),
+                        tone: .warning,
+                        systemImage: "exclamationmark.triangle"
+                    )
+                }
+
                 LazyVStack(spacing: AtlasSpacing.xs) {
                     ForEach(groups) { group in
                         AtlasSectionDisclosure(
@@ -342,11 +602,12 @@ public struct FileOrganizerFeatureView: View {
                         ) {
                             LazyVStack(spacing: AtlasSpacing.xxs) {
                                 ForEach(group.items) { item in
+                                    let isConflict = conflictingEntryIDs.contains(item.id)
                                     AtlasDetailRow(
-                                        title: group.names[item.id] ?? item.title,
+                                        title: isConflict ? "\(group.names[item.id] ?? item.title) ⚠" : (group.names[item.id] ?? item.title),
                                         subtitle: AtlasL10n.string("fileorganizer.preview.row.to"),
                                         footnote: shortenDestination(item.detail),
-                                        systemImage: group.category.systemImage
+                                        systemImage: isConflict ? "exclamationmark.triangle" : group.category.systemImage
                                     )
                                 }
                             }
@@ -375,6 +636,12 @@ public struct FileOrganizerFeatureView: View {
                 // Folder selector
                 folderSelector
 
+                // Destination selector
+                destinationSelector
+
+                // Recursive scan toggle
+                recursiveScanToggle
+
                 HStack(spacing: AtlasSpacing.sm) {
                     Button {
                         onStartScan(selectedFolders)
@@ -386,12 +653,12 @@ public struct FileOrganizerFeatureView: View {
 
                     if !entries.isEmpty && !executionCompleted {
                         Button {
-                            onRefreshPreview()
+                            onRefreshPreview(Array(selectedEntryIDs))
                         } label: {
                             Label(AtlasL10n.string("fileorganizer.action.preview"), systemImage: "eye")
                         }
                         .buttonStyle(.bordered)
-                        .disabled(isScanning || isClassifying || isExecutingPlan)
+                        .disabled(isScanning || isClassifying || isExecutingPlan || selectedEntryIDs.isEmpty)
                     }
                 }
 
@@ -414,6 +681,15 @@ public struct FileOrganizerFeatureView: View {
                         .disabled(!canExecutePlan || isScanning || isExecutingPlan)
                     }
                 }
+
+                Button {
+                    isRuleEditorPresented = true
+                } label: {
+                    Label(AtlasL10n.string("fileorganizer.action.editRules"), systemImage: "slider.horizontal.3")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(isScanning || isClassifying || isExecutingPlan)
             }
         }
     }
@@ -472,6 +748,83 @@ public struct FileOrganizerFeatureView: View {
 
     private var presetFolders: [String] {
         ["~/Desktop", "~/Downloads"]
+    }
+
+    // MARK: - Destination Selector
+
+    private var destinationSelector: some View {
+        HStack(spacing: AtlasSpacing.xs) {
+            Image(systemName: "arrow.down.circle")
+                .foregroundStyle(AtlasColor.textTertiary)
+                .font(AtlasTypography.body)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(AtlasL10n.string("fileorganizer.destination.title"))
+                    .font(AtlasTypography.caption)
+                    .foregroundStyle(AtlasColor.textSecondary)
+                Text(displayPath(destinationBasePath))
+                    .font(AtlasTypography.body)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+
+            Spacer()
+
+            Button {
+                isDestinationPickerPresented = true
+            } label: {
+                Text(AtlasL10n.string("fileorganizer.destination.change"))
+                    .font(AtlasTypography.caption)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(AtlasColor.brand)
+        }
+        .fileImporter(
+            isPresented: $isDestinationPickerPresented,
+            allowedContentTypes: [.folder],
+            allowsMultipleSelection: false
+        ) { result in
+            guard case let .success(urls) = result, let url = urls.first else { return }
+            let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+            let path = url.path
+            let displayPath = path.hasPrefix(homeDir)
+                ? "~" + String(path.dropFirst(homeDir.count))
+                : path
+            onUpdateDestination(displayPath)
+        }
+    }
+
+    private func displayPath(_ path: String) -> String {
+        let expanded = (path as NSString).expandingTildeInPath
+        let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        if expanded.hasPrefix(homeDir) {
+            return "~" + String(expanded.dropFirst(homeDir.count))
+        }
+        return path
+    }
+
+    // MARK: - Recursive Scan Toggle
+
+    private var recursiveScanToggle: some View {
+        HStack(spacing: AtlasSpacing.xs) {
+            Image(systemName: isRecursiveScan ? "folder.fill" : "folder")
+                .foregroundStyle(AtlasColor.textTertiary)
+                .font(AtlasTypography.body)
+
+            Text(AtlasL10n.string("fileorganizer.recursive.title"))
+                .font(AtlasTypography.body)
+                .foregroundStyle(AtlasColor.textPrimary)
+
+            Spacer()
+
+            Toggle("", isOn: Binding(
+                get: { isRecursiveScan },
+                set: { onUpdateRecursiveScan($0) }
+            ))
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .controlSize(.small)
+        }
     }
 
     private func folderToggle(_ folder: String) -> some View {

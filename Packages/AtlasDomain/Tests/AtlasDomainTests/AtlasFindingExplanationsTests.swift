@@ -102,7 +102,7 @@ final class AtlasFindingExplanationsTests: XCTestCase {
     // MARK: - Explanation with File Age
 
     func testExplanationWithFileAgeAppendsAgeDescriptor() {
-        let fileAge = FileAgeInfo(lastAccessedDate: Date().addingTimeInterval(-90 * 86400))
+        let fileAge = FileAgeInfo(lastModifiedDate: Date().addingTimeInterval(-90 * 86400))
         let explanation = AtlasFindingExplanations.explanation(
             for: .systemCache,
             risk: .safe,
@@ -178,35 +178,35 @@ final class AtlasFindingExplanationsTests: XCTestCase {
     // MARK: - Age Descriptor
 
     func testAgeDescriptorWithRecentLastAccessedDate() {
-        let fileAge = FileAgeInfo(lastAccessedDate: Date().addingTimeInterval(-10 * 86400))
+        let fileAge = FileAgeInfo(lastModifiedDate: Date().addingTimeInterval(-10 * 86400))
         let descriptor = AtlasFindingExplanations.ageDescriptor(from: fileAge)
         XCTAssertFalse(descriptor.isEmpty)
         XCTAssertTrue(descriptor.contains("天"), "Expected '天' in descriptor: \(descriptor)")
     }
 
     func testAgeDescriptorWith30DayLastAccessedDate() {
-        let fileAge = FileAgeInfo(lastAccessedDate: Date().addingTimeInterval(-32 * 86400))
+        let fileAge = FileAgeInfo(lastModifiedDate: Date().addingTimeInterval(-32 * 86400))
         let descriptor = AtlasFindingExplanations.ageDescriptor(from: fileAge)
         XCTAssertFalse(descriptor.isEmpty)
         XCTAssertTrue(descriptor.contains("月"), "Expected '月' in descriptor: \(descriptor)")
     }
 
     func testAgeDescriptorWith6MonthLastAccessedDate() {
-        let fileAge = FileAgeInfo(lastAccessedDate: Date().addingTimeInterval(-200 * 86400))
+        let fileAge = FileAgeInfo(lastModifiedDate: Date().addingTimeInterval(-200 * 86400))
         let descriptor = AtlasFindingExplanations.ageDescriptor(from: fileAge)
         XCTAssertFalse(descriptor.isEmpty)
         XCTAssertTrue(descriptor.contains("月"), "Expected '月' in descriptor: \(descriptor)")
     }
 
     func testAgeDescriptorWith1YearLastAccessedDate() {
-        let fileAge = FileAgeInfo(lastAccessedDate: Date().addingTimeInterval(-380 * 86400))
+        let fileAge = FileAgeInfo(lastModifiedDate: Date().addingTimeInterval(-380 * 86400))
         let descriptor = AtlasFindingExplanations.ageDescriptor(from: fileAge)
         XCTAssertFalse(descriptor.isEmpty)
         XCTAssertTrue(descriptor.contains("年"), "Expected '年' in descriptor: \(descriptor)")
     }
 
     func testAgeDescriptorWith2YearLastAccessedDate() {
-        let fileAge = FileAgeInfo(lastAccessedDate: Date().addingTimeInterval(-800 * 86400))
+        let fileAge = FileAgeInfo(lastModifiedDate: Date().addingTimeInterval(-800 * 86400))
         let descriptor = AtlasFindingExplanations.ageDescriptor(from: fileAge)
         XCTAssertFalse(descriptor.isEmpty)
         XCTAssertTrue(descriptor.contains("年"), "Expected '年' in descriptor: \(descriptor)")
@@ -214,7 +214,7 @@ final class AtlasFindingExplanationsTests: XCTestCase {
 
     func testAgeDescriptorFallsBackToCreationDate() {
         let fileAge = FileAgeInfo(
-            lastAccessedDate: nil,
+            lastModifiedDate: nil,
             creationDate: Date().addingTimeInterval(-400 * 86400)
         )
         let descriptor = AtlasFindingExplanations.ageDescriptor(from: fileAge)
@@ -236,7 +236,7 @@ final class AtlasFindingExplanationsTests: XCTestCase {
     }
 
     func testAgeDescriptorWithFutureDateReturnsEmpty() {
-        let fileAge = FileAgeInfo(lastAccessedDate: Date().addingTimeInterval(86400))
+        let fileAge = FileAgeInfo(lastModifiedDate: Date().addingTimeInterval(86400))
         let descriptor = AtlasFindingExplanations.ageDescriptor(from: fileAge)
         XCTAssertEqual(descriptor, "")
     }

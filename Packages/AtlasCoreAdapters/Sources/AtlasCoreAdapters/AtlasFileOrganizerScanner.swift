@@ -5,9 +5,13 @@ import Foundation
 public struct AtlasFileOrganizerScanner: AtlasFileOrganizerScanning, Sendable {
     public init() {}
 
-    public func scanFolders(_ paths: [String]) async throws -> FileOrganizerScanResult {
+    public func scanFolders(_ paths: [String], destinationBasePath: String = "~/Organized", recursive: Bool = false) async throws -> FileOrganizerScanResult {
         let fm = FileManager.default
         var entries: [FileOrganizerEntry] = []
+
+        let enumeratorOptions: FileManager.DirectoryEnumerationOptions = recursive
+            ? [.skipsHiddenFiles]
+            : [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
 
         for folderPath in paths {
             let expandedPath = (folderPath as NSString).expandingTildeInPath
@@ -15,7 +19,7 @@ public struct AtlasFileOrganizerScanner: AtlasFileOrganizerScanning, Sendable {
             guard let enumerator = fm.enumerator(
                 at: baseURL,
                 includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
-                options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
+                options: enumeratorOptions
             ) else { continue }
 
             for case let url as URL in enumerator {
@@ -48,7 +52,8 @@ public struct AtlasFileOrganizerScanner: AtlasFileOrganizerScanning, Sendable {
                 }
 
                 let safeFileName = (fileName as NSString).lastPathComponent
-                let proposedDestination = "~/Organized/\(category.folderName)/\(safeFileName)"
+                let basePath = destinationBasePath.hasSuffix("/") ? String(destinationBasePath.dropLast()) : destinationBasePath
+                let proposedDestination = "\(basePath)/\(category.folderName)/\(safeFileName)"
 
                 entries.append(FileOrganizerEntry(
                     path: displayPath,

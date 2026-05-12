@@ -97,7 +97,7 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
                         ? ISO8601DateFormatter().date(from: String(parts[6]))
                         : nil
                     if lastAccessed != nil || createdDate != nil {
-                        ageInfo = FileAgeInfo(lastAccessedDate: lastAccessed, creationDate: createdDate)
+                        ageInfo = FileAgeInfo(lastModifiedDate: lastAccessed, creationDate: createdDate)
                     }
                 }
 
@@ -506,14 +506,14 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
                 continue
             }
 
-            var oldestAccessed: Date?
+            var oldestModified: Date?
             var oldestCreated: Date?
 
             for targetPath in targetPaths {
                 if let attributes = try? FileManager.default.attributesOfItem(atPath: targetPath) {
                     if let modified = attributes[.modificationDate] as? Date {
-                        if oldestAccessed == nil || modified < oldestAccessed! {
-                            oldestAccessed = modified
+                        if oldestModified == nil || modified < oldestModified! {
+                            oldestModified = modified
                         }
                     }
                     if let created = attributes[.creationDate] as? Date {
@@ -524,9 +524,9 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
                 }
             }
 
-            if oldestAccessed != nil || oldestCreated != nil {
+            if oldestModified != nil || oldestCreated != nil {
                 findings[index].fileAge = FileAgeInfo(
-                    lastAccessedDate: oldestAccessed,
+                    lastModifiedDate: oldestModified,
                     creationDate: oldestCreated
                 )
                 let category = findings[index].storageCategory ?? .systemCache

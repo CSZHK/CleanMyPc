@@ -96,11 +96,11 @@ public enum AtlasFindingExplanations {
     ) -> String {
         let now = Date()
 
-        if let lastAccessed = fileAge.lastAccessedDate {
-            let components = calendar.dateComponents([.day], from: lastAccessed, to: now)
+        if let lastModified = fileAge.lastModifiedDate {
+            let components = calendar.dateComponents([.day], from: lastModified, to: now)
             let days = max(components.day ?? 0, 0)
             if days > 0 {
-                return lastAccessedDescriptor(days: days, language: language)
+                return lastModifiedDescriptor(days: days, language: language)
             }
         }
 
@@ -115,7 +115,7 @@ public enum AtlasFindingExplanations {
         return ""
     }
 
-    private static func lastAccessedDescriptor(
+    private static func lastModifiedDescriptor(
         days: Int,
         language: AtlasLanguage?
     ) -> String {

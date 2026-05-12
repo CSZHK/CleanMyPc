@@ -175,14 +175,16 @@ struct AppShellView: View {
                 movedCount: model.fileOrganizerMovedCount,
                 scannedFolders: model.scannedFolders,
                 rules: model.fileOrganizerRules,
+                destinationBasePath: model.settings.fileOrganizerDestinationBasePath,
+                isRecursiveScan: model.settings.fileOrganizerRecursiveScan,
                 onStartScan: { folders in
                     Task { await model.runFileOrganizerScan(folderPaths: folders) }
                 },
                 onClassify: { entryIDs in
                     Task { await model.classifyFileOrganizerEntries(entryIDs: entryIDs) }
                 },
-                onRefreshPreview: {
-                    Task { await model.refreshFileOrganizerPreview() }
+                onRefreshPreview: { entryIDs in
+                    Task { await model.refreshFileOrganizerPreview(entryIDs: entryIDs) }
                 },
                 onExecutePlan: {
                     Task { await model.executeFileOrganizerPlan() }
@@ -192,6 +194,18 @@ struct AppShellView: View {
                 },
                 onEditRules: {
                     // Future: open rule editor
+                },
+                onUpdateDestination: { path in
+                    Task { await model.updateFileOrganizerDestination(path) }
+                },
+                onUpdateRecursiveScan: { recursive in
+                    Task { await model.updateFileOrganizerRecursiveScan(recursive) }
+                },
+                onUpdateRules: { rules in
+                    Task { await model.updateFileOrganizerRules(rules) }
+                },
+                onUndoExecution: {
+                    Task { await model.undoFileOrganizerExecution() }
                 }
             )
         case .apps:

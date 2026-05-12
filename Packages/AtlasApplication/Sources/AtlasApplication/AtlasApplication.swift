@@ -750,11 +750,11 @@ public struct SettingsSetUseCase: Sendable {
 // MARK: - File Organizer Protocols
 
 public protocol AtlasFileOrganizerScanning: Sendable {
-    func scanFolders(_ paths: [String]) async throws -> FileOrganizerScanResult
+    func scanFolders(_ paths: [String], destinationBasePath: String, recursive: Bool) async throws -> FileOrganizerScanResult
 }
 
 public protocol AtlasFileOrganizerClassifying: Sendable {
-    func classify(_ entries: [FileOrganizerEntry], rules: [FileOrganizerRule]) async -> [FileOrganizerEntry]
+    func classify(_ entries: [FileOrganizerEntry], rules: [FileOrganizerRule], destinationBasePath: String) async -> [FileOrganizerEntry]
 }
 
 // MARK: - File Organizer Output Types

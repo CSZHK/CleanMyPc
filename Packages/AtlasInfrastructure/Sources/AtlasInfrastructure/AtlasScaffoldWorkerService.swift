@@ -568,13 +568,13 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
 
         if let scanProvider = fileOrganizerScanProvider {
             do {
-                let result = try await scanProvider.scanFolders(folderPaths)
+                let result = try await scanProvider.scanFolders(folderPaths, destinationBasePath: state.settings.fileOrganizerDestinationBasePath, recursive: state.settings.fileOrganizerRecursiveScan)
                 entries = result.entries
             } catch {
                 return rejectedResult(
                     for: request,
                     code: .executionUnavailable,
-                    reason: "File Organizer scan failed: \(error.localizedDescription)"
+                    reason: AtlasL10n.string("fileorganizer.error.scanFailed", error.localizedDescription)
                 )
             }
         } else {
@@ -629,7 +629,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
 
         let classifiedEntries: [FileOrganizerEntry]
         if let classifier = fileOrganizerClassifier {
-            classifiedEntries = await classifier.classify(currentEntries, rules: AtlasScaffoldFixtures.fileOrganizerRules(language: state.settings.language))
+            classifiedEntries = await classifier.classify(currentEntries, rules: state.settings.fileOrganizerCustomRules ?? AtlasScaffoldFixtures.fileOrganizerRules(language: state.settings.language), destinationBasePath: state.settings.fileOrganizerDestinationBasePath)
         } else {
             classifiedEntries = currentEntries
         }
@@ -680,7 +680,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             return rejectedResult(
                 for: request,
                 code: .invalidSelection,
-                reason: "No file organizer entries available to execute."
+                reason: AtlasL10n.string("fileorganizer.error.noEntries")
             )
         }
 
@@ -689,7 +689,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             return rejectedResult(
                 for: request,
                 code: .invalidSelection,
-                reason: "The requested file organizer plan is no longer current."
+                reason: AtlasL10n.string("fileorganizer.error.stalePlan")
             )
         }
 
@@ -854,7 +854,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             return rejectedResult(
                 for: request,
                 code: .invalidSelection,
-                reason: "The requested file organizer plan is no longer current."
+                reason: AtlasL10n.string("fileorganizer.error.stalePlan")
             )
         }
         let response = AtlasResponseEnvelope(requestID: request.id, response: .fileOrganizerPlan(plan))
@@ -1466,7 +1466,10 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             recoveryRetentionDays: min(max(settings.recoveryRetentionDays, 1), 30),
             notificationsEnabled: settings.notificationsEnabled,
             excludedPaths: Array(Set(settings.excludedPaths.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })).sorted(),
-            language: settings.language
+            language: settings.language,
+            fileOrganizerDestinationBasePath: settings.fileOrganizerDestinationBasePath,
+            fileOrganizerRecursiveScan: settings.fileOrganizerRecursiveScan,
+            fileOrganizerCustomRules: settings.fileOrganizerCustomRules
         )
     }
 }

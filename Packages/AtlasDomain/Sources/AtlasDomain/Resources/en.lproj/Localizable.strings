@@ -775,7 +775,7 @@
 
 // MARK: - File Age Descriptors
 
-"fileage.notUsedIn" = "not used in %@";
+"fileage.notUsedIn" = "not modified in %@";
 "fileage.years" = "%d years";
 "fileage.year" = "1 year";
 "fileage.months" = "%d months";
@@ -806,9 +806,9 @@
 
 // MARK: - Smart Clean File Age Labels
 
-"smartclean.fileage.lastAccessed" = "Last accessed %@";
+"smartclean.fileage.lastAccessed" = "Last modified %@";
 "smartclean.fileage.created" = "Created %@";
-"smartclean.fileage.notUsedIn" = "Not used in %@";
+"smartclean.fileage.notUsedIn" = "Not modified in %@";
 
 // MARK: - Smart Clean Aggregate Summary
 
@@ -900,6 +900,7 @@
 "model.fileorganizer.scanning" = "Scanning files…";
 "model.fileorganizer.classifying" = "Classifying files…";
 "model.fileorganizer.executing" = "Executing file organization…";
+"fileorganizer.progress.scanningFolder" = "Scanning %@… (%d/%d)";
 
 // File Organizer - execution states
 "fileorganizer.status.executionFailed" = "File organization could not be completed";
@@ -908,3 +909,55 @@
 "fileorganizer.status.executionComplete" = "File organization completed";
 "fileorganizer.callout.executionComplete.title" = "File organization completed";
 "fileorganizer.callout.executionComplete.detail" = "Successfully moved %d files. You can restore original locations from History.";
+
+"fileorganizer.undo.title" = "%d files moved";
+"fileorganizer.undo.detail" = "Tap undo to move files back to their original locations.";
+"fileorganizer.undo.action" = "Undo";
+
+"fileorganizer.error.scanFailed" = "File organizer scan failed: %@";
+"fileorganizer.error.noEntries" = "No file organizer entries available to execute.";
+"fileorganizer.error.stalePlan" = "The requested file organizer plan is no longer current. Please preview again.";
+
+"fileorganizer.selection.count" = "%d of %d selected";
+"fileorganizer.action.selectAll" = "Select All";
+"fileorganizer.action.deselectAll" = "Deselect All";
+
+"fileorganizer.destination.title" = "Destination";
+"fileorganizer.destination.change" = "Change";
+
+"fileorganizer.recursive.title" = "Include Subfolders";
+
+"fileorganizer.conflict.exists" = "A file with this name already exists at: %@";
+"fileorganizer.conflict.callout.title" = "%d files have destination conflicts";
+"fileorganizer.conflict.callout.detail" = "Conflicting files will be renamed automatically (e.g. filename (1).png). Deselect entries to skip them.";
+
+"fileorganizer.ruleeditor.title" = "Classification Rules";
+"fileorganizer.ruleeditor.subtitle" = "Customize file classification rules by extension or name pattern.";
+"fileorganizer.ruleeditor.rules.title" = "Rules";
+"fileorganizer.ruleeditor.empty" = "No custom rules yet. Tap the button below to add one.";
+"fileorganizer.ruleeditor.untitled" = "Untitled Rule";
+"fileorganizer.ruleeditor.add" = "Add Rule";
+"fileorganizer.ruleeditor.save" = "Save";
+"fileorganizer.ruleeditor.new.title" = "New Rule";
+"fileorganizer.ruleeditor.edit.title" = "Edit Rule";
+"fileorganizer.ruleeditor.edit.subtitle" = "Set rule name, matching patterns, and target category.";
+"fileorganizer.ruleeditor.section.general" = "General";
+"fileorganizer.ruleeditor.section.size" = "Size Limits";
+"fileorganizer.ruleeditor.field.name" = "Name";
+"fileorganizer.ruleeditor.field.extensions" = "Extensions";
+"fileorganizer.ruleeditor.field.extensions.hint" = "Comma-separated, e.g. png, jpg";
+"fileorganizer.ruleeditor.field.category" = "Category";
+"fileorganizer.ruleeditor.field.subfolder" = "Subfolder";
+"fileorganizer.ruleeditor.field.optional" = "Optional";
+"fileorganizer.ruleeditor.field.minsize" = "Min Size";
+"fileorganizer.ruleeditor.field.maxsize" = "Max Size";
+"fileorganizer.ruleeditor.field.bytes" = "Bytes";
+
+"fileorganizer.insight.title" = "Insights";
+"fileorganizer.insight.large.summary" = "%d large file(s) detected (%@)";
+"fileorganizer.insight.large.badge" = "Large file";
+"fileorganizer.insight.duplicate.summary" = "%d possible duplicate(s) detected (same name & size)";
+"fileorganizer.insight.duplicate.badge" = "Duplicate";
+"fileorganizer.ruleeditor.priority.hint" = "Rules are applied top-to-bottom. Drag to reorder priority.";
+"fileorganizer.ruleeditor.import.title" = "Import";
+"fileorganizer.ruleeditor.export.title" = "Export";

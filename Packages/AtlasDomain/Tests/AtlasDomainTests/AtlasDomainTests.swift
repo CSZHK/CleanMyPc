@@ -121,7 +121,7 @@ final class AtlasDomainTests: XCTestCase {
     func testFindingInitializesWithFileAgeField() {
         let now = Date()
         let fileAge = FileAgeInfo(
-            lastAccessedDate: now.addingTimeInterval(-90 * 86400),
+            lastModifiedDate: now.addingTimeInterval(-90 * 86400),
             creationDate: now.addingTimeInterval(-365 * 86400)
         )
         let finding = Finding(
@@ -133,7 +133,7 @@ final class AtlasDomainTests: XCTestCase {
             fileAge: fileAge
         )
         XCTAssertNotNil(finding.fileAge)
-        XCTAssertNotNil(finding.fileAge?.lastAccessedDate)
+        XCTAssertNotNil(finding.fileAge?.lastModifiedDate)
         XCTAssertNotNil(finding.fileAge?.creationDate)
         XCTAssertNil(finding.explanation)
         XCTAssertNil(finding.storageCategory)
@@ -154,7 +154,7 @@ final class AtlasDomainTests: XCTestCase {
     }
 
     func testFindingInitializesWithAllNewFields() {
-        let fileAge = FileAgeInfo(lastAccessedDate: Date().addingTimeInterval(-180 * 86400))
+        let fileAge = FileAgeInfo(lastModifiedDate: Date().addingTimeInterval(-180 * 86400))
         let finding = Finding(
             title: "System Cache",
             detail: "System-level cache data",
@@ -224,43 +224,43 @@ final class AtlasDomainTests: XCTestCase {
 
     func testFileAgeInfoDefaultInit() {
         let fileAge = FileAgeInfo()
-        XCTAssertNil(fileAge.lastAccessedDate)
+        XCTAssertNil(fileAge.lastModifiedDate)
         XCTAssertNil(fileAge.creationDate)
     }
 
-    func testFileAgeInfoWithLastAccessedOnly() {
+    func testFileAgeInfoWithLastModifiedOnly() {
         let date = Date().addingTimeInterval(-30 * 86400)
-        let fileAge = FileAgeInfo(lastAccessedDate: date)
-        XCTAssertEqual(fileAge.lastAccessedDate, date)
+        let fileAge = FileAgeInfo(lastModifiedDate: date)
+        XCTAssertEqual(fileAge.lastModifiedDate, date)
         XCTAssertNil(fileAge.creationDate)
     }
 
     func testFileAgeInfoWithCreationOnly() {
         let date = Date().addingTimeInterval(-365 * 86400)
         let fileAge = FileAgeInfo(creationDate: date)
-        XCTAssertNil(fileAge.lastAccessedDate)
+        XCTAssertNil(fileAge.lastModifiedDate)
         XCTAssertEqual(fileAge.creationDate, date)
     }
 
     func testFileAgeInfoWithBothDates() {
         let accessed = Date().addingTimeInterval(-60 * 86400)
         let created = Date().addingTimeInterval(-365 * 86400)
-        let fileAge = FileAgeInfo(lastAccessedDate: accessed, creationDate: created)
-        XCTAssertEqual(fileAge.lastAccessedDate, accessed)
+        let fileAge = FileAgeInfo(lastModifiedDate: accessed, creationDate: created)
+        XCTAssertEqual(fileAge.lastModifiedDate, accessed)
         XCTAssertEqual(fileAge.creationDate, created)
     }
 
     func testFileAgeInfoIsHashable() {
         let date = Date()
-        let a = FileAgeInfo(lastAccessedDate: date, creationDate: date)
-        let b = FileAgeInfo(lastAccessedDate: date, creationDate: date)
+        let a = FileAgeInfo(lastModifiedDate: date, creationDate: date)
+        let b = FileAgeInfo(lastModifiedDate: date, creationDate: date)
         XCTAssertEqual(a, b)
         XCTAssertEqual(a.hashValue, b.hashValue)
     }
 
     func testFileAgeInfoIsCodable() throws {
         let date = Date()
-        let original = FileAgeInfo(lastAccessedDate: date, creationDate: date)
+        let original = FileAgeInfo(lastModifiedDate: date, creationDate: date)
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(FileAgeInfo.self, from: data)
         XCTAssertEqual(original, decoded)

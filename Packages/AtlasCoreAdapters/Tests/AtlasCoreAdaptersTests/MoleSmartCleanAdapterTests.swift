@@ -84,7 +84,7 @@ Developer tools	/Users/test/Library/Developer/Xcode/DerivedData/ProjectB	2048	re
         XCTAssertEqual(chromeCache?.storageCategory, .browserData)
         XCTAssertNotNil(chromeCache?.fileAge)
         // Chrome entry has no lastAccessed but has createdDate
-        XCTAssertNil(chromeCache?.fileAge?.lastAccessedDate)
+        XCTAssertNil(chromeCache?.fileAge?.lastModifiedDate)
         XCTAssertNotNil(chromeCache?.fileAge?.creationDate)
         XCTAssertNotNil(chromeCache?.explanation)
     }
@@ -204,11 +204,11 @@ Developer tools	/Users/test/Library/Developer/Xcode/DerivedData/ProjectA	1024	sa
 
         let finding = findings[0]
         XCTAssertNotNil(finding.fileAge)
-        XCTAssertNotNil(finding.fileAge?.lastAccessedDate)
+        XCTAssertNotNil(finding.fileAge?.lastModifiedDate)
         XCTAssertNotNil(finding.fileAge?.creationDate)
 
         // Verify dates are approximately correct (within 60 seconds tolerance)
-        let accessedDelta = abs(finding.fileAge!.lastAccessedDate!.timeIntervalSinceNow - lastAccessed.timeIntervalSinceNow)
+        let accessedDelta = abs(finding.fileAge!.lastModifiedDate!.timeIntervalSinceNow - lastAccessed.timeIntervalSinceNow)
         XCTAssertLessThan(accessedDelta, 60)
         let createdDelta = abs(finding.fileAge!.creationDate!.timeIntervalSinceNow - created.timeIntervalSinceNow)
         XCTAssertLessThan(createdDelta, 60)
@@ -228,7 +228,7 @@ Developer tools	/Users/test/Library/Developer/Xcode/DerivedData/ProjectA	1024	sa
         XCTAssertNil(findings[0].fileAge)
     }
 
-    func testFileAgeParsingWithOnlyLastAccessedDate() throws {
+    func testFileAgeParsingWithOnlyLastModifiedDate() throws {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("tsv")
         try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
 
@@ -243,7 +243,7 @@ Developer tools	/Users/test/Library/Developer/Xcode/DerivedData/ProjectA	1024	sa
         let findings = MoleSmartCleanAdapter.parseDetailedFindings(from: fileURL)
         XCTAssertEqual(findings.count, 1)
         XCTAssertNotNil(findings[0].fileAge)
-        XCTAssertNotNil(findings[0].fileAge?.lastAccessedDate)
+        XCTAssertNotNil(findings[0].fileAge?.lastModifiedDate)
         XCTAssertNil(findings[0].fileAge?.creationDate)
     }
 
