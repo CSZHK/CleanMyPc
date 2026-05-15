@@ -14,24 +14,33 @@ public struct StorageFeatureView: View {
             title: AtlasL10n.string("storage.screen.title"),
             subtitle: AtlasL10n.string("storage.screen.subtitle")
         ) {
-            AtlasInfoCard(title: AtlasL10n.string("storage.largeItems.title")) {
-                VStack(alignment: .leading, spacing: 14) {
-                    ForEach(insights) { insight in
-                        HStack(alignment: .top, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(insight.title)
-                                    .font(.headline)
-                                Text(insight.path)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
+            AtlasInfoCard(
+                title: AtlasL10n.string("storage.largeItems.title"),
+                subtitle: AtlasL10n.string("storage.largeItems.subtitle")
+            ) {
+                if insights.isEmpty {
+                    AtlasEmptyState(
+                        title: AtlasL10n.string("storage.empty.title"),
+                        detail: AtlasL10n.string("storage.empty.detail"),
+                        systemImage: "internaldrive",
+                        tone: .neutral
+                    )
+                } else {
+                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                        ForEach(insights) { insight in
+                            AtlasDetailRow(
+                                title: insight.title,
+                                subtitle: insight.path,
+                                systemImage: "doc.fill",
+                                tone: .neutral
+                            ) {
+                                VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
+                                    AtlasStatusChip(insight.ageDescription, tone: .neutral)
 
-                            Spacer()
-
-                            VStack(alignment: .trailing, spacing: 8) {
-                                AtlasStatusChip(insight.ageDescription, tone: .neutral)
-                                Text(AtlasFormatters.byteCount(insight.bytes))
-                                    .font(.subheadline.weight(.medium))
+                                    Text(AtlasFormatters.byteCount(insight.bytes))
+                                        .font(AtlasTypography.label)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }

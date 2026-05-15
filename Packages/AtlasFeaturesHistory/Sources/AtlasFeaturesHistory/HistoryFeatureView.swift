@@ -523,6 +523,7 @@ public struct HistoryFeatureView: View {
                                 taskRun: taskRun,
                                 isLatest: sortedTaskRuns.first?.id == taskRun.id
                             )
+                            .id(taskRun.id)
                         } else {
                             AtlasEmptyState(
                                 title: AtlasL10n.string("history.detail.empty.title"),
@@ -539,6 +540,7 @@ public struct HistoryFeatureView: View {
                                 canRestore: restoringItemID == nil && !item.isExpired,
                                 onRestore: { onRestoreItem(item.id) }
                             )
+                            .id(item.id)
                         } else {
                             AtlasEmptyState(
                                 title: AtlasL10n.string("history.detail.empty.title"),
@@ -550,10 +552,8 @@ public struct HistoryFeatureView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
+                .transition(.opacity)
             }
-            .animation(.easeInOut(duration: 0.2), value: selectedTaskRunID)
-            .animation(.easeInOut(duration: 0.2), value: selectedRecoveryItemID)
-            .animation(.easeInOut(duration: 0.2), value: selectedSection)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(AtlasSpacing.lg)
@@ -588,6 +588,12 @@ public struct HistoryFeatureView: View {
     }
 
     private func syncSelection() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            syncSelectionBody()
+        }
+    }
+
+    private func syncSelectionBody() {
         if !sortedTaskRuns.isEmpty, selectedTaskRun == nil {
             selectedTaskRunID = sortedTaskRuns.first?.id
         }

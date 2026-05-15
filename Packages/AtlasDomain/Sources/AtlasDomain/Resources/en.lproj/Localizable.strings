@@ -961,3 +961,31 @@
 "fileorganizer.ruleeditor.priority.hint" = "Rules are applied top-to-bottom. Drag to reorder priority.";
 "fileorganizer.ruleeditor.import.title" = "Import";
 "fileorganizer.ruleeditor.export.title" = "Export";
+"fileorganizer.ruleeditor.delete" = "Delete";
+"fileorganizer.ruleeditor.delete.confirm" = "Delete this rule?";
+"fileorganizer.ruleeditor.empty.detail" = "Tap Add Rule to create a file classification rule.";
+"fileorganizer.ruleeditor.field.namePatterns" = "Name Patterns";
+"fileorganizer.ruleeditor.field.namePatterns.hint" = "Comma-separated, e.g. Screenshot,IMG";
+"fileorganizer.ruleeditor.field.minsize.unit" = "MB";
+"fileorganizer.ruleeditor.field.maxsize.unit" = "MB";
+"fileorganizer.ruleeditor.field.subfolder.preview" = "%@/%@";
+
+// File Organizer — empty & accessibility
+"fileorganizer.empty.title" = "Select Folders to Scan";
+"fileorganizer.empty.detail" = "Choose Desktop, Downloads, or any other folder, then tap Scan to organize your files.";
+"fileorganizer.accessibility.selected" = "Selected";
+"fileorganizer.accessibility.notSelected" = "Not selected";
+"fileorganizer.accessibility.toggleHint" = "Double tap to toggle selection";
+
+// Storage — detail
+"storage.largeItems.subtitle" = "Large files and old files taking up disk space";
+"storage.empty.title" = "No Large Items Found";
+"storage.empty.detail" = "No space-hogging items have been detected yet.";
+
+// Apps — building preview
+"apps.detail.callout.building.title" = "Building Preview";
+"apps.detail.callout.building.detail" = "Analyzing app files, please wait…";
+
+// About — social accessibility
+"about.social.qr.hint" = "Scan QR code to add on %@";
+"about.social.link.hint" = "Double tap to open link";

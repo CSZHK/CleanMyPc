@@ -459,14 +459,18 @@ private struct AppDetailView: View {
             }
 
             AtlasCallout(
-                title: previewPlan == nil
-                    ? AtlasL10n.string("apps.detail.callout.preview.title")
-                    : AtlasL10n.string("apps.detail.callout.ready.title"),
-                detail: previewPlan == nil
-                    ? AtlasL10n.string("apps.detail.callout.preview.detail")
-                    : AtlasL10n.string("apps.detail.callout.ready.detail"),
-                tone: previewPlan == nil ? .neutral : .warning,
-                systemImage: previewPlan == nil ? "eye" : "checkmark.shield.fill"
+                title: isBuildingPreview
+                    ? AtlasL10n.string("apps.detail.callout.building.title")
+                    : previewPlan == nil
+                        ? AtlasL10n.string("apps.detail.callout.preview.title")
+                        : AtlasL10n.string("apps.detail.callout.ready.title"),
+                detail: isBuildingPreview
+                    ? AtlasL10n.string("apps.detail.callout.building.detail")
+                    : previewPlan == nil
+                        ? AtlasL10n.string("apps.detail.callout.preview.detail")
+                        : AtlasL10n.string("apps.detail.callout.ready.detail"),
+                tone: isBuildingPreview ? .neutral : (previewPlan == nil ? .neutral : .warning),
+                systemImage: isBuildingPreview ? "arrow.triangle.2.circlepath" : (previewPlan == nil ? "eye" : "checkmark.shield.fill")
             )
 
             VStack(alignment: .leading, spacing: AtlasSpacing.md) {
@@ -679,17 +683,24 @@ private struct AppDetailView: View {
     }
 
     private var previewButton: some View {
-        Group {
-            if previewPlan == nil {
-                Button(isBuildingPreview ? AtlasL10n.string("apps.preview.running") : AtlasL10n.string("apps.preview.action")) {
-                    onPreview()
+        HStack(spacing: AtlasSpacing.sm) {
+            if isBuildingPreview {
+                ProgressView()
+                    .controlSize(.small)
+            }
+
+            Group {
+                if previewPlan == nil {
+                    Button(isBuildingPreview ? AtlasL10n.string("apps.preview.running") : AtlasL10n.string("apps.preview.action")) {
+                        onPreview()
+                    }
+                    .buttonStyle(.atlasPrimary)
+                } else {
+                    Button(isBuildingPreview ? AtlasL10n.string("apps.preview.running") : AtlasL10n.string("apps.preview.action")) {
+                        onPreview()
+                    }
+                    .buttonStyle(.atlasSecondary)
                 }
-                .buttonStyle(.atlasPrimary)
-            } else {
-                Button(isBuildingPreview ? AtlasL10n.string("apps.preview.running") : AtlasL10n.string("apps.preview.action")) {
-                    onPreview()
-                }
-                .buttonStyle(.atlasSecondary)
             }
         }
         .disabled(isBusy)

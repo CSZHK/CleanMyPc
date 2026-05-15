@@ -4,12 +4,15 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct FileOrganizerRuleEditorView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var rules: [FileOrganizerRule]
     @State private var editingRule: FileOrganizerRule?
     @State private var isEditSheetPresented = false
     @State private var isNewRule = false
     @State private var isExportPresented = false
     @State private var isImportPresented = false
+    @State private var importError: String?
+    @State private var ruleToDelete: FileOrganizerRule?
 
     let onSave: ([FileOrganizerRule]) -> Void
 
@@ -19,56 +22,31 @@ struct FileOrganizerRuleEditorView: View {
     }
 
     var body: some View {
-        AtlasScreen(
-            title: AtlasL10n.string("fileorganizer.ruleeditor.title"),
-            subtitle: AtlasL10n.string("fileorganizer.ruleeditor.subtitle")
-        ) {
-            VStack(spacing: AtlasSpacing.md) {
-                rulesList
-
-                HStack(spacing: AtlasSpacing.sm) {
-                    Button {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: AtlasSpacing.xl) {
+                    rulesList
+                    actionBar
+                }
+                .padding(AtlasSpacing.xl)
+            }
+            .navigationTitle(AtlasL10n.string("fileorganizer.ruleeditor.title"))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(AtlasL10n.string("confirm.cancel")) {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(AtlasL10n.string("fileorganizer.ruleeditor.save")) {
                         onSave(rules)
-                    } label: {
-                        Label(AtlasL10n.string("fileorganizer.ruleeditor.save"), systemImage: "checkmark.circle")
+                        dismiss()
                     }
-                    .buttonStyle(.borderedProminent)
-
-                    Button {
-                        let newRule = FileOrganizerRule(
-                            name: "",
-                            extensionPatterns: [],
-                            category: .other
-                        )
-                        editingRule = newRule
-                        isNewRule = true
-                        isEditSheetPresented = true
-                    } label: {
-                        Label(AtlasL10n.string("fileorganizer.ruleeditor.add"), systemImage: "plus.circle")
-                    }
-                    .buttonStyle(.bordered)
-
-                    Spacer()
-
-                    Button {
-                        isImportPresented = true
-                    } label: {
-                        Label(AtlasL10n.string("fileorganizer.ruleeditor.import.title"), systemImage: "square.and.arrow.down")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-
-                    Button {
-                        isExportPresented = true
-                    } label: {
-                        Label(AtlasL10n.string("fileorganizer.ruleeditor.export.title"), systemImage: "square.and.arrow.up")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(rules.isEmpty)
+                    .bold()
                 }
             }
         }
+        .frame(minWidth: 580, minHeight: 480)
         .sheet(isPresented: $isEditSheetPresented) {
             if let rule = editingRule {
                 RuleEditForm(rule: rule, isNew: isNewRule) { savedRule in
@@ -85,12 +63,29 @@ struct FileOrganizerRuleEditorView: View {
                 }
             }
         }
+        .alert(
+            AtlasL10n.string("fileorganizer.ruleeditor.delete"),
+            isPresented: Binding(
+                get: { ruleToDelete != nil },
+                set: { if !$0 { ruleToDelete = nil } }
+            ),
+            presenting: ruleToDelete
+        ) { rule in
+            Button(AtlasL10n.string("fileorganizer.ruleeditor.delete"), role: .destructive) {
+                withAnimation { rules.removeAll { $0.id == rule.id } }
+                ruleToDelete = nil
+            }
+            Button(AtlasL10n.string("confirm.cancel"), role: .cancel) {
+                ruleToDelete = nil
+            }
+        } message: { _ in
+            Text(AtlasL10n.string("fileorganizer.ruleeditor.delete.confirm"))
+        }
         .fileExporter(
             isPresented: $isExportPresented,
             documents: [RulesDocument(rules: rules)],
             contentType: .json
         ) { result in
-            // Export completed — no further action needed
             if case .failure(let error) = result {
                 print("Rule export failed: \(error)")
             }
@@ -103,29 +98,54 @@ struct FileOrganizerRuleEditorView: View {
             guard case let .success(urls) = result, let url = urls.first else { return }
             guard url.startAccessingSecurityScopedResource() else { return }
             defer { url.stopAccessingSecurityScopedResource() }
-            guard let data = try? Data(contentsOf: url),
-                  let imported = try? JSONDecoder().decode([FileOrganizerRule].self, from: data) else { return }
-            rules = imported
+            do {
+                let data = try Data(contentsOf: url)
+                let imported = try JSONDecoder().decode([FileOrganizerRule].self, from: data)
+                rules = imported
+            } catch {
+                importError = error.localizedDescription
+            }
+        }
+        .alert(
+            AtlasL10n.string("fileorganizer.ruleeditor.import.title"),
+            isPresented: Binding(
+                get: { importError != nil },
+                set: { if !$0 { importError = nil } }
+            ),
+            presenting: importError
+        ) { _ in
+            Button(AtlasL10n.string("confirm.cancel"), role: .cancel) { importError = nil }
+        } message: { error in
+            Text(error)
         }
     }
 
+    // MARK: - Rules List
+
     private var rulesList: some View {
-        AtlasInfoCard(
-            title: AtlasL10n.string("fileorganizer.ruleeditor.rules.title"),
-            subtitle: rules.count > 1 ? AtlasL10n.string("fileorganizer.ruleeditor.priority.hint") : nil
-        ) {
+        VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
+            VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
+                Text(AtlasL10n.string("fileorganizer.ruleeditor.rules.title"))
+                    .font(AtlasTypography.sectionTitle)
+
+                if rules.count > 1 {
+                    Text(AtlasL10n.string("fileorganizer.ruleeditor.priority.hint"))
+                        .font(AtlasTypography.bodySmall)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             if rules.isEmpty {
-                Text(AtlasL10n.string("fileorganizer.ruleeditor.empty"))
-                    .font(AtlasTypography.body)
-                    .foregroundStyle(AtlasColor.textSecondary)
-                    .padding(AtlasSpacing.sm)
+                AtlasEmptyState(
+                    title: AtlasL10n.string("fileorganizer.ruleeditor.empty"),
+                    detail: AtlasL10n.string("fileorganizer.ruleeditor.empty.detail"),
+                    systemImage: "slider.horizontal.3",
+                    tone: .neutral
+                )
             } else {
-                LazyVStack(spacing: AtlasSpacing.xs) {
+                VStack(spacing: AtlasSpacing.xs) {
                     ForEach(Array(rules.enumerated()), id: \.element.id) { index, rule in
                         ruleRow(rule, at: index)
-                    }
-                    .onDelete { offsets in
-                        rules.remove(atOffsets: offsets)
                     }
                 }
             }
@@ -133,79 +153,138 @@ struct FileOrganizerRuleEditorView: View {
     }
 
     private func ruleRow(_ rule: FileOrganizerRule, at index: Int) -> some View {
-        Button {
+        HStack(spacing: AtlasSpacing.sm) {
+            Text("\(index + 1)")
+                .font(AtlasTypography.caption)
+                .foregroundStyle(AtlasColor.textTertiary)
+                .frame(width: 20)
+
+            Image(systemName: rule.category.systemImage)
+                .foregroundStyle(AtlasColor.brand)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: AtlasSpacing.xxs) {
+                Text(rule.name.isEmpty ? AtlasL10n.string("fileorganizer.ruleeditor.untitled") : rule.name)
+                    .font(AtlasTypography.body)
+                    .foregroundStyle(AtlasColor.textPrimary)
+
+                if !rule.extensionPatterns.isEmpty {
+                    Text(rule.extensionPatterns.joined(separator: ", "))
+                        .font(AtlasTypography.caption)
+                        .foregroundStyle(AtlasColor.textSecondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            HStack(spacing: AtlasSpacing.xxs) {
+                Button {
+                    withAnimation(AtlasMotion.fast) {
+                        rules.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1)
+                    }
+                } label: {
+                    Image(systemName: "chevron.up")
+                        .font(AtlasTypography.captionSmall.weight(.semibold))
+                        .foregroundStyle(index > 0 ? AtlasColor.brand : AtlasColor.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .disabled(index == 0)
+
+                Button {
+                    withAnimation(AtlasMotion.fast) {
+                        rules.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2)
+                    }
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .font(AtlasTypography.captionSmall.weight(.semibold))
+                        .foregroundStyle(index < rules.count - 1 ? AtlasColor.brand : AtlasColor.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .disabled(index >= rules.count - 1)
+
+                Button {
+                    ruleToDelete = rule
+                } label: {
+                    Image(systemName: "trash")
+                        .font(AtlasTypography.captionSmall.weight(.semibold))
+                        .foregroundStyle(AtlasColor.danger.opacity(0.7))
+                }
+                .buttonStyle(.plain)
+            }
+
+            Image(systemName: "chevron.right")
+                .font(AtlasTypography.caption)
+                .foregroundStyle(AtlasColor.textTertiary)
+        }
+        .padding(.vertical, AtlasSpacing.sm)
+        .padding(.horizontal, AtlasSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AtlasRadius.sm, style: .continuous)
+                .fill(AtlasColor.card)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AtlasRadius.sm, style: .continuous)
+                .strokeBorder(AtlasColor.border, lineWidth: 1)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
             editingRule = rule
             isNewRule = false
             isEditSheetPresented = true
-        } label: {
-            HStack(spacing: AtlasSpacing.xs) {
-                // Priority badge
-                Text("\(index + 1)")
-                    .font(AtlasTypography.caption)
-                    .foregroundStyle(AtlasColor.textTertiary)
-                    .frame(width: 20)
-
-                Image(systemName: rule.category.systemImage)
-                    .foregroundStyle(AtlasColor.brand)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(rule.name.isEmpty ? AtlasL10n.string("fileorganizer.ruleeditor.untitled") : rule.name)
-                        .font(AtlasTypography.body)
-                        .foregroundStyle(AtlasColor.textPrimary)
-
-                    if !rule.extensionPatterns.isEmpty {
-                        Text(rule.extensionPatterns.joined(separator: ", "))
-                            .font(AtlasTypography.caption)
-                            .foregroundStyle(AtlasColor.textSecondary)
-                            .lineLimit(1)
-                    }
-                }
-
-                Spacer()
-
-                // Move buttons
-                HStack(spacing: 2) {
-                    Button {
-                        withAnimation { rules.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1) }
-                    } label: {
-                        Image(systemName: "chevron.up")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(index > 0 ? AtlasColor.brand : AtlasColor.textTertiary)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(index == 0)
-
-                    Button {
-                        withAnimation { rules.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2) }
-                    } label: {
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(index < rules.count - 1 ? AtlasColor.brand : AtlasColor.textTertiary)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(index >= rules.count - 1)
-                }
-
-                Image(systemName: "chevron.right")
-                    .font(AtlasTypography.caption)
-                    .foregroundStyle(AtlasColor.textTertiary)
-            }
-            .padding(.vertical, AtlasSpacing.xxs)
         }
-        .buttonStyle(.plain)
+    }
+
+    // MARK: - Action Bar
+
+    private var actionBar: some View {
+        HStack(spacing: AtlasSpacing.sm) {
+            Button {
+                let newRule = FileOrganizerRule(
+                    name: "",
+                    extensionPatterns: [],
+                    category: .other
+                )
+                editingRule = newRule
+                isNewRule = true
+                isEditSheetPresented = true
+            } label: {
+                Label(AtlasL10n.string("fileorganizer.ruleeditor.add"), systemImage: "plus.circle")
+            }
+            .buttonStyle(.atlasSecondary)
+
+            Spacer()
+
+            Button {
+                isImportPresented = true
+            } label: {
+                Label(AtlasL10n.string("fileorganizer.ruleeditor.import.title"), systemImage: "square.and.arrow.down")
+            }
+            .buttonStyle(.atlasGhost)
+
+            Button {
+                isExportPresented = true
+            } label: {
+                Label(AtlasL10n.string("fileorganizer.ruleeditor.export.title"), systemImage: "square.and.arrow.up")
+            }
+            .buttonStyle(.atlasGhost)
+            .disabled(rules.isEmpty)
+        }
     }
 }
+
+// MARK: - Rule Edit Form
 
 private struct RuleEditForm: View {
     @State private var name: String
     @State private var extensionText: String
+    @State private var namePatternText: String
     @State private var category: FileOrganizerCategory
     @State private var subfolder: String
     @State private var hasMinSize = false
-    @State private var minSizeText: String
+    @State private var minSizeMBText: String
     @State private var hasMaxSize = false
-    @State private var maxSizeText: String
+    @State private var maxSizeMBText: String
 
     private let ruleId: UUID
     let isNew: Bool
@@ -219,94 +298,147 @@ private struct RuleEditForm: View {
         self.onCancel = onCancel
         self._name = State(initialValue: rule.name)
         self._extensionText = State(initialValue: rule.extensionPatterns.joined(separator: ", "))
+        self._namePatternText = State(initialValue: rule.namePatterns.joined(separator: ", "))
         self._category = State(initialValue: rule.category)
         self._subfolder = State(initialValue: rule.destinationSubfolder ?? "")
         let minSize = rule.minSizeBytes
         self._hasMinSize = State(initialValue: minSize != nil)
-        self._minSizeText = State(initialValue: minSize.map { String($0) } ?? "")
+        self._minSizeMBText = State(initialValue: minSize.map { String(format: "%.0f", Double($0) / 1_048_576.0) } ?? "")
         let maxSize = rule.maxSizeBytes
         self._hasMaxSize = State(initialValue: maxSize != nil)
-        self._maxSizeText = State(initialValue: maxSize.map { String($0) } ?? "")
+        self._maxSizeMBText = State(initialValue: maxSize.map { String(format: "%.0f", Double($0) / 1_048_576.0) } ?? "")
     }
 
     var body: some View {
-        AtlasScreen(
-            title: isNew
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: AtlasSpacing.xl) {
+                    generalSection
+                    sizeSection
+                    saveButtons
+                }
+                .padding(AtlasSpacing.xl)
+            }
+            .navigationTitle(isNew
                 ? AtlasL10n.string("fileorganizer.ruleeditor.new.title")
-                : AtlasL10n.string("fileorganizer.ruleeditor.edit.title"),
-            subtitle: AtlasL10n.string("fileorganizer.ruleeditor.edit.subtitle")
-        ) {
-            VStack(spacing: AtlasSpacing.md) {
-                AtlasInfoCard(title: AtlasL10n.string("fileorganizer.ruleeditor.section.general")) {
-                    VStack(spacing: AtlasSpacing.sm) {
-                        LabeledContent(AtlasL10n.string("fileorganizer.ruleeditor.field.name")) {
-                            TextField("", text: $name)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(maxWidth: 200)
-                        }
-
-                        LabeledContent(AtlasL10n.string("fileorganizer.ruleeditor.field.extensions")) {
-                            TextField(AtlasL10n.string("fileorganizer.ruleeditor.field.extensions.hint"), text: $extensionText)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(maxWidth: 200)
-                        }
-
-                        LabeledContent(AtlasL10n.string("fileorganizer.ruleeditor.field.category")) {
-                            Picker("", selection: $category) {
-                                ForEach(FileOrganizerCategory.allCases, id: \.rawValue) { cat in
-                                    Text(cat.title).tag(cat)
-                                }
-                            }
-                            .frame(maxWidth: 200)
-                        }
-
-                        LabeledContent(AtlasL10n.string("fileorganizer.ruleeditor.field.subfolder")) {
-                            TextField(AtlasL10n.string("fileorganizer.ruleeditor.field.optional"), text: $subfolder)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(maxWidth: 200)
-                        }
-                    }
-                }
-
-                AtlasInfoCard(title: AtlasL10n.string("fileorganizer.ruleeditor.section.size")) {
-                    VStack(spacing: AtlasSpacing.sm) {
-                        HStack {
-                            Toggle(AtlasL10n.string("fileorganizer.ruleeditor.field.minsize"), isOn: $hasMinSize)
-                            if hasMinSize {
-                                TextField(AtlasL10n.string("fileorganizer.ruleeditor.field.bytes"), text: $minSizeText)
-                                    .textFieldStyle(.roundedBorder)
-                                    .frame(width: 120)
-                            }
-                        }
-
-                        HStack {
-                            Toggle(AtlasL10n.string("fileorganizer.ruleeditor.field.maxsize"), isOn: $hasMaxSize)
-                            if hasMaxSize {
-                                TextField(AtlasL10n.string("fileorganizer.ruleeditor.field.bytes"), text: $maxSizeText)
-                                    .textFieldStyle(.roundedBorder)
-                                    .frame(width: 120)
-                            }
-                        }
-                    }
-                }
-
-                HStack(spacing: AtlasSpacing.sm) {
-                    Button {
-                        saveRule()
-                    } label: {
-                        Label(AtlasL10n.string("fileorganizer.ruleeditor.save"), systemImage: "checkmark")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(name.isEmpty && extensionText.trimmingCharacters(in: .whitespaces).isEmpty)
-
-                    Button {
+                : AtlasL10n.string("fileorganizer.ruleeditor.edit.title"))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(AtlasL10n.string("confirm.cancel")) {
                         onCancel()
-                    } label: {
-                        Label(AtlasL10n.string("confirm.cancel"), systemImage: "xmark")
                     }
-                    .buttonStyle(.bordered)
                 }
             }
+        }
+        .frame(minWidth: 480, minHeight: 400)
+    }
+
+    // MARK: - General Section
+
+    private var generalSection: some View {
+        AtlasInfoCard(title: AtlasL10n.string("fileorganizer.ruleeditor.section.general")) {
+            VStack(spacing: AtlasSpacing.lg) {
+                fieldRow(AtlasL10n.string("fileorganizer.ruleeditor.field.name")) {
+                    TextField(AtlasL10n.string("fileorganizer.ruleeditor.field.name"), text: $name)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                fieldRow(AtlasL10n.string("fileorganizer.ruleeditor.field.extensions")) {
+                    TextField(AtlasL10n.string("fileorganizer.ruleeditor.field.extensions.hint"), text: $extensionText)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                fieldRow(AtlasL10n.string("fileorganizer.ruleeditor.field.namePatterns")) {
+                    TextField(AtlasL10n.string("fileorganizer.ruleeditor.field.namePatterns.hint"), text: $namePatternText)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                fieldRow(AtlasL10n.string("fileorganizer.ruleeditor.field.category")) {
+                    Picker("", selection: $category) {
+                        ForEach(FileOrganizerCategory.allCases, id: \.rawValue) { cat in
+                            Label(cat.title, systemImage: cat.systemImage).tag(cat)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+
+                fieldRow(AtlasL10n.string("fileorganizer.ruleeditor.field.subfolder")) {
+                    HStack {
+                        TextField(AtlasL10n.string("fileorganizer.ruleeditor.field.optional"), text: $subfolder)
+                            .textFieldStyle(.roundedBorder)
+                        if !subfolder.isEmpty {
+                            Text(AtlasL10n.string("fileorganizer.ruleeditor.field.subfolder.preview", category.folderName, subfolder))
+                                .font(AtlasTypography.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Size Section
+
+    private var sizeSection: some View {
+        AtlasInfoCard(title: AtlasL10n.string("fileorganizer.ruleeditor.section.size")) {
+            VStack(spacing: AtlasSpacing.lg) {
+                HStack {
+                    Toggle(AtlasL10n.string("fileorganizer.ruleeditor.field.minsize"), isOn: $hasMinSize)
+                    if hasMinSize {
+                        TextField(AtlasL10n.string("fileorganizer.ruleeditor.field.minsize.unit"), text: $minSizeMBText)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 100)
+                        Text(AtlasL10n.string("fileorganizer.ruleeditor.field.minsize.unit"))
+                            .font(AtlasTypography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                HStack {
+                    Toggle(AtlasL10n.string("fileorganizer.ruleeditor.field.maxsize"), isOn: $hasMaxSize)
+                    if hasMaxSize {
+                        TextField(AtlasL10n.string("fileorganizer.ruleeditor.field.maxsize.unit"), text: $maxSizeMBText)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 100)
+                        Text(AtlasL10n.string("fileorganizer.ruleeditor.field.maxsize.unit"))
+                            .font(AtlasTypography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Save Buttons
+
+    private var saveButtons: some View {
+        HStack(spacing: AtlasSpacing.sm) {
+            Button {
+                saveRule()
+            } label: {
+                Label(AtlasL10n.string("fileorganizer.ruleeditor.save"), systemImage: "checkmark")
+            }
+            .buttonStyle(.atlasPrimary)
+            .disabled(
+                name.trimmingCharacters(in: .whitespaces).isEmpty
+                    && extensionText.trimmingCharacters(in: .whitespaces).isEmpty
+                    && namePatternText.trimmingCharacters(in: .whitespaces).isEmpty
+            )
+
+            Button {
+                onCancel()
+            } label: {
+                Label(AtlasL10n.string("confirm.cancel"), systemImage: "xmark")
+            }
+            .buttonStyle(.atlasGhost)
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func fieldRow(_ label: String, @ViewBuilder content: () -> some View) -> some View {
+        LabeledContent(label) {
+            content()
         }
     }
 
@@ -316,8 +448,13 @@ private struct RuleEditForm: View {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
             .filter { !$0.isEmpty }
 
-        let minSize: Int64? = hasMinSize ? Int64(minSizeText) : nil
-        let maxSize: Int64? = hasMaxSize ? Int64(maxSizeText) : nil
+        let namePatterns = namePatternText
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        let minSizeBytes: Int64? = hasMinSize ? Double(minSizeMBText).flatMap { $0 > 0 ? Int64($0 * 1_048_576.0) : nil } : nil
+        let maxSizeBytes: Int64? = hasMaxSize ? Double(maxSizeMBText).flatMap { $0 > 0 ? Int64($0 * 1_048_576.0) : nil } : nil
         let folder = subfolder.trimmingCharacters(in: .whitespaces)
         let ruleName = name.trimmingCharacters(in: .whitespaces)
 
@@ -325,14 +462,17 @@ private struct RuleEditForm: View {
             id: ruleId,
             name: ruleName.isEmpty ? exts.joined(separator: ", ") : ruleName,
             extensionPatterns: exts,
+            namePatterns: namePatterns,
             category: category,
             destinationSubfolder: folder.isEmpty ? nil : folder,
-            minSizeBytes: minSize,
-            maxSizeBytes: maxSize
+            minSizeBytes: minSizeBytes,
+            maxSizeBytes: maxSizeBytes
         )
         onSave(rule)
     }
 }
+
+// MARK: - Rules Document (export/import)
 
 private struct RulesDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }

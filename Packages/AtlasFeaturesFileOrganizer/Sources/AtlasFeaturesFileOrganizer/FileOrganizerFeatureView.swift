@@ -142,14 +142,24 @@ public struct FileOrganizerFeatureView: View {
         ) {
             VStack(spacing: AtlasSpacing.md) {
                 statusCallout
-                metricCards
 
                 if executionCompleted && movedCount > 0 {
                     undoBanner
                 }
 
+                actionButtons
+
                 if !entries.isEmpty {
+                    metricCards
+
                     insightsSection
+                } else if !isScanning && !isClassifying {
+                    AtlasEmptyState(
+                        title: AtlasL10n.string("fileorganizer.empty.title"),
+                        detail: AtlasL10n.string("fileorganizer.empty.detail"),
+                        systemImage: "folder.badge.gearshape",
+                        tone: .neutral
+                    )
                 }
 
                 if !entries.isEmpty {
@@ -159,8 +169,6 @@ public struct FileOrganizerFeatureView: View {
                 if !plan.items.isEmpty && !executionCompleted {
                     planPreviewSection
                 }
-
-                actionButtons
             }
         }
         .onChange(of: entries) { oldEntries, newEntries in
@@ -168,7 +176,6 @@ public struct FileOrganizerFeatureView: View {
             let addedIDs = Set(newEntries.map(\.id)).subtracting(oldIDs)
             selectedEntryIDs.formUnion(addedIDs)
             let validIDs = Set(newEntries.map(\.id))
-            selectedEntryIDs.subtract(validIDs.subtracting(Set(newEntries.map(\.id))))
             selectedEntryIDs = selectedEntryIDs.intersection(validIDs)
         }
         .confirmationDialog(
@@ -331,7 +338,7 @@ public struct FileOrganizerFeatureView: View {
                 .foregroundStyle(AtlasColor.brand)
                 .font(.system(size: 20))
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AtlasSpacing.xxs) {
                 Text(AtlasL10n.string("fileorganizer.undo.title", movedCount))
                     .font(AtlasTypography.body)
                     .foregroundStyle(AtlasColor.textPrimary)
@@ -347,8 +354,7 @@ public struct FileOrganizerFeatureView: View {
             } label: {
                 Label(AtlasL10n.string("fileorganizer.undo.action"), systemImage: "arrow.uturn.backward")
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
+            .buttonStyle(.atlasSecondary)
         }
         .padding(AtlasSpacing.sm)
         .background(
@@ -429,56 +435,97 @@ public struct FileOrganizerFeatureView: View {
                 selectedEntryIDs.insert(entry.id)
             }
         } label: {
-            HStack(spacing: AtlasSpacing.xs) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? AtlasColor.brand : AtlasColor.textTertiary)
-                    .font(.system(size: 18))
-
-                if showThumbnail {
-                    FileThumbnailView(path: entry.path)
+            HStack(spacing: 0) {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(AtlasColor.brand.opacity(0.6))
+                        .frame(width: 4)
+                        .padding(.trailing, AtlasSpacing.xs)
+                } else {
+                    Color.clear.frame(width: 4 + AtlasSpacing.xs)
                 }
 
-                AtlasDetailRow(
-                    title: {
-                        var name = entry.fileName
-                        if hasConflict { name += " ⚠" }
-                        return name
-                    }(),
-                    subtitle: ByteCountFormatter.string(fromByteCount: entry.bytes, countStyle: .file),
-                    footnote: {
-                        if hasConflict {
-                            return AtlasL10n.string("fileorganizer.conflict.exists", entry.proposedDestination)
-                        }
-                        var parts = [entry.proposedDestination]
-                        if isLarge {
-                            parts.append(AtlasL10n.string("fileorganizer.insight.large.badge"))
-                        }
-                        if isDuplicate {
-                            parts.append(AtlasL10n.string("fileorganizer.insight.duplicate.badge"))
-                        }
-                        return parts.joined(separator: " · ")
-                    }(),
-                    systemImage: showThumbnail ? nil : {
-                        if hasConflict { return "exclamationmark.triangle" }
-                        if isLarge { return "exclamationmark.circle" }
-                        if isDuplicate { return "doc.on.doc" }
-                        return category.systemImage
-                    }()
-                )
+                HStack(spacing: AtlasSpacing.xs) {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(isSelected ? AtlasColor.brand : AtlasColor.textTertiary)
+                        .font(.system(size: 18))
+
+                    if showThumbnail {
+                        FileThumbnailView(path: entry.path)
+                    }
+
+                    AtlasDetailRow(
+                        title: {
+                            var name = entry.fileName
+                            if hasConflict { name += " ⚠" }
+                            return name
+                        }(),
+                        subtitle: ByteCountFormatter.string(fromByteCount: entry.bytes, countStyle: .file),
+                        footnote: {
+                            if hasConflict {
+                                return AtlasL10n.string("fileorganizer.conflict.exists", entry.proposedDestination)
+                            }
+                            var parts = [entry.proposedDestination]
+                            if isLarge {
+                                parts.append(AtlasL10n.string("fileorganizer.insight.large.badge"))
+                            }
+                            if isDuplicate {
+                                parts.append(AtlasL10n.string("fileorganizer.insight.duplicate.badge"))
+                            }
+                            return parts.joined(separator: " · ")
+                        }(),
+                        systemImage: showThumbnail ? nil : {
+                            if hasConflict { return "exclamationmark.triangle" }
+                            if isLarge { return "exclamationmark.circle" }
+                            if isDuplicate { return "doc.on.doc" }
+                            return category.systemImage
+                        }()
+                    )
+                }
             }
+            .padding(AtlasSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: AtlasRadius.sm, style: .continuous)
+                    .fill(isSelected ? AtlasColor.brand.opacity(0.06) : Color.clear)
+            )
         }
         .buttonStyle(.plain)
+        .animation(AtlasMotion.fast, value: isSelected)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(entry.fileName), \(ByteCountFormatter.string(fromByteCount: entry.bytes, countStyle: .file)), \(category.title), \(AtlasL10n.string("fileorganizer.preview.row.to")) \(entry.proposedDestination), \(isSelected ? AtlasL10n.string("fileorganizer.accessibility.selected") : AtlasL10n.string("fileorganizer.accessibility.notSelected"))")
+        .accessibilityHint(AtlasL10n.string("fileorganizer.accessibility.toggleHint"))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Insights
 
+    @ViewBuilder
     private var insightsSection: some View {
         let largeCount = largeFileIDs.count
         let dupCount = duplicateFileIDs.count
-        if largeCount == 0 && dupCount == 0 {
-            return AnyView(EmptyView())
+        if largeCount > 0 || dupCount > 0 {
+            let detail = Self.insightDetail(
+                entries: entries,
+                largeFileIDs: largeFileIDs,
+                duplicateFileIDs: duplicateFileIDs
+            )
+            AtlasCallout(
+                title: AtlasL10n.string("fileorganizer.insight.title"),
+                detail: detail,
+                tone: .warning,
+                systemImage: "lightbulb"
+            )
         }
+    }
+
+    private static func insightDetail(
+        entries: [FileOrganizerEntry],
+        largeFileIDs: Set<UUID>,
+        duplicateFileIDs: Set<UUID>
+    ) -> String {
         var items: [String] = []
+        let largeCount = largeFileIDs.count
+        let dupCount = duplicateFileIDs.count
         if largeCount > 0 {
             let totalLargeBytes = entries.filter { largeFileIDs.contains($0.id) }.reduce(Int64(0)) { $0 + $1.bytes }
             let formatted = ByteCountFormatter.string(fromByteCount: totalLargeBytes, countStyle: .file)
@@ -487,14 +534,7 @@ public struct FileOrganizerFeatureView: View {
         if dupCount > 0 {
             items.append(AtlasL10n.string("fileorganizer.insight.duplicate.summary", dupCount))
         }
-        return AnyView(
-            AtlasCallout(
-                title: AtlasL10n.string("fileorganizer.insight.title"),
-                detail: items.joined(separator: "\n"),
-                tone: .warning,
-                systemImage: "lightbulb"
-            )
-        )
+        return items.joined(separator: "\n")
     }
 
     private var selectionControls: some View {
@@ -509,20 +549,16 @@ public struct FileOrganizerFeatureView: View {
                 selectedEntryIDs = Set(entries.map(\.id))
             } label: {
                 Text(AtlasL10n.string("fileorganizer.action.selectAll"))
-                    .font(AtlasTypography.caption)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(AtlasColor.brand)
+            .buttonStyle(.atlasGhost)
             .disabled(selectedEntryIDs.count == entries.count)
 
             Button {
                 selectedEntryIDs.removeAll()
             } label: {
                 Text(AtlasL10n.string("fileorganizer.action.deselectAll"))
-                    .font(AtlasTypography.caption)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(AtlasColor.textTertiary)
+            .buttonStyle(.atlasGhost)
             .disabled(selectedEntryIDs.isEmpty)
         }
         .padding(.horizontal, AtlasSpacing.xs)
@@ -642,43 +678,25 @@ public struct FileOrganizerFeatureView: View {
                 // Recursive scan toggle
                 recursiveScanToggle
 
-                HStack(spacing: AtlasSpacing.sm) {
-                    Button {
-                        onStartScan(selectedFolders)
-                    } label: {
-                        Label(AtlasL10n.string("fileorganizer.action.scan"), systemImage: "magnifyingglass")
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: AtlasSpacing.sm) {
+                        scanAndPreviewButtons
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(selectedFolders.isEmpty || isScanning || isClassifying || isExecutingPlan)
 
-                    if !entries.isEmpty && !executionCompleted {
-                        Button {
-                            onRefreshPreview(Array(selectedEntryIDs))
-                        } label: {
-                            Label(AtlasL10n.string("fileorganizer.action.preview"), systemImage: "eye")
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(isScanning || isClassifying || isExecutingPlan || selectedEntryIDs.isEmpty)
+                    VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
+                        scanAndPreviewButtons
                     }
                 }
 
                 if !plan.items.isEmpty && !executionCompleted {
-                    HStack(spacing: AtlasSpacing.sm) {
-                        Button {
-                            onDryRun()
-                        } label: {
-                            Label(AtlasL10n.string("fileorganizer.action.dryRun"), systemImage: "play")
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: AtlasSpacing.sm) {
+                            dryRunAndExecuteButtons
                         }
-                        .buttonStyle(.bordered)
-                        .disabled(isScanning || isExecutingPlan)
 
-                        Button {
-                            showExecuteConfirmation = true
-                        } label: {
-                            Label(AtlasL10n.string("fileorganizer.action.execute"), systemImage: "checkmark.circle")
+                        VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
+                            dryRunAndExecuteButtons
                         }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(!canExecutePlan || isScanning || isExecutingPlan)
                     }
                 }
 
@@ -687,11 +705,50 @@ public struct FileOrganizerFeatureView: View {
                 } label: {
                     Label(AtlasL10n.string("fileorganizer.action.editRules"), systemImage: "slider.horizontal.3")
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .buttonStyle(.atlasGhost)
                 .disabled(isScanning || isClassifying || isExecutingPlan)
             }
         }
+    }
+
+    @ViewBuilder
+    private var scanAndPreviewButtons: some View {
+        Button {
+            onStartScan(selectedFolders)
+        } label: {
+            Label(AtlasL10n.string("fileorganizer.action.scan"), systemImage: "magnifyingglass")
+        }
+        .buttonStyle(.atlasPrimary)
+        .disabled(selectedFolders.isEmpty || isScanning || isClassifying || isExecutingPlan)
+
+        if !entries.isEmpty && !executionCompleted {
+            Button {
+                onRefreshPreview(Array(selectedEntryIDs))
+            } label: {
+                Label(AtlasL10n.string("fileorganizer.action.preview"), systemImage: "eye")
+            }
+            .buttonStyle(.atlasSecondary)
+            .disabled(isScanning || isClassifying || isExecutingPlan || selectedEntryIDs.isEmpty)
+        }
+    }
+
+    @ViewBuilder
+    private var dryRunAndExecuteButtons: some View {
+        Button {
+            onDryRun()
+        } label: {
+            Label(AtlasL10n.string("fileorganizer.action.dryRun"), systemImage: "play")
+        }
+        .buttonStyle(.atlasSecondary)
+        .disabled(isScanning || isExecutingPlan)
+
+        Button {
+            showExecuteConfirmation = true
+        } label: {
+            Label(AtlasL10n.string("fileorganizer.action.execute"), systemImage: "checkmark.circle")
+        }
+        .buttonStyle(.atlasPrimary)
+        .disabled(!canExecutePlan || isScanning || isExecutingPlan)
     }
 
     // MARK: - Folder Selector
@@ -708,8 +765,7 @@ public struct FileOrganizerFeatureView: View {
                 } label: {
                     Label(AtlasL10n.string("fileorganizer.folderpicker.title"), systemImage: "folder.badge.plus")
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .buttonStyle(.atlasGhost)
             }
 
             if !selectedFolders.filter({ !presetFolders.contains($0) }).isEmpty {
@@ -758,7 +814,7 @@ public struct FileOrganizerFeatureView: View {
                 .foregroundStyle(AtlasColor.textTertiary)
                 .font(AtlasTypography.body)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AtlasSpacing.xxs) {
                 Text(AtlasL10n.string("fileorganizer.destination.title"))
                     .font(AtlasTypography.caption)
                     .foregroundStyle(AtlasColor.textSecondary)
@@ -774,10 +830,8 @@ public struct FileOrganizerFeatureView: View {
                 isDestinationPickerPresented = true
             } label: {
                 Text(AtlasL10n.string("fileorganizer.destination.change"))
-                    .font(AtlasTypography.caption)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(AtlasColor.brand)
+            .buttonStyle(.atlasGhost)
         }
         .fileImporter(
             isPresented: $isDestinationPickerPresented,

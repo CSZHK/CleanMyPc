@@ -961,3 +961,31 @@
 "fileorganizer.ruleeditor.priority.hint" = "规则从上到下依次匹配，排在前面的优先级更高。";
 "fileorganizer.ruleeditor.import.title" = "导入";
 "fileorganizer.ruleeditor.export.title" = "导出";
+"fileorganizer.ruleeditor.delete" = "删除";
+"fileorganizer.ruleeditor.delete.confirm" = "确认删除这条规则吗？";
+"fileorganizer.ruleeditor.empty.detail" = "点击「添加规则」创建文件分类规则。";
+"fileorganizer.ruleeditor.field.namePatterns" = "文件名模式";
+"fileorganizer.ruleeditor.field.namePatterns.hint" = "用逗号分隔，如：Screenshot,IMG";
+"fileorganizer.ruleeditor.field.minsize.unit" = "MB";
+"fileorganizer.ruleeditor.field.maxsize.unit" = "MB";
+"fileorganizer.ruleeditor.field.subfolder.preview" = "%@/%@";
+
+// File Organizer — empty & accessibility
+"fileorganizer.empty.title" = "选择文件夹开始扫描";
+"fileorganizer.empty.detail" = "选择桌面、下载或其他文件夹，然后点击扫描按钮整理文件。";
+"fileorganizer.accessibility.selected" = "已选中";
+"fileorganizer.accessibility.notSelected" = "未选中";
+"fileorganizer.accessibility.toggleHint" = "双击切换选中状态";
+
+// Storage — detail
+"storage.largeItems.subtitle" = "占用磁盘空间较多的大文件和旧文件";
+"storage.empty.title" = "暂无大文件";
+"storage.empty.detail" = "尚未检测到占用大量空间的项目。";
+
+// Apps — building preview
+"apps.detail.callout.building.title" = "正在生成预览";
+"apps.detail.callout.building.detail" = "正在分析应用文件，请稍候……";
+
+// About — social accessibility
+"about.social.qr.hint" = "扫描二维码以添加 %@";
+"about.social.link.hint" = "双击打开链接";

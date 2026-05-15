@@ -61,7 +61,7 @@ struct TaskCenterView: View {
             .accessibilityHint(AtlasL10n.string("taskcenter.openHistory.hint"))
         }
         .padding(AtlasSpacing.xl)
-        .frame(width: 430)
+        .frame(minWidth: 360, idealWidth: 430, maxWidth: 520)
         .accessibilityIdentifier("taskcenter.panel")
     }
 

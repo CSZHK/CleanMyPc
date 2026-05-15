@@ -61,15 +61,17 @@ public struct OverviewFeatureView: View {
                     tone: .neutral,
                     systemImage: "line.3.horizontal.decrease.circle"
                 )
-                AtlasMetricCard(
-                    title: AtlasL10n.string("overview.metric.permissions.title"),
-                    value: "\(grantedRequiredPermissionCount)/\(max(requiredPermissionCount, 1))",
-                    detail: requiredPermissionsReady
-                        ? AtlasL10n.string("overview.metric.permissions.ready")
-                        : AtlasL10n.string("overview.metric.permissions.limited"),
-                    tone: requiredPermissionsReady ? .success : .warning,
-                    systemImage: "lock.shield"
-                )
+                if requiredPermissionCount > 0 {
+                    AtlasMetricCard(
+                        title: AtlasL10n.string("overview.metric.permissions.title"),
+                        value: "\(grantedRequiredPermissionCount)/\(requiredPermissionCount)",
+                        detail: requiredPermissionsReady
+                            ? AtlasL10n.string("overview.metric.permissions.ready")
+                            : AtlasL10n.string("overview.metric.permissions.limited"),
+                        tone: requiredPermissionsReady ? .success : .warning,
+                        systemImage: "lock.shield"
+                    )
+                }
             }
 
             // MARK: - Quick actions bar

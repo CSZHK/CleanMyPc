@@ -3,6 +3,7 @@ import AtlasDomain
 import SwiftUI
 
 public struct AboutFeatureView: View {
+
     public init() {}
 
     public var body: some View {
@@ -89,29 +90,46 @@ public struct AboutFeatureView: View {
 // MARK: - Social Grid
 
 private struct SocialGrid: View {
+
     var body: some View {
-        HStack(spacing: AtlasSpacing.md) {
-            SocialCard(
-                iconAsset: "icon-wechat",
-                label: AtlasL10n.string("about.social.wechat"),
-                qrCodeAsset: "qrcode-wechat"
-            )
-            SocialCard(
-                iconAsset: "icon-xiaohongshu",
-                label: AtlasL10n.string("about.social.xiaohongshu"),
-                qrCodeAsset: "qrcode-xiaohongshu"
-            )
-            SocialCard(
-                iconAsset: "icon-x",
-                label: AtlasL10n.string("about.social.x"),
-                url: "https://x.com/lizikk_zhu"
-            )
-            SocialCard(
-                iconAsset: "icon-discord",
-                label: AtlasL10n.string("about.social.discord"),
-                url: "https://discord.gg/aR2kF8Xman"
-            )
+        let columns: [GridItem] = [
+            GridItem(.flexible(minimum: 100), spacing: AtlasSpacing.md),
+            GridItem(.flexible(minimum: 100), spacing: AtlasSpacing.md),
+        ]
+
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: AtlasSpacing.md) {
+                socialCards
+            }
+
+            LazyVGrid(columns: columns, spacing: AtlasSpacing.md) {
+                socialCards
+            }
         }
+    }
+
+    @ViewBuilder
+    private var socialCards: some View {
+        SocialCard(
+            iconAsset: "icon-wechat",
+            label: AtlasL10n.string("about.social.wechat"),
+            qrCodeAsset: "qrcode-wechat"
+        )
+        SocialCard(
+            iconAsset: "icon-xiaohongshu",
+            label: AtlasL10n.string("about.social.xiaohongshu"),
+            qrCodeAsset: "qrcode-xiaohongshu"
+        )
+        SocialCard(
+            iconAsset: "icon-x",
+            label: AtlasL10n.string("about.social.x"),
+            url: "https://x.com/lizikk_zhu"
+        )
+        SocialCard(
+            iconAsset: "icon-discord",
+            label: AtlasL10n.string("about.social.discord"),
+            url: "https://discord.gg/aR2kF8Xman"
+        )
     }
 }
 
@@ -134,6 +152,7 @@ private struct SocialCard: View {
         .onHover { isHovering = $0 }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(label)
+        .accessibilityHint(qrCodeAsset != nil ? AtlasL10n.string("about.social.qr.hint", label) : (url != nil ? AtlasL10n.string("about.social.link.hint") : ""))
     }
 
     private var cardContent: some View {
@@ -143,7 +162,7 @@ private struct SocialCard: View {
                     .resizable()
                     .interpolation(.high)
                     .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: AtlasRadius.sm, style: .continuous))
                     .padding(.horizontal, AtlasSpacing.section)
                     .padding(.top, AtlasSpacing.sm)
             } else {
@@ -170,7 +189,7 @@ private struct SocialCard: View {
 
                 if url != nil {
                     Image(systemName: "arrow.up.right")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(AtlasTypography.captionSmall.weight(.bold))
                         .foregroundStyle(.tertiary)
                 }
             }
