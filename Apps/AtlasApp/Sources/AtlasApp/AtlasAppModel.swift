@@ -4,7 +4,6 @@ import AtlasDesignSystem
 import AtlasDomain
 import AtlasInfrastructure
 import Combine
-import Foundation
 import SwiftUI
 import UserNotifications
 
@@ -677,54 +676,22 @@ final class AtlasAppModel: ObservableObject {
                 fileOrganizerPlanIssue = error.localizedDescription
             }
         } else {
-            // Multiple folders — scan sequentially with per-folder progress
-            var allEntries: [FileOrganizerEntry] = []
-            var lastSnapshot: AtlasWorkspaceSnapshot?
-            var firstError: Error?
-            let totalFolders = Double(folderPaths.count)
+            // Multiple folders — single call with all paths
+            let folderNames = folderPaths.map { ($0 as NSString).lastPathComponent }.joined(separator: ", ")
+            fileOrganizerScanSummary = AtlasL10n.string("fileorganizer.progress.scanningFolder", folderNames, 1, 1)
+            fileOrganizerProgress = 0.1
 
-            for (index, folder) in folderPaths.enumerated() {
-                let folderName = (folder as NSString).lastPathComponent
-                fileOrganizerScanSummary = AtlasL10n.string("fileorganizer.progress.scanningFolder", folderName, index + 1, folderPaths.count)
-                fileOrganizerProgress = Double(index) / totalFolders
-
-                do {
-                    let output = try await workspaceController.fileOrganizerScan(folderPaths: [folder])
-                    allEntries.append(contentsOf: output.entries)
-                    lastSnapshot = output.snapshot
-                } catch {
-                    if firstError == nil { firstError = error }
-                }
-            }
-
-            if var merged = lastSnapshot {
-                // Merge accumulated entries into snapshot
-                merged.fileOrganizerEntries = allEntries
-                // Consolidate scan task runs — keep only one with correct summary
-                let scanRuns = merged.taskRuns.filter { $0.kind == .scan || $0.kind == .organizeFiles }
-                if scanRuns.count > 1 {
-                    merged.taskRuns.removeAll { $0.kind == .scan || $0.kind == .organizeFiles }
-                    if var last = scanRuns.last {
-                        last.summary = AtlasL10n.string(
-                            allEntries.count == 1 ? "infrastructure.scan.completed.one" : "infrastructure.scan.completed.other",
-                            allEntries.count
-                        )
-                        merged.taskRuns.insert(last, at: 0)
-                    }
-                }
-
+            do {
+                let output = try await workspaceController.fileOrganizerScan(folderPaths: folderPaths)
                 withAnimation(.snappy(duration: 0.24)) {
-                    snapshot = merged
-                    fileOrganizerEntries = allEntries
-                    fileOrganizerScanSummary = AtlasL10n.string(
-                        allEntries.count == 1 ? "infrastructure.scan.completed.one" : "infrastructure.scan.completed.other",
-                        allEntries.count
-                    )
-                    fileOrganizerProgress = 1.0
+                    snapshot = output.snapshot
+                    fileOrganizerEntries = output.entries
+                    fileOrganizerScanSummary = output.summary
+                    fileOrganizerProgress = output.progressFraction
                     isFileOrganizerPlanFresh = false
                     fileOrganizerPlanIssue = nil
                 }
-            } else if let error = firstError {
+            } catch {
                 fileOrganizerScanSummary = error.localizedDescription
                 fileOrganizerProgress = 0
                 fileOrganizerPlanIssue = error.localizedDescription
@@ -810,7 +777,26 @@ final class AtlasAppModel: ObservableObject {
                 fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.ready")
             }
         } catch {
-            fileOrganizerExecutionIssue = error.localizedDescription
+            // Worker may have partially succeeded — verify files actually returned to original locations
+            let allRestored = recoveryItem.restoreMappings?.allSatisfy { mapping in
+                let restored = FileManager.default.fileExists(atPath: (mapping.originalPath as NSString).expandingTildeInPath)
+                let sourceGone = !FileManager.default.fileExists(atPath: (mapping.trashedPath as NSString).expandingTildeInPath)
+                return restored && sourceGone
+            } ?? false
+            if allRestored {
+                withAnimation(.snappy(duration: 0.24)) {
+                    snapshot.recoveryItems.removeAll { $0.id == recoveryItem.id }
+                    snapshot.fileOrganizerEntries = []
+                    fileOrganizerEntries = []
+                    currentFileOrganizerPlan = ActionPlan(title: "", items: [], estimatedBytes: 0)
+                    isFileOrganizerPlanFresh = false
+                    fileOrganizerExecutionCompleted = false
+                    fileOrganizerMovedCount = 0
+                    fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.ready")
+                }
+            } else {
+                fileOrganizerExecutionIssue = error.localizedDescription
+            }
         }
         restoringRecoveryItemID = nil
     }
@@ -844,6 +830,9 @@ final class AtlasAppModel: ObservableObject {
     }
 
     func dryRunFileOrganizerPlan() async {
+        guard !currentFileOrganizerPlan.items.isEmpty else { return }
+        let itemCount = currentFileOrganizerPlan.items.count
+        let estimatedBytes = currentFileOrganizerPlan.estimatedBytes
         do {
             let output = try await workspaceController.fileOrganizerDryRun(planID: currentFileOrganizerPlan.id)
             withAnimation(.snappy(duration: 0.24)) {
@@ -851,8 +840,20 @@ final class AtlasAppModel: ObservableObject {
                 currentFileOrganizerPlan = output.actionPlan
                 fileOrganizerScanSummary = output.summary
             }
+            let sizeStr = ByteCountFormatter.string(fromByteCount: estimatedBytes, countStyle: .file)
+            let msg = AtlasL10n.string(
+                itemCount == 1
+                    ? "fileorganizer.dryRun.success.one"
+                    : "fileorganizer.dryRun.success.other",
+                "\(itemCount)", sizeStr
+            )
+            showToast(msg, tone: .success, systemImage: "checkmark.circle")
         } catch {
-            fileOrganizerScanSummary = error.localizedDescription
+            showToast(
+                AtlasL10n.string("fileorganizer.dryRun.error", error.localizedDescription),
+                tone: .danger,
+                systemImage: "exclamationmark.triangle"
+            )
         }
     }
 

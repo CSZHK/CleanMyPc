@@ -861,6 +861,9 @@
 "fileorganizer.action.execute.hint" = "Move files to categorized subdirectories based on the plan.";
 "fileorganizer.action.dryRun" = "Dry Run";
 "fileorganizer.action.dryRun.hint" = "Simulate the organization without actually moving files.";
+"fileorganizer.dryRun.success.one" = "Dry run complete: %1$@ file can be safely moved (%2$@)";
+"fileorganizer.dryRun.success.other" = "Dry run complete: %1$@ files can be safely moved (%2$@)";
+"fileorganizer.dryRun.error" = "Dry run failed: %@";
 "fileorganizer.action.editRules" = "Edit Rules";
 
 "fileorganizer.metric.totalFiles.title" = "Total Files";

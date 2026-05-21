@@ -2171,6 +2171,129 @@ extension AtlasInfrastructureTests {
         // /etc/hosts should still exist (not moved)
         XCTAssertTrue(FileManager.default.fileExists(atPath: "/etc/hosts"))
     }
+
+    // MARK: - File Organizer Undo/Restore Tests
+
+    func testFileOrganizerUndoRestoresFilesToOriginalLocation() async throws {
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        _ = try repository.saveState(emptyWorkspaceState())
+
+        let fm = FileManager.default
+        let homeDir = fm.homeDirectoryForCurrentUser.path
+        let testBase = (homeDir as NSString).appendingPathComponent("Library/Caches/AtlasFOUndoTest-\(UUID().uuidString)")
+        try fm.createDirectory(atPath: testBase, withIntermediateDirectories: true)
+
+        let file1 = (testBase as NSString).appendingPathComponent("report.pdf")
+        let file2 = (testBase as NSString).appendingPathComponent("photo.png")
+        try Data("pdf-content".utf8).write(to: URL(fileURLWithPath: file1))
+        try Data("png-data".utf8).write(to: URL(fileURLWithPath: file2))
+        addTeardownBlock {
+            try? fm.removeItem(atPath: testBase)
+            try? fm.removeItem(atPath: (homeDir as NSString).appendingPathComponent("Organized"))
+        }
+
+        let displayPath1 = "~" + String(file1.dropFirst(homeDir.count))
+        let displayPath2 = "~" + String(file2.dropFirst(homeDir.count))
+        let entries = [
+            FileOrganizerEntry(path: displayPath1, fileName: "report.pdf", bytes: 11, category: .documents, proposedDestination: "~/Organized/Documents/report.pdf"),
+            FileOrganizerEntry(path: displayPath2, fileName: "photo.png", bytes: 8, category: .images, proposedDestination: "~/Organized/Images/photo.png"),
+        ]
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: StubFileOrganizerScanner(entries: entries)
+        )
+
+        // Scan → Preview → Execute
+        _ = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["~" + String(testBase.dropFirst(homeDir.count))]))
+        )
+        let planResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerPreviewPlan(taskID: UUID(), entryIDs: []))
+        )
+        guard case let .fileOrganizerPlan(plan) = planResult.response.response else {
+            XCTFail("Expected plan"); return
+        }
+        let executeResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerExecutePlan(planID: plan.id))
+        )
+
+        // Verify files moved away and recovery item created
+        XCTAssertFalse(fm.fileExists(atPath: file1))
+        XCTAssertFalse(fm.fileExists(atPath: file2))
+        XCTAssertEqual(executeResult.snapshot.recoveryItems.count, 1)
+
+        // Restore (undo)
+        let recoveryItemID = try XCTUnwrap(executeResult.snapshot.recoveryItems.first?.id)
+        let restoreResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .restoreItems(taskID: UUID(), itemIDs: [recoveryItemID]))
+        )
+
+        // Verify files restored to original location
+        XCTAssertTrue(fm.fileExists(atPath: file1), "file1 should be restored")
+        XCTAssertTrue(fm.fileExists(atPath: file2), "file2 should be restored")
+        XCTAssertEqual(restoreResult.snapshot.recoveryItems.count, 0, "recovery item should be removed")
+        if case let .accepted(task) = restoreResult.response.response {
+            XCTAssertEqual(task.kind, .restore)
+        } else {
+            XCTFail("Expected accepted restore response, got \(restoreResult.response.response)")
+        }
+    }
+
+    func testFileOrganizerUndoRejectsExpiredRecoveryItem() async throws {
+        let baseDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let clock = TestClock(now: baseDate)
+        let repository = AtlasWorkspaceRepository(
+            stateFileURL: temporaryStateFileURL(),
+            nowProvider: { clock.now }
+        )
+
+        let recoveryItem = RecoveryItem(
+            id: UUID(),
+            title: "File Organizer",
+            detail: "Expired undo",
+            originalPath: "~/Desktop",
+            bytes: 100,
+            deletedAt: baseDate.addingTimeInterval(-60),
+            expiresAt: baseDate.addingTimeInterval(-10),
+            payload: .fileOrganizer(FileOrganizerRecoveryPayload(
+                moveMappings: [FileOrganizerMoveMapping(originalPath: "~/Desktop/test.txt", destinationPath: "~/Organized/Documents/test.txt")],
+                sourceFolder: "~/Desktop"
+            )),
+            restoreMappings: nil
+        )
+        let state = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: 0,
+                findings: [],
+                apps: [],
+                taskRuns: [],
+                recoveryItems: [recoveryItem],
+                permissions: [],
+                healthSnapshot: nil
+            ),
+            currentPlan: ActionPlan(title: "", items: [], estimatedBytes: 0),
+            settings: AtlasScaffoldWorkspace.state().settings
+        )
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            nowProvider: { clock.now },
+            allowStateOnlyCleanExecution: false
+        )
+
+        let restore = try await worker.submit(
+            AtlasRequestEnvelope(command: .restoreItems(taskID: UUID(), itemIDs: [recoveryItem.id]))
+        )
+
+        guard case let .rejected(code, reason) = restore.response.response else {
+            XCTFail("Expected rejected response for expired recovery item"); return
+        }
+        XCTAssertEqual(code, .invalidSelection)
+        XCTAssertTrue(reason.contains("no longer available"), "reason should mention item unavailable, got: \(reason)")
+        // Expired items are pruned during save/load, so the item no longer exists → invalidSelection
+    }
 }
 
 // MARK: - File Organizer Test Stubs

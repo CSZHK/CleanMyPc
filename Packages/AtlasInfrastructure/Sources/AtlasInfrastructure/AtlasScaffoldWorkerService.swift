@@ -778,34 +778,18 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             let newRestoreMappings = zip(moveMappings, absoluteDestPaths).map { mapping, absoluteDest in
                 RecoveryPathMapping(originalPath: (mapping.originalPath as NSString).expandingTildeInPath, trashedPath: absoluteDest)
             }
-            // Merge with existing file organizer recovery items so undo reverts all moves
-            var allMoveMappings = moveMappings
-            var allRestoreMappings = newRestoreMappings
-            var mergedBytes = totalBytesMoved
-            for existingItem in state.snapshot.recoveryItems {
-                guard case let .fileOrganizer(payload) = existingItem.payload else { continue }
-                allMoveMappings.append(contentsOf: payload.moveMappings)
-                if let existing = existingItem.restoreMappings {
-                    allRestoreMappings.insert(contentsOf: existing, at: 0)
-                }
-                mergedBytes += existingItem.bytes
-            }
-            state.snapshot.recoveryItems.removeAll { item in
-                if case .fileOrganizer = item.payload { return true }
-                return false
-            }
             let recoveryItem = RecoveryItem(
                 title: AtlasL10n.string("fileorganizer.recovery.title"),
                 detail: AtlasL10n.string("fileorganizer.recovery.detail"),
                 originalPath: sourceFolder,
-                bytes: mergedBytes,
+                bytes: totalBytesMoved,
                 deletedAt: Date(),
                 expiresAt: Date().addingTimeInterval(30 * 24 * 3600),
                 payload: .fileOrganizer(FileOrganizerRecoveryPayload(
-                    moveMappings: allMoveMappings,
+                    moveMappings: moveMappings,
                     sourceFolder: sourceFolder
                 )),
-                restoreMappings: allRestoreMappings
+                restoreMappings: newRestoreMappings
             )
             state.snapshot.recoveryItems.insert(recoveryItem, at: 0)
         }

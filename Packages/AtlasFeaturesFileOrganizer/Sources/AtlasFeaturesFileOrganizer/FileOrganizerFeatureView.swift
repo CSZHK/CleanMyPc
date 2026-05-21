@@ -200,6 +200,11 @@ public struct FileOrganizerFeatureView: View {
             let validIDs = Set(newEntries.map(\.id))
             selectedEntryIDs = selectedEntryIDs.intersection(validIDs)
         }
+        .onChange(of: executionCompleted) { _, completed in
+            if completed {
+                selectedEntryIDs = []
+            }
+        }
         .confirmationDialog(
             AtlasL10n.string("fileorganizer.confirm.execute.title"),
             isPresented: $showExecuteConfirmation,
@@ -771,7 +776,7 @@ public struct FileOrganizerFeatureView: View {
             Label(AtlasL10n.string("fileorganizer.action.dryRun"), systemImage: "play")
         }
         .buttonStyle(.atlasSecondary)
-        .disabled(isScanning || isExecutingPlan)
+        .disabled(isScanning || isExecutingPlan || plan.items.isEmpty)
 
         Button {
             showExecuteConfirmation = true

@@ -861,6 +861,9 @@
 "fileorganizer.action.execute.hint" = "按分类计划将文件移动到对应子目录。";
 "fileorganizer.action.dryRun" = "模拟运行";
 "fileorganizer.action.dryRun.hint" = "模拟整理过程，不实际移动文件。";
+"fileorganizer.dryRun.success.one" = "模拟完成：%1$@ 个文件可安全移动（%2$@）";
+"fileorganizer.dryRun.success.other" = "模拟完成：%1$@ 个文件可安全移动（%2$@）";
+"fileorganizer.dryRun.error" = "模拟运行失败：%@";
 "fileorganizer.action.editRules" = "编辑规则";
 
 "fileorganizer.metric.totalFiles.title" = "文件总数";
