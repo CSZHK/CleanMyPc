@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-05-21
+
+### Added
+
+- **UI/UX overhaul** — 22 improvements across P0–P3 priority levels covering all 6 feature modules.
+  - **Skeleton loading** — `AtlasSkeletonCard` and `AtlasSkeletonRow` with shimmer animation replace spinner in Overview first-load state. Respects `accessibilityReduceMotion`.
+  - **Toast notifications** — `AtlasToastContainer` + `AtlasToastItem` with auto-dismiss (3s), manual close, and tone-aware styling. Integrated into `AtlasAppModel`.
+  - **Undo banner** — `AtlasUndoBanner` shared component for SmartClean post-execution rollback prompt.
+  - **Filter chips** — `AtlasFilterChip` for SmartClean risk-level filtering (All / Safe / Review / Advanced) and Apps leftover-only toggle.
+  - **Segmented control** — `AtlasSegmentedControl` replacing native `.pickerStyle(.segmented)` in Settings language picker.
+  - **Tooltip modifier** — `AtlasTooltipModifier` with hover-activated tooltip, arrow, and placement options (top/bottom/leading/trailing). Applied to Overview metric cards.
+  - **Dynamic sidebar subtitles** — sidebar rows now show live context (disk %, findings count, app count, permissions status) via `AtlasSidebarContext`.
+  - **Thumbnail cache** — `NSCache`-based `ThumbnailCache` in FileOrganizer avoids repeated disk reads for file thumbnails.
+
+### Changed
+
+- **Callout cleanup** — removed redundant callouts from Settings (all 3 panels), Permissions (duplicate of hero card). Apps callout now conditional on previewPlan/restoreRefreshStatus only.
+- **File Organizer** — configuration section collapsed into `AtlasSectionDisclosure` (default collapsed); action buttons (Scan/Preview/Execute) always visible separately. Metric cards switched from `HStack` to responsive `LazyVGrid`.
+- **Settings** — tab bar pinned at top, only panel content scrolls. Eliminated nested `ScrollView`.
+- **Accessibility** — `AtlasStatusChip` now includes unicode icon prefix (✓/△/✕) per tone. `reduceMotion` checks added to FileOrganizer selection animation and toast transitions. Dynamic Type upper bounds added to `AtlasTypography` fixed-size styles.
+- **Window sizing** — `defaultSize(1024×680)` + `NSWindow.minSize(940×640)` prevents split-view collapse.
+- **Localization** — 17 new keys in both `en` and `zh-Hans` for sidebar dynamic subtitles, SmartClean filter, and undo banner.
+
 ## [1.0.6] - 2026-05-15
 
 ### Added
