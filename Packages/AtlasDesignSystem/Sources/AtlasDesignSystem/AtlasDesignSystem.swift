@@ -704,8 +704,23 @@ public struct AtlasStatusChip: View {
         self.tone = tone
     }
 
+    /// Accessibility icon prefix for each tone — prepended to chip text.
+    private var accessibilityIcon: String? {
+        switch tone {
+        case .success: return "\u{2713}" // ✓
+        case .warning: return "\u{25B3}" // △
+        case .danger:  return "\u{2715}" // ✕
+        case .neutral: return nil
+        }
+    }
+
     public var body: some View {
-        Text(label)
+        let displayText = if let icon = accessibilityIcon {
+            "\(icon) \(label)"
+        } else {
+            label
+        }
+        return Text(displayText)
             .font(AtlasTypography.caption)
             .padding(.horizontal, AtlasSpacing.md)
             .padding(.vertical, AtlasSpacing.xs)

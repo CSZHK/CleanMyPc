@@ -1,5 +1,36 @@
 import Foundation
 
+public struct AtlasSidebarContext: Sendable {
+    public var findingsCount: Int
+    public var reclaimableBytes: Int64
+    public var appsCount: Int
+    public var recoveryItemsCount: Int
+    public var requiredPermissionsGranted: Int
+    public var requiredPermissionsTotal: Int
+    public var diskUsedPercent: Double?
+    public var fileOrganizerEntriesCount: Int
+
+    public init(
+        findingsCount: Int = 0,
+        reclaimableBytes: Int64 = 0,
+        appsCount: Int = 0,
+        recoveryItemsCount: Int = 0,
+        requiredPermissionsGranted: Int = 0,
+        requiredPermissionsTotal: Int = 0,
+        diskUsedPercent: Double? = nil,
+        fileOrganizerEntriesCount: Int = 0
+    ) {
+        self.findingsCount = findingsCount
+        self.reclaimableBytes = reclaimableBytes
+        self.appsCount = appsCount
+        self.recoveryItemsCount = recoveryItemsCount
+        self.requiredPermissionsGranted = requiredPermissionsGranted
+        self.requiredPermissionsTotal = requiredPermissionsTotal
+        self.diskUsedPercent = diskUsedPercent
+        self.fileOrganizerEntriesCount = fileOrganizerEntriesCount
+    }
+}
+
 public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, Sendable {
     case overview
     case smartClean
@@ -11,6 +42,50 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
     case about
 
     public var id: String { rawValue }
+
+    public func dynamicSubtitle(context: AtlasSidebarContext) -> String {
+        switch self {
+        case .overview:
+            if let pct = context.diskUsedPercent {
+                return AtlasL10n.string("sidebar.overview.dynamic", Int(pct))
+            }
+            return subtitle
+        case .smartClean:
+            if context.findingsCount > 0 {
+                return AtlasL10n.string("sidebar.smartclean.dynamic", context.findingsCount, Self.formatBytes(context.reclaimableBytes))
+            }
+            return subtitle
+        case .fileOrganizer:
+            if context.fileOrganizerEntriesCount > 0 {
+                return AtlasL10n.string("sidebar.fileorganizer.dynamic", context.fileOrganizerEntriesCount)
+            }
+            return subtitle
+        case .apps:
+            if context.appsCount > 0 {
+                return AtlasL10n.string("sidebar.apps.dynamic", context.appsCount)
+            }
+            return subtitle
+        case .history:
+            if context.recoveryItemsCount > 0 {
+                return AtlasL10n.string("sidebar.history.dynamic", context.recoveryItemsCount)
+            }
+            return subtitle
+        case .permissions:
+            if context.requiredPermissionsTotal > 0 {
+                if context.requiredPermissionsGranted == context.requiredPermissionsTotal {
+                    return AtlasL10n.string("sidebar.permissions.ready")
+                }
+                return AtlasL10n.string("sidebar.permissions.partial", context.requiredPermissionsGranted, context.requiredPermissionsTotal)
+            }
+            return subtitle
+        case .settings, .about:
+            return subtitle
+        }
+    }
+
+    private static func formatBytes(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
 
     // MARK: - Sidebar
 

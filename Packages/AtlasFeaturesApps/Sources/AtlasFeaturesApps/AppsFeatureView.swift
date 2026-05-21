@@ -19,6 +19,7 @@ public struct AppsFeatureView: View {
 
     @State private var selectedAppID: UUID?
     @State private var browserWidth: CGFloat?
+    @State private var showLeftoversOnly = false
 
     public init(
         apps: [AppFootprint] = AtlasScaffoldFixtures.apps,
@@ -53,12 +54,14 @@ public struct AppsFeatureView: View {
             subtitle: AtlasL10n.string("apps.screen.subtitle"),
             maxContentWidth: AtlasLayout.maxWorkspaceWidth
         ) {
-            AtlasCallout(
-                title: screenCalloutTitle,
-                detail: screenCalloutDetail,
-                tone: screenCalloutTone,
-                systemImage: screenCalloutSystemImage
-            )
+            if previewPlan != nil || restoreRefreshStatus != nil {
+                AtlasCallout(
+                    title: screenCalloutTitle,
+                    detail: screenCalloutDetail,
+                    tone: screenCalloutTone,
+                    systemImage: screenCalloutSystemImage
+                )
+            }
 
             AtlasInfoCard(
                 title: AtlasL10n.string("apps.inventory.title"),
@@ -103,6 +106,8 @@ public struct AppsFeatureView: View {
                     .accessibilityHint(AtlasL10n.string("apps.refresh.hint"))
                 }
             }
+
+            leftoversFilterChip
 
             AtlasInfoCard(
                 title: AtlasL10n.string("apps.browser.title"),
@@ -150,11 +155,26 @@ public struct AppsFeatureView: View {
     }
 
     private var sortedApps: [AppFootprint] {
-        Self.sortedApps(apps)
+        let all = Self.sortedApps(apps)
+        if showLeftoversOnly {
+            return all.filter { $0.leftoverItems > 0 }
+        }
+        return all
     }
 
     private var sortedAppIDs: [UUID] {
         sortedApps.map(\.id)
+    }
+
+    @ViewBuilder
+    private var leftoversFilterChip: some View {
+        AtlasFilterChip(
+            title: AtlasL10n.string("apps.filter.leftoversOnly"),
+            isSelected: showLeftoversOnly,
+            count: Self.sortedApps(apps).filter { $0.leftoverItems > 0 }.count
+        ) {
+            showLeftoversOnly.toggle()
+        }
     }
 
     private var effectiveBrowserWidth: CGFloat {
@@ -596,15 +616,10 @@ private struct AppDetailView: View {
                     }
 
                     if !reviewOnlyItems.isEmpty {
-                        AtlasInfoCard(
+                        AtlasSectionDisclosure(
                             title: AtlasL10n.string("apps.preview.reviewOnly.title"),
-                            subtitle: AtlasL10n.string(
-                                reviewOnlyItems.count == 1
-                                    ? "apps.preview.reviewOnly.subtitle.one"
-                                    : "apps.preview.reviewOnly.subtitle.other",
-                                reviewOnlyItems.count
-                            ),
-                            tone: .neutral
+                            count: reviewOnlyItems.count,
+                            defaultExpanded: false
                         ) {
                             VStack(alignment: .leading, spacing: AtlasSpacing.md) {
                                 ForEach(reviewOnlyItems) { item in

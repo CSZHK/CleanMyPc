@@ -989,3 +989,20 @@
 // About — social accessibility
 "about.social.qr.hint" = "扫描二维码以添加 %@";
 "about.social.link.hint" = "双击打开链接";
+
+// Sidebar dynamic subtitles
+"sidebar.overview.dynamic" = "磁盘: %d%% 已使用";
+"sidebar.smartclean.dynamic" = "%d 项, %@";
+"sidebar.fileorganizer.dynamic" = "%d 个文件";
+"sidebar.apps.dynamic" = "%d 个应用";
+"sidebar.history.dynamic" = "%d 项";
+"sidebar.permissions.ready" = "✓ 已全部授权";
+"sidebar.permissions.partial" = "%d/%d 已授权";
+
+// MARK: - SmartClean Filter & Undo Banner
+"smartclean.filter.all" = "全部";
+"smartclean.undo.banner.message" = "清理计划已成功执行。";
+"smartclean.undo.banner.action" = "撤销";
+
+// MARK: - Apps Filter
+"apps.filter.leftoversOnly" = "仅残留文件";

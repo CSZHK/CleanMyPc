@@ -16,11 +16,17 @@ struct AtlasApp: App {
                 AppShellView(model: model)
                     .environment(\.locale, model.appLanguage.locale)
                     .frame(minWidth: 940, minHeight: 640)
+                    .onAppear {
+                        if let window = NSApp.windows.first(where: { $0.isVisible }) {
+                            window.minSize = NSSize(width: 940, height: 640)
+                        }
+                    }
             }
         }
         .commands {
             AtlasAppCommands(model: model)
         }
+        .defaultSize(width: 1024, height: 680)
         .windowStyle(.hiddenTitleBar)
     }
 

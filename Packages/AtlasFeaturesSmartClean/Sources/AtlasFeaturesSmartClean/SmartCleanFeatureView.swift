@@ -15,11 +15,15 @@ public struct SmartCleanFeatureView: View {
     private let canExecutePlan: Bool
     private let planIssue: String?
     private let executionIssue: String?
+    private let executionCompleted: Bool
     private let onStartScan: () -> Void
     private let onRefreshPreview: () -> Void
     private let onExecutePlan: () -> Void
+    private let onUndoExecution: (() -> Void)?
 
     @State private var showExecuteConfirmation = false
+    @State private var showUndoBanner = true
+    @State private var selectedRiskFilter: RiskLevel?
 
     public init(
         findings: [Finding] = AtlasScaffoldFixtures.findings,
@@ -32,9 +36,11 @@ public struct SmartCleanFeatureView: View {
         canExecutePlan: Bool = false,
         planIssue: String? = nil,
         executionIssue: String? = nil,
+        executionCompleted: Bool = false,
         onStartScan: @escaping () -> Void = {},
         onRefreshPreview: @escaping () -> Void = {},
-        onExecutePlan: @escaping () -> Void = {}
+        onExecutePlan: @escaping () -> Void = {},
+        onUndoExecution: (() -> Void)? = nil
     ) {
         self.findings = findings
         self.plan = plan
@@ -46,9 +52,11 @@ public struct SmartCleanFeatureView: View {
         self.canExecutePlan = canExecutePlan
         self.planIssue = planIssue
         self.executionIssue = executionIssue
+        self.executionCompleted = executionCompleted
         self.onStartScan = onStartScan
         self.onRefreshPreview = onRefreshPreview
         self.onExecutePlan = onExecutePlan
+        self.onUndoExecution = onUndoExecution
     }
 
     public var body: some View {
@@ -63,6 +71,17 @@ public struct SmartCleanFeatureView: View {
                 tone: statusTone,
                 systemImage: statusSymbol
             )
+
+            if executionCompleted, showUndoBanner, let undoAction = onUndoExecution {
+                AtlasUndoBanner(
+                    message: AtlasL10n.string("smartclean.undo.banner.message"),
+                    actionTitle: AtlasL10n.string("smartclean.undo.banner.action"),
+                    tone: .success,
+                    onUndo: undoAction,
+                    onDismiss: { showUndoBanner = false }
+                )
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
 
             AtlasInfoCard(
                 title: AtlasL10n.string("smartclean.controls.title"),
@@ -227,22 +246,60 @@ public struct SmartCleanFeatureView: View {
                     onAction: onStartScan
                 )
             } else {
-                AggregateSummaryCard(findings: findings)
+                filterChips
+
+                AggregateSummaryCard(findings: filteredFindings)
 
                 ForEach(RiskLevel.allCases, id: \.self) { risk in
                     riskSection(risk)
                 }
             }
         }
+        .animation(AtlasMotion.standard, value: showUndoBanner)
     }
 
     private var metricColumns: [GridItem] {
         AtlasLayout.adaptiveMetricColumns(for: contentWidth)
     }
 
+    // MARK: - Risk Filter
+
+    private var filteredFindings: [Finding] {
+        guard let selectedRiskFilter else {
+            return findings
+        }
+        return findings.filter { $0.risk == selectedRiskFilter }
+    }
+
+    @ViewBuilder
+    private var filterChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AtlasSpacing.sm) {
+                AtlasFilterChip(
+                    title: AtlasL10n.string("smartclean.filter.all"),
+                    isSelected: selectedRiskFilter == nil,
+                    count: findings.count
+                ) {
+                    selectedRiskFilter = nil
+                }
+
+                ForEach(RiskLevel.allCases, id: \.self) { risk in
+                    let count = findings.filter { $0.risk == risk }.count
+                    AtlasFilterChip(
+                        title: risk.title,
+                        isSelected: selectedRiskFilter == risk,
+                        count: count
+                    ) {
+                        selectedRiskFilter = risk
+                    }
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private func riskSection(_ risk: RiskLevel) -> some View {
-        let items = findings.filter { $0.risk == risk }
+        let items = filteredFindings.filter { $0.risk == risk }
 
         if !items.isEmpty {
             AtlasSectionDisclosure(

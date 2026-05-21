@@ -20,7 +20,7 @@ struct AppShellView: View {
                 ForEach(AtlasRoute.SidebarSection.allCases) { section in
                     Section(section.title) {
                         ForEach(section.routes) { route in
-                            SidebarRouteRow(route: route)
+                            SidebarRouteRow(route: route, context: sidebarContext)
                                 .tag(route)
                         }
                     }
@@ -65,6 +65,11 @@ struct AppShellView: View {
             .padding(.top, 10)
             .padding(.trailing, 24)
             .ignoresSafeArea(.container, edges: .top)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            AtlasToastContainer(items: $model.toasts)
+                .padding(AtlasSpacing.lg)
+                .allowsHitTesting(!model.toasts.isEmpty)
         }
         .task {
             await model.refreshHealthSnapshotIfNeeded()
@@ -121,6 +126,7 @@ struct AppShellView: View {
             OverviewFeatureView(
                 snapshot: model.filteredSnapshot,
                 isRefreshingHealthSnapshot: model.isHealthSnapshotRefreshing,
+                isLoading: model.isHealthSnapshotRefreshing && model.filteredSnapshot.healthSnapshot == nil,
                 onStartSmartClean: {
                     model.navigate(to: .smartClean)
                     Task { await model.runSmartCleanScan() }
@@ -148,6 +154,7 @@ struct AppShellView: View {
                 canExecutePlan: model.canExecuteCurrentSmartCleanPlan,
                 planIssue: model.smartCleanPlanIssue,
                 executionIssue: model.smartCleanExecutionIssue,
+                executionCompleted: model.smartCleanExecutionIssue == nil && !model.isPlanRunning && !model.currentPlan.items.isEmpty,
                 onStartScan: {
                     Task { await model.runSmartCleanScan() }
                 },
@@ -156,7 +163,8 @@ struct AppShellView: View {
                 },
                 onExecutePlan: {
                     Task { await model.executeCurrentPlan() }
-                }
+                },
+                onUndoExecution: nil // TODO: wire when SmartClean undo is implemented
             )
         case .fileOrganizer:
             FileOrganizerFeatureView(
@@ -273,6 +281,21 @@ struct AppShellView: View {
         }.count
     }
 
+    private var sidebarContext: AtlasSidebarContext {
+        let snap = model.filteredSnapshot
+        let requiredPerms = snap.permissions.filter { $0.kind.isRequiredForCurrentWorkflows }
+        return AtlasSidebarContext(
+            findingsCount: snap.findings.count,
+            reclaimableBytes: snap.reclaimableSpaceBytes,
+            appsCount: snap.apps.count,
+            recoveryItemsCount: snap.recoveryItems.count,
+            requiredPermissionsGranted: requiredPerms.filter(\.isGranted).count,
+            requiredPermissionsTotal: requiredPerms.count,
+            diskUsedPercent: snap.healthSnapshot?.diskUsedPercent,
+            fileOrganizerEntriesCount: snap.fileOrganizerEntries.count
+        )
+    }
+
     private var taskCenterToolbarButton: some View {
         Button {
             model.openTaskCenter()
@@ -305,6 +328,12 @@ struct AppShellView: View {
 
 private struct SidebarRouteRow: View {
     let route: AtlasRoute
+    let dynamicSubtitleText: String
+
+    init(route: AtlasRoute, context: AtlasSidebarContext = AtlasSidebarContext()) {
+        self.route = route
+        self.dynamicSubtitleText = route.dynamicSubtitle(context: context)
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: AtlasSpacing.md) {
@@ -333,7 +362,7 @@ private struct SidebarRouteRow: View {
                 Text(route.title)
                     .font(AtlasTypography.rowTitle)
 
-                Text(route.subtitle)
+                Text(dynamicSubtitleText)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
@@ -345,7 +374,7 @@ private struct SidebarRouteRow: View {
         .listRowSeparator(.hidden)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("route.\(route.id)")
-        .accessibilityLabel("\(route.title). \(route.subtitle)")
+        .accessibilityLabel("\(route.title). \(dynamicSubtitleText)")
         .accessibilityHint(route.shortcutNumber.isEmpty ? "" : AtlasL10n.string("sidebar.route.hint", route.shortcutNumber))
     }
 }

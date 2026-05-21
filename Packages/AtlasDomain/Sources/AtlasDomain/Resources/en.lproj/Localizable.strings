@@ -989,3 +989,20 @@
 // About — social accessibility
 "about.social.qr.hint" = "Scan QR code to add on %@";
 "about.social.link.hint" = "Double tap to open link";
+
+// Sidebar dynamic subtitles
+"sidebar.overview.dynamic" = "Disk: %d%% used";
+"sidebar.smartclean.dynamic" = "%d items, %@";
+"sidebar.fileorganizer.dynamic" = "%d files found";
+"sidebar.apps.dynamic" = "%d apps";
+"sidebar.history.dynamic" = "%d items";
+"sidebar.permissions.ready" = "✓ All granted";
+"sidebar.permissions.partial" = "%d/%d granted";
+
+// MARK: - SmartClean Filter & Undo Banner
+"smartclean.filter.all" = "All";
+"smartclean.undo.banner.message" = "Cleanup plan executed successfully.";
+"smartclean.undo.banner.action" = "Undo";
+
+// MARK: - Apps Filter
+"apps.filter.leftoversOnly" = "Leftovers Only";

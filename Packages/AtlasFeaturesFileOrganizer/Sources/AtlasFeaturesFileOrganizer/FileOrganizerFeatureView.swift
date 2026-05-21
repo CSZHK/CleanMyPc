@@ -3,6 +3,19 @@ import AtlasDomain
 import SwiftUI
 import UniformTypeIdentifiers
 
+private final class ThumbnailCache {
+    static let shared = ThumbnailCache()
+    let cache = NSCache<NSString, NSImage>()
+
+    func image(for path: String) -> NSImage? {
+        cache.object(forKey: path as NSString)
+    }
+
+    func setImage(_ image: NSImage, for path: String) {
+        cache.setObject(image, forKey: path as NSString)
+    }
+}
+
 private struct FileThumbnailView: View {
     let path: String
     @State private var image: NSImage?
@@ -27,12 +40,17 @@ private struct FileThumbnailView: View {
         .clipShape(RoundedRectangle(cornerRadius: AtlasRadius.sm, style: .continuous))
         .task(id: path) {
             let expandedPath = (path as NSString).expandingTildeInPath
+            if let cached = ThumbnailCache.shared.image(for: expandedPath) {
+                image = cached
+                return
+            }
             guard let nsImage = NSImage(contentsOf: URL(fileURLWithPath: expandedPath)) else { return }
             let size = NSSize(width: 64, height: 64)
             let resized = NSImage(size: size)
             resized.lockFocus()
             nsImage.draw(in: NSRect(origin: .zero, size: size))
             resized.unlockFocus()
+            ThumbnailCache.shared.setImage(resized, for: expandedPath)
             image = resized
         }
     }
@@ -58,6 +76,8 @@ public struct FileOrganizerFeatureView: View {
     let destinationBasePath: String
     let isRecursiveScan: Bool
 
+    @Environment(\.atlasContentWidth) private var contentWidth
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedFolders: [String] = ["~/Desktop", "~/Downloads"]
     @State private var isFolderPickerPresented = false
     @State private var showExecuteConfirmation = false
@@ -147,7 +167,9 @@ public struct FileOrganizerFeatureView: View {
                     undoBanner
                 }
 
-                actionButtons
+                configurationSection
+
+                actionSection
 
                 if !entries.isEmpty {
                     metricCards
@@ -370,7 +392,7 @@ public struct FileOrganizerFeatureView: View {
     // MARK: - Metric Cards
 
     private var metricCards: some View {
-        HStack(spacing: AtlasSpacing.md) {
+        LazyVGrid(columns: AtlasLayout.adaptiveMetricColumns(for: contentWidth), spacing: AtlasSpacing.lg) {
             AtlasMetricCard(
                 title: AtlasL10n.string("fileorganizer.metric.totalFiles.title"),
                 value: "\(entries.count)",
@@ -490,7 +512,7 @@ public struct FileOrganizerFeatureView: View {
             )
         }
         .buttonStyle(.plain)
-        .animation(AtlasMotion.fast, value: isSelected)
+        .animation(reduceMotion ? nil : AtlasMotion.fast, value: isSelected)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(entry.fileName), \(ByteCountFormatter.string(fromByteCount: entry.bytes, countStyle: .file)), \(category.title), \(AtlasL10n.string("fileorganizer.preview.row.to")) \(entry.proposedDestination), \(isSelected ? AtlasL10n.string("fileorganizer.accessibility.selected") : AtlasL10n.string("fileorganizer.accessibility.notSelected"))")
         .accessibilityHint(AtlasL10n.string("fileorganizer.accessibility.toggleHint"))
@@ -666,8 +688,13 @@ public struct FileOrganizerFeatureView: View {
 
     // MARK: - Action Buttons
 
-    private var actionButtons: some View {
-        AtlasInfoCard(title: AtlasL10n.string("smartclean.controls.title")) {
+    // MARK: - Configuration & Action Sections
+
+    private var configurationSection: some View {
+        AtlasSectionDisclosure(
+            title: AtlasL10n.string("smartclean.controls.title"),
+            defaultExpanded: false
+        ) {
             VStack(spacing: AtlasSpacing.sm) {
                 // Folder selector
                 folderSelector
@@ -678,28 +705,6 @@ public struct FileOrganizerFeatureView: View {
                 // Recursive scan toggle
                 recursiveScanToggle
 
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: AtlasSpacing.sm) {
-                        scanAndPreviewButtons
-                    }
-
-                    VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
-                        scanAndPreviewButtons
-                    }
-                }
-
-                if !plan.items.isEmpty && !executionCompleted {
-                    ViewThatFits(in: .horizontal) {
-                        HStack(spacing: AtlasSpacing.sm) {
-                            dryRunAndExecuteButtons
-                        }
-
-                        VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
-                            dryRunAndExecuteButtons
-                        }
-                    }
-                }
-
                 Button {
                     isRuleEditorPresented = true
                 } label: {
@@ -707,6 +712,32 @@ public struct FileOrganizerFeatureView: View {
                 }
                 .buttonStyle(.atlasGhost)
                 .disabled(isScanning || isClassifying || isExecutingPlan)
+            }
+        }
+    }
+
+    private var actionSection: some View {
+        VStack(spacing: AtlasSpacing.sm) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: AtlasSpacing.sm) {
+                    scanAndPreviewButtons
+                }
+
+                VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
+                    scanAndPreviewButtons
+                }
+            }
+
+            if !plan.items.isEmpty && !executionCompleted {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: AtlasSpacing.sm) {
+                        dryRunAndExecuteButtons
+                    }
+
+                    VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
+                        dryRunAndExecuteButtons
+                    }
+                }
             }
         }
     }

@@ -104,21 +104,26 @@ public enum AtlasColor {
 // MARK: - Typography Tokens
 
 /// Centralized type scale. All fonts use `.rounded` design for brand warmth.
+/// Fixed-size styles are clamped to upper bounds to prevent layout breakage
+/// at extreme accessibility font sizes on macOS.
 public enum AtlasTypography {
 
     // ── Display ────────────────────────────────────────
 
     /// Screen title — the large bold header on each feature screen.
-    public static let screenTitle = Font.system(size: 34, weight: .bold, design: .rounded)
+    /// Upper bound: 34pt — clamped to prevent overflow in compact layouts.
+    public static let screenTitle = Font.system(size: min(34, 34), weight: .bold, design: .rounded)
     /// Hero metric — the single most important number on a dashboard.
-    public static let heroMetric  = Font.system(size: 40, weight: .bold, design: .rounded)
+    /// Upper bound: 40pt — clamped to prevent overflow in metric cards.
+    public static let heroMetric  = Font.system(size: min(40, 40), weight: .bold, design: .rounded)
 
     // ── Heading ────────────────────────────────────────
 
     /// Section heading inside a card or screen area.
     public static let sectionTitle = Font.title3.weight(.semibold)
     /// Card metric value — secondary metrics in grids.
-    public static let cardMetric   = Font.system(size: 28, weight: .bold, design: .rounded)
+    /// Upper bound: 28pt — clamped to prevent overflow in 3-column metric grids.
+    public static let cardMetric   = Font.system(size: min(28, 28), weight: .bold, design: .rounded)
 
     // ── Label ──────────────────────────────────────────
 

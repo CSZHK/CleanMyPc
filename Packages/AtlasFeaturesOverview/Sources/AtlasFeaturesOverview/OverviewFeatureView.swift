@@ -6,6 +6,7 @@ import SwiftUI
 public struct OverviewFeatureView: View {
     private let snapshot: AtlasWorkspaceSnapshot
     private let isRefreshingHealthSnapshot: Bool
+    private let isLoading: Bool
     private let onStartSmartClean: (() -> Void)?
     private let onNavigateToSmartClean: (() -> Void)?
     private let onNavigateToHistory: (() -> Void)?
@@ -16,6 +17,7 @@ public struct OverviewFeatureView: View {
     public init(
         snapshot: AtlasWorkspaceSnapshot = AtlasScaffoldWorkspace.snapshot(),
         isRefreshingHealthSnapshot: Bool = false,
+        isLoading: Bool = false,
         onStartSmartClean: (() -> Void)? = nil,
         onNavigateToSmartClean: (() -> Void)? = nil,
         onNavigateToHistory: (() -> Void)? = nil,
@@ -23,6 +25,7 @@ public struct OverviewFeatureView: View {
     ) {
         self.snapshot = snapshot
         self.isRefreshingHealthSnapshot = isRefreshingHealthSnapshot
+        self.isLoading = isLoading
         self.onStartSmartClean = onStartSmartClean
         self.onNavigateToSmartClean = onNavigateToSmartClean
         self.onNavigateToHistory = onNavigateToHistory
@@ -34,6 +37,42 @@ public struct OverviewFeatureView: View {
             title: AtlasL10n.string("overview.screen.title"),
             subtitle: AtlasL10n.string("overview.screen.subtitle")
         ) {
+            if isLoading {
+                skeletonContent
+            } else {
+                loadedContent
+            }
+        }
+    }
+
+    // MARK: - Skeleton Content
+
+    @ViewBuilder
+    private var skeletonContent: some View {
+        // Hero metric skeleton
+        AtlasSkeletonCard(height: 140)
+
+        // Secondary metrics skeleton
+        LazyVGrid(columns: secondaryColumns, spacing: AtlasSpacing.lg) {
+            AtlasSkeletonCard(height: 100)
+            AtlasSkeletonCard(height: 100)
+        }
+
+        // System snapshot skeleton
+        VStack(spacing: AtlasSpacing.lg) {
+            AtlasSkeletonCard(height: 16)
+            AtlasSkeletonCard(height: 16)
+        }
+
+        // Detail rows skeleton
+        AtlasSkeletonCard(height: 200)
+        AtlasSkeletonCard(height: 200)
+    }
+
+    // MARK: - Loaded Content
+
+    @ViewBuilder
+    private var loadedContent: some View {
             AtlasCallout(
                 title: overviewCalloutTitle,
                 detail: overviewCalloutDetail,
@@ -61,6 +100,7 @@ public struct OverviewFeatureView: View {
                     tone: .neutral,
                     systemImage: "line.3.horizontal.decrease.circle"
                 )
+                .atlasTooltip(AtlasL10n.string("overview.metric.findings.detail"), placement: .bottom)
                 if requiredPermissionCount > 0 {
                     AtlasMetricCard(
                         title: AtlasL10n.string("overview.metric.permissions.title"),
@@ -70,6 +110,12 @@ public struct OverviewFeatureView: View {
                             : AtlasL10n.string("overview.metric.permissions.limited"),
                         tone: requiredPermissionsReady ? .success : .warning,
                         systemImage: "lock.shield"
+                    )
+                    .atlasTooltip(
+                        requiredPermissionsReady
+                            ? AtlasL10n.string("overview.metric.permissions.ready")
+                            : AtlasL10n.string("overview.metric.permissions.limited"),
+                        placement: .bottom
                     )
                 }
             }
@@ -168,7 +214,6 @@ public struct OverviewFeatureView: View {
                     }
                 }
             }
-        }
     }
 
     // MARK: - Quick Actions Bar
@@ -232,10 +277,11 @@ public struct OverviewFeatureView: View {
             }
 
             if isRefreshingHealthSnapshot, snapshot.healthSnapshot == nil {
-                AtlasLoadingState(
-                    title: AtlasL10n.string("overview.snapshot.loading.title"),
-                    detail: AtlasL10n.string("overview.snapshot.loading.detail")
-                )
+                VStack(spacing: AtlasSpacing.lg) {
+                    AtlasSkeletonCard(height: 100)
+                    AtlasSkeletonCard(height: 100)
+                    AtlasSkeletonCard(height: 100)
+                }
             } else if let healthSnapshot = snapshot.healthSnapshot {
                 LazyVGrid(columns: adaptiveColumns, spacing: AtlasSpacing.lg) {
                     AtlasMetricCard(
@@ -251,6 +297,10 @@ public struct OverviewFeatureView: View {
                         detail: AtlasL10n.string("overview.snapshot.disk.detail", formatted(healthSnapshot.diskUsedGB), formatted(healthSnapshot.diskTotalGB)),
                         tone: healthSnapshot.diskUsedPercent > 80 ? .warning : .success,
                         systemImage: "internaldrive"
+                    )
+                    .atlasTooltip(
+                        AtlasL10n.string("overview.snapshot.disk.detail", formatted(healthSnapshot.diskUsedGB), formatted(healthSnapshot.diskTotalGB)),
+                        placement: .bottom
                     )
                     AtlasMetricCard(
                         title: AtlasL10n.string("overview.snapshot.uptime.title"),

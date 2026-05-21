@@ -45,15 +45,6 @@ public struct PermissionsFeatureView: View {
                 lineWidth: 10
             )
 
-            AtlasCallout(
-                title: corePermissionsReady ? AtlasL10n.string("permissions.callout.ready.title") : AtlasL10n.string("permissions.callout.limited.title"),
-                detail: corePermissionsReady
-                    ? AtlasL10n.string("permissions.callout.ready.detail")
-                    : AtlasL10n.string("permissions.callout.limited.detail"),
-                tone: corePermissionsReady ? .success : .warning,
-                systemImage: corePermissionsReady ? "checkmark.shield.fill" : "lock.shield"
-            )
-
             AtlasInfoCard(
                 title: AtlasL10n.string("permissions.next.title"),
                 subtitle: AtlasL10n.string("permissions.next.subtitle"),

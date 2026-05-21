@@ -26,20 +26,15 @@ public struct SettingsFeatureView: View {
     public var body: some View {
         AtlasScreen(
             title: AtlasL10n.string("settings.screen.title"),
-            subtitle: AtlasL10n.string("settings.screen.subtitle")
+            subtitle: AtlasL10n.string("settings.screen.subtitle"),
+            useScrollView: false
         ) {
-            AtlasCallout(
-                title: AtlasL10n.string("settings.callout.title"),
-                detail: AtlasL10n.string("settings.callout.detail"),
-                tone: .neutral,
-                systemImage: "gearshape.2.fill"
-            )
-
             AtlasInfoCard(
                 title: AtlasL10n.string("settings.panel.title"),
                 subtitle: AtlasL10n.string("settings.panel.subtitle")
             ) {
                 VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
+                    // Tab bar — pinned at top, not inside ScrollView
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: AtlasSpacing.sm) {
                             ForEach(SettingsPanel.allCases) { panel in
@@ -61,6 +56,7 @@ public struct SettingsFeatureView: View {
                         }
                     }
 
+                    // Only the panel content scrolls
                     ScrollView {
                         switch selectedPanel {
                         case .general:
@@ -81,13 +77,6 @@ public struct SettingsFeatureView: View {
 
     private var generalPanel: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-            AtlasCallout(
-                title: AtlasL10n.string("settings.general.title"),
-                detail: AtlasL10n.string("settings.general.subtitle"),
-                tone: .neutral,
-                systemImage: "slider.horizontal.3"
-            )
-
             VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
                 AtlasKeyValueRow(
                     title: AtlasL10n.string("settings.language.title"),
@@ -95,17 +84,15 @@ public struct SettingsFeatureView: View {
                     detail: AtlasL10n.string("settings.language.detail")
                 )
 
-                Picker(AtlasL10n.string("settings.language.picker"), selection: Binding(get: {
-                    settings.language
-                }, set: { newValue in
-                    onSetLanguage(newValue)
-                })) {
-                    ForEach(AtlasLanguage.allCases) { language in
-                        Text(language.displayName)
-                            .tag(language)
-                    }
-                }
-                .pickerStyle(.segmented)
+                AtlasSegmentedControl(
+                    options: AtlasLanguage.allCases,
+                    selection: Binding(get: {
+                        settings.language
+                    }, set: { newValue in
+                        onSetLanguage(newValue)
+                    }),
+                    label: { $0.displayName }
+                )
                 .accessibilityIdentifier("settings.language")
                 .accessibilityHint(AtlasL10n.string("settings.language.hint"))
             }
@@ -139,13 +126,6 @@ public struct SettingsFeatureView: View {
 
     private var recoveryPanel: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-            AtlasCallout(
-                title: AtlasL10n.string("settings.recoveryPanel.title"),
-                detail: AtlasL10n.string("settings.recoveryPanel.subtitle"),
-                tone: .warning,
-                systemImage: "arrow.uturn.backward.circle.fill"
-            )
-
             VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
                 AtlasKeyValueRow(
                     title: AtlasL10n.string("settings.retention.title"),
@@ -204,13 +184,6 @@ public struct SettingsFeatureView: View {
 
     private var trustPanel: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-            AtlasCallout(
-                title: AtlasL10n.string("settings.trust.title"),
-                detail: AtlasL10n.string("settings.trust.subtitle"),
-                tone: .success,
-                systemImage: "checkmark.shield.fill"
-            )
-
             VStack(alignment: .leading, spacing: AtlasSpacing.md) {
                 AtlasDetailRow(
                     title: AtlasL10n.string("settings.distribution.title"),

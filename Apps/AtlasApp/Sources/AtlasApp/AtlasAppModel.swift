@@ -1,5 +1,6 @@
 import AtlasApplication
 import AtlasCoreAdapters
+import AtlasDesignSystem
 import AtlasDomain
 import AtlasInfrastructure
 import Combine
@@ -37,6 +38,9 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var isCheckingForUpdate = false
     @Published private(set) var updateCheckNotice: String?
     @Published private(set) var updateCheckError: String?
+
+    // Toast state — public setter needed for AtlasToastContainer Binding
+    @Published var toasts: [AtlasToastItem] = []
 
     // File Organizer state
     @Published private(set) var fileOrganizerEntries: [FileOrganizerEntry] = []
@@ -594,6 +598,21 @@ final class AtlasAppModel: ObservableObject {
     func toggleTaskCenter() {
         withAnimation(.snappy(duration: 0.2)) {
             isTaskCenterPresented.toggle()
+        }
+    }
+
+    // MARK: - Toast Management
+
+    func showToast(_ message: String, tone: AtlasTone = .neutral, systemImage: String? = nil) {
+        let toast = AtlasToastItem(message: message, tone: tone, systemImage: systemImage)
+        withAnimation(AtlasMotion.standard) {
+            toasts.append(toast)
+        }
+    }
+
+    func dismissToast(id: UUID) {
+        withAnimation(AtlasMotion.standard) {
+            toasts.removeAll { $0.id == id }
         }
     }
 
