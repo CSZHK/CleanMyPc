@@ -18,6 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install xcodegen
+        run: brew install xcodegen
+
       - name: Build and package Atlas native app
         run: ./scripts/atlas/package-native.sh
 

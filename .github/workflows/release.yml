@@ -64,6 +64,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
 
+      - name: Install xcodegen
+        run: brew install xcodegen
+
       - name: Derive native release version
         run: |
           echo "ATLAS_VERSION=${GITHUB_REF_NAME#V}" >> "$GITHUB_ENV"
