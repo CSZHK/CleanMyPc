@@ -520,6 +520,7 @@ public struct AtlasPrimaryButtonStyle: ButtonStyle {
                 y: configuration.isPressed ? 2 : 6
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .contentShape(Capsule(style: .continuous))
             .animation(reduceMotion ? nil : AtlasMotion.fast, value: configuration.isPressed)
     }
 }
@@ -543,6 +544,7 @@ public struct AtlasSecondaryButtonStyle: ButtonStyle {
                     .strokeBorder(AtlasColor.brand.opacity(0.3), lineWidth: 1.5)
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .contentShape(Capsule(style: .continuous))
             .animation(AtlasMotion.fast, value: configuration.isPressed)
     }
 }
@@ -562,6 +564,7 @@ public struct AtlasGhostButtonStyle: ButtonStyle {
                     .fill(configuration.isPressed ? AtlasColor.brand.opacity(0.06) : Color.clear)
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .contentShape(Capsule(style: .continuous))
             .animation(AtlasMotion.fast, value: configuration.isPressed)
     }
 }

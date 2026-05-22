@@ -627,6 +627,12 @@
 "settings.language.detail" = "当前优先支持简体中文和英文切换。";
 "settings.language.picker" = "选择界面语言";
 "settings.language.hint" = "在简体中文和英文之间切换，默认语言为简体中文。";
+"settings.theme.title" = "外观";
+"settings.theme.detail" = "选择应用的主题风格。";
+"settings.theme.system" = "跟随系统";
+"settings.theme.light" = "浅色";
+"settings.theme.dark" = "深色";
+"settings.theme.hint" = "在跟随系统、浅色和深色外观之间切换。";
 "settings.retention.title" = "恢复保留时长";
 "settings.retention.value" = "%d 天";
 "settings.retention.detail" = "可恢复的清理结果会在这个时间窗口内保留。";

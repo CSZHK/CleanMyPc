@@ -34,6 +34,7 @@ public struct AtlasSegmentedControl<Option: Hashable>: View {
                             Capsule(style: .continuous)
                                 .fill(isSelected ? AtlasColor.brand : Color.clear)
                         )
+                        .contentShape(Rectangle())
                         .contentTransition(.numericText())
                 }
                 .buttonStyle(.plain)

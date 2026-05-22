@@ -8,17 +8,20 @@ public struct SettingsFeatureView: View {
 
     private let settings: AtlasSettings
     private let onSetLanguage: (AtlasLanguage) -> Void
+    private let onSetTheme: (AtlasTheme) -> Void
     private let onSetRecoveryRetention: (Int) -> Void
     private let onToggleNotifications: (Bool) -> Void
 
     public init(
         settings: AtlasSettings = AtlasScaffoldFixtures.settings,
         onSetLanguage: @escaping (AtlasLanguage) -> Void = { _ in },
+        onSetTheme: @escaping (AtlasTheme) -> Void = { _ in },
         onSetRecoveryRetention: @escaping (Int) -> Void = { _ in },
         onToggleNotifications: @escaping (Bool) -> Void = { _ in }
     ) {
         self.settings = settings
         self.onSetLanguage = onSetLanguage
+        self.onSetTheme = onSetTheme
         self.onSetRecoveryRetention = onSetRecoveryRetention
         self.onToggleNotifications = onToggleNotifications
     }
@@ -38,20 +41,7 @@ public struct SettingsFeatureView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: AtlasSpacing.sm) {
                             ForEach(SettingsPanel.allCases) { panel in
-                                Group {
-                                    if selectedPanel == panel {
-                                        Button(panel.title) {
-                                            selectedPanel = panel
-                                        }
-                                        .buttonStyle(.atlasSecondary)
-                                    } else {
-                                        Button(panel.title) {
-                                            selectedPanel = panel
-                                        }
-                                        .buttonStyle(.atlasGhost)
-                                    }
-                                }
-                                .accessibilityIdentifier("settings.panel.\(panel.id)")
+                                panelButton(for: panel)
                             }
                         }
                     }
@@ -95,6 +85,26 @@ public struct SettingsFeatureView: View {
                 )
                 .accessibilityIdentifier("settings.language")
                 .accessibilityHint(AtlasL10n.string("settings.language.hint"))
+            }
+
+            VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
+                AtlasKeyValueRow(
+                    title: AtlasL10n.string("settings.theme.title"),
+                    value: settings.theme.displayName,
+                    detail: AtlasL10n.string("settings.theme.detail")
+                )
+
+                AtlasSegmentedControl(
+                    options: AtlasTheme.allCases,
+                    selection: Binding(get: {
+                        settings.theme
+                    }, set: { newValue in
+                        onSetTheme(newValue)
+                    }),
+                    label: { $0.displayName }
+                )
+                .accessibilityIdentifier("settings.theme")
+                .accessibilityHint(AtlasL10n.string("settings.theme.hint"))
             }
 
             Divider()
@@ -230,15 +240,36 @@ public struct SettingsFeatureView: View {
 
     @ViewBuilder
     private var trustDocumentButtons: some View {
-        Button(AtlasL10n.string("settings.trust.documents.ack")) {
+        Button {
             presentedDocument = .acknowledgement(settings.acknowledgementText)
+        } label: {
+            Text(AtlasL10n.string("settings.trust.documents.ack"))
         }
         .buttonStyle(.atlasSecondary)
 
-        Button(AtlasL10n.string("settings.trust.documents.notices")) {
+        Button {
             presentedDocument = .notices(settings.thirdPartyNoticesText)
+        } label: {
+            Text(AtlasL10n.string("settings.trust.documents.notices"))
         }
         .buttonStyle(.atlasSecondary)
+    }
+
+    @ViewBuilder
+    private func panelButton(for panel: SettingsPanel) -> some View {
+        if selectedPanel == panel {
+            Button(panel.title) {
+                selectedPanel = panel
+            }
+            .buttonStyle(.atlasSecondary)
+            .accessibilityIdentifier("settings.panel.\(panel.id)")
+        } else {
+            Button(panel.title) {
+                selectedPanel = panel
+            }
+            .buttonStyle(.atlasGhost)
+            .accessibilityIdentifier("settings.panel.\(panel.id)")
+        }
     }
 }
 

@@ -627,6 +627,12 @@
 "settings.language.detail" = "Atlas currently supports Simplified Chinese and English.";
 "settings.language.picker" = "Select language";
 "settings.language.hint" = "Switch between Simplified Chinese and English. Simplified Chinese is the default.";
+"settings.theme.title" = "Appearance";
+"settings.theme.detail" = "Choose the app appearance style.";
+"settings.theme.system" = "System";
+"settings.theme.light" = "Light";
+"settings.theme.dark" = "Dark";
+"settings.theme.hint" = "Switch between system, light, and dark appearance.";
 "settings.retention.title" = "Recovery retention";
 "settings.retention.value" = "%d days";
 "settings.retention.detail" = "Recoverable cleanup stays available until this window expires.";

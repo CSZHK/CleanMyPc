@@ -1101,6 +1101,7 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
     public var notificationsEnabled: Bool
     public var excludedPaths: [String]
     public var language: AtlasLanguage
+    public var theme: AtlasTheme
     public var fileOrganizerDestinationBasePath: String
     public var fileOrganizerRecursiveScan: Bool
     public var fileOrganizerCustomRules: [FileOrganizerRule]?
@@ -1118,6 +1119,7 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         notificationsEnabled: Bool,
         excludedPaths: [String],
         language: AtlasLanguage = .default,
+        theme: AtlasTheme = .default,
         fileOrganizerDestinationBasePath: String = "~/Organized",
         fileOrganizerRecursiveScan: Bool = false,
         fileOrganizerCustomRules: [FileOrganizerRule]? = nil
@@ -1126,6 +1128,7 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         self.notificationsEnabled = notificationsEnabled
         self.excludedPaths = excludedPaths
         self.language = language
+        self.theme = theme
         self.fileOrganizerDestinationBasePath = fileOrganizerDestinationBasePath
         self.fileOrganizerRecursiveScan = fileOrganizerRecursiveScan
         self.fileOrganizerCustomRules = fileOrganizerCustomRules
@@ -1136,6 +1139,7 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         case notificationsEnabled
         case excludedPaths
         case language
+        case theme
         case fileOrganizerDestinationBasePath
         case fileOrganizerRecursiveScan
         case fileOrganizerCustomRules
@@ -1148,6 +1152,7 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         self.notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
         self.excludedPaths = try container.decodeIfPresent([String].self, forKey: .excludedPaths) ?? []
         self.language = language
+        self.theme = try container.decodeIfPresent(AtlasTheme.self, forKey: .theme) ?? .default
         self.fileOrganizerDestinationBasePath = try container.decodeIfPresent(String.self, forKey: .fileOrganizerDestinationBasePath) ?? "~/Organized"
         self.fileOrganizerRecursiveScan = try container.decodeIfPresent(Bool.self, forKey: .fileOrganizerRecursiveScan) ?? false
         self.fileOrganizerCustomRules = try container.decodeIfPresent([FileOrganizerRule].self, forKey: .fileOrganizerCustomRules)
@@ -1159,6 +1164,7 @@ public struct AtlasSettings: Codable, Hashable, Sendable {
         try container.encode(notificationsEnabled, forKey: .notificationsEnabled)
         try container.encode(excludedPaths, forKey: .excludedPaths)
         try container.encode(language, forKey: .language)
+        try container.encode(theme, forKey: .theme)
         try container.encode(fileOrganizerDestinationBasePath, forKey: .fileOrganizerDestinationBasePath)
         try container.encode(fileOrganizerRecursiveScan, forKey: .fileOrganizerRecursiveScan)
         try container.encodeIfPresent(fileOrganizerCustomRules, forKey: .fileOrganizerCustomRules)

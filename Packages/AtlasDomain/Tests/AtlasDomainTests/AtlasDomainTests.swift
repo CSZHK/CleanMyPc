@@ -34,7 +34,40 @@ final class AtlasDomainTests: XCTestCase {
         let settings = try JSONDecoder().decode(AtlasSettings.self, from: data)
 
         XCTAssertEqual(settings.language, .zhHans)
+        XCTAssertEqual(settings.theme, .system)
         XCTAssertEqual(settings.acknowledgementText, AtlasL10n.acknowledgement(language: .zhHans))
+    }
+
+    func testThemeDefaultIsSystem() {
+        XCTAssertEqual(AtlasTheme.default, .system)
+    }
+
+    func testThemeAllCasesCount() {
+        XCTAssertEqual(AtlasTheme.allCases.count, 3)
+        XCTAssertTrue(AtlasTheme.allCases.contains(.system))
+        XCTAssertTrue(AtlasTheme.allCases.contains(.light))
+        XCTAssertTrue(AtlasTheme.allCases.contains(.dark))
+    }
+
+    func testThemeRoundTripCodable() throws {
+        for theme in AtlasTheme.allCases {
+            let data = try JSONEncoder().encode(theme)
+            let decoded = try JSONDecoder().decode(AtlasTheme.self, from: data)
+            XCTAssertEqual(decoded, theme)
+        }
+    }
+
+    func testSettingsDecodeDefaultsThemeToSystemWhenMissing() throws {
+        let data = Data("""
+        {
+          "recoveryRetentionDays": 7,
+          "notificationsEnabled": true,
+          "excludedPaths": []
+        }
+        """.utf8)
+
+        let settings = try JSONDecoder().decode(AtlasSettings.self, from: data)
+        XCTAssertEqual(settings.theme, .system)
     }
 
     func testOnlyFullDiskAccessIsRequiredForCurrentWorkflows() {

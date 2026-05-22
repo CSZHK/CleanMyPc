@@ -125,6 +125,7 @@ final class AtlasAppModel: ObservableObject {
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
+        syncAppearance()
     }
 
     var appLanguage: AtlasLanguage {
@@ -511,6 +512,7 @@ final class AtlasAppModel: ObservableObject {
                 currentPlan = persistedState.currentPlan
                 settings = persistedState.settings
             }
+            syncAppearance()
             latestScanSummary = error.localizedDescription
         }
 
@@ -555,6 +557,14 @@ final class AtlasAppModel: ObservableObject {
         currentAppPreview = nil
         currentPreviewedAppID = nil
         latestAppRestoreRefreshStatus = nil
+    }
+
+    func setTheme(_ theme: AtlasTheme) async {
+        withAnimation(.snappy(duration: 0.2)) {
+            settings.theme = theme
+        }
+        NSApp.appearance = theme.nsAppearance
+        await updateSettings { _ in }
     }
 
     func refreshCurrentRoute() async {
@@ -625,9 +635,14 @@ final class AtlasAppModel: ObservableObject {
             withAnimation(.snappy(duration: 0.2)) {
                 settings = output.settings
             }
+            syncAppearance()
         } catch {
             latestAppsSummary = error.localizedDescription
         }
+    }
+
+    private func syncAppearance() {
+        NSApp.appearance = settings.theme.nsAppearance
     }
 
     private func refreshLocalizedReadySummaries() {

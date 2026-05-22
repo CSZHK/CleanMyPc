@@ -50,6 +50,7 @@ struct AppShellView: View {
                 .animation(AtlasMotion.slow, value: model.selection)
         }
         .navigationSplitViewStyle(.balanced)
+        .preferredColorScheme(model.settings.theme.colorScheme)
         .overlay(alignment: .topTrailing) {
             AboutUpdateToolbarButton(
                 appVersion: model.appVersion,
@@ -262,6 +263,9 @@ struct AppShellView: View {
                 settings: model.settings,
                 onSetLanguage: { language in
                     Task { await model.setLanguage(language) }
+                },
+                onSetTheme: { theme in
+                    Task { await model.setTheme(theme) }
                 },
                 onSetRecoveryRetention: { days in
                     Task { await model.setRecoveryRetentionDays(days) }

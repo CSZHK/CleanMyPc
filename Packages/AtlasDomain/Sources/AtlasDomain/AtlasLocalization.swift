@@ -31,6 +31,24 @@ public enum AtlasLanguage: String, CaseIterable, Codable, Hashable, Sendable, Id
     }
 }
 
+public enum AtlasTheme: String, CaseIterable, Codable, Hashable, Sendable, Identifiable {
+    case system
+    case light
+    case dark
+
+    public static let `default`: AtlasTheme = .system
+
+    public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .system: return AtlasL10n.string("settings.theme.system")
+        case .light:  return AtlasL10n.string("settings.theme.light")
+        case .dark:   return AtlasL10n.string("settings.theme.dark")
+        }
+    }
+}
+
 public enum AtlasL10n {
     private static let stateLock = NSLock()
     private static var storedLanguage: AtlasLanguage = .default
