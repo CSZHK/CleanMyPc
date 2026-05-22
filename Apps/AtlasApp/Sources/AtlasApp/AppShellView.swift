@@ -102,11 +102,11 @@ struct AppShellView: View {
         switch route {
         case .settings, .about:
             detailView(for: route)
-                .id(route)
+                .id("\(route.rawValue)-\(model.appLanguage.rawValue)")
                 .transition(reduceMotion ? .opacity : AtlasTransition.fadeSlide)
         default:
             detailView(for: route)
-                .id(route)
+                .id("\(route.rawValue)-\(model.appLanguage.rawValue)")
                 .transition(reduceMotion ? .opacity : AtlasTransition.fadeSlide)
                 .searchable(
                     text: Binding(

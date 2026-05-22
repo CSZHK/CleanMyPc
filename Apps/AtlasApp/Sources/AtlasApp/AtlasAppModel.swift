@@ -539,16 +539,16 @@ final class AtlasAppModel: ObservableObject {
     }
 
     func setLanguage(_ language: AtlasLanguage) async {
-        guard settings.language != language else {
-            return
-        }
-
-        await updateSettings { settings in
+        // Always apply — even if settings already match, UI may be stale
+        AtlasL10n.setCurrentLanguage(language)
+        withAnimation(.snappy(duration: 0.2)) {
             settings.language = language
         }
-
-        AtlasL10n.setCurrentLanguage(language)
         refreshLocalizedReadySummaries()
+
+        // Persist in background
+        await updateSettings { _ in }
+
         if !snapshot.findings.isEmpty {
             await refreshPlanPreview()
         }
