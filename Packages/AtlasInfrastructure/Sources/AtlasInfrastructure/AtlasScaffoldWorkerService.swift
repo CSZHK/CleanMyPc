@@ -18,6 +18,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     private let allowProviderFailureFallback: Bool
     private let allowStateOnlyCleanExecution: Bool
     private var state: AtlasWorkspaceState
+    private var pendingAppUninstallSnapshots: [UUID: AtlasAppUninstallEvidenceSnapshot] = [:]
 
     public init(
         repository: AtlasWorkspaceRepository = AtlasWorkspaceRepository(),
@@ -75,8 +76,8 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             return await listApps(using: request)
         case let .previewAppUninstall(appID):
             return await previewAppUninstall(using: request, appID: appID)
-        case let .executeAppUninstall(appID):
-            return await executeAppUninstall(using: request, appID: appID)
+        case let .executeAppUninstall(appID, planID):
+            return await executeAppUninstall(using: request, appID: appID, planID: planID)
         case .settingsGet:
             return await settingsGet(using: request)
         case let .settingsSet(settings):
@@ -479,7 +480,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         )
     }
 
-    private func executeAppUninstall(using request: AtlasRequestEnvelope, appID: UUID) async -> AtlasWorkerCommandResult {
+    private func executeAppUninstall(using request: AtlasRequestEnvelope, appID: UUID, planID: UUID?) async -> AtlasWorkerCommandResult {
         guard let app = state.snapshot.apps.first(where: { $0.id == appID }) else {
             return rejectedResult(
                 for: request,
@@ -488,12 +489,57 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             )
         }
 
-        let uninstallEvidence = appUninstallEvidenceAnalyzer.analyze(
-            appName: app.name,
-            bundleIdentifier: app.bundleIdentifier,
-            bundlePath: app.bundlePath,
-            bundleBytes: app.bytes
-        )
+        let uninstallEvidence: AtlasAppUninstallEvidence
+        var matchedSnapshot: AtlasAppUninstallEvidenceSnapshot?
+        var evidenceDivergenceAtExecution = false
+
+        if let planID, let snapshot = pendingAppUninstallSnapshots[planID] {
+            // Snapshot found: verify fingerprint integrity
+            let currentSnapshot = appUninstallEvidenceAnalyzer.analyzeSnapshot(
+                planID: planID,
+                appName: app.name,
+                bundleIdentifier: app.bundleIdentifier,
+                bundlePath: app.bundlePath,
+                bundleBytes: app.bytes
+            )
+
+            if currentSnapshot.fingerprintHash != snapshot.fingerprintHash {
+                evidenceDivergenceAtExecution = true
+                await auditStore.append("Evidence divergence detected for \(app.name): fingerprint mismatch")
+            }
+
+            // Convert snapshot groups back to legacy evidence format for recovery item creation
+            let legacyGroups = snapshot.reviewOnlyGroups.compactMap { group -> AtlasAppFootprintEvidenceGroup? in
+                // Map AtlasAppEvidenceCategory to AtlasAppFootprintEvidenceCategory where possible
+                guard let legacyCategory = AtlasAppFootprintEvidenceCategory(rawValue: group.category.rawValue) else {
+                    return nil
+                }
+                return AtlasAppFootprintEvidenceGroup(
+                    category: legacyCategory,
+                    items: group.items.map { AtlasAppFootprintEvidenceItem(path: $0.path, bytes: $0.bytes) }
+                )
+            }
+            uninstallEvidence = AtlasAppUninstallEvidence(
+                bundlePath: app.bundlePath,
+                bundleBytes: app.bytes,
+                reviewOnlyGroups: legacyGroups
+            )
+            matchedSnapshot = snapshot
+
+            // Remove snapshot from pending map after use
+            pendingAppUninstallSnapshots.removeValue(forKey: planID)
+        } else {
+            // No snapshot found (nil planID or worker restarted): fall back to re-running analyzer
+            uninstallEvidence = appUninstallEvidenceAnalyzer.analyze(
+                appName: app.name,
+                bundleIdentifier: app.bundleIdentifier,
+                bundlePath: app.bundlePath,
+                bundleBytes: app.bytes
+            )
+            if let planID {
+                await auditStore.append("No pending snapshot found for plan \(planID.uuidString), falling back to fresh analysis for \(app.name)")
+            }
+        }
 
         var appRestoreMappings: [RecoveryPathMapping]?
         if !app.bundlePath.isEmpty, FileManager.default.fileExists(atPath: app.bundlePath) {
@@ -523,7 +569,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         let taskID = UUID()
         state.snapshot.apps.removeAll { $0.id == appID }
         state.snapshot.recoveryItems.insert(
-            makeRecoveryItem(for: app, uninstallEvidence: uninstallEvidence, deletedAt: Date(), restoreMappings: appRestoreMappings),
+            makeRecoveryItem(for: app, uninstallEvidence: uninstallEvidence, uninstallSnapshot: matchedSnapshot, evidenceDivergenceAtExecution: evidenceDivergenceAtExecution, deletedAt: Date(), restoreMappings: appRestoreMappings),
             at: 0
         )
 
@@ -1239,6 +1285,8 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     private func makeRecoveryItem(
         for app: AppFootprint,
         uninstallEvidence: AtlasAppUninstallEvidence,
+        uninstallSnapshot: AtlasAppUninstallEvidenceSnapshot? = nil,
+        evidenceDivergenceAtExecution: Bool = false,
         deletedAt: Date,
         restoreMappings: [RecoveryPathMapping]? = nil
     ) -> RecoveryItem {
@@ -1255,7 +1303,12 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             bytes: app.bytes,
             deletedAt: deletedAt,
             expiresAt: recoveryExpiryDate(from: deletedAt),
-            payload: .app(AtlasAppRecoveryPayload(app: app, uninstallEvidence: uninstallEvidence)),
+            payload: .app(AtlasAppRecoveryPayload(
+                app: app,
+                uninstallEvidence: uninstallEvidence,
+                uninstallSnapshot: uninstallSnapshot,
+                evidenceDivergenceAtExecution: evidenceDivergenceAtExecution
+            )),
             restoreMappings: restoreMappings
         )
     }
@@ -1347,6 +1400,21 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             bundleBytes: app.bytes
         )
 
+        // Capture evidence snapshot for preview-execute integrity
+        let plan = ActionPlan(
+            title: AtlasL10n.string("infrastructure.plan.uninstall.title", language: state.settings.language, app.name),
+            items: [],
+            estimatedBytes: uninstallEvidence.bundleBytes
+        )
+
+        let snapshot = appUninstallEvidenceAnalyzer.analyzeSnapshot(
+            planID: plan.id,
+            appName: app.name,
+            bundleIdentifier: app.bundleIdentifier,
+            bundlePath: app.bundlePath,
+            bundleBytes: app.bytes
+        )
+
         var items: [ActionItem] = [
             ActionItem(
                 id: app.id,
@@ -1373,11 +1441,21 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             )
         })
 
-        return ActionPlan(
-            title: AtlasL10n.string("infrastructure.plan.uninstall.title", language: state.settings.language, app.name),
+        let finalPlan = ActionPlan(
+            id: plan.id,
+            title: plan.title,
             items: items,
-            estimatedBytes: uninstallEvidence.bundleBytes
+            estimatedBytes: uninstallEvidence.bundleBytes,
+            evidencePlanID: plan.id,
+            estimatedReviewOnlyBytes: snapshot.reviewOnlyBytes,
+            evidenceGroups: snapshot.groups
         )
+
+        // Store snapshot for verification at execution time.
+        // Each snapshot is keyed by unique planID; execution removes its own entry via removeValue(forKey:).
+        pendingAppUninstallSnapshots[plan.id] = snapshot
+
+        return finalPlan
     }
 
     private func appReviewOnlyEvidenceTitle(for group: AtlasAppFootprintEvidenceGroup) -> String {

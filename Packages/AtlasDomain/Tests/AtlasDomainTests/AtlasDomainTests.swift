@@ -233,7 +233,7 @@ final class AtlasDomainTests: XCTestCase {
     }
 
     func testStorageCategoryCaseIterableCount() {
-        XCTAssertEqual(AtlasStorageCategory.allCases.count, 8)
+        XCTAssertEqual(AtlasStorageCategory.allCases.count, 9)
     }
 
     func testStorageCategoryTitlesAreLocalized() {

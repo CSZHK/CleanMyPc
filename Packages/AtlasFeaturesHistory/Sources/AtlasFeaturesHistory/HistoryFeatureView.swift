@@ -1027,11 +1027,28 @@ private struct HistoryRecoveryDetailView: View {
                                 detail: AtlasL10n.string("history.detail.recovery.evidence.refresh.detail")
                             )
 
-                            if payload.uninstallEvidence.reviewOnlyGroupCount > 0 {
+                            // Only show legacy reviewOnlyGroupCount when no v2 snapshot exists;
+                            // otherwise the snapshot cards already display all categories and the
+                            // legacy count (which drops 4 categories) would show a misleading number.
+                            if payload.uninstallSnapshot == nil,
+                               payload.uninstallEvidence.reviewOnlyGroupCount > 0 {
                                 AtlasKeyValueRow(
                                     title: AtlasL10n.string("history.detail.recovery.evidence.reviewGroups"),
                                     value: "\(payload.uninstallEvidence.reviewOnlyGroupCount)",
                                     detail: appReviewOnlyGroupSummary(for: payload)
+                                )
+                            }
+
+                            if let snapshot = payload.uninstallSnapshot {
+                                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                                    ForEach(snapshot.groups) { group in
+                                        AtlasEvidenceGroupCard(group: group, mode: .history)
+                                    }
+                                }
+                            } else if payload.uninstallEvidence.reviewOnlyGroupCount > 0 {
+                                AtlasStatusChip(
+                                    AtlasL10n.string("evidence.legacy.badge"),
+                                    tone: .neutral
                                 )
                             }
                         }
@@ -1054,14 +1071,18 @@ private struct HistoryRecoveryDetailView: View {
                 }
             }
 
-            if let payload = appRecoveryPayload, payload.uninstallEvidence.reviewOnlyItemCount > 0 {
+            if let payload = appRecoveryPayload {
+                // Prefer snapshot reviewOnlyItemCount over legacy evidence count:
+                // legacy mapping drops 4 categories, so uninstallEvidence undercounts when a snapshot exists.
+                let reviewOnlyCount = payload.uninstallSnapshot?.reviewOnlyItemCount ?? payload.uninstallEvidence.reviewOnlyItemCount
+                if reviewOnlyCount > 0 {
                 AtlasInfoCard(
                     title: AtlasL10n.string("history.detail.recovery.reviewOnly.title"),
                     subtitle: AtlasL10n.string(
-                        payload.uninstallEvidence.reviewOnlyItemCount == 1
+                        reviewOnlyCount == 1
                             ? "history.detail.recovery.reviewOnly.subtitle.one"
                             : "history.detail.recovery.reviewOnly.subtitle.other",
-                        payload.uninstallEvidence.reviewOnlyItemCount
+                        reviewOnlyCount
                     ),
                     tone: .neutral
                 ) {
@@ -1076,6 +1097,7 @@ private struct HistoryRecoveryDetailView: View {
                         systemImage: "doc.text.magnifyingglass"
                     )
                 }
+                } // reviewOnlyCount > 0
             }
 
             ViewThatFits(in: .horizontal) {

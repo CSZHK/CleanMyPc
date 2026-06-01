@@ -451,17 +451,26 @@ public struct ActionPlan: Identifiable, Codable, Hashable, Sendable {
     public var title: String
     public var items: [ActionItem]
     public var estimatedBytes: Int64
+    public var evidencePlanID: UUID?
+    public var estimatedReviewOnlyBytes: Int64?
+    public var evidenceGroups: [AtlasAppEvidenceGroup]?
 
     public init(
         id: UUID = UUID(),
         title: String,
         items: [ActionItem],
-        estimatedBytes: Int64
+        estimatedBytes: Int64,
+        evidencePlanID: UUID? = nil,
+        estimatedReviewOnlyBytes: Int64? = nil,
+        evidenceGroups: [AtlasAppEvidenceGroup]? = nil
     ) {
         self.id = id
         self.title = title
         self.items = items
         self.estimatedBytes = estimatedBytes
+        self.evidencePlanID = evidencePlanID
+        self.estimatedReviewOnlyBytes = estimatedReviewOnlyBytes
+        self.evidenceGroups = evidenceGroups
     }
 }
 
@@ -545,6 +554,149 @@ public enum AtlasAppFootprintEvidenceCategory: String, CaseIterable, Codable, Ha
     case preferences
     case logs
     case launchItems
+}
+
+public enum AtlasAppEvidenceCategory: String, Codable, Hashable, Sendable, CaseIterable {
+    case appBundle
+    case supportFiles
+    case caches
+    case preferences
+    case logs
+    case launchItems
+    case savedState
+    case containers
+    case groupContainers
+    case miscLeftovers
+
+    public var title: String {
+        switch self {
+        case .appBundle: return AtlasL10n.string("evidence.category.appBundle")
+        case .supportFiles: return AtlasL10n.string("evidence.category.supportFiles")
+        case .caches: return AtlasL10n.string("evidence.category.caches")
+        case .preferences: return AtlasL10n.string("evidence.category.preferences")
+        case .logs: return AtlasL10n.string("evidence.category.logs")
+        case .launchItems: return AtlasL10n.string("evidence.category.launchItems")
+        case .savedState: return AtlasL10n.string("evidence.category.savedState")
+        case .containers: return AtlasL10n.string("evidence.category.containers")
+        case .groupContainers: return AtlasL10n.string("evidence.category.groupContainers")
+        case .miscLeftovers: return AtlasL10n.string("evidence.category.miscLeftovers")
+        }
+    }
+
+    public var safetyLevel: AtlasEvidenceSafetyLevel {
+        switch self {
+        case .appBundle, .caches, .logs, .savedState: return .safe
+        case .supportFiles, .preferences, .containers, .miscLeftovers: return .conditional
+        case .launchItems, .groupContainers: return .protected
+        }
+    }
+}
+
+public enum AtlasEvidenceSafetyLevel: String, Codable, Hashable, Sendable {
+    case safe
+    case conditional
+    case protected
+
+    public var title: String {
+        switch self {
+        case .safe: return AtlasL10n.string("evidence.safety.safe")
+        case .conditional: return AtlasL10n.string("evidence.safety.conditional")
+        case .protected: return AtlasL10n.string("evidence.safety.protected")
+        }
+    }
+}
+
+public enum AtlasEvidenceFileType: String, Codable, Hashable, Sendable {
+    case file
+    case directory
+    case plist
+    case symlink
+    case bundle
+}
+
+public struct AtlasAppEvidenceItem: Identifiable, Codable, Hashable, Sendable {
+    public var path: String
+    public var bytes: Int64
+    public var fileType: AtlasEvidenceFileType
+    public var verified: Bool
+
+    public var id: String { path }
+
+    public init(path: String, bytes: Int64, fileType: AtlasEvidenceFileType = .file, verified: Bool = false) {
+        self.path = path
+        self.bytes = bytes
+        self.fileType = fileType
+        self.verified = verified
+    }
+}
+
+public struct AtlasAppEvidenceGroup: Identifiable, Codable, Hashable, Sendable {
+    public var category: AtlasAppEvidenceCategory
+    public var safetyLevel: AtlasEvidenceSafetyLevel
+    public var items: [AtlasAppEvidenceItem]
+
+    public var id: AtlasAppEvidenceCategory { category }
+    public var totalBytes: Int64 { items.map(\.bytes).reduce(0, +) }
+    public var itemCount: Int { items.count }
+
+    public init(category: AtlasAppEvidenceCategory, safetyLevel: AtlasEvidenceSafetyLevel? = nil, items: [AtlasAppEvidenceItem] = []) {
+        self.category = category
+        self.safetyLevel = safetyLevel ?? category.safetyLevel
+        self.items = items
+    }
+}
+
+public struct AtlasAppUninstallEvidenceSnapshot: Codable, Hashable, Sendable {
+    public var planID: UUID
+    public var capturedAt: Date
+    public var bundlePath: String
+    public var bundleBytes: Int64
+    public var groups: [AtlasAppEvidenceGroup]
+    public var fingerprintHash: String
+
+    public var reviewOnlyGroups: [AtlasAppEvidenceGroup] {
+        groups.filter { $0.category != .appBundle }
+    }
+    public var reviewOnlyBytes: Int64 {
+        reviewOnlyGroups.reduce(0) { $0 + $1.totalBytes }
+    }
+    public var reviewOnlyItemCount: Int {
+        reviewOnlyGroups.reduce(0) { $0 + $1.itemCount }
+    }
+    public var totalBytes: Int64 {
+        groups.reduce(0) { $0 + $1.totalBytes }
+    }
+
+    public init(planID: UUID, capturedAt: Date, bundlePath: String, bundleBytes: Int64, groups: [AtlasAppEvidenceGroup], fingerprintHash: String) {
+        self.planID = planID
+        self.capturedAt = capturedAt
+        self.bundlePath = bundlePath
+        self.bundleBytes = bundleBytes
+        self.groups = groups
+        self.fingerprintHash = fingerprintHash
+    }
+
+    /// Compute a fingerprint over the sorted file paths in the given groups.
+    ///
+    /// - Important: Uses Swift's `Hasher` which is seeded per-process. The fingerprint is
+    ///   deterministic **within a single process session** (preview → execute in the same
+    ///   worker). It is NOT stable across app launches or XPC worker restarts. For
+    ///   cross-session comparison, replace with a cryptographic hash (e.g., SHA-256).
+    public static func computeFingerprint(for groups: [AtlasAppEvidenceGroup]) -> String {
+        let paths = groups.flatMap { $0.items.map(\.path) }.sorted().joined(separator: "\n")
+        var hasher = Hasher()
+        hasher.combine(paths)
+        let hashValue = hasher.finalize()
+        // Bitcast Int to UInt64 for deterministic hex representation within the same process.
+        // Direct conversion via Int64 crashes when the hash is negative,
+        // so we go through the truncating bitPattern initializer instead.
+        let unsigned = UInt64(truncatingIfNeeded: hashValue)
+        return String(format: "%016llx", unsigned)
+    }
+
+    public func computeFingerprint() -> String {
+        Self.computeFingerprint(for: groups)
+    }
 }
 
 public struct AtlasAppFootprintEvidenceItem: Identifiable, Codable, Hashable, Sendable {
@@ -633,6 +785,8 @@ public struct AtlasAppPostRestoreRefreshStatus: Hashable, Sendable {
     public var recordedLeftoverItems: Int
     public var refreshedLeftoverItems: Int?
     public var issueDescription: String?
+    public var evidenceDivergenceDetected: Bool
+    public var divergentCategories: [AtlasAppEvidenceCategory]
 
     public init(
         appName: String,
@@ -641,7 +795,9 @@ public struct AtlasAppPostRestoreRefreshStatus: Hashable, Sendable {
         state: AtlasAppPostRestoreRefreshState,
         recordedLeftoverItems: Int,
         refreshedLeftoverItems: Int? = nil,
-        issueDescription: String? = nil
+        issueDescription: String? = nil,
+        evidenceDivergenceDetected: Bool = false,
+        divergentCategories: [AtlasAppEvidenceCategory] = []
     ) {
         self.appName = appName
         self.bundleIdentifier = bundleIdentifier
@@ -650,6 +806,8 @@ public struct AtlasAppPostRestoreRefreshStatus: Hashable, Sendable {
         self.recordedLeftoverItems = recordedLeftoverItems
         self.refreshedLeftoverItems = refreshedLeftoverItems
         self.issueDescription = issueDescription
+        self.evidenceDivergenceDetected = evidenceDivergenceDetected
+        self.divergentCategories = divergentCategories
     }
 }
 
@@ -661,21 +819,31 @@ public struct AtlasAppRecoveryPayload: Codable, Hashable, Sendable {
     public var schemaVersion: Int
     public var app: AppFootprint
     public var uninstallEvidence: AtlasAppUninstallEvidence
+    public var uninstallSnapshot: AtlasAppUninstallEvidenceSnapshot?
+    /// True when files changed between preview and execution (fingerprint mismatch).
+    /// Indicates the snapshot may not exactly reflect what existed at trash time.
+    public var evidenceDivergenceAtExecution: Bool
 
     public init(
         schemaVersion: Int = AtlasRecoveryPayloadSchemaVersion.current,
         app: AppFootprint,
-        uninstallEvidence: AtlasAppUninstallEvidence
+        uninstallEvidence: AtlasAppUninstallEvidence,
+        uninstallSnapshot: AtlasAppUninstallEvidenceSnapshot? = nil,
+        evidenceDivergenceAtExecution: Bool = false
     ) {
         self.schemaVersion = schemaVersion
         self.app = app
         self.uninstallEvidence = uninstallEvidence
+        self.uninstallSnapshot = uninstallSnapshot
+        self.evidenceDivergenceAtExecution = evidenceDivergenceAtExecution
     }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion
         case app
         case uninstallEvidence
+        case uninstallSnapshot
+        case evidenceDivergenceAtExecution
     }
 
     public init(from decoder: Decoder) throws {
@@ -684,6 +852,8 @@ public struct AtlasAppRecoveryPayload: Codable, Hashable, Sendable {
             ?? AtlasRecoveryPayloadSchemaVersion.current
         self.app = try container.decode(AppFootprint.self, forKey: .app)
         self.uninstallEvidence = try container.decode(AtlasAppUninstallEvidence.self, forKey: .uninstallEvidence)
+        self.uninstallSnapshot = try container.decodeIfPresent(AtlasAppUninstallEvidenceSnapshot.self, forKey: .uninstallSnapshot)
+        self.evidenceDivergenceAtExecution = try container.decodeIfPresent(Bool.self, forKey: .evidenceDivergenceAtExecution) ?? false
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -691,6 +861,10 @@ public struct AtlasAppRecoveryPayload: Codable, Hashable, Sendable {
         try container.encode(schemaVersion, forKey: .schemaVersion)
         try container.encode(app, forKey: .app)
         try container.encode(uninstallEvidence, forKey: .uninstallEvidence)
+        try container.encodeIfPresent(uninstallSnapshot, forKey: .uninstallSnapshot)
+        if evidenceDivergenceAtExecution {
+            try container.encode(evidenceDivergenceAtExecution, forKey: .evidenceDivergenceAtExecution)
+        }
     }
 }
 
@@ -811,6 +985,7 @@ public struct AppFootprint: Identifiable, Codable, Hashable, Sendable {
     public var bundlePath: String
     public var bytes: Int64
     public var leftoverItems: Int
+    public var evidenceSummary: [AtlasAppEvidenceCategory: Int]?
 
     public init(
         id: UUID = UUID(),
@@ -818,7 +993,8 @@ public struct AppFootprint: Identifiable, Codable, Hashable, Sendable {
         bundleIdentifier: String,
         bundlePath: String,
         bytes: Int64,
-        leftoverItems: Int
+        leftoverItems: Int,
+        evidenceSummary: [AtlasAppEvidenceCategory: Int]? = nil
     ) {
         self.id = id
         self.name = name
@@ -826,6 +1002,7 @@ public struct AppFootprint: Identifiable, Codable, Hashable, Sendable {
         self.bundlePath = bundlePath
         self.bytes = bytes
         self.leftoverItems = leftoverItems
+        self.evidenceSummary = evidenceSummary
     }
 }
 

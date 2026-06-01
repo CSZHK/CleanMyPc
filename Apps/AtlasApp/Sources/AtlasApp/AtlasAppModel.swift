@@ -64,6 +64,7 @@ final class AtlasAppModel: ObservableObject {
     private var filterCancellationToken: AnyCancellable?
     private var didRequestInitialHealthSnapshot = false
     private var didRequestInitialPermissionSnapshot = false
+    private var pendingRestoreSnapshotCategoryCounts: [AtlasAppEvidenceCategory: Int]?
 
     init(
         repository: AtlasWorkspaceRepository = AtlasWorkspaceRepository(),
@@ -435,6 +436,40 @@ final class AtlasAppModel: ObservableObject {
         isAppActionRunning = false
     }
 
+    func rescanLeftovers(appID: UUID) async {
+        guard !isAppActionRunning else {
+            return
+        }
+
+        selection = .apps
+        isAppActionRunning = true
+        activePreviewAppID = appID
+        activeUninstallAppID = nil
+        // Clear stale snapshot counts from any prior restore cycle
+        pendingRestoreSnapshotCategoryCounts = nil
+
+        do {
+            let output = try await workspaceController.previewAppUninstall(appID: appID)
+            withAnimation(.snappy(duration: 0.24)) {
+                snapshot = output.snapshot
+                currentAppPreview = output.actionPlan
+                currentPreviewedAppID = appID
+                latestAppsSummary = output.summary
+                // Clear divergence state after re-scan
+                if var status = latestAppRestoreRefreshStatus {
+                    status.evidenceDivergenceDetected = false
+                    status.divergentCategories = []
+                    latestAppRestoreRefreshStatus = status
+                }
+            }
+        } catch {
+            latestAppsSummary = error.localizedDescription
+        }
+
+        activePreviewAppID = nil
+        isAppActionRunning = false
+    }
+
     func executeAppUninstall(appID: UUID) async {
         guard !isAppActionRunning else {
             return
@@ -447,7 +482,7 @@ final class AtlasAppModel: ObservableObject {
         latestAppRestoreRefreshStatus = nil
 
         do {
-            let output = try await workspaceController.executeAppUninstall(appID: appID)
+            let output = try await workspaceController.executeAppUninstall(appID: appID, planID: currentAppPreview?.id)
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = output.snapshot
                 currentAppPreview = nil
@@ -468,13 +503,24 @@ final class AtlasAppModel: ObservableObject {
         }
 
         let restoredItem = snapshot.recoveryItems.first(where: { $0.id == itemID })
+        // Capture snapshot category counts for divergence detection after reload
+        pendingRestoreSnapshotCategoryCounts = restoredItem?.appRecoveryPayload.flatMap {
+            Self.categoryCountsFromSnapshot($0.uninstallSnapshot)
+        }
         let restoreStatus = restoredItem?.appRecoveryPayload.map { payload in
-            AtlasAppPostRestoreRefreshStatus(
+            // Prefer snapshot reviewOnlyItemCount over legacy evidence count:
+            // legacy mapping (AtlasAppFootprintEvidenceCategory) drops 4 categories
+            // (savedState, containers, groupContainers, miscLeftovers), so
+            // uninstallEvidence.reviewOnlyItemCount undercounts when a snapshot exists.
+            let snapshotItemCount = payload.uninstallSnapshot?.reviewOnlyItemCount
+            let legacyItemCount = payload.uninstallEvidence.reviewOnlyItemCount
+            let bestItemCount = snapshotItemCount ?? legacyItemCount
+            return AtlasAppPostRestoreRefreshStatus(
                 appName: payload.app.name,
                 bundleIdentifier: payload.app.bundleIdentifier,
                 bundlePath: payload.app.bundlePath,
                 state: .refreshing,
-                recordedLeftoverItems: max(payload.uninstallEvidence.reviewOnlyItemCount, payload.app.leftoverItems)
+                recordedLeftoverItems: max(bestItemCount, payload.app.leftoverItems)
             )
         }
         let shouldRefreshAppsAfterRestore = restoreStatus != nil
@@ -506,6 +552,11 @@ final class AtlasAppModel: ObservableObject {
                 await refreshPlanPreview()
             }
         } catch {
+            // Clear transient restore state to prevent stale data from leaking
+            // into the next refreshApps() call, which would produce false divergence.
+            pendingRestoreSnapshotCategoryCounts = nil
+            latestAppRestoreRefreshStatus = nil
+
             let persistedState = repository.loadState()
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = persistedState.snapshot
@@ -906,6 +957,8 @@ final class AtlasAppModel: ObservableObject {
             }
         } catch {
             latestAppsSummary = error.localizedDescription
+            // Clear stale snapshot counts — the refresh failed so we can't compare
+            pendingRestoreSnapshotCategoryCounts = nil
             if let existingStatus = restoreStatus ?? latestAppRestoreRefreshStatus {
                 latestAppRestoreRefreshStatus = AtlasAppPostRestoreRefreshStatus(
                     appName: existingStatus.appName,
@@ -956,6 +1009,26 @@ private extension AtlasAppModel {
             )
         }
 
+        // Detect evidence divergence: compare fresh scan evidenceSummary against snapshot group counts
+        let snapshotCounts = pendingRestoreSnapshotCategoryCounts
+        let freshSummary = refreshedApp.evidenceSummary
+        var divergentCategories: [AtlasAppEvidenceCategory] = []
+        var divergenceDetected = false
+
+        if let snapshotCounts, let freshSummary {
+            for category in AtlasAppEvidenceCategory.allCases {
+                let snapshotCount = snapshotCounts[category] ?? 0
+                let freshCount = freshSummary[category] ?? 0
+                if snapshotCount != freshCount {
+                    divergentCategories.append(category)
+                }
+            }
+            divergenceDetected = !divergentCategories.isEmpty
+        }
+
+        // Clear the pending snapshot counts after use
+        pendingRestoreSnapshotCategoryCounts = nil
+
         return AtlasAppPostRestoreRefreshStatus(
             appName: refreshedApp.name,
             bundleIdentifier: refreshedApp.bundleIdentifier,
@@ -963,7 +1036,23 @@ private extension AtlasAppModel {
             state: .refreshed,
             recordedLeftoverItems: status.recordedLeftoverItems,
             refreshedLeftoverItems: refreshedApp.leftoverItems,
-            issueDescription: nil
+            issueDescription: nil,
+            evidenceDivergenceDetected: divergenceDetected,
+            divergentCategories: divergentCategories
         )
+    }
+
+    /// Extract per-category counts from a snapshot, using path-level granularity to match
+    /// `MacAppsInventoryAdapter.computeEvidenceSummary` which counts individual existing paths
+    /// per category (e.g., supportFiles may count 2 if both `{appName}` and `{bundleID}` paths
+    /// exist). Using `group.items.count` (number of candidate URLs that existed on disk at
+    /// capture time) aligns with the adapter's path-level counting.
+    static func categoryCountsFromSnapshot(_ snapshot: AtlasAppUninstallEvidenceSnapshot?) -> [AtlasAppEvidenceCategory: Int]? {
+        guard let snapshot else { return nil }
+        var counts: [AtlasAppEvidenceCategory: Int] = [:]
+        for group in snapshot.reviewOnlyGroups {
+            counts[group.category] = group.items.count
+        }
+        return counts
     }
 }

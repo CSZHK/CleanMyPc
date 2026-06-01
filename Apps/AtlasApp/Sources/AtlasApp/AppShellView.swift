@@ -235,6 +235,9 @@ struct AppShellView: View {
                 },
                 onExecuteAppUninstall: { appID in
                     Task { await model.executeAppUninstall(appID: appID) }
+                },
+                onRescanLeftovers: { appID in
+                    Task { await model.rescanLeftovers(appID: appID) }
                 }
             )
         case .history:

@@ -487,8 +487,8 @@ public struct AtlasWorkspaceController: Sendable {
         }
     }
 
-    public func executeAppUninstall(appID: UUID) async throws -> AtlasTaskActionOutput {
-        let request = ExecuteAppUninstallUseCase().makeRequest(appID: appID)
+    public func executeAppUninstall(appID: UUID, planID: UUID? = nil) async throws -> AtlasTaskActionOutput {
+        let request = ExecuteAppUninstallUseCase().makeRequest(appID: appID, planID: planID)
         let result = try await worker.submit(request)
 
         switch result.response.response {
@@ -726,8 +726,8 @@ public struct PreviewAppUninstallUseCase: Sendable {
 public struct ExecuteAppUninstallUseCase: Sendable {
     public init() {}
 
-    public func makeRequest(appID: UUID) -> AtlasRequestEnvelope {
-        AtlasRequestEnvelope(command: .executeAppUninstall(appID: appID))
+    public func makeRequest(appID: UUID, planID: UUID? = nil) -> AtlasRequestEnvelope {
+        AtlasRequestEnvelope(command: .executeAppUninstall(appID: appID, planID: planID))
     }
 }
 

@@ -16,6 +16,7 @@ public struct AppsFeatureView: View {
     private let onRefreshApps: () -> Void
     private let onPreviewAppUninstall: (UUID) -> Void
     private let onExecuteAppUninstall: (UUID) -> Void
+    private let onRescanLeftovers: (UUID) -> Void
 
     @State private var selectedAppID: UUID?
     @State private var browserWidth: CGFloat?
@@ -32,7 +33,8 @@ public struct AppsFeatureView: View {
         activeUninstallAppID: UUID? = nil,
         onRefreshApps: @escaping () -> Void = {},
         onPreviewAppUninstall: @escaping (UUID) -> Void = { _ in },
-        onExecuteAppUninstall: @escaping (UUID) -> Void = { _ in }
+        onExecuteAppUninstall: @escaping (UUID) -> Void = { _ in },
+        onRescanLeftovers: @escaping (UUID) -> Void = { _ in }
     ) {
         self.apps = apps
         self.previewPlan = previewPlan
@@ -45,6 +47,7 @@ public struct AppsFeatureView: View {
         self.onRefreshApps = onRefreshApps
         self.onPreviewAppUninstall = onPreviewAppUninstall
         self.onExecuteAppUninstall = onExecuteAppUninstall
+        self.onRescanLeftovers = onRescanLeftovers
         _selectedAppID = State(initialValue: Self.sortedApps(apps).first?.id)
     }
 
@@ -336,7 +339,8 @@ public struct AppsFeatureView: View {
                                 isUninstalling: activeUninstallAppID == selectedApp.id,
                                 isBusy: isRunning,
                                 onPreview: { onPreviewAppUninstall(selectedApp.id) },
-                                onUninstall: { onExecuteAppUninstall(selectedApp.id) }
+                                onUninstall: { onExecuteAppUninstall(selectedApp.id) },
+                                onRescanLeftovers: { onRescanLeftovers(selectedApp.id) }
                             )
                         } else {
                             AtlasEmptyState(
@@ -459,6 +463,7 @@ private struct AppDetailView: View {
     let isBusy: Bool
     let onPreview: () -> Void
     let onUninstall: () -> Void
+    let onRescanLeftovers: () -> Void
 
     @State private var showUninstallConfirmation = false
 
@@ -542,6 +547,28 @@ private struct AppDetailView: View {
                 }
             }
 
+            if let restoreRefreshStatus, restoreRefreshStatus.evidenceDivergenceDetected {
+                AtlasCallout(
+                    title: AtlasL10n.string("apps.restore.divergence.title"),
+                    detail: AtlasL10n.string(
+                        "apps.restore.divergence.detail",
+                        restoreRefreshStatus.appName,
+                        restoreRefreshStatus.divergentCategories.map(\.title).joined(separator: ", ")
+                    ),
+                    tone: .warning,
+                    systemImage: "exclamationmark.arrow.triangle.2.circlepath"
+                )
+
+                Button {
+                    onRescanLeftovers()
+                } label: {
+                    Label(AtlasL10n.string("apps.restore.divergence.rescan"), systemImage: "arrow.triangle.2.circlepath")
+                }
+                .buttonStyle(.atlasPrimary)
+                .disabled(isBusy)
+                .accessibilityIdentifier("apps.restore.divergence.rescan")
+            }
+
             if let previewPlan {
                 let recoverableItems = previewPlan.items.filter(\.recoverable)
                 let reviewOnlyItems = previewPlan.items.filter { !$0.recoverable }
@@ -579,6 +606,30 @@ private struct AppDetailView: View {
                             tone: reviewOnlyItems.isEmpty ? .neutral : .warning,
                             systemImage: "doc.text.magnifyingglass"
                         )
+                    }
+
+                    if let reviewOnlyBytes = previewPlan.estimatedReviewOnlyBytes, reviewOnlyBytes > 0 {
+                        AtlasMetricCard(
+                            title: AtlasL10n.string("apps.preview.metric.reviewOnlyBytes.title"),
+                            value: AtlasFormatters.byteCount(reviewOnlyBytes),
+                            detail: AtlasL10n.string("apps.preview.metric.reviewOnlyBytes.detail"),
+                            tone: .warning,
+                            systemImage: "doc.text.magnifyingglass"
+                        )
+                    }
+
+                    if let evidenceGroups = previewPlan.evidenceGroups, !evidenceGroups.isEmpty {
+                        AtlasSectionDisclosure(
+                            title: AtlasL10n.string("apps.preview.evidenceGroups.title"),
+                            count: evidenceGroups.count,
+                            defaultExpanded: true
+                        ) {
+                            VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                                ForEach(evidenceGroups) { group in
+                                    AtlasEvidenceGroupCard(group: group, mode: .preview)
+                                }
+                            }
+                        }
                     }
 
                     AtlasCallout(

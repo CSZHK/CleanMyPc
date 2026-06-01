@@ -443,6 +443,9 @@
 "apps.restore.refresh.recorded.detail" = "Review-only leftover items recorded when Atlas captured the uninstall evidence.";
 "apps.restore.refresh.current.title" = "Current inventory";
 "apps.restore.refresh.current.detail" = "Leftover items reported by the latest app inventory refresh.";
+"apps.restore.divergence.title" = "Evidence changed after restore";
+"apps.restore.divergence.detail" = "After restoring %@, leftover counts changed in these categories: %@. Re-scan to get the latest evidence.";
+"apps.restore.divergence.rescan" = "Re-scan leftovers";
 
 "history.screen.title" = "History";
 "history.screen.subtitle" = "See what ran, what changed, and what you can still restore before recovery retention expires.";
@@ -740,6 +743,7 @@
 "storageCategory.downloadArtifact" = "Downloads";
 "storageCategory.mailAttachment" = "Mail Attachments";
 "storageCategory.oldBackup" = "Old Backups";
+"storageCategory.unknown" = "Unknown";
 
 // MARK: - Explanation Templates (per StorageCategory × RiskLevel)
 
@@ -774,6 +778,10 @@
 "explanation.oldBackup.safe" = "Old backup files that have been superseded can be safely removed.";
 "explanation.oldBackup.review" = "These backup files should be reviewed to confirm they are no longer needed for recovery.";
 "explanation.oldBackup.advanced" = "These backup files may be critical for system recovery and require advanced inspection.";
+
+"explanation.unknown.safe" = "These uncategorized files can be safely removed after review.";
+"explanation.unknown.review" = "These uncategorized files should be reviewed before removal to confirm they are not needed.";
+"explanation.unknown.advanced" = "These uncategorized files may be important and require careful inspection before cleanup.";
 
 // MARK: - Explanation with Age Context
 
@@ -1015,3 +1023,27 @@
 
 // MARK: - Apps Filter
 "apps.filter.leftoversOnly" = "Leftovers Only";
+
+// MARK: - Evidence Localization Keys
+"evidence.category.appBundle" = "App Bundle";
+"evidence.category.supportFiles" = "Support Files";
+"evidence.category.caches" = "Caches";
+"evidence.category.preferences" = "Preferences";
+"evidence.category.logs" = "Logs";
+"evidence.category.launchItems" = "Launch Items";
+"evidence.category.savedState" = "Saved State";
+"evidence.category.containers" = "Containers";
+"evidence.category.groupContainers" = "Group Containers";
+"evidence.category.miscLeftovers" = "Misc Leftovers";
+"evidence.safety.safe" = "Safe";
+"evidence.safety.conditional" = "Conditional";
+"evidence.safety.protected" = "Protected";
+"evidence.divergence.title" = "Evidence Changed";
+"evidence.divergence.detail" = "Some files changed since preview";
+"evidence.legacy.badge" = "Legacy Evidence";
+"evidence.card.items.one" = "1 item";
+"evidence.card.items.other" = "%d items";
+"evidence.card.divergent" = "%d changed";
+"apps.preview.metric.reviewOnlyBytes.title" = "Review-Only Size";
+"apps.preview.metric.reviewOnlyBytes.detail" = "Byte size of evidence marked for manual review only.";
+"apps.preview.evidenceGroups.title" = "Evidence Breakdown";

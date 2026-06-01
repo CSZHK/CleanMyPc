@@ -443,6 +443,9 @@
 "apps.restore.refresh.recorded.detail" = "Atlas 在采集卸载证据时记录的仅供复核残留项目数量。";
 "apps.restore.refresh.current.title" = "当前清单";
 "apps.restore.refresh.current.detail" = "最近一次应用清单刷新报告的残留项目数量。";
+"apps.restore.divergence.title" = "恢复后发现证据变更";
+"apps.restore.divergence.detail" = "%@ 恢复后，以下类别的残留数量发生变化：%@。建议重新扫描以获取最新证据。";
+"apps.restore.divergence.rescan" = "重新扫描残留";
 
 "history.screen.title" = "历史";
 "history.screen.subtitle" = "查看执行过的任务、发生的变更，以及在恢复窗口关闭前仍可找回的项目。";
@@ -740,6 +743,7 @@
 "storageCategory.downloadArtifact" = "下载文件";
 "storageCategory.mailAttachment" = "邮件附件";
 "storageCategory.oldBackup" = "旧备份";
+"storageCategory.unknown" = "未知";
 
 // MARK: - Explanation Templates (per StorageCategory × RiskLevel)
 
@@ -774,6 +778,10 @@
 "explanation.oldBackup.safe" = "已被取代的旧备份文件可以安全清理。";
 "explanation.oldBackup.review" = "这些备份文件建议先复核，确认已不再需要用于恢复。";
 "explanation.oldBackup.advanced" = "这些备份文件可能对系统恢复至关重要，需要高级检查。";
+
+"explanation.unknown.safe" = "这些未分类文件经检查后可以安全清理。";
+"explanation.unknown.review" = "这些未分类文件建议在删除前先复核，确认已不再需要。";
+"explanation.unknown.advanced" = "这些未分类文件可能较为重要，需要仔细检查后再清理。";
 
 // MARK: - Explanation with Age Context
 
@@ -1015,3 +1023,27 @@
 
 // MARK: - Apps Filter
 "apps.filter.leftoversOnly" = "仅残留文件";
+
+// MARK: - Evidence Localization Keys
+"evidence.category.appBundle" = "应用程序";
+"evidence.category.supportFiles" = "支持文件";
+"evidence.category.caches" = "缓存";
+"evidence.category.preferences" = "偏好设置";
+"evidence.category.logs" = "日志";
+"evidence.category.launchItems" = "启动项";
+"evidence.category.savedState" = "保存状态";
+"evidence.category.containers" = "容器";
+"evidence.category.groupContainers" = "群组容器";
+"evidence.category.miscLeftovers" = "其他残留";
+"evidence.safety.safe" = "安全";
+"evidence.safety.conditional" = "需确认";
+"evidence.safety.protected" = "受保护";
+"evidence.divergence.title" = "证据变更";
+"evidence.divergence.detail" = "预览后部分文件已变更";
+"evidence.legacy.badge" = "旧版证据";
+"evidence.card.items.one" = "1 项";
+"evidence.card.items.other" = "%d 项";
+"evidence.card.divergent" = "%d 项已变更";
+"apps.preview.metric.reviewOnlyBytes.title" = "仅供复核大小";
+"apps.preview.metric.reviewOnlyBytes.detail" = "标记为仅限手动复核的证据的字节大小。";
+"apps.preview.evidenceGroups.title" = "证据明细";

@@ -30,7 +30,7 @@ public enum AtlasCommand: Codable, Hashable, Sendable {
     case restoreItems(taskID: UUID, itemIDs: [UUID])
     case appsList
     case previewAppUninstall(appID: UUID)
-    case executeAppUninstall(appID: UUID)
+    case executeAppUninstall(appID: UUID, planID: UUID? = nil)
     case settingsGet
     case settingsSet(AtlasSettings)
     case fileOrganizerScan(taskID: UUID, folderPaths: [String])

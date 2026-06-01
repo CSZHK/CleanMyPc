@@ -224,7 +224,11 @@ private struct AtlasReadmeAssetExporter {
                     summary: AtlasL10n.string("model.apps.ready"),
                     isRunning: false,
                     activePreviewAppID: nil,
-                    activeUninstallAppID: nil
+                    activeUninstallAppID: nil,
+                    onRefreshApps: {},
+                    onPreviewAppUninstall: { _ in },
+                    onExecuteAppUninstall: { _ in },
+                    onRescanLeftovers: { _ in }
                 )
             },
             fileName: "atlas-apps.png"
