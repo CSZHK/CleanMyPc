@@ -102,6 +102,38 @@ final class CalmLedgerComponentTests: XCTestCase {
         XCTAssertTrue(AtlasEvidenceState.single(withRecovery).showsRecoveryBox)
     }
 
+    // MARK: - F3 AtlasActionBar
+
+    func testActionBarCompactDropsPromiseKeepsPrimary() {
+        let breakpoint = AtlasLayout.actionBarCompactBreakpoint // 740
+        // Wide: full ⛨ sentence.
+        XCTAssertEqual(AtlasActionBar.promiseDisplay(contentWidth: breakpoint, hasPromise: true), .full)
+        XCTAssertEqual(AtlasActionBar.promiseDisplay(contentWidth: 1000, hasPromise: true), .full)
+        // Narrow: promise yields to the ⛨ icon — primary mode is untouched by width
+        // (the button never enters the yield order).
+        XCTAssertEqual(AtlasActionBar.promiseDisplay(contentWidth: breakpoint - 1, hasPromise: true), .icon)
+        XCTAssertEqual(AtlasActionBar.primaryMode(progress: nil), .button)
+        // No promise ⇒ hidden at every width (fail-closed §1.6 — no static ⛨ claim).
+        XCTAssertEqual(AtlasActionBar.promiseDisplay(contentWidth: 1000, hasPromise: false), .hidden)
+        XCTAssertEqual(AtlasActionBar.promiseDisplay(contentWidth: 400, hasPromise: false), .hidden)
+    }
+
+    func testActionBarProgressMode() {
+        XCTAssertEqual(AtlasActionBar.primaryMode(progress: nil), .button)
+        XCTAssertEqual(AtlasActionBar.primaryMode(progress: 0.42), .progress(0.42))
+        // Out-of-range progress clamps instead of crashing the ProgressView.
+        XCTAssertEqual(AtlasActionBar.primaryMode(progress: -0.5), .progress(0))
+        XCTAssertEqual(AtlasActionBar.primaryMode(progress: 1.7), .progress(1))
+        XCTAssertEqual(AtlasActionBar.percentText(for: 0.42), "42%")
+        XCTAssertEqual(AtlasActionBar.percentText(for: 1.7), "100%")
+        // Construction smoke for both modes.
+        let bar = AtlasActionBar(
+            primaryTitle: "执行清理计划", primaryEnabled: true, onPrimary: {},
+            promise: "⛨ 执行前自动建立恢复点 · 保留 7 天", metricText: "3.4 GB", progress: 0.5
+        )
+        XCTAssertNotNil(bar.body)
+    }
+
     func testStageBarCircledNumeralAndHighlightClamp() {
         XCTAssertEqual(AtlasStageBar.circledNumeral(1), "①")
         XCTAssertEqual(AtlasStageBar.circledNumeral(4), "④")
