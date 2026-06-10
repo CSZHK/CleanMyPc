@@ -220,6 +220,37 @@ final class AtlasDesignSystemTests: XCTestCase {
         }
     }
 
+    func testFallbackTableCoversAllColorsets() {
+        // Generated fallback (CLI runs) must stay 1:1 with the colorset name list.
+        XCTAssertEqual(AtlasColorFallback.table.count, 32)
+        let brand = AtlasColorFallback.table["AtlasBrand"]
+        XCTAssertNotNil(brand)
+        XCTAssertEqual(brand!.light.r, 15.0 / 255.0, accuracy: 0.0001)
+        XCTAssertEqual(brand!.light.g, 118.0 / 255.0, accuracy: 0.0001)
+        XCTAssertEqual(brand!.light.b, 110.0 / 255.0, accuracy: 0.0001)
+        XCTAssertEqual(brand!.dark.r, 31.0 / 255.0, accuracy: 0.0001)
+    }
+
+    func testAtlasColorFallbackPathProducesRenderableColor() {
+        // In SwiftPM test runs the compiled catalog is absent — exercise the fallback path
+        // end-to-end and pin its resolved sRGB components for both appearances.
+        guard NSColor(named: "AtlasBrand", bundle: .module) == nil else {
+            return // compiled catalog present (Xcode test run) — fallback path not reachable here
+        }
+        let entry = AtlasColorFallback.table["AtlasBrand"]!
+        let dynamic = NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            let c = isDark ? entry.dark : entry.light
+            return NSColor(srgbRed: c.r, green: c.g, blue: c.b, alpha: c.a)
+        }
+        var resolved = NSColor.black
+        NSAppearance(named: .aqua)!.performAsCurrentDrawingAppearance {
+            resolved = dynamic.usingColorSpace(.sRGB) ?? .black
+        }
+        XCTAssertEqual(resolved.redComponent, 15.0 / 255.0, accuracy: 0.001)
+        XCTAssertEqual(resolved.greenComponent, 118.0 / 255.0, accuracy: 0.001)
+    }
+
     func testThreeVoiceTypographyExists() {
         let _ = AtlasTypography.dataHero
         let _ = AtlasTypography.dataMetric

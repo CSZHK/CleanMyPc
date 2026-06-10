@@ -24,56 +24,56 @@ import SwiftUI
 public enum AtlasColor {
 
     // ── Brand ──────────────────────────────────────────
-    public static let brand = Color("AtlasBrand", bundle: .module)
+    public static let brand = atlasColor("AtlasBrand")
     /// Hover/pressed fill variant — fills and borders only, never text (spec §1.2).
-    public static let brandHover = Color("AtlasBrandHover", bundle: .module)
+    public static let brandHover = atlasColor("AtlasBrandHover")
     /// Mint accent — non-text uses only (progress, badges, decoration).
-    public static let accent = Color("AtlasAccent", bundle: .module)
+    public static let accent = atlasColor("AtlasAccent")
 
     // ── Semantic (spec: safe/review/danger/info — API keeps legacy names) ──
-    public static let success = Color("AtlasSafe", bundle: .module)
-    public static let warning = Color("AtlasReview", bundle: .module)
-    public static let danger  = Color("AtlasDanger", bundle: .module)
-    public static let info    = Color("AtlasInfo", bundle: .module)
-    public static let successFill = Color("AtlasSafeFill", bundle: .module)
-    public static let warningFill = Color("AtlasReviewFill", bundle: .module)
-    public static let dangerFill  = Color("AtlasDangerFill", bundle: .module)
-    public static let infoFill    = Color("AtlasInfoFill", bundle: .module)
+    public static let success = atlasColor("AtlasSafe")
+    public static let warning = atlasColor("AtlasReview")
+    public static let danger  = atlasColor("AtlasDanger")
+    public static let info    = atlasColor("AtlasInfo")
+    public static let successFill = atlasColor("AtlasSafeFill")
+    public static let warningFill = atlasColor("AtlasReviewFill")
+    public static let dangerFill  = atlasColor("AtlasDangerFill")
+    public static let infoFill    = atlasColor("AtlasInfoFill")
 
     // ── Surfaces ───────────────────────────────────────
-    public static let canvasTop = Color("AtlasCanvasTop", bundle: .module)
-    public static let canvasBottom = Color("AtlasCanvasBottom", bundle: .module)
-    public static let surface = Color("AtlasSurface", bundle: .module)
-    public static let surfaceSubdued = Color("AtlasSurfaceSubdued", bundle: .module)
-    public static let surfaceInput = Color("AtlasSurfaceInput", bundle: .module)
+    public static let canvasTop = atlasColor("AtlasCanvasTop")
+    public static let canvasBottom = atlasColor("AtlasCanvasBottom")
+    public static let surface = atlasColor("AtlasSurface")
+    public static let surfaceSubdued = atlasColor("AtlasSurfaceSubdued")
+    public static let surfaceInput = atlasColor("AtlasSurfaceInput")
     /// Legacy alias — migrate consumers to `surface` during M3, then remove.
     public static var card: Color { surface }
-    public static let cardRaised = Color("AtlasCardRaised", bundle: .module)
-    public static let heroSurface = Color("AtlasHeroSurface", bundle: .module)
+    public static let cardRaised = atlasColor("AtlasCardRaised")
+    public static let heroSurface = atlasColor("AtlasHeroSurface")
 
     // ── Ledger paper (warm trust surface, spec §1.2 边界) ──
-    public static let ledgerPaper = Color("AtlasLedgerPaper", bundle: .module)
-    public static let ledgerInk = Color("AtlasLedgerInk", bundle: .module)
-    public static let ledgerSecondary = Color("AtlasLedgerSecondary", bundle: .module)
-    public static let ledgerBorder = Color("AtlasLedgerBorder", bundle: .module)
-    public static let ledgerRule = Color("AtlasLedgerRule", bundle: .module)
+    public static let ledgerPaper = atlasColor("AtlasLedgerPaper")
+    public static let ledgerInk = atlasColor("AtlasLedgerInk")
+    public static let ledgerSecondary = atlasColor("AtlasLedgerSecondary")
+    public static let ledgerBorder = atlasColor("AtlasLedgerBorder")
+    public static let ledgerRule = atlasColor("AtlasLedgerRule")
 
     // ── Text ───────────────────────────────────────────
-    public static let ink = Color("AtlasInk", bundle: .module)
-    public static let inkData = Color("AtlasInkData", bundle: .module)
-    public static let textPrimary = Color("AtlasTextBody", bundle: .module)
-    public static let textSecondary = Color("AtlasTextSecondary", bundle: .module)
+    public static let ink = atlasColor("AtlasInk")
+    public static let inkData = atlasColor("AtlasInkData")
+    public static let textPrimary = atlasColor("AtlasTextBody")
+    public static let textSecondary = atlasColor("AtlasTextSecondary")
     /// Tertiary text — NOT directly on canvasTop (4.41:1 light, <AA); use on surface/surfaceSubdued only.
-    public static let textTertiary = Color("AtlasTextTertiary", bundle: .module)
+    public static let textTertiary = atlasColor("AtlasTextTertiary")
 
     // ── Border ─────────────────────────────────────────
-    public static let border = Color("AtlasSurfaceBorder", bundle: .module)
+    public static let border = atlasColor("AtlasSurfaceBorder")
     public static let borderEmphasis = Color.primary.opacity(0.14)
 
     // ── Action bar (ink-dark pinned bar) ───────────────
-    public static let actionBarBg = Color("AtlasActionBarBg", bundle: .module)
-    public static let actionBarText = Color("AtlasActionBarText", bundle: .module)
-    public static let actionBarData = Color("AtlasActionBarData", bundle: .module)
+    public static let actionBarBg = atlasColor("AtlasActionBarBg")
+    public static let actionBarText = atlasColor("AtlasActionBarText")
+    public static let actionBarData = atlasColor("AtlasActionBarData")
 
     // ── Gradients ──────────────────────────────────────
     /// Legacy hero gradient (brand → accent). M3 migrates hero uses; keep for compatibility.
