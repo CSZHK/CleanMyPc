@@ -164,6 +164,7 @@ public struct AtlasStageBar: View {
                 segmentLabel(label, state: state)
             }
             .buttonStyle(.plain)
+            .focusable(false) // the BAR is the single Tab stop — inner buttons stay out of the focus loop
             .overlay(focusRing(for: index))
         case .current, .future:
             segmentLabel(label, state: state)

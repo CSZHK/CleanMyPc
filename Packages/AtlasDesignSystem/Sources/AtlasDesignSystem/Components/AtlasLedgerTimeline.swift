@@ -224,7 +224,7 @@ public struct AtlasLedgerTimeline: View {
         }
         .foregroundStyle(badgeForeground(badge.tone))
         .padding(.horizontal, AtlasSpacing.sm)
-        .padding(.vertical, 2)
+        .padding(.vertical, AtlasSpacing.xxs)
         .background(
             Capsule(style: .continuous)
                 .fill(badgeBackground(badge.tone))
