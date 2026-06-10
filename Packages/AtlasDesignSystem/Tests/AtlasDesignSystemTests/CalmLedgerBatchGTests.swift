@@ -132,4 +132,48 @@ final class CalmLedgerBatchGTests: XCTestCase {
         let caption: any View = Text("#A1F3 · 10:24").atlasDataCaption()
         XCTAssertNotNil(caption)
     }
+
+    // MARK: - G5 AtlasScreen action-bar slot
+
+    func testAtlasScreenActionBarSlotCompiles() {
+        // Existing call shapes stay source-compatible (no actionBar argument).
+        let plain = AtlasScreen(title: "智能清理", subtitle: "副标题") {
+            Text("content")
+        }
+        XCTAssertNotNil(plain.body)
+        let withHero = AtlasScreen(
+            title: "概览", subtitle: "s", hasHero: true,
+            heroContent: { Text("hero") },
+            content: { Text("content") }
+        )
+        XCTAssertNotNil(withHero.body)
+        // New slot: action bar pins via safeAreaInset, content untouched.
+        let withBar = AtlasScreen(
+            title: "智能清理", subtitle: "s",
+            actionBar: {
+                AnyView(
+                    AtlasActionBar(
+                        primaryTitle: "执行清理计划", primaryEnabled: true, onPrimary: {},
+                        promise: nil, metricText: "3.4 GB", progress: nil
+                    )
+                )
+            }
+        ) {
+            Text("content")
+        }
+        XCTAssertNotNil(withBar.body)
+    }
+
+    func testActionBarHeightKeyReducesToMax() {
+        // The preference carries the tallest reported bar height upward
+        // (M3 AppShell lifts toasts by it).
+        XCTAssertEqual(AtlasActionBarHeightKey.defaultValue, 0)
+        var value: CGFloat = AtlasActionBarHeightKey.defaultValue
+        AtlasActionBarHeightKey.reduce(value: &value) { 64 }
+        XCTAssertEqual(value, 64)
+        AtlasActionBarHeightKey.reduce(value: &value) { 12 }
+        XCTAssertEqual(value, 64, "smaller sibling reports must not shrink the lift height")
+        AtlasActionBarHeightKey.reduce(value: &value) { 80 }
+        XCTAssertEqual(value, 80)
+    }
 }

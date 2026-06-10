@@ -62,12 +62,24 @@ public enum AtlasFormatters {
     }
 }
 
+/// Reports the rendered action-bar height up the view tree (set by the
+/// `AtlasScreen` `actionBar` slot). M3 AppShell reads it to lift the
+/// `AtlasToastContainer` above the pinned bar (spec §4.3 共存规则).
+public struct AtlasActionBarHeightKey: PreferenceKey {
+    public static let defaultValue: CGFloat = 0
+
+    public static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 public struct AtlasScreen<HeroContent: View, Content: View>: View {
     private let title: String
     private let subtitle: String
     private let useScrollView: Bool
     private let maxContentWidth: CGFloat?
     private let hasHero: Bool
+    private let actionBar: (() -> AnyView)?
     private let heroContent: HeroContent
     private let content: Content
 
@@ -77,6 +89,7 @@ public struct AtlasScreen<HeroContent: View, Content: View>: View {
         useScrollView: Bool = true,
         maxContentWidth: CGFloat? = AtlasLayout.maxReadingWidth,
         hasHero: Bool = false,
+        actionBar: (() -> AnyView)? = nil,
         @ViewBuilder heroContent: () -> HeroContent = { EmptyView() },
         @ViewBuilder content: () -> Content
     ) {
@@ -85,6 +98,7 @@ public struct AtlasScreen<HeroContent: View, Content: View>: View {
         self.useScrollView = useScrollView
         self.maxContentWidth = maxContentWidth
         self.hasHero = hasHero
+        self.actionBar = actionBar
         self.heroContent = heroContent()
         self.content = content()
     }
@@ -109,6 +123,25 @@ public struct AtlasScreen<HeroContent: View, Content: View>: View {
                     } else {
                         contentStack(horizontalPadding: horizontalPadding, containerWidth: proxy.size.width)
                     }
+                }
+            }
+            // Action-bar slot (spec §4.3): pinned via safeAreaInset OUTSIDE the
+            // private ScrollView — the bar spans the full container width while
+            // the content stays clamped to maxContentWidth; the canvas gradient
+            // ignores the safe area and keeps painting beneath the bar. Bottom
+            // edge only — top toolbar/.searchable remain untouched, and screen-
+            // level overlays (M3 evidence drawer) stack above unobstructed.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if let actionBar {
+                    actionBar()
+                        .background(
+                            GeometryReader { barProxy in
+                                Color.clear.preference(
+                                    key: AtlasActionBarHeightKey.self,
+                                    value: barProxy.size.height
+                                )
+                            }
+                        )
                 }
             }
         }
@@ -149,8 +182,12 @@ public struct AtlasScreen<HeroContent: View, Content: View>: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
+            // tracking −0.3 (spec §1.3 screenTitle): a Text-modifier capability
+            // the Font token cannot express — applied at the title slot
+            // (findings 遗项 ①, resolved here).
             Text(title)
                 .font(AtlasTypography.screenTitle)
+                .tracking(-0.3)
 
             Text(subtitle)
                 .font(AtlasTypography.body)

@@ -94,6 +94,11 @@ public enum AtlasColor {
 /// ① UI voice: SF Pro (default design — rounded removed in v3)
 /// ② Data voice: SF Mono — every number, size, path, timestamp
 /// ③ Ledger voice: New York + Songti SC explicit cascade — ledger artifacts ONLY
+///
+/// 设计上限（钳制值，spec §1.3）: screenTitle 34 / dataHero 48 / dataMetric 30 /
+/// ledgerTitle 24。macOS 无 iOS 式全局 Dynamic Type——固定字号下这些值是未来引入
+/// 缩放机制时的天花板；当前为文档性约束（无运行时钳制代码），实现缩放时必须落地。
+/// screenTitle 的 tracking −0.3 是 Text-modifier 层能力，落在 AtlasScreen 标题槽。
 public enum AtlasTypography {
 
     // ── ① UI voice ─────────────────────────────────────
