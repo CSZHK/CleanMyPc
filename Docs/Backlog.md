@@ -56,6 +56,7 @@
 - `EPIC-B` Smart Clean Safe Coverage Expansion
 - `EPIC-C` Recovery Payload Hardening
 - `EPIC-D` Release Readiness
+- `EPIC-E` Calm Ledger Frontend Redesign (non-mainline; runs in EPIC-D blockage window per D-012; UI-automation baseline ATL-267 must land AFTER this merges)
 
 ## Now / Next / Later
 
@@ -342,6 +343,7 @@ Reason:
 #### Now
 
 - `EPIC-A` Apps Evidence Execution
+- `EPIC-E` Calm Ledger Redesign — M0 governance + M1 token layer in progress on `redesign/calm-ledger` (interrupt protocol: design spec §0.3)
 
 #### Next
 
