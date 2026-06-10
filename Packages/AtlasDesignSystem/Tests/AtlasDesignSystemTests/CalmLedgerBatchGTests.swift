@@ -72,4 +72,42 @@ final class CalmLedgerBatchGTests: XCTestCase {
         // Rationale opacity stays at the ≥4.5:1-verified level (90%, not 85%).
         XCTAssertEqual(AtlasNextActionBanner.rationaleOpacity, 0.9, accuracy: 0.0001)
     }
+
+    // MARK: - G3 AtlasErrorState
+
+    func testErrorStateLayoutVariants() {
+        // Layout-discriminating properties: block centers with the EmptyState
+        // icon scale; inlineRow leads with the list-row glyph scale.
+        XCTAssertTrue(AtlasErrorState.Layout.block.isCentered)
+        XCTAssertFalse(AtlasErrorState.Layout.inlineRow.isCentered)
+        XCTAssertEqual(AtlasErrorState.Layout.block.iconPointSize, 28)
+        XCTAssertEqual(AtlasErrorState.Layout.inlineRow.iconPointSize, 14)
+        // Both layouts construct with full content.
+        let block = AtlasErrorState(
+            title: "清理失败",
+            message: "3 项因权限不足被跳过",
+            suggestion: "在权限页授予完全磁盘访问后重试",
+            actionTitle: "重试",
+            onAction: {},
+            layout: .block
+        )
+        XCTAssertNotNil(block.body)
+        let row = AtlasErrorState(
+            title: "权限不足",
+            message: "~/Library/Caches/com.example 无法删除",
+            layout: .inlineRow
+        )
+        XCTAssertNotNil(row.body)
+    }
+
+    func testErrorStateActionHiddenWhenNil() {
+        // Fail-closed: the action button needs BOTH a title and a handler.
+        XCTAssertTrue(AtlasErrorState.showsAction(title: "重试", action: {}))
+        XCTAssertFalse(AtlasErrorState.showsAction(title: nil, action: {}))
+        XCTAssertFalse(AtlasErrorState.showsAction(title: "重试", action: nil))
+        XCTAssertFalse(AtlasErrorState.showsAction(title: nil, action: nil))
+        // Default layout is .block; default action is absent.
+        let minimal = AtlasErrorState(title: "t", message: "m")
+        XCTAssertNotNil(minimal.body)
+    }
 }
