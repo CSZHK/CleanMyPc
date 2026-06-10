@@ -26,7 +26,7 @@ DECISIONS(D-012) / Backlog(EPIC-E + A/B/C 完成标记，后者随 M4) / IA / CO
 | Phase | Verify Command | Status |
 |-------|---------------|--------|
 | M0 | git log 检查 5 个内容提交 + 1 个收口提交；ls iterations/REQ-calm-ledger-redesign | PASS |
-| M1 | node scripts/design/contrast-check.mjs && swift test --package-path Packages && swift build --package-path Apps | PENDING |
+| M1 | node scripts/design/contrast-check.mjs && swift test --package-path Packages && swift build --package-path Apps | PASS |
 | M2 | swift test --package-path Packages（新组件单测全绿） | PENDING |
 | M3 | swift test --package-path Packages && swift test --package-path Apps + 每屏手动矩阵 | PENDING |
 | M4 | ./scripts/test.sh + 截图重导 + 双语言键集合 diff 脚本 0 缺失 | PENDING |
@@ -34,9 +34,17 @@ DECISIONS(D-012) / Backlog(EPIC-E + A/B/C 完成标记，后者随 M4) / IA / CO
 ## Actual Verification
 （执行时填写）
 - M0 (2026-06-10): 分支 redesign/calm-ledger，main..HEAD 6 commits（5 内容 + 1 收口），16 文件 883 插入 0 删除，治理工件齐备（spec 审查字节级一致）
+- M1 (2026-06-10): contrast-check 32/32 ALL PASS；colorset 生成幂等（porcelain 0）；Packages 384 tests / 0 failures（377 存量 + 7 新增）；Apps build complete；宋体 cascade 实测 family=Songti SC（无需降级）；№ U+2116 glyph 可用（glyphID 1710）
 
 ## Actual Deliverables
 （执行时填写）
+
+### M0+M1（CHG-2026-06-calm-ledger-m0m1）
+- 治理: D-012 / EPIC-E / REQ 包 / CHG 包 / .agent 三件套
+- Token 真相源: scripts/design/calm-ledger-tokens.json（32 色 + 16 对比对）
+- 门禁: contrast-check.mjs（32 检查，hex 守卫）+ generate-colorsets.mjs（幂等，32 colorset）
+- Swift v3: AtlasColor 全 colorset 化（去 @MainActor）/ 三声部 AtlasTypography（含 Songti cascade）/ AtlasMotion +2 / AtlasLayout 断点 / 高程 −30%
+- 测试: +7（token 存在性 ×4、字体探针 ×2、colorset 解析守卫 ×1），共 384 绿
 
 ## Close Gate
 M0–M4 全部 Planned Verification = PASS + 手动矩阵 + 人工 UI 审查通过

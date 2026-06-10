@@ -4,5 +4,5 @@
 - 当前计划: Docs/plans/2026-06-10-calm-ledger-m0-m1.md
 - REQ: iterations/REQ-calm-ledger-redesign/
 - 当前 CHG: changes/CHG-2026-06-calm-ledger-m0m1/
-- 里程碑: M0 ✓ M1 ▶ M2 ▷ M3 ▷ M4 ▷（计划按边界续写）
+- 里程碑: M0 ✓ M1 ✓ M2 ▷ M3 ▷ M4 ▷（M2 计划待编写）
 - 中断协议: 规格 §0.3（签名凭据到位 → 当前里程碑边界暂停，EPIC-D 恢复）
