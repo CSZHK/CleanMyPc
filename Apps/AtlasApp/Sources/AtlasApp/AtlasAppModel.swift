@@ -693,7 +693,9 @@ final class AtlasAppModel: ObservableObject {
     }
 
     private func syncAppearance() {
-        NSApp.appearance = settings.theme.nsAppearance
+        // Optional-chain: bare `swift test` runs have no NSApplication (NSApp is nil).
+        // With a real app instance the assignment behaves exactly as before.
+        NSApp?.appearance = settings.theme.nsAppearance
     }
 
     private func refreshLocalizedReadySummaries() {
