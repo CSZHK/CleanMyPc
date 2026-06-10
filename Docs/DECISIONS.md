@@ -74,6 +74,16 @@
 - App recovery payloads carry an explicit schema version and must remain backward-compatible with legacy app-only recovery payload shapes
 - App payload restores must refresh app inventory before `Apps` reuses footprint counts or uninstall preview state
 
+### D-012 Calm Ledger Frontend Redesign
+
+- The design truth source moves from `Docs/DESIGN_SPEC.md` (v2 "Calm Authority") to `Docs/design/2026-06-10-frontend-redesign-calm-ledger.md` (v1.1 "Calm Ledger") once the redesign branch merges
+- The `History` module is renamed to `台账` (zh-Hans) / `Ledger` (en); route identifier `AtlasRoute.history` becomes `AtlasRoute.ledger`; the SPM package name `AtlasFeaturesHistory` is retained
+- The frozen-MVP route-name contract test (`testPrimaryRoutesMatchFrozenMVP`) is explicitly unfrozen for this rename; the unfreeze is recorded in `iterations/REQ-calm-ledger-redesign/requirement.md`
+- Default window size becomes 1180×740 (minimum 980×640); existing users keep their autosaved frame — the evidence-drawer tier is the accepted baseline for them
+- `File Organizer` is retroactively recognized as an in-scope production module (it shipped in v1.0.8 without a decision entry)
+- The redesign is **not** a mainline epic: it runs inside the EPIC-D external-blockage window under the interrupt protocol defined in the design spec §0.3 (pause at milestone boundary when signing credentials arrive; EPIC-D resumes with full priority; redesign branch rebases main per milestone)
+- The Startup module sidebar slot remains **contingent on a separate D-010 update** and must not ship before that approval
+
 ## Update Rule
 
 Add a new decision entry whenever product scope, protocol, privilege boundaries, release route, or recovery model changes.
