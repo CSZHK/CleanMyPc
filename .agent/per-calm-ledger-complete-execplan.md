@@ -32,6 +32,8 @@
 - 2026-06-10: 评审模式调整——批次内「实施者 + 单合并审查者（spec+质量合一）+ 客观门禁（build/test/contrast）」，控制器核 diff；理由：M0/M1 六轮两段审查全 Approve，门禁已脚本化。
 - 2026-06-10: Backlog #9 决策——新增 `AtlasOnBrand` token（light #FFFFFF / dark #0C1614，与视觉方向板深色稿一致：暗字亮底）+ `AtlasBannerEnd` 渐变端 token（light #0C5F58 加深 / dark #2BC4B1）；主按钮/横幅/行动栏主操作文字一律 onBrand，bannerGradient 第二停改 BannerEnd；新增 2 对比对（OnBrand×Brand、OnBrand×BannerEnd），四向预算 5.47/7.24/6.9/8.5 全 ≥4.5。落 Batch H；产品负责人不认可暗字亮底可单 token 回退。
 - 2026-06-10: 台账编号与回执派生（规格 §1.6 落地细则）——`AtlasSettings` 增 `ledgerNextNumber: Int`（decode 默认按「既有任务运行数+1」一次性初始化，D-011 版本化信封内向后兼容）；扫描完成产出计划时分配 № 并自增，重扫作废旧 № 产新 №；历史任务运行无存储 № 者按时间序计算展示编号（仅限计数器引入前的存量，无碰撞）。回执 #XXXX = 扫描摘要稳定串 SHA256 前 4 hex，存于屏幕 ViewState，工具栏芯片显示当前路由模块最近回执。协议层零改动。
+- 2026-06-10（**修订上一条**，Batch H BLOCKED 证据驱动）：AtlasSettings 实际经协议传输（AtlasProtocol.swift:35/:81）且持久化权威在 Worker，Worker `sanitized(settings:)` 逐字段重建、静默丢弃未枚举字段（AtlasScaffoldWorkerService.swift:1526-1536）——「存于 AtlasSettings」细则作废。**改为纯客户端持久化**：№ 计数器经 `UserDefaults`（key `atlas.ledger.nextNumber`，AtlasAppModel 封装读写，首次取号按既有任务运行数+1 初始化）；Batch K 推荐冷却同改 UserDefaults（key 前缀 `atlas.overview.snooze.`）。协议/Worker 红线保持完好；重装后编号重新起算——本地维护工具可接受，记入设计偏差。
+- 2026-06-10: 存量缺陷记档（不入本 REQ，建议单独 CHG）——Worker `sanitized()` 漏传 `theme`：任一次设置保存回显会把显式主题重置为 .system。修复需触 Worker（本 REQ 红线外）；证据链已由 Batch H 实施者固化（file:line 见其报告）。
 
 ## Surprises & Discoveries
 - 2026-06-10 ~18:0x: Batch E 实施子代理（agentId a185efceb1cc29996）撞会话用量上限（19:00 Asia/Shanghai 重置），24 次工具调用后中断。
