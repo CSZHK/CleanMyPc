@@ -281,6 +281,10 @@ final class AtlasDesignSystemTests: XCTestCase {
         let resolved = CTFontCreateForString(nsFont as CTFont, sample, CFRange(location: 0, length: 2))
         let family = CTFontCopyFamilyName(resolved) as String
         XCTAssertTrue(family.contains("Songti"), "zh ledger voice resolved to '\(family)', expected Songti SC")
+        // Bold requests must resolve the real Bold face (cascade carries .face) —
+        // a family-only cascade silently degrades zh bold ledger titles to Songti Regular.
+        let subFamily = (CTFontCopyName(resolved, kCTFontSubFamilyNameKey) as String?) ?? ""
+        XCTAssertTrue(subFamily.contains("Bold"), "bold zh ledger voice resolved face '\(subFamily)', expected Songti SC Bold")
     }
 
     func testNumeroGlyphAvailableInLedgerFont() {

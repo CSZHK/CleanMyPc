@@ -121,10 +121,14 @@ public enum AtlasTypography {
     }
 
     /// NSFont variant exposed for CoreText feasibility tests.
+    /// The cascade descriptor carries an explicit face so zh-Hans actually resolves
+    /// Songti SC **Bold** for ≥semibold requests — a family-only cascade ignores the
+    /// requested weight and always falls back to Songti Regular (M1 finding).
     public static func ledgerNSFont(size: CGFloat, weight: NSFont.Weight) -> NSFont {
         let base = NSFont.systemFont(ofSize: size, weight: weight)
         var descriptor = base.fontDescriptor.withDesign(.serif) ?? base.fontDescriptor
-        let songti = NSFontDescriptor(fontAttributes: [.family: "Songti SC"])
+        let face = weight.rawValue >= NSFont.Weight.semibold.rawValue ? "Bold" : "Regular"
+        let songti = NSFontDescriptor(fontAttributes: [.family: "Songti SC", .face: face])
         descriptor = descriptor.addingAttributes([.cascadeList: [songti]])
         return NSFont(descriptor: descriptor, size: size) ?? base
     }

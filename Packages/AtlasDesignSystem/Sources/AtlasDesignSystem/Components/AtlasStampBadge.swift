@@ -38,6 +38,7 @@ public struct AtlasStampBadge: View {
     private let style: Style
 
     @State private var settled = false
+    @State private var contentSide: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Base stamp diameter before the style multiplier.
@@ -52,8 +53,11 @@ public struct AtlasStampBadge: View {
         self.style = style
     }
 
+    /// Font sizes are FIXED (no minimumScaleFactor): the zh serif red line demands
+    /// ≥13pt bold (§1.3) and scaling would silently drop below it. The badge grows
+    /// to its content instead: the circle side is max(base, measured content side).
     public var body: some View {
-        let diameter = Self.baseDiameter * style.sizeMultiplier
+        let diameter = max(Self.baseDiameter, contentSide) * style.sizeMultiplier
 
         ZStack {
             Circle()
@@ -61,24 +65,38 @@ public struct AtlasStampBadge: View {
 
             VStack(spacing: AtlasSpacing.xxs) {
                 if let numberText {
+                    // №+digits are a Latin/numeral artifact — the zh ≥13pt serif
+                    // red line does not apply; small serif keeps the stamp hierarchy.
                     Text(numberText)
-                        .font(AtlasTypography.ledgerNumber)
+                        .font(AtlasTypography.ledgerFont(size: 10, weight: .bold))
                 }
 
+                // Ledger voice ③ at the 13pt-bold token — satisfies the zh serif red line.
                 Text(title)
-                    .font(AtlasTypography.ledgerFont(size: 13, weight: .bold))
+                    .font(AtlasTypography.ledgerNumber)
                     .multilineTextAlignment(.center)
 
                 if let subtitle {
+                    // Voice classification: subtitle carries facts ("X GB · 保留 N 天"),
+                    // which is data voice ② (§1.3) — mono dataCaption, not serif.
                     Text(subtitle)
-                        .font(AtlasTypography.ledgerFont(size: 10, weight: .regular))
+                        .font(AtlasTypography.dataCaption)
+                        .monospacedDigit()
                         .multilineTextAlignment(.center)
                 }
             }
             .foregroundStyle(AtlasColor.brand)
             .lineLimit(2)
-            .minimumScaleFactor(0.7)
             .padding(AtlasSpacing.md)
+            .background(
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear { contentSide = max(proxy.size.width, proxy.size.height) }
+                        .onChange(of: proxy.size) { _, size in
+                            contentSide = max(size.width, size.height)
+                        }
+                }
+            )
         }
         .frame(width: diameter, height: diameter)
         .rotationEffect(.degrees(settled ? Self.restingAngle : 0))
