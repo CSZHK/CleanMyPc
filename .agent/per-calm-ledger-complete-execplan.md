@@ -23,6 +23,8 @@
 | 4 | P1 | M3 | 规格 §2/§3 | 壳层（侧栏/工具栏/菜单/任务中心/窗口）+ 路由改名 + ViewState + 8 屏迁移 | TODO |
 | 5 | P1 | M4 | 规格 §0.4/§7 | L10n 键迁移（~120×2）+ 9 文档同步 + 截图基线 + 全量门禁 | TODO |
 | 6 | P2 | 视觉 | findings L5 | 宋体粗体 face/traits（台账标题观感不足时） | DEFERRED→M2 内顺带评估 |
+| 7 | P0 | 测试阻塞 | Batch E 发现 | AtlasAppModel.swift:696 `NSApp.appearance` 强解包——裸 swift test 无 NSApplication，29 测试全崩（来源 main 4ff6c08，此前被编译失败掩盖） | FIXED |
+| 8 | P0 | 开发路径 | Batch E 发现 | 裸 swift-run 无 .app bundle，UNUserNotificationCenter 权限链抛 NSException 启动即崩（stash 基线证明 pre-existing） | FIXED |
 
 ## Decision Log
 - 2026-06-10: swift-run 色彩缺口采用方案 a「生成式 Swift 回退表」——generate-colorsets.mjs 从同一 manifest 额外产出 AtlasColorFallback.swift，AtlasColor 经 atlasColor(_:) 解析（named 命中走 catalog，缺失走 dynamicProvider 回退）；保持单一真相源，发布路径行为不变。
