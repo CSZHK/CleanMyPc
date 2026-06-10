@@ -738,7 +738,7 @@ private struct AppDetailView: View {
     private var headerMeta: some View {
         VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
             Text(AtlasFormatters.byteCount(app.bytes))
-                .font(AtlasTypography.cardMetric)
+                .font(AtlasTypography.dataMetric)
                 .foregroundStyle(.primary)
 
             AtlasStatusChip(

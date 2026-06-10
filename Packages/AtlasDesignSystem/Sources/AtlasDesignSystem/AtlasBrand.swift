@@ -1,21 +1,17 @@
 // MARK: - Atlas Brand Identity & Design Tokens
 //
-// Brand Concept: "Calm Authority"
-// Atlas — like a cartographer mapping your system's terrain.
-// Precise, trustworthy, and quietly confident.
+// Brand Concept: "Calm Ledger / 平静台账" (spec: Docs/design/2026-06-10-frontend-redesign-calm-ledger.md)
+//   Calm shell × precise mono data × ledger trust artifacts.
 //
 // Visual Language:
-//   - Cool indigo base with warm amber highlights
-//   - Generous whitespace, constrained reading width
-//   - Three elevation tiers for clear visual hierarchy
-//   - Rounded, organic shapes (continuous corners)
-//   - Subtle glassmorphism on cards
-//   - Motion: snappy but never bouncy
+//   - Cool work surfaces (white cards on mint-white canvas) vs warm ledger paper
+//   - Three type voices: SF Pro (UI) / SF Mono (data) / New York+Songti (ledger artifacts only)
+//   - Three elevation tiers, shadows softened 30% vs v2; no glassmorphism
+//   - Continuous corners; motion snappy, never bouncy; reduce-motion respected
 //
-// Color Story:
-//   - Indigo (Primary): trust, depth, tech-premium
-//   - Amber (Accent): warmth, discovery, the gold on a map
-//   - Semantic tones keep green/orange/red for system states
+// Tokens are colorset-backed (AtlasColors.xcassets), generated from
+// scripts/design/calm-ledger-tokens.json. Run scripts/design/contrast-check.mjs
+// before changing any value.
 
 import AppKit
 import AtlasDomain
@@ -23,125 +19,124 @@ import SwiftUI
 
 // MARK: - Color Tokens
 
-/// Atlas brand color palette — all colors adapt to light/dark automatically.
+/// Calm Ledger palette — every value lives in AtlasColors.xcassets (light+dark),
+/// generated from scripts/design/calm-ledger-tokens.json. Do not hardcode hex here.
 public enum AtlasColor {
 
     // ── Brand ──────────────────────────────────────────
-
-    /// Primary brand teal — used for key actions and active states.
     public static let brand = Color("AtlasBrand", bundle: .module)
-
-    /// Fresh mint accent — used for highlights, badges, and discovery cues.
+    /// Hover/pressed fill variant — fills and borders only, never text (spec §1.2).
+    public static let brandHover = Color("AtlasBrandHover", bundle: .module)
+    /// Mint accent — non-text uses only (progress, badges, decoration).
     public static let accent = Color("AtlasAccent", bundle: .module)
 
-    // ── Semantic ───────────────────────────────────────
-
-    public static let success = Color(nsColor: .systemGreen)
-    public static let warning = Color(nsColor: .systemOrange)
-    public static let danger  = Color(nsColor: .systemRed)
-    public static let info    = Color(nsColor: .systemBlue)
+    // ── Semantic (spec: safe/review/danger/info — API keeps legacy names) ──
+    public static let success = Color("AtlasSafe", bundle: .module)
+    public static let warning = Color("AtlasReview", bundle: .module)
+    public static let danger  = Color("AtlasDanger", bundle: .module)
+    public static let info    = Color("AtlasInfo", bundle: .module)
+    public static let successFill = Color("AtlasSafeFill", bundle: .module)
+    public static let warningFill = Color("AtlasReviewFill", bundle: .module)
+    public static let dangerFill  = Color("AtlasDangerFill", bundle: .module)
+    public static let infoFill    = Color("AtlasInfoFill", bundle: .module)
 
     // ── Surfaces ───────────────────────────────────────
+    public static let canvasTop = Color("AtlasCanvasTop", bundle: .module)
+    public static let canvasBottom = Color("AtlasCanvasBottom", bundle: .module)
+    public static let surface = Color("AtlasSurface", bundle: .module)
+    public static let surfaceSubdued = Color("AtlasSurfaceSubdued", bundle: .module)
+    public static let surfaceInput = Color("AtlasSurfaceInput", bundle: .module)
+    /// Legacy alias — migrate consumers to `surface` during M3, then remove.
+    public static var card: Color { surface }
+    public static let cardRaised = Color("AtlasCardRaised", bundle: .module)
+    public static let heroSurface = Color("AtlasHeroSurface", bundle: .module)
 
-    /// App canvas — top of gradient.
-    public static let canvasTop = Color(nsColor: .windowBackgroundColor)
-    /// App canvas — bottom of gradient.
-    public static let canvasBottom = Color(nsColor: .underPageBackgroundColor)
-
-    /// Card surface that adapts to light/dark.
-    public static var card: Color {
-        Color(nsColor: .controlBackgroundColor)
-    }
-
-    /// Raised card overlay — glassmorphic tint.
-    @MainActor
-    public static var cardRaised: Color {
-        if NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua {
-            return Color.white.opacity(0.06)
-        } else {
-            return Color.white.opacity(0.65)
-        }
-    }
+    // ── Ledger paper (warm trust surface, spec §1.2 边界) ──
+    public static let ledgerPaper = Color("AtlasLedgerPaper", bundle: .module)
+    public static let ledgerInk = Color("AtlasLedgerInk", bundle: .module)
+    public static let ledgerSecondary = Color("AtlasLedgerSecondary", bundle: .module)
+    public static let ledgerBorder = Color("AtlasLedgerBorder", bundle: .module)
+    public static let ledgerRule = Color("AtlasLedgerRule", bundle: .module)
 
     // ── Text ───────────────────────────────────────────
-
-    /// Primary text on canvas.
-    public static let textPrimary = Color.primary
-    /// Secondary / muted text.
-    public static let textSecondary = Color.secondary
-    /// Tertiary text — footnotes, timestamps.
-    public static let textTertiary = Color.secondary.opacity(0.6)
+    public static let ink = Color("AtlasInk", bundle: .module)
+    public static let inkData = Color("AtlasInkData", bundle: .module)
+    public static let textPrimary = Color("AtlasTextBody", bundle: .module)
+    public static let textSecondary = Color("AtlasTextSecondary", bundle: .module)
+    public static let textTertiary = Color("AtlasTextTertiary", bundle: .module)
 
     // ── Border ─────────────────────────────────────────
-
-    /// Subtle card border.
-    public static let border = Color.primary.opacity(0.08)
-    /// Emphasis border — used on prominent cards and focus states.
+    public static let border = Color("AtlasSurfaceBorder", bundle: .module)
     public static let borderEmphasis = Color.primary.opacity(0.14)
 
-    // ── Brand Gradient ─────────────────────────────────
+    // ── Action bar (ink-dark pinned bar) ───────────────
+    public static let actionBarBg = Color("AtlasActionBarBg", bundle: .module)
+    public static let actionBarText = Color("AtlasActionBarText", bundle: .module)
+    public static let actionBarData = Color("AtlasActionBarData", bundle: .module)
 
-    /// Brand → Accent linear gradient for hero areas.
+    // ── Gradients ──────────────────────────────────────
+    /// Legacy hero gradient (brand → accent). M3 migrates hero uses; keep for compatibility.
     public static var brandGradient: LinearGradient {
-        LinearGradient(
-            colors: [brand, accent],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+        LinearGradient(colors: [brand, accent], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
-
-    /// Hero area surface — deeper than canvas for visual contrast.
-    @MainActor
-    public static var heroSurface: Color {
-        if NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua {
-            return Color.white.opacity(0.04)
-        } else {
-            return Color.black.opacity(0.02)
-        }
+    /// Next-action banner gradient (spec §3: brand → brandHover, 135°).
+    public static var bannerGradient: LinearGradient {
+        LinearGradient(colors: [brand, brandHover], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }
 
-// MARK: - Typography Tokens
+// MARK: - Typography Tokens (three voices, spec §1.3)
 
-/// Centralized type scale. All fonts use `.rounded` design for brand warmth.
-/// Fixed-size styles are clamped to upper bounds to prevent layout breakage
-/// at extreme accessibility font sizes on macOS.
+/// ① UI voice: SF Pro (default design — rounded removed in v3)
+/// ② Data voice: SF Mono — every number, size, path, timestamp
+/// ③ Ledger voice: New York + Songti SC explicit cascade — ledger artifacts ONLY
 public enum AtlasTypography {
 
-    // ── Display ────────────────────────────────────────
-
-    /// Screen title — the large bold header on each feature screen.
-    /// Upper bound: 34pt — clamped to prevent overflow in compact layouts.
-    public static let screenTitle = Font.system(size: min(34, 34), weight: .bold, design: .rounded)
-    /// Hero metric — the single most important number on a dashboard.
-    /// Upper bound: 40pt — clamped to prevent overflow in metric cards.
-    public static let heroMetric  = Font.system(size: min(40, 40), weight: .bold, design: .rounded)
-
-    // ── Heading ────────────────────────────────────────
-
-    /// Section heading inside a card or screen area.
-    public static let sectionTitle = Font.title3.weight(.semibold)
-    /// Card metric value — secondary metrics in grids.
-    /// Upper bound: 28pt — clamped to prevent overflow in 3-column metric grids.
-    public static let cardMetric   = Font.system(size: min(28, 28), weight: .bold, design: .rounded)
-
-    // ── Label ──────────────────────────────────────────
-
-    /// Semibold label for metric titles, sidebar primary text, etc.
+    // ── ① UI voice ─────────────────────────────────────
+    public static let screenTitle = Font.system(size: 28, weight: .bold)
+    public static let sectionTitle = Font.system(size: 17, weight: .semibold)
     public static let label      = Font.subheadline.weight(.semibold)
-    /// Headline weight for row titles.
-    public static let rowTitle   = Font.headline
-    /// Standard body text.
-    public static let body       = Font.subheadline
-    /// Small secondary body text.
-    public static let bodySmall  = Font.caption
+    public static let rowTitle   = Font.system(size: 13, weight: .semibold)
+    public static let body       = Font.system(size: 13)
+    public static let bodySmall  = Font.system(size: 11)
+    public static let caption    = Font.system(size: 11, weight: .semibold)
+    public static let captionSmall = Font.system(size: 10)
 
-    // ── Caption ────────────────────────────────────────
+    // ── ② Data voice (SF Mono) ─────────────────────────
+    public static let dataHero   = Font.system(size: 42, weight: .semibold, design: .monospaced)
+    public static let dataMetric = Font.system(size: 26, weight: .semibold, design: .monospaced)
+    public static let dataBody   = Font.system(size: 12, design: .monospaced)
+    public static let dataCaption = Font.system(size: 10.5, design: .monospaced)
 
-    /// Chip labels, footnotes, overlines.
-    public static let caption    = Font.caption.weight(.semibold)
-    /// Extra-small legal and timestamp text.
-    public static let captionSmall = Font.caption2
+    // ── ③ Ledger voice (serif + zh Songti cascade) ─────
+    public static let ledgerTitle = ledgerFont(size: 19, weight: .bold)
+    public static let ledgerNumber = ledgerFont(size: 13, weight: .bold)
+
+    /// Serif with explicit Songti SC cascade so zh-Hans renders 宋体, not PingFang
+    /// (system serif fallback for CJK is undefined across OS versions — spec §1.3).
+    public static func ledgerFont(size: CGFloat, weight: Font.Weight) -> Font {
+        Font(ledgerNSFont(size: size, weight: weight.nsWeight))
+    }
+
+    /// NSFont variant exposed for CoreText feasibility tests.
+    public static func ledgerNSFont(size: CGFloat, weight: NSFont.Weight) -> NSFont {
+        let base = NSFont.systemFont(ofSize: size, weight: weight)
+        var descriptor = base.fontDescriptor.withDesign(.serif) ?? base.fontDescriptor
+        let songti = NSFontDescriptor(fontAttributes: [.family: "Songti SC"])
+        descriptor = descriptor.addingAttributes([.cascadeList: [songti]])
+        return NSFont(descriptor: descriptor, size: size) ?? base
+    }
+}
+
+private extension Font.Weight {
+    var nsWeight: NSFont.Weight {
+        switch self {
+        case .bold: return .bold
+        case .semibold: return .semibold
+        case .medium: return .medium
+        default: return .regular
+        }
+    }
 }
 
 // MARK: - Spacing Tokens
@@ -214,8 +209,8 @@ public enum AtlasElevation: Sendable {
     public var shadowOpacity: Double {
         switch self {
         case .flat:      return 0
-        case .raised:    return 0.05
-        case .prominent: return 0.09
+        case .raised:    return 0.035
+        case .prominent: return 0.063
         }
     }
 
@@ -248,6 +243,11 @@ public enum AtlasMotion {
     public static let slow = Animation.snappy(duration: 0.35)
     /// Spring for playful feedback — completion, celebration.
     public static let spring = Animation.spring(response: 0.45, dampingFraction: 0.7)
+    /// Stage-bar content transition — 12pt slide + fade (spec §1.5).
+    public static let stageTransition = Animation.snappy(duration: 0.30)
+    /// Stamp-in spring for completion / recovery-point moments (spec §1.5).
+    public static let stampIn = Animation.spring(response: 0.45, dampingFraction: 0.62)
+    // countUp is NOT an Animation: implemented as contentTransition(.numericText()) in M2 components.
 }
 
 // MARK: - Layout Tokens
@@ -260,8 +260,15 @@ public enum AtlasLayout {
     public static let maxWorkspaceWidth: CGFloat = 1200
     /// Slightly wider content ceiling for workflow-heavy screens.
     public static let maxWorkflowWidth: CGFloat = 1080
-    /// Switch split-pane cards into stacked mode before detail panels become cramped.
+    /// DEPRECATED (Calm Ledger M3 removes): superseded by evidencePanelBreakpoint.
+    /// Still consumed by AppsFeatureView / HistoryFeatureView until their M3 migration.
     public static let browserSplitThreshold: CGFloat = 860
+    /// Evidence panel minimum width (spec §4.1).
+    public static let evidencePanelMinWidth: CGFloat = 300
+    /// Below this content width the evidence panel becomes a slide-over drawer (spec §2.4).
+    public static let evidencePanelBreakpoint: CGFloat = 880
+    /// Below this content width the action bar collapses to primary + shield badge (spec §2.4).
+    public static let actionBarCompactBreakpoint: CGFloat = 740
     /// Keep enough readable width for text before detail-row accessories stay inline.
     public static let detailRowMinimumTextWidth: CGFloat = 240
     /// Standard 3-column metric grid definition.
@@ -371,18 +378,6 @@ public func atlasCardBackground(tone: AtlasTone = .neutral, elevation: AtlasElev
                 x: 0,
                 y: elevation.shadowY
             )
-
-        // Prominent cards get a subtle top-left inner glow
-        if elevation == .prominent {
-            RoundedRectangle(cornerRadius: cr, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.08), Color.clear],
-                        startPoint: .topLeading,
-                        endPoint: .center
-                    )
-                )
-        }
     }
 }
 

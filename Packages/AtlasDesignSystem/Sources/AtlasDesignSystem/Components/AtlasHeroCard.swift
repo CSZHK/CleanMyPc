@@ -167,7 +167,7 @@ public struct AtlasHeroCardDefaultCenter: View {
 
             VStack(spacing: AtlasSpacing.xs) {
                 Text(value)
-                    .font(AtlasTypography.heroMetric)
+                    .font(AtlasTypography.dataHero)
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
 

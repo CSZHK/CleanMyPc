@@ -61,11 +61,11 @@ public struct AtlasCircularProgress: View {
     private var centerContent: some View {
         if let icon {
             Image(systemName: icon)
-                .font(.system(size: textSize, weight: .semibold, design: .rounded))
+                .font(.system(size: textSize, weight: .semibold, design: .monospaced))
                 .foregroundStyle(tone.tint)
         } else if let text {
             Text(text)
-                .font(.system(size: textSize, weight: .bold, design: .rounded))
+                .font(.system(size: textSize, weight: .bold, design: .monospaced))
                 .foregroundStyle(.primary)
                 .contentTransition(.numericText())
         }

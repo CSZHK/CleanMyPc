@@ -82,7 +82,7 @@ public struct AggregateSummaryCard: View {
     private var headerSection: some View {
         VStack(spacing: AtlasSpacing.xs) {
             Text(AtlasFormatters.byteCount(totalBytes))
-                .font(AtlasTypography.heroMetric)
+                .font(AtlasTypography.dataHero)
                 .foregroundStyle(.primary)
                 .contentTransition(.numericText())
 
@@ -141,7 +141,7 @@ public struct AggregateSummaryCard: View {
                     Spacer()
 
                     Text(AtlasFormatters.byteCount(agg.totalBytes))
-                        .font(AtlasTypography.cardMetric)
+                        .font(AtlasTypography.dataMetric)
                         .foregroundStyle(agg.riskLevel.atlasTone.tint)
                         .contentTransition(.numericText())
                 }

@@ -200,7 +200,7 @@ public struct AtlasMetricCard: View {
             }
 
             Text(value)
-                .font(elevation == .prominent ? AtlasTypography.heroMetric : AtlasTypography.cardMetric)
+                .font(elevation == .prominent ? AtlasTypography.dataHero : AtlasTypography.dataMetric)
                 .foregroundStyle(.primary)
                 .contentTransition(.numericText())
 
