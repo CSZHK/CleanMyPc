@@ -359,7 +359,8 @@ public enum AtlasIcon {
     public static let overview    = "gauge.with.dots.needle.33percent"
     public static let smartClean  = "sparkles"
     public static let apps        = "square.grid.2x2"
-    public static let history     = "clock.arrow.circlepath"
+    /// Ledger route glyph (≣-style list card) — replaces the removed, unreferenced `history` clock icon (Calm Ledger §2.2).
+    public static let ledger      = "list.bullet.rectangle"
     public static let permissions = "lock.shield"
     public static let settings    = "gearshape"
     public static let storage     = "internaldrive"

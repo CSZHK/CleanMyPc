@@ -36,7 +36,9 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
     case smartClean
     case fileOrganizer
     case apps
-    case history
+    /// Renamed from `history` (Calm Ledger §2.2). Selection is pure in-memory
+    /// state (no @AppStorage/SceneStorage) — compile-time rename, no migration.
+    case ledger
     case permissions
     case settings
     case about
@@ -65,9 +67,9 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
                 return AtlasL10n.string("sidebar.apps.dynamic", context.appsCount)
             }
             return subtitle
-        case .history:
+        case .ledger:
             if context.recoveryItemsCount > 0 {
-                return AtlasL10n.string("sidebar.history.dynamic", context.recoveryItemsCount)
+                return AtlasL10n.string("sidebar.ledger.dynamic", context.recoveryItemsCount)
             }
             return subtitle
         case .permissions:
@@ -109,7 +111,7 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
             case .core:
                 return [.overview, .smartClean, .fileOrganizer, .apps]
             case .manage:
-                return [.history, .permissions]
+                return [.ledger, .permissions]
             }
         }
     }
@@ -131,7 +133,7 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
         switch self {
         case .overview, .smartClean, .fileOrganizer, .apps:
             return .core
-        case .history, .permissions:
+        case .ledger, .permissions:
             return .manage
         case .settings, .about:
             return nil
@@ -148,8 +150,8 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
             return AtlasL10n.string("route.fileorganizer.title")
         case .apps:
             return AtlasL10n.string("route.apps.title")
-        case .history:
-            return AtlasL10n.string("route.history.title")
+        case .ledger:
+            return AtlasL10n.string("route.ledger.title")
         case .permissions:
             return AtlasL10n.string("route.permissions.title")
         case .settings:
@@ -169,8 +171,8 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
             return AtlasL10n.string("route.fileorganizer.subtitle")
         case .apps:
             return AtlasL10n.string("route.apps.subtitle")
-        case .history:
-            return AtlasL10n.string("route.history.subtitle")
+        case .ledger:
+            return AtlasL10n.string("route.ledger.subtitle")
         case .permissions:
             return AtlasL10n.string("route.permissions.subtitle")
         case .settings:
@@ -190,8 +192,8 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
             return "folder.badge.gearshape"
         case .apps:
             return "square.stack.3d.up"
-        case .history:
-            return "clock.arrow.circlepath"
+        case .ledger:
+            return "list.bullet.rectangle"
         case .permissions:
             return "lock.shield"
         case .settings:

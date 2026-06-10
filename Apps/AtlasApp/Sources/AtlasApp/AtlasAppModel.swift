@@ -644,7 +644,7 @@ final class AtlasAppModel: ObservableObject {
             break  // File Organizer requires user to select folders and tap scan; no auto-scan on route change
         case .apps:
             await refreshApps()
-        case .history:
+        case .ledger:
             break
         case .permissions:
             await inspectPermissions()

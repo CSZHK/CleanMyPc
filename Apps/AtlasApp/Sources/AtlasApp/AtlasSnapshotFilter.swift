@@ -56,13 +56,13 @@ final class AtlasSnapshotFilter: ObservableObject {
     }
 
     func filteredTaskRuns(from snapshot: AtlasWorkspaceSnapshot) -> [TaskRun] {
-        filter(snapshot.taskRuns, route: .history) { task in
+        filter(snapshot.taskRuns, route: .ledger) { task in
             [task.kind.title, task.status.title, task.summary]
         }
     }
 
     func filteredRecoveryItems(from snapshot: AtlasWorkspaceSnapshot) -> [RecoveryItem] {
-        filter(snapshot.recoveryItems, route: .history) { item in
+        filter(snapshot.recoveryItems, route: .ledger) { item in
             [item.title, item.detail, item.originalPath]
         }
     }

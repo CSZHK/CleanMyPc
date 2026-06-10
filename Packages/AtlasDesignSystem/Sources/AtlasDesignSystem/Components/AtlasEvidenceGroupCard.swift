@@ -23,8 +23,9 @@ public enum AtlasEvidenceGroupDisplayMode: Sendable {
     case preview
     /// Full display with verified/divergent indicators used after uninstall completion.
     case completion
-    /// History-oriented display with timestamp context for recovery items.
-    case history
+    /// Ledger-oriented display with timestamp context for recovery items
+    /// (renamed from `history`, Calm Ledger §2.2).
+    case ledger
 }
 
 /// A compact card representing a single evidence group (e.g. Caches, Support Files)
@@ -118,7 +119,7 @@ public struct AtlasEvidenceGroupCard: View {
         case .completion:
             completionTrailing
 
-        case .history:
+        case .ledger:
             if group.items.isEmpty {
                 AtlasStatusChip(
                     AtlasL10n.string("evidence.legacy.badge"),
@@ -172,7 +173,7 @@ public struct AtlasEvidenceGroupCard: View {
         case .completion:
             let divergent = group.items.contains { !$0.verified }
             return divergent ? AtlasColor.warning.opacity(0.04) : AtlasColor.cardRaised
-        case .history:
+        case .ledger:
             return AtlasColor.cardRaised
         }
     }
@@ -184,7 +185,7 @@ public struct AtlasEvidenceGroupCard: View {
         case .completion:
             let divergent = group.items.contains { !$0.verified }
             return divergent ? AtlasColor.warning.opacity(0.2) : AtlasColor.border
-        case .history:
+        case .ledger:
             return AtlasColor.border
         }
     }

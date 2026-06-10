@@ -84,7 +84,7 @@ private extension AtlasRoute {
             return "3"
         case .apps:
             return "4"
-        case .history:
+        case .ledger:
             return "5"
         case .permissions:
             return "6"

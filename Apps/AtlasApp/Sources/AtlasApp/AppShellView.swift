@@ -90,7 +90,7 @@ struct AppShellView: View {
                 summary: model.taskCenterSummary
             ) {
                 model.closeTaskCenter()
-                model.navigate(to: .history)
+                model.navigate(to: .ledger)
             }
             .onExitCommand {
                 model.closeTaskCenter()
@@ -136,7 +136,7 @@ struct AppShellView: View {
                     model.navigate(to: .smartClean)
                 },
                 onNavigateToHistory: {
-                    model.navigate(to: .history)
+                    model.navigate(to: .ledger)
                 },
                 onNavigateToPermissions: {
                     model.navigate(to: .permissions)
@@ -240,7 +240,7 @@ struct AppShellView: View {
                     Task { await model.rescanLeftovers(appID: appID) }
                 }
             )
-        case .history:
+        case .ledger:
             HistoryFeatureView(
                 taskRuns: model.filteredTaskRuns,
                 recoveryItems: model.filteredRecoveryItems,
@@ -394,7 +394,7 @@ private extension AtlasRoute {
         case .smartClean:     return AtlasColor.success
         case .fileOrganizer:  return AtlasColor.accent
         case .apps:           return AtlasColor.info
-        case .history:        return AtlasColor.textSecondary
+        case .ledger:        return AtlasColor.textSecondary
         case .permissions:    return AtlasColor.warning
         case .settings:       return AtlasColor.textSecondary
         case .about:          return AtlasColor.brand
@@ -415,7 +415,7 @@ private extension AtlasRoute {
             return "3"
         case .apps:
             return "4"
-        case .history:
+        case .ledger:
             return "5"
         case .permissions:
             return "6"

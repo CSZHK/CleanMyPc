@@ -5,7 +5,7 @@ import SwiftUI
 struct TaskCenterView: View {
     let taskRuns: [TaskRun]
     let summary: String
-    let onOpenHistory: () -> Void
+    let onOpenLedger: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
@@ -52,13 +52,13 @@ struct TaskCenterView: View {
                 }
             }
 
-            Button(action: onOpenHistory) {
-                Label(AtlasL10n.string("taskcenter.openHistory"), systemImage: "arrow.right.circle.fill")
+            Button(action: onOpenLedger) {
+                Label(AtlasL10n.string("taskcenter.openLedger"), systemImage: "arrow.right.circle.fill")
             }
             .buttonStyle(.atlasPrimary)
             .keyboardShortcut(.defaultAction)
-            .accessibilityIdentifier("taskcenter.openHistory")
-            .accessibilityHint(AtlasL10n.string("taskcenter.openHistory.hint"))
+            .accessibilityIdentifier("taskcenter.openLedger")
+            .accessibilityHint(AtlasL10n.string("taskcenter.openLedger.hint"))
         }
         .padding(AtlasSpacing.xl)
         .frame(minWidth: 360, idealWidth: 430, maxWidth: 520)

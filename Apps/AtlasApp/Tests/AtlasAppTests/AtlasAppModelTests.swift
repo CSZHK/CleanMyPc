@@ -382,10 +382,10 @@ final class AtlasAppModelTests: XCTestCase {
         XCTAssertNotNil(model.currentAppPreview)
         XCTAssertEqual(model.currentPreviewedAppID, app.id)
 
-        model.navigate(to: .history)
+        model.navigate(to: .ledger)  // route renamed history→ledger (Calm Ledger §2.2)
         await model.restoreRecoveryItem(recoveryItem.id)
 
-        XCTAssertEqual(model.selection, .history)
+        XCTAssertEqual(model.selection, .ledger)
         XCTAssertNil(model.currentAppPreview)
         XCTAssertNil(model.currentPreviewedAppID)
         XCTAssertEqual(model.snapshot.apps.first?.leftoverItems, 1)

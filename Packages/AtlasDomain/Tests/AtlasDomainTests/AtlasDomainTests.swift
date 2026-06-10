@@ -8,11 +8,13 @@ final class AtlasDomainTests: XCTestCase {
     }
 
     func testPrimaryRoutesMatchFrozenMVP() {
+        // Unfrozen row: 「历史」→「台账」 (Calm Ledger §2.2 route rename, recorded
+        // in REQ-calm-ledger-redesign). All other rows remain frozen MVP values.
         XCTAssertEqual(
             AtlasRoute.allCases
                 .filter { $0 != .about }
                 .map(\.title),
-            ["概览", "智能清理", "文件整理", "应用", "历史", "权限", "设置"]
+            ["概览", "智能清理", "文件整理", "应用", "台账", "权限", "设置"]
         )
     }
 

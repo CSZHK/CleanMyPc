@@ -10,6 +10,8 @@
 "route.apps.subtitle" = "Review app footprints, leftovers, and uninstall plans before you remove anything.";
 "route.history.title" = "History";
 "route.history.subtitle" = "Track runs, outcomes, and recovery entry points.";
+"route.ledger.title" = "Ledger";
+"route.ledger.subtitle" = "Every run, its outcome, and its recovery entry point.";
 "route.permissions.title" = "Permissions";
 "route.permissions.subtitle" = "Explain why access is needed before asking for it.";
 "route.settings.title" = "Settings";
@@ -230,6 +232,8 @@
 "taskcenter.empty.detail" = "Try another search, or run a new Smart Clean scan to populate the task timeline.";
 "taskcenter.openHistory" = "Open History";
 "taskcenter.openHistory.hint" = "Moves to the History screen with the full audit trail and recovery items.";
+"taskcenter.openLedger" = "Open Ledger";
+"taskcenter.openLedger.hint" = "Moves to the Ledger screen with the full audit trail and recovery items.";
 "taskcenter.timeline.finished" = "Started %@ • Finished %@";
 "taskcenter.timeline.running" = "Started %@ • Still in progress";
 
@@ -1013,6 +1017,7 @@
 "sidebar.fileorganizer.dynamic" = "%d files found";
 "sidebar.apps.dynamic" = "%d apps";
 "sidebar.history.dynamic" = "%d items";
+"sidebar.ledger.dynamic" = "%d items";
 "sidebar.permissions.ready" = "✓ All granted";
 "sidebar.permissions.partial" = "%d/%d granted";
 

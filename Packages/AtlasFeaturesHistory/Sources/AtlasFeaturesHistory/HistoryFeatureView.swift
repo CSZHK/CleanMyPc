@@ -238,7 +238,7 @@ public struct HistoryFeatureView: View {
         }
 
         let remainingItems = visibleRecoveryItems.filter { !$0.isExpiringSoon }
-        let groupedItems = Dictionary(grouping: remainingItems, by: \.historyCategory)
+        let groupedItems = Dictionary(grouping: remainingItems, by: \.ledgerCategory)
 
         for category in HistoryRecoveryCategory.displayOrder {
             guard let items = groupedItems[category], !items.isEmpty else {
@@ -700,13 +700,13 @@ private enum HistoryRecoveryFilter: String, CaseIterable, Identifiable {
         case .expiring:
             return item.isExpiringSoon
         case .apps:
-            return item.historyCategory == .apps
+            return item.ledgerCategory == .apps
         case .developer:
-            return item.historyCategory == .developer
+            return item.ledgerCategory == .developer
         case .browsers:
-            return item.historyCategory == .browsers
+            return item.ledgerCategory == .browsers
         case .system:
-            return item.historyCategory == .system
+            return item.ledgerCategory == .system
         }
     }
 }
@@ -876,8 +876,8 @@ private struct HistoryTaskDetailView: View {
             }
 
             AtlasCallout(
-                title: taskRun.status.historyCalloutTitle,
-                detail: taskRun.status.historyCalloutDetail,
+                title: taskRun.status.ledgerCalloutTitle,
+                detail: taskRun.status.ledgerCalloutDetail,
                 tone: taskRun.status.atlasTone,
                 systemImage: taskRun.status.atlasTone.symbol
             )
@@ -1042,7 +1042,7 @@ private struct HistoryRecoveryDetailView: View {
                             if let snapshot = payload.uninstallSnapshot {
                                 VStack(alignment: .leading, spacing: AtlasSpacing.md) {
                                     ForEach(snapshot.groups) { group in
-                                        AtlasEvidenceGroupCard(group: group, mode: .history)
+                                        AtlasEvidenceGroupCard(group: group, mode: .ledger)
                                     }
                                 }
                             } else if payload.uninstallEvidence.reviewOnlyGroupCount > 0 {
@@ -1289,7 +1289,7 @@ private extension RecoveryItem {
         return expiresAt <= cutoff
     }
 
-    var historyCategory: HistoryRecoveryCategory {
+    var ledgerCategory: HistoryRecoveryCategory {
         switch payload {
         case .app:
             return .apps
@@ -1355,7 +1355,7 @@ private enum HistoryRecoveryCategory: String, CaseIterable {
 }
 
 private extension TaskStatus {
-    var historyCalloutTitle: String {
+    var ledgerCalloutTitle: String {
         switch self {
         case .queued:
             return AtlasL10n.string("history.detail.task.callout.queued.title")
@@ -1368,7 +1368,7 @@ private extension TaskStatus {
         }
     }
 
-    var historyCalloutDetail: String {
+    var ledgerCalloutDetail: String {
         switch self {
         case .queued:
             return AtlasL10n.string("history.detail.task.callout.queued.detail")

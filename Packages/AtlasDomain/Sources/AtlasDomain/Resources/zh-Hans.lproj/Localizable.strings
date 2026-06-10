@@ -10,6 +10,8 @@
 "route.apps.subtitle" = "先查看应用占用、残留和卸载计划，再决定是否移除。";
 "route.history.title" = "历史";
 "route.history.subtitle" = "跟踪任务、结果和恢复入口。";
+"route.ledger.title" = "台账";
+"route.ledger.subtitle" = "记录每次任务的结果与恢复入口。";
 "route.permissions.title" = "权限";
 "route.permissions.subtitle" = "先解释原因，再请求访问。";
 "route.settings.title" = "设置";
@@ -230,6 +232,8 @@
 "taskcenter.empty.detail" = "试试新的搜索词，或者运行一次智能清理扫描来填充任务时间线。";
 "taskcenter.openHistory" = "打开历史";
 "taskcenter.openHistory.hint" = "进入历史页面，查看完整审计轨迹和恢复项。";
+"taskcenter.openLedger" = "打开台账";
+"taskcenter.openLedger.hint" = "进入台账页面，查看完整审计轨迹和恢复项。";
 "taskcenter.timeline.finished" = "开始于 %@ • 结束于 %@";
 "taskcenter.timeline.running" = "开始于 %@ • 仍在进行中";
 
@@ -1013,6 +1017,7 @@
 "sidebar.fileorganizer.dynamic" = "%d 个文件";
 "sidebar.apps.dynamic" = "%d 个应用";
 "sidebar.history.dynamic" = "%d 项";
+"sidebar.ledger.dynamic" = "%d 项";
 "sidebar.permissions.ready" = "✓ 已全部授权";
 "sidebar.permissions.partial" = "%d/%d 已授权";
 

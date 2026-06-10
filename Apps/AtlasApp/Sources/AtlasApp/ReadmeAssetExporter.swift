@@ -234,14 +234,14 @@ private struct AtlasReadmeAssetExporter {
             fileName: "atlas-apps.png"
         )
         try renderView(
-            AtlasScreenshotShell(activeRoute: .history) {
+            AtlasScreenshotShell(activeRoute: .ledger) {
                 HistoryFeatureView(
                     taskRuns: state.snapshot.taskRuns,
                     recoveryItems: state.snapshot.recoveryItems,
                     restoringItemID: nil
                 )
             },
-            fileName: "atlas-history.png"
+            fileName: "atlas-ledger.png"
         )
 
         return 5
@@ -295,7 +295,7 @@ private extension AtlasRoute {
         case .smartClean:     return AtlasColor.success
         case .fileOrganizer:  return AtlasColor.accent
         case .apps:           return AtlasColor.info
-        case .history:        return AtlasColor.textSecondary
+        case .ledger:         return AtlasColor.textSecondary
         case .permissions:    return AtlasColor.warning
         case .settings:       return AtlasColor.textSecondary
         case .about:          return AtlasColor.brand
