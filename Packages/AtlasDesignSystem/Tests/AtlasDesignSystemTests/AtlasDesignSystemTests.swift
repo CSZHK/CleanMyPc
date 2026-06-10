@@ -190,6 +190,21 @@ final class AtlasDesignSystemTests: XCTestCase {
         let _ = AtlasColor.heroSurface  // v3: no longer @MainActor — plain static let
     }
 
+    /// Shared fixture: every colorset name shipped in AtlasColors.xcassets.
+    /// Single source for the drift guard (`testAllColorsetTokensResolve`) and the
+    /// fallback-table parity check (`testFallbackTableCoversAllColorsets`).
+    static let allColorsetNames: [String] = [
+        "AtlasBrand", "AtlasBrandHover", "AtlasAccent",
+        "AtlasInk", "AtlasInkData", "AtlasTextBody", "AtlasTextSecondary", "AtlasTextTertiary",
+        "AtlasCanvasTop", "AtlasCanvasBottom",
+        "AtlasSurface", "AtlasSurfaceSubdued", "AtlasSurfaceInput", "AtlasSurfaceBorder",
+        "AtlasLedgerPaper", "AtlasLedgerInk", "AtlasLedgerSecondary", "AtlasLedgerBorder", "AtlasLedgerRule",
+        "AtlasSafe", "AtlasSafeFill", "AtlasReview", "AtlasReviewFill",
+        "AtlasDanger", "AtlasDangerFill", "AtlasInfo", "AtlasInfoFill",
+        "AtlasActionBarBg", "AtlasActionBarText", "AtlasActionBarData",
+        "AtlasCardRaised", "AtlasHeroSurface",
+    ]
+
     func testAllColorsetTokensResolve() {
         // Guard the colorset-name ↔ Color("…") string seam: a typo'd name renders
         // clear at runtime while every existence test stays green.
@@ -197,17 +212,7 @@ final class AtlasDesignSystemTests: XCTestCase {
         // so compiled-catalog lookup (NSColor(named:)) can only succeed in Xcode-built
         // bundles. Accept either a compiled hit or the raw colorset payload so the
         // drift guard holds on both build paths.
-        let names = [
-            "AtlasBrand", "AtlasBrandHover", "AtlasAccent",
-            "AtlasInk", "AtlasInkData", "AtlasTextBody", "AtlasTextSecondary", "AtlasTextTertiary",
-            "AtlasCanvasTop", "AtlasCanvasBottom",
-            "AtlasSurface", "AtlasSurfaceSubdued", "AtlasSurfaceInput", "AtlasSurfaceBorder",
-            "AtlasLedgerPaper", "AtlasLedgerInk", "AtlasLedgerSecondary", "AtlasLedgerBorder", "AtlasLedgerRule",
-            "AtlasSafe", "AtlasSafeFill", "AtlasReview", "AtlasReviewFill",
-            "AtlasDanger", "AtlasDangerFill", "AtlasInfo", "AtlasInfoFill",
-            "AtlasActionBarBg", "AtlasActionBarText", "AtlasActionBarData",
-            "AtlasCardRaised", "AtlasHeroSurface",
-        ]
+        let names = Self.allColorsetNames
         XCTAssertEqual(names.count, 32)
         for name in names {
             let compiled = NSColor(named: name, bundle: .module) != nil
@@ -221,8 +226,9 @@ final class AtlasDesignSystemTests: XCTestCase {
     }
 
     func testFallbackTableCoversAllColorsets() {
-        // Generated fallback (CLI runs) must stay 1:1 with the colorset name list.
-        XCTAssertEqual(AtlasColorFallback.table.count, 32)
+        // Generated fallback (CLI runs) must stay 1:1 with the colorset name list —
+        // set equality catches both missing entries AND stray/renamed ones.
+        XCTAssertEqual(Set(AtlasColorFallback.table.keys), Set(Self.allColorsetNames))
         let brand = AtlasColorFallback.table["AtlasBrand"]
         XCTAssertNotNil(brand)
         XCTAssertEqual(brand!.light.r, 15.0 / 255.0, accuracy: 0.0001)
@@ -232,23 +238,19 @@ final class AtlasDesignSystemTests: XCTestCase {
     }
 
     func testAtlasColorFallbackPathProducesRenderableColor() {
-        // In SwiftPM test runs the compiled catalog is absent — exercise the fallback path
-        // end-to-end and pin its resolved sRGB components for both appearances.
-        guard NSColor(named: "AtlasBrand", bundle: .module) == nil else {
-            return // compiled catalog present (Xcode test run) — fallback path not reachable here
-        }
-        let entry = AtlasColorFallback.table["AtlasBrand"]!
-        let dynamic = NSColor(name: nil) { appearance in
-            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-            let c = isDark ? entry.dark : entry.light
-            return NSColor(srgbRed: c.r, green: c.g, blue: c.b, alpha: c.a)
-        }
+        // Directly exercises the PRODUCTION fallback branch (atlasFallbackNSColor is
+        // exactly what atlasColor(_:) consumes when the compiled catalog is absent)
+        // and pins its resolved sRGB components under the aqua appearance.
+        let dynamic = atlasFallbackNSColor("AtlasBrand")
+        XCTAssertNotNil(dynamic, "AtlasBrand must have a generated fallback entry")
         var resolved = NSColor.black
         NSAppearance(named: .aqua)!.performAsCurrentDrawingAppearance {
-            resolved = dynamic.usingColorSpace(.sRGB) ?? .black
+            resolved = dynamic!.usingColorSpace(.sRGB) ?? .black
         }
         XCTAssertEqual(resolved.redComponent, 15.0 / 255.0, accuracy: 0.001)
         XCTAssertEqual(resolved.greenComponent, 118.0 / 255.0, accuracy: 0.001)
+        XCTAssertEqual(resolved.blueComponent, 110.0 / 255.0, accuracy: 0.001)
+        XCTAssertNil(atlasFallbackNSColor("NoSuchToken"), "unknown tokens must return nil (catalog semantics preserved)")
     }
 
     func testThreeVoiceTypographyExists() {
