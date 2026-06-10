@@ -70,6 +70,9 @@ private struct ShimmerModifier: ViewModifier {
         content
             .overlay(
                 GeometryReader { proxy in
+                    // G6 token review: the white sweep stays — it is a lighting
+                    // EFFECT over the `border`-token placeholder (appearance-
+                    // agnostic highlight), not a composed palette color.
                     let highlight = Color.white.opacity(0.15)
                     let base = Color.clear
 

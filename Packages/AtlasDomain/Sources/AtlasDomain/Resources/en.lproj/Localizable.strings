@@ -1069,3 +1069,9 @@
 "ds.ledger.status.superseded" = "Superseded";
 "ds.ledger.entry.a11y" = "Plan number %d, %@";
 "ds.banner.dismiss" = "Dismiss";
+"ds.toast.dismiss" = "Dismiss notification";
+"ds.toast.open" = "Open details";
+"ds.tone.info" = "Info";
+"ds.tone.success" = "Success";
+"ds.tone.warning" = "Warning";
+"ds.tone.danger" = "Error";

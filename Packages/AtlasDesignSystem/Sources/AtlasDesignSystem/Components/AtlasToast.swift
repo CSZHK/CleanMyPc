@@ -1,24 +1,56 @@
+import AtlasDomain
 import SwiftUI
 
 // MARK: - Toast Item Model
 
 /// A data model representing a single toast notification.
+///
+/// G6 extensions (spec §4.3 「已入账 №N · 撤销」): an optional inline action
+/// (`actionTitle` + `onAction`, e.g. undo) and an optional whole-toast tap
+/// (`onTap`, e.g. jump to the ledger entry — 回链红线 §1.6). All default to
+/// nil, so existing call sites compile unchanged. Closures are
+/// `@MainActor @Sendable` so MainActor callers can capture their models.
+///
+/// Equality intentionally ignores the closures (function values are not
+/// equatable); identity is carried by `id` + visible content.
 public struct AtlasToastItem: Identifiable, Equatable, Sendable {
     public var id: UUID
     public var message: String
     public var tone: AtlasTone
     public var systemImage: String?
+    public var actionTitle: String?
+    public var onAction: (@MainActor @Sendable () -> Void)?
+    public var onTap: (@MainActor @Sendable () -> Void)?
 
     public init(
         id: UUID = UUID(),
         message: String,
         tone: AtlasTone = .neutral,
-        systemImage: String? = nil
+        systemImage: String? = nil,
+        actionTitle: String? = nil,
+        onAction: (@MainActor @Sendable () -> Void)? = nil,
+        onTap: (@MainActor @Sendable () -> Void)? = nil
     ) {
         self.id = id
         self.message = message
         self.tone = tone
         self.systemImage = systemImage
+        self.actionTitle = actionTitle
+        self.onAction = onAction
+        self.onTap = onTap
+    }
+
+    public static func == (lhs: AtlasToastItem, rhs: AtlasToastItem) -> Bool {
+        lhs.id == rhs.id
+            && lhs.message == rhs.message
+            && lhs.tone == rhs.tone
+            && lhs.systemImage == rhs.systemImage
+            && lhs.actionTitle == rhs.actionTitle
+    }
+
+    /// The inline action renders only when both title and handler exist.
+    public static func showsAction(title: String?, action: (@MainActor @Sendable () -> Void)?) -> Bool {
+        title != nil && action != nil
     }
 }
 
@@ -100,6 +132,19 @@ private struct AtlasToastRow: View {
 
             Spacer(minLength: AtlasSpacing.sm)
 
+            // Inline action (e.g. 撤销) — does NOT auto-dismiss; the caller
+            // owns the `items` binding and removes the toast if appropriate.
+            if AtlasToastItem.showsAction(title: item.actionTitle, action: item.onAction),
+               let actionTitle = item.actionTitle, let onAction = item.onAction {
+                Button(actionTitle) {
+                    onAction()
+                }
+                .buttonStyle(.plain)
+                .font(AtlasTypography.caption)
+                .foregroundStyle(AtlasColor.brand)
+                .accessibilityLabel(actionTitle)
+            }
+
             // Manual close button
             Button {
                 onDismiss()
@@ -111,8 +156,7 @@ private struct AtlasToastRow: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Dismiss")
-            .accessibilityHint("Close this notification")
+            .accessibilityLabel(AtlasL10n.string("ds.toast.dismiss"))
         }
         .padding(.horizontal, AtlasSpacing.lg)
         .frame(height: Self.fixedHeight)
@@ -135,6 +179,12 @@ private struct AtlasToastRow: View {
             RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
                 .strokeBorder(item.tone.border, lineWidth: 1)
         )
+        .contentShape(RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous))
+        .onTapGesture {
+            // Whole-toast tap (回链红线 §1.6: 「已入账 №N」 must reach the ledger).
+            // Inner buttons win hit-testing over this gesture.
+            item.onTap?()
+        }
         .onHover { hovering in
             isHovered = hovering
         }
@@ -143,7 +193,8 @@ private struct AtlasToastRow: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(item.tone.accessibilityLabel): \(item.message)")
-        .accessibilityHint("Notification. Dismiss button available.")
+        .accessibilityHint(item.onTap != nil ? AtlasL10n.string("ds.toast.open") : "")
+        .accessibilityAddTraits(item.onTap != nil ? .isButton : [])
     }
 
     private func scheduleAutoDismiss() {
@@ -157,13 +208,14 @@ private struct AtlasToastRow: View {
 // MARK: - AtlasTone Accessibility Convenience
 
 extension AtlasTone {
-    /// Human-readable label for accessibility announcements.
+    /// Human-readable label for accessibility announcements (localized via
+    /// `ds.tone.*` — was hardcoded English before the G6 pass).
     var accessibilityLabel: String {
         switch self {
-        case .neutral: return "Info"
-        case .success: return "Success"
-        case .warning: return "Warning"
-        case .danger:  return "Error"
+        case .neutral: return AtlasL10n.string("ds.tone.info")
+        case .success: return AtlasL10n.string("ds.tone.success")
+        case .warning: return AtlasL10n.string("ds.tone.warning")
+        case .danger:  return AtlasL10n.string("ds.tone.danger")
         }
     }
 }

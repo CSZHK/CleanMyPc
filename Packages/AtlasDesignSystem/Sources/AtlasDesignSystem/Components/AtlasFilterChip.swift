@@ -35,8 +35,11 @@ public struct AtlasFilterChip: View {
                         .padding(.horizontal, AtlasSpacing.xxs)
                         .padding(.vertical, 1)
                         .background(
+                            // Selected badge keeps a white overlay: it is white-on-brand
+                            // foreground decoration (like the chip's white text), not a
+                            // palette composition — no token exists for it (G6 note).
                             Capsule(style: .continuous)
-                                .fill(isSelected ? Color.white.opacity(0.2) : Color.primary.opacity(0.06))
+                                .fill(isSelected ? Color.white.opacity(0.2) : AtlasColor.surfaceInput)
                         )
                 }
             }
@@ -44,8 +47,10 @@ public struct AtlasFilterChip: View {
             .padding(.horizontal, AtlasSpacing.md)
             .padding(.vertical, AtlasSpacing.xs)
             .background(
+                // G6 token pass: resting chips sit on the surfaceSubdued row tone
+                // (was a 4% brand wash composed via opacity).
                 Capsule(style: .continuous)
-                    .fill(isSelected ? AtlasColor.brand : AtlasColor.brand.opacity(0.04))
+                    .fill(isSelected ? AtlasColor.brand : AtlasColor.surfaceSubdued)
             )
             .overlay(
                 Capsule(style: .continuous)

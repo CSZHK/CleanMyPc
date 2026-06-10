@@ -1,6 +1,22 @@
 import AtlasDomain
 import SwiftUI
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DEPRECATED (Calm Ledger M2, G6): absorbed by `AtlasEvidencePanel` — this file
+// is deleted with the M3 Apps migration. Do NOT adopt in new code; build the
+// single/aggregate/executing evidence states on `AtlasEvidencePanel` instead.
+//
+// The `@available(*, deprecated)` marker lives on the typealias below rather
+// than on the struct itself: two pre-M3 consumers remain (AppsFeatureView:629,
+// HistoryFeatureView:1045) and Swift has no per-use deprecation exemption, so
+// marking the struct would break the zero-warning build until M3 (verified:
+// 2 warnings). M3 deletes the consumers, then this whole file.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Deprecation marker for ``AtlasEvidenceGroupCard`` (see file header).
+@available(*, deprecated, message: "Absorbed by AtlasEvidencePanel — remove with M3 Apps migration")
+public typealias AtlasLegacyEvidenceGroupCard = AtlasEvidenceGroupCard
+
 /// Controls how an ``AtlasEvidenceGroupCard`` renders its content.
 public enum AtlasEvidenceGroupDisplayMode: Sendable {
     /// Compact inline display used in uninstall preview cards.
@@ -13,6 +29,9 @@ public enum AtlasEvidenceGroupDisplayMode: Sendable {
 
 /// A compact card representing a single evidence group (e.g. Caches, Support Files)
 /// in the app uninstall workflow.  Adapts its content based on ``mode``.
+///
+/// > Deprecated: Absorbed by ``AtlasEvidencePanel`` — removed with the M3 Apps
+/// > migration (see file header for why the attribute sits on the typealias).
 public struct AtlasEvidenceGroupCard: View {
     let group: AtlasAppEvidenceGroup
     let mode: AtlasEvidenceGroupDisplayMode

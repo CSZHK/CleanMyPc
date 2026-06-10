@@ -38,7 +38,7 @@ public struct AtlasCircularProgress: View {
             if showTrack {
                 Circle()
                     .stroke(
-                        Color.primary.opacity(0.06),
+                        AtlasColor.border, // G6 token pass: was Color.primary.opacity(0.06)
                         style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                     )
             }
@@ -71,11 +71,18 @@ public struct AtlasCircularProgress: View {
         }
     }
 
+    /// Conic ring gradient (spec §4.3: AngularGradient, not linear).
+    ///
+    /// Seam handling (G6 decision: 起止同色): the first and last stops share
+    /// the same color, so the 0°/360° wrap point blends invisibly at 100% —
+    /// the lighter band sits mid-arc instead of at the seam. A round line cap
+    /// alone cannot hide a first≠last discontinuity once the ring closes.
+    /// Defined before `rotationEffect(-90°)`, so the wrap point (and the start
+    /// of the arc) sits at 12 o'clock.
     private var gradientForTone: some ShapeStyle {
-        LinearGradient(
-            colors: [tone.tint, tone.tint.opacity(0.6)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
+        AngularGradient(
+            gradient: Gradient(colors: [tone.tint, tone.tint.opacity(0.6), tone.tint]),
+            center: .center
         )
     }
 }

@@ -176,4 +176,47 @@ final class CalmLedgerBatchGTests: XCTestCase {
         AtlasActionBarHeightKey.reduce(value: &value) { 80 }
         XCTAssertEqual(value, 80)
     }
+
+    // MARK: - G6 AtlasToast action support
+
+    func testToastActionSupport() {
+        // Legacy construction shape still compiles (zero-change call sites).
+        let legacy = AtlasToastItem(message: "已完成", tone: .success)
+        XCTAssertNil(legacy.actionTitle)
+        XCTAssertNil(legacy.onAction)
+        XCTAssertNil(legacy.onTap)
+
+        // Action + whole-toast tap closures attach and fire.
+        var undone = 0
+        var opened = 0
+        let id = UUID()
+        let entry = AtlasToastItem(
+            id: id,
+            message: "已入账 №42",
+            tone: .success,
+            actionTitle: "撤销",
+            onAction: { undone += 1 },
+            onTap: { opened += 1 }
+        )
+        entry.onAction?()
+        entry.onTap?()
+        XCTAssertEqual([undone, opened], [1, 1])
+
+        // Action renders only with BOTH title and handler (fail-closed).
+        XCTAssertTrue(AtlasToastItem.showsAction(title: "撤销", action: {}))
+        XCTAssertFalse(AtlasToastItem.showsAction(title: nil, action: {}))
+        XCTAssertFalse(AtlasToastItem.showsAction(title: "撤销", action: nil))
+
+        // Equality ignores closures (visible content + id only) — the
+        // container's `.animation(value: items)` stays stable across
+        // re-created closures.
+        let sameContent = AtlasToastItem(
+            id: id, message: "已入账 №42", tone: .success,
+            actionTitle: "撤销", onAction: { }, onTap: { }
+        )
+        XCTAssertEqual(entry, sameContent)
+        var otherTitle = sameContent
+        otherTitle.actionTitle = "重试"
+        XCTAssertNotEqual(entry, otherTitle)
+    }
 }

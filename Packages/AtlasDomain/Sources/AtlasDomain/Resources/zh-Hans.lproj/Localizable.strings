@@ -1069,3 +1069,9 @@
 "ds.ledger.status.superseded" = "已作废";
 "ds.ledger.entry.a11y" = "计划编号 %d，%@";
 "ds.banner.dismiss" = "忽略";
+"ds.toast.dismiss" = "关闭通知";
+"ds.toast.open" = "打开详情";
+"ds.tone.info" = "信息";
+"ds.tone.success" = "成功";
+"ds.tone.warning" = "警告";
+"ds.tone.danger" = "错误";

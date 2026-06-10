@@ -20,12 +20,32 @@ public enum AtlasTone: Sendable {
         }
     }
 
+    /// Soft chip/callout ground — semantic fill colorsets (G6 token pass),
+    /// replacing the old `tint.opacity(0.12)` composition.
+    ///
+    /// `.neutral` maps to `successFill`: neutral's tint IS `brand`, which is
+    /// the same hue family as the safe foreground (identical hex in light
+    /// mode), so `successFill` is the brand-family soft fill. Verified ≥4.5:1
+    /// against `tint` in both appearances (light 4.91:1 — gated pair; dark
+    /// 5.24:1 — computed; `infoFill` would clash teal-on-blue).
     public var fill: Color {
-        tint.opacity(0.12)
+        switch self {
+        case .neutral:
+            return AtlasColor.successFill
+        case .success:
+            return AtlasColor.successFill
+        case .warning:
+            return AtlasColor.warningFill
+        case .danger:
+            return AtlasColor.dangerFill
+        }
     }
 
+    /// Softer ground now aliases `fill` (G6): the 8% composition is gone and
+    /// both levels resolve to the gated semantic colorsets. Kept as a separate
+    /// accessor for source compatibility; collapse during M3 if unused.
     public var softFill: Color {
-        tint.opacity(0.08)
+        fill
     }
 
     public var border: Color {
@@ -836,12 +856,13 @@ public struct AtlasEmptyState: View {
         .frame(maxWidth: .infinity)
         .padding(AtlasSpacing.section)
         .background(
+            // G6 token pass: surfaceSubdued/border replace primary-opacity mixes.
             RoundedRectangle(cornerRadius: AtlasRadius.xl, style: .continuous)
-                .fill(Color.primary.opacity(0.03))
+                .fill(AtlasColor.surfaceSubdued)
         )
         .overlay(
             RoundedRectangle(cornerRadius: AtlasRadius.xl, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                .strokeBorder(AtlasColor.border, lineWidth: 1)
         )
         .accessibilityElement(children: onAction != nil ? .contain : .ignore)
         .accessibilityLabel(Text(title))
@@ -854,6 +875,7 @@ public struct AtlasLoadingState: View {
     private let detail: String
     private let progress: Double?
     @State private var pulsePhase = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(title: String, detail: String, progress: Double? = nil) {
         self.title = title
@@ -887,14 +909,17 @@ public struct AtlasLoadingState: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AtlasSpacing.xl)
         .background(
+            // G6 token pass: surfaceSubdued ground (primary-opacity mix removed);
+            // the breath animates the TOKEN's opacity, not a composed color.
             RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
-                .fill(Color.primary.opacity(pulsePhase ? 0.05 : 0.03))
+                .fill(AtlasColor.surfaceSubdued.opacity(pulsePhase ? 1.0 : 0.7))
         )
         .overlay(
             RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                .strokeBorder(AtlasColor.border, lineWidth: 1)
         )
         .onAppear {
+            guard !reduceMotion else { return } // breathing pulse is decorative
             withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
                 pulsePhase = true
             }
