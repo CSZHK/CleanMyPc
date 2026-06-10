@@ -825,7 +825,7 @@ extension AtlasAppModelTests {
         XCTAssertFalse(model.isFileOrganizerPlanFresh)
 
         // Step 2: Preview
-        await model.refreshFileOrganizerPreview()
+        await model.refreshFileOrganizerPreview(entryIDs: [])
 
         XCTAssertTrue(model.isFileOrganizerPlanFresh)
         XCTAssertTrue(model.canExecuteFileOrganizerPlan)
@@ -905,7 +905,7 @@ extension AtlasAppModelTests {
         let model = AtlasAppModel(repository: repository, workerService: worker)
 
         await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
-        await model.refreshFileOrganizerPreview()
+        await model.refreshFileOrganizerPreview(entryIDs: [])
         XCTAssertTrue(model.isFileOrganizerPlanFresh)
 
         await model.dryRunFileOrganizerPlan()
@@ -952,7 +952,7 @@ extension AtlasAppModelTests {
 
         // Full pipeline: scan → preview → execute
         await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
-        await model.refreshFileOrganizerPreview()
+        await model.refreshFileOrganizerPreview(entryIDs: [])
         await model.executeFileOrganizerPlan()
 
         // Verify file moved
@@ -1013,7 +1013,7 @@ extension AtlasAppModelTests {
 
         // First scan + preview
         await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
-        await model.refreshFileOrganizerPreview()
+        await model.refreshFileOrganizerPreview(entryIDs: [])
         XCTAssertTrue(model.isFileOrganizerPlanFresh)
         XCTAssertEqual(model.currentFileOrganizerPlan.items.count, 1)
 
@@ -1069,7 +1069,7 @@ extension AtlasAppModelTests {
         XCTAssertFalse(model.isWorkflowBusy)
 
         // After preview completes
-        await model.refreshFileOrganizerPreview()
+        await model.refreshFileOrganizerPreview(entryIDs: [])
         XCTAssertFalse(model.isWorkflowBusy)
 
         // After execute completes
@@ -1088,7 +1088,7 @@ extension AtlasAppModelTests {
 private struct E2EFileOrganizerScanner: AtlasFileOrganizerScanning {
     let entries: [FileOrganizerEntry]
 
-    func scanFolders(_ paths: [String]) async throws -> FileOrganizerScanResult {
+    func scanFolders(_ paths: [String], destinationBasePath: String = "~/Organized", recursive: Bool = false) async throws -> FileOrganizerScanResult {
         var counts: [FileOrganizerCategory: Int] = [:]
         for entry in entries { counts[entry.category, default: 0] += 1 }
         return FileOrganizerScanResult(
@@ -1101,7 +1101,7 @@ private struct E2EFileOrganizerScanner: AtlasFileOrganizerScanning {
 }
 
 private struct FailingE2EFileOrganizerScanner: AtlasFileOrganizerScanning {
-    func scanFolders(_ paths: [String]) async throws -> FileOrganizerScanResult {
+    func scanFolders(_ paths: [String], destinationBasePath: String = "~/Organized", recursive: Bool = false) async throws -> FileOrganizerScanResult {
         throw NSError(domain: "AtlasAppModelTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Scan unavailable."])
     }
 }
