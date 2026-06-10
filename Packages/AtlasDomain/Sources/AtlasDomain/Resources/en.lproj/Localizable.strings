@@ -1068,3 +1068,4 @@
 "ds.ledger.status.archived" = "Archived";
 "ds.ledger.status.superseded" = "Superseded";
 "ds.ledger.entry.a11y" = "Plan number %d, %@";
+"ds.banner.dismiss" = "Dismiss";

@@ -1068,3 +1068,4 @@
 "ds.ledger.status.archived" = "已归档";
 "ds.ledger.status.superseded" = "已作废";
 "ds.ledger.entry.a11y" = "计划编号 %d，%@";
+"ds.banner.dismiss" = "忽略";
