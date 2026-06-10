@@ -1062,3 +1062,9 @@
 "ds.evidence.executing.title" = "Execution progress";
 "ds.evidence.executing.detail.show" = "Show reason";
 "ds.evidence.executing.detail.hide" = "Hide reason";
+"ds.ledger.status.inProgress" = "In progress";
+"ds.ledger.status.recoverable" = "Restore point · %d days";
+"ds.ledger.status.verified" = "Verified";
+"ds.ledger.status.archived" = "Archived";
+"ds.ledger.status.superseded" = "Superseded";
+"ds.ledger.entry.a11y" = "Plan number %d, %@";

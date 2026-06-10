@@ -1062,3 +1062,9 @@
 "ds.evidence.executing.title" = "执行进度";
 "ds.evidence.executing.detail.show" = "展开原因";
 "ds.evidence.executing.detail.hide" = "收起原因";
+"ds.ledger.status.inProgress" = "进行中";
+"ds.ledger.status.recoverable" = "恢复点 · %d 天";
+"ds.ledger.status.verified" = "已验证";
+"ds.ledger.status.archived" = "已归档";
+"ds.ledger.status.superseded" = "已作废";
+"ds.ledger.entry.a11y" = "计划编号 %d，%@";

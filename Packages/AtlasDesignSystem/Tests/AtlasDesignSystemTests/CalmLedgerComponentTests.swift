@@ -134,6 +134,61 @@ final class CalmLedgerComponentTests: XCTestCase {
         XCTAssertNotNil(bar.body)
     }
 
+    // MARK: - F4 AtlasLedgerTimeline
+
+    private func ledgerEntry(_ id: String, number: Int, status: AtlasLedgerEntryStatus) -> AtlasLedgerEntryModel {
+        AtlasLedgerEntryModel(id: id, number: number, title: "清理计划", detail: "d", metricText: nil, status: status)
+    }
+
+    func testLedgerPinningOrder() {
+        let entries = [
+            ledgerEntry("a", number: 40, status: .verified),
+            ledgerEntry("b", number: 42, status: .inProgress),
+            ledgerEntry("c", number: 43, status: .recoverable(daysLeft: 5)),
+            ledgerEntry("d", number: 41, status: .archived),
+            ledgerEntry("e", number: 39, status: .inProgress),
+        ]
+        let ordered = AtlasLedgerTimeline.pinnedOrder(entries)
+        // inProgress pinned first (№ desc within the pin group), rest by № desc.
+        XCTAssertEqual(ordered.map(\.id), ["b", "e", "c", "d", "a"])
+        XCTAssertEqual(ordered.map(\.number), [42, 39, 43, 41, 40])
+        // Empty input stays empty (no crash).
+        XCTAssertTrue(AtlasLedgerTimeline.pinnedOrder([]).isEmpty)
+    }
+
+    func testLedgerStatusBadgeMapping() {
+        let recoverable = AtlasLedgerTimeline.badge(for: .recoverable(daysLeft: 5), language: .zhHans)
+        XCTAssertEqual(recoverable.text, "恢复点 · 5 天")
+        XCTAssertEqual(recoverable.symbol, "checkmark.shield.fill") // ⛨ teal shield, never red
+        XCTAssertEqual(recoverable.tone, .neutral) // neutral → brand teal
+
+        let recoverableEn = AtlasLedgerTimeline.badge(for: .recoverable(daysLeft: 7), language: .en)
+        XCTAssertEqual(recoverableEn.text, "Restore point · 7 days")
+
+        let verified = AtlasLedgerTimeline.badge(for: .verified, language: .zhHans)
+        XCTAssertEqual(verified.text, "已验证")
+        XCTAssertEqual(verified.symbol, "checkmark") // ✓
+        XCTAssertEqual(verified.tone, .success)
+
+        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .archived, language: .zhHans).text, "已归档")
+        XCTAssertNil(AtlasLedgerTimeline.badge(for: .archived, language: .zhHans).tone, "archived renders muted")
+        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .superseded, language: .en).text, "Superseded")
+        XCTAssertNil(AtlasLedgerTimeline.badge(for: .superseded, language: .en).tone)
+        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .inProgress, language: .zhHans).text, "进行中")
+        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .inProgress, language: .zhHans).tone, .warning) // running precedent
+    }
+
+    func testLedgerEntryA11yLabel() {
+        XCTAssertEqual(
+            AtlasLedgerTimeline.accessibilityLabel(number: 42, title: "清理计划", language: .zhHans),
+            "计划编号 42，清理计划"
+        )
+        XCTAssertEqual(
+            AtlasLedgerTimeline.accessibilityLabel(number: 42, title: "Cleanup plan", language: .en),
+            "Plan number 42, Cleanup plan"
+        )
+    }
+
     func testStageBarCircledNumeralAndHighlightClamp() {
         XCTAssertEqual(AtlasStageBar.circledNumeral(1), "①")
         XCTAssertEqual(AtlasStageBar.circledNumeral(4), "④")
