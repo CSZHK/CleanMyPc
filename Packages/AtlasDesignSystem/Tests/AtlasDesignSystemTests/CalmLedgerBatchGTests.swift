@@ -110,4 +110,26 @@ final class CalmLedgerBatchGTests: XCTestCase {
         let minimal = AtlasErrorState(title: "t", message: "m")
         XCTAssertNotNil(minimal.body)
     }
+
+    // MARK: - G4 AtlasDataText
+
+    func testCountUpTextConstruction() {
+        // Default font is the dataMetric token; custom fonts pass through.
+        let metric = AtlasCountUpText(text: "3.4 GB")
+        XCTAssertEqual(metric.text, "3.4 GB")
+        XCTAssertNotNil(metric.body)
+        let hero = AtlasCountUpText(text: "42%", font: AtlasTypography.dataHero)
+        XCTAssertNotNil(hero.body)
+        // §1.5 countUp: digits roll only when motion is allowed.
+        XCTAssertEqual(AtlasCountUpText.contentTransition(reduceMotion: false), .numericText())
+        XCTAssertEqual(AtlasCountUpText.contentTransition(reduceMotion: true), .identity)
+    }
+
+    func testDataVoiceModifiersApply() {
+        // Construction smoke: the data-voice entry points wrap any view.
+        let body: any View = Text("1 024 MB").atlasData()
+        XCTAssertNotNil(body)
+        let caption: any View = Text("#A1F3 · 10:24").atlasDataCaption()
+        XCTAssertNotNil(caption)
+    }
 }
