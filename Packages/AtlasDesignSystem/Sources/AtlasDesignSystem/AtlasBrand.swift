@@ -19,7 +19,7 @@ import SwiftUI
 
 // MARK: - Color Tokens
 
-/// Calm Ledger palette — every value lives in AtlasColors.xcassets (light+dark),
+/// Calm Ledger palette — palette values live in AtlasColors.xcassets (light+dark; borderEmphasis is the one opacity-based exception),
 /// generated from scripts/design/calm-ledger-tokens.json. Do not hardcode hex here.
 public enum AtlasColor {
 
@@ -63,6 +63,7 @@ public enum AtlasColor {
     public static let inkData = Color("AtlasInkData", bundle: .module)
     public static let textPrimary = Color("AtlasTextBody", bundle: .module)
     public static let textSecondary = Color("AtlasTextSecondary", bundle: .module)
+    /// Tertiary text — NOT directly on canvasTop (4.41:1 light, <AA); use on surface/surfaceSubdued only.
     public static let textTertiary = Color("AtlasTextTertiary", bundle: .module)
 
     // ── Border ─────────────────────────────────────────
@@ -79,7 +80,7 @@ public enum AtlasColor {
     public static var brandGradient: LinearGradient {
         LinearGradient(colors: [brand, accent], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
-    /// Next-action banner gradient (spec §3: brand → brandHover, 135°).
+    /// Next-action banner gradient (spec §3: brand → brandHover, top-leading → bottom-trailing).
     public static var bannerGradient: LinearGradient {
         LinearGradient(colors: [brand, brandHover], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
@@ -114,6 +115,7 @@ public enum AtlasTypography {
 
     /// Serif with explicit Songti SC cascade so zh-Hans renders 宋体, not PingFang
     /// (system serif fallback for CJK is undefined across OS versions — spec §1.3).
+    /// Supported weights: regular/medium/semibold/bold (others map to regular). Prefer the cached `ledgerTitle`/`ledgerNumber` tokens — this constructs a descriptor per call.
     public static func ledgerFont(size: CGFloat, weight: Font.Weight) -> Font {
         Font(ledgerNSFont(size: size, weight: weight.nsWeight))
     }

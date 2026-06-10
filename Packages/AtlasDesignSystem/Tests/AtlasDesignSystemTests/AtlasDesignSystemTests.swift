@@ -127,7 +127,7 @@ final class AtlasDesignSystemTests: XCTestCase {
         let _ = AtlasColor.canvasTop
         let _ = AtlasColor.canvasBottom
         let _ = AtlasColor.card
-        // cardRaised requires NSApp which is unavailable in test context
+        let _ = AtlasColor.cardRaised
     }
 
     func testTextColorsExist() {
@@ -188,6 +188,36 @@ final class AtlasDesignSystemTests: XCTestCase {
         let _ = AtlasColor.brandHover
         let _ = AtlasColor.cardRaised   // v3: no longer @MainActor — plain static let
         let _ = AtlasColor.heroSurface  // v3: no longer @MainActor — plain static let
+    }
+
+    func testAllColorsetTokensResolve() {
+        // Guard the colorset-name ↔ Color("…") string seam: a typo'd name renders
+        // clear at runtime while every existence test stays green.
+        // SwiftPM CLI (swift test / swift run) copies .xcassets verbatim — no actool —
+        // so compiled-catalog lookup (NSColor(named:)) can only succeed in Xcode-built
+        // bundles. Accept either a compiled hit or the raw colorset payload so the
+        // drift guard holds on both build paths.
+        let names = [
+            "AtlasBrand", "AtlasBrandHover", "AtlasAccent",
+            "AtlasInk", "AtlasInkData", "AtlasTextBody", "AtlasTextSecondary", "AtlasTextTertiary",
+            "AtlasCanvasTop", "AtlasCanvasBottom",
+            "AtlasSurface", "AtlasSurfaceSubdued", "AtlasSurfaceInput", "AtlasSurfaceBorder",
+            "AtlasLedgerPaper", "AtlasLedgerInk", "AtlasLedgerSecondary", "AtlasLedgerBorder", "AtlasLedgerRule",
+            "AtlasSafe", "AtlasSafeFill", "AtlasReview", "AtlasReviewFill",
+            "AtlasDanger", "AtlasDangerFill", "AtlasInfo", "AtlasInfoFill",
+            "AtlasActionBarBg", "AtlasActionBarText", "AtlasActionBarData",
+            "AtlasCardRaised", "AtlasHeroSurface",
+        ]
+        XCTAssertEqual(names.count, 32)
+        for name in names {
+            let compiled = NSColor(named: name, bundle: .module) != nil
+            let raw = Bundle.module.url(
+                forResource: "Contents",
+                withExtension: "json",
+                subdirectory: "AtlasColors.xcassets/\(name).colorset"
+            ) != nil
+            XCTAssertTrue(compiled || raw, "colorset '\(name)' failed to resolve — name/string drift")
+        }
     }
 
     func testThreeVoiceTypographyExists() {
