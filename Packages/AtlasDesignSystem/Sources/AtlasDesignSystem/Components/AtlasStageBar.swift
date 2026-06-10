@@ -42,6 +42,7 @@ public struct AtlasStageBar: View {
     private let onSelect: (Int) -> Void
 
     @State private var highlightedIndex: Int?
+    @State private var measuredWidth: CGFloat = 0
     @FocusState private var isFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -104,9 +105,13 @@ public struct AtlasStageBar: View {
     }
 
     /// Moves the keyboard highlight by `delta`, clamped to the stage range (no wrap).
-    public static func movedHighlight(from index: Int, delta: Int, stageCount: Int) -> Int {
+    /// In compact mode the highlight stays pinned: only the current stage is visible,
+    /// so arrows must not move an invisible highlight (announce-only surface).
+    public static func movedHighlight(from index: Int, delta: Int, stageCount: Int, isCompact: Bool = false) -> Int {
         guard stageCount > 0 else { return 0 }
-        return min(max(index + delta, 0), stageCount - 1)
+        let clamped = min(max(index, 0), stageCount - 1)
+        guard !isCompact else { return clamped }
+        return min(max(clamped + delta, 0), stageCount - 1)
     }
 
     // MARK: Body
@@ -125,7 +130,10 @@ public struct AtlasStageBar: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            // reduce-motion: 降级为直接落定（无动画），严于规格的 opacity 降级要求。
             .animation(reduceMotion ? nil : AtlasMotion.stageTransition, value: currentIndex)
+            .onAppear { measuredWidth = proxy.size.width }
+            .onChange(of: proxy.size.width) { _, width in measuredWidth = width }
         }
         .frame(height: Self.barHeight)
         .focusable()
@@ -229,7 +237,12 @@ public struct AtlasStageBar: View {
 
     private func moveHighlight(by delta: Int) {
         let base = highlightedIndex ?? currentIndex
-        highlightedIndex = Self.movedHighlight(from: base, delta: delta, stageCount: stages.count)
+        highlightedIndex = Self.movedHighlight(
+            from: base,
+            delta: delta,
+            stageCount: stages.count,
+            isCompact: Self.isCompact(containerWidth: measuredWidth)
+        )
     }
 
     private func activateHighlighted() -> KeyPress.Result {

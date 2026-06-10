@@ -148,7 +148,7 @@ public struct AtlasActionBar: View {
             }
             .padding(.horizontal, AtlasSpacing.lg)
             .padding(.vertical, AtlasSpacing.sm)
-            .background(Capsule(style: .continuous).fill(Color.white.opacity(0.08)))
+            .background(Capsule(style: .continuous).fill(AtlasColor.actionBarTrack))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(primaryTitle))
             .accessibilityValue(Text(Self.percentText(for: value)))

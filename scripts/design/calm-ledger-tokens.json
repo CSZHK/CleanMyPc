@@ -31,6 +31,7 @@
     "AtlasActionBarBg":    { "light": "#10302C", "dark": "#0C2421" },
     "AtlasActionBarText":  { "light": "#9FD4C9", "dark": "#9FD4C9" },
     "AtlasActionBarData":  { "light": "#52E2B5", "dark": "#52E2B5" },
+    "AtlasActionBarTrack": { "light": "#23403D", "dark": "#1F3633" },
     "AtlasCardRaised":     { "light": "#FFFFFFA6", "dark": "#FFFFFF0F" },
     "AtlasHeroSurface":    { "light": "#00000005", "dark": "#FFFFFF0A" }
   },

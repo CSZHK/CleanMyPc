@@ -74,6 +74,9 @@ public enum AtlasColor {
     public static let actionBarBg = atlasColor("AtlasActionBarBg")
     public static let actionBarText = atlasColor("AtlasActionBarText")
     public static let actionBarData = atlasColor("AtlasActionBarData")
+    /// Decorative progress-track backdrop on the ink bar (white 8% premixed into
+    /// actionBarBg per appearance — solid token instead of opacity composition).
+    public static let actionBarTrack = atlasColor("AtlasActionBarTrack")
 
     // ── Gradients ──────────────────────────────────────
     /// Legacy hero gradient (brand → accent). M3 migrates hero uses; keep for compatibility.

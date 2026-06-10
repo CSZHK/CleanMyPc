@@ -222,4 +222,16 @@ final class CalmLedgerComponentTests: XCTestCase {
         XCTAssertEqual(AtlasStageBar.movedHighlight(from: 3, delta: 1, stageCount: 4), 3)
         XCTAssertEqual(AtlasStageBar.movedHighlight(from: 1, delta: 1, stageCount: 4), 2)
     }
+
+    func testStageBarCompactKeyboardClamp() {
+        // Compact mode shows only the current capsule — arrows pin the highlight
+        // instead of moving an invisible one.
+        XCTAssertEqual(AtlasStageBar.movedHighlight(from: 1, delta: 1, stageCount: 4, isCompact: true), 1)
+        XCTAssertEqual(AtlasStageBar.movedHighlight(from: 1, delta: -1, stageCount: 4, isCompact: true), 1)
+        XCTAssertEqual(AtlasStageBar.movedHighlight(from: 3, delta: 1, stageCount: 4, isCompact: true), 3)
+        // Out-of-range input still clamps into range even while pinned.
+        XCTAssertEqual(AtlasStageBar.movedHighlight(from: 9, delta: 1, stageCount: 4, isCompact: true), 3)
+        // Default (full) behavior unchanged.
+        XCTAssertEqual(AtlasStageBar.movedHighlight(from: 1, delta: 1, stageCount: 4, isCompact: false), 2)
+    }
 }
