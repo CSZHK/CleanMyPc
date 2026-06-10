@@ -130,6 +130,9 @@ dist/
 
 # END ATOMSTORM ITERATION GOVERNANCE
 
+# Superpowers brainstorm artifacts
+.superpowers/
+
 # Auto Claude data directory
 .auto-claude/
 
