@@ -53,6 +53,55 @@ final class CalmLedgerComponentTests: XCTestCase {
         XCTAssertTrue(disabledZh.contains("不可用"), "got: \(disabledZh)")
     }
 
+    // MARK: - F2 AtlasEvidencePanel
+
+    func testEvidencePanelStateExhaustive() {
+        let content = AtlasEvidenceContent(
+            title: "Safari 缓存",
+            whyText: "仅缓存数据，应用会自动重建",
+            evidence: [AtlasEvidenceItem(id: "p1", label: "路径", value: "~/Library/Caches/com.apple.Safari")],
+            recoveryText: "恢复点已建立 · 1.2 GB · 保留 7 天"
+        )
+        let aggregate = AtlasEvidenceAggregate(
+            count: 12,
+            totalText: "3.4 GB",
+            riskBreakdown: [("安全", 10, AtlasTone.success), ("复核", 2, AtlasTone.warning)],
+            commonRecoveryText: "全部可恢复"
+        )
+        let states: [AtlasEvidenceState] = [
+            .empty,
+            .single(content),
+            .aggregate(aggregate),
+            .executing(rows: [("已清理 Safari 缓存", .success, nil), ("清理失败", .danger, "权限不足")]),
+        ]
+        // All four kinds construct and discriminate; panel hosts each without crashing.
+        XCTAssertEqual(states.map(\.kind), [.empty, .single, .aggregate, .executing])
+        for state in states {
+            let panel = AtlasEvidencePanel(state: state) { Text("act") }
+            XCTAssertNotNil(panel.body)
+        }
+        // Recovery predicate across kinds: only single/aggregate with text show the box.
+        XCTAssertFalse(AtlasEvidenceState.empty.showsRecoveryBox)
+        XCTAssertTrue(AtlasEvidenceState.single(content).showsRecoveryBox)
+        XCTAssertTrue(AtlasEvidenceState.aggregate(aggregate).showsRecoveryBox)
+        XCTAssertFalse(AtlasEvidenceState.executing(rows: []).showsRecoveryBox)
+    }
+
+    func testEvidenceRecoveryNilHidesShieldBox() {
+        // fail-closed (spec §1.6): no recovery facts ⇒ no ⛨ box, ever.
+        let noRecovery = AtlasEvidenceContent(title: "t", whyText: "w", evidence: [], recoveryText: nil)
+        XCTAssertFalse(AtlasEvidenceState.single(noRecovery).showsRecoveryBox)
+
+        let blankRecovery = AtlasEvidenceContent(title: "t", whyText: "w", evidence: [], recoveryText: "  \n")
+        XCTAssertFalse(AtlasEvidenceState.single(blankRecovery).showsRecoveryBox, "whitespace-only must stay fail-closed")
+
+        let noCommon = AtlasEvidenceAggregate(count: 2, totalText: "1 MB", riskBreakdown: [], commonRecoveryText: nil)
+        XCTAssertFalse(AtlasEvidenceState.aggregate(noCommon).showsRecoveryBox)
+
+        let withRecovery = AtlasEvidenceContent(title: "t", whyText: "w", evidence: [], recoveryText: "保留 7 天")
+        XCTAssertTrue(AtlasEvidenceState.single(withRecovery).showsRecoveryBox)
+    }
+
     func testStageBarCircledNumeralAndHighlightClamp() {
         XCTAssertEqual(AtlasStageBar.circledNumeral(1), "①")
         XCTAssertEqual(AtlasStageBar.circledNumeral(4), "④")

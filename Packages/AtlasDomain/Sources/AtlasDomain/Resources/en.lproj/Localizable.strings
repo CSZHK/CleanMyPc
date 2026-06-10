@@ -1054,3 +1054,11 @@
 "ds.stagebar.status.current" = "current";
 "ds.stagebar.status.completed" = "completed";
 "ds.stagebar.status.unavailable" = "unavailable, complete earlier stages first";
+"ds.evidence.empty" = "Select an item to view evidence";
+"ds.evidence.section.why" = "Why it's safe";
+"ds.evidence.section.evidence" = "Evidence";
+"ds.evidence.section.recovery" = "Recovery plan";
+"ds.evidence.aggregate.selected" = "%d selected";
+"ds.evidence.executing.title" = "Execution progress";
+"ds.evidence.executing.detail.show" = "Show reason";
+"ds.evidence.executing.detail.hide" = "Hide reason";

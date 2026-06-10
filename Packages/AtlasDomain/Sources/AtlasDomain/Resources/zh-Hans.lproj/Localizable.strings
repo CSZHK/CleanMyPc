@@ -1054,3 +1054,11 @@
 "ds.stagebar.status.current" = "当前";
 "ds.stagebar.status.completed" = "已完成";
 "ds.stagebar.status.unavailable" = "不可用，需先完成前序阶段";
+"ds.evidence.empty" = "选择一项查看证据";
+"ds.evidence.section.why" = "为什么安全";
+"ds.evidence.section.evidence" = "证据";
+"ds.evidence.section.recovery" = "恢复方案";
+"ds.evidence.aggregate.selected" = "已选 %d 项";
+"ds.evidence.executing.title" = "执行进度";
+"ds.evidence.executing.detail.show" = "展开原因";
+"ds.evidence.executing.detail.hide" = "收起原因";
