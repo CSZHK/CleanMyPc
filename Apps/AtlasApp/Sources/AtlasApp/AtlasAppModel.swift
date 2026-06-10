@@ -41,6 +41,11 @@ final class AtlasAppModel: ObservableObject {
     // Toast state — public setter needed for AtlasToastContainer Binding
     @Published var toasts: [AtlasToastItem] = []
 
+    // Workflow ViewState per route (Calm Ledger §2.3) — hosted here, not in
+    // feature @State: AppShellView rebuilds feature views with .id(route), so
+    // stage/selection/filter must survive route switches (§7 red line).
+    @Published private(set) var workflowStates: [AtlasRoute: AtlasWorkflowViewState] = [:]
+
     // File Organizer state
     @Published private(set) var fileOrganizerEntries: [FileOrganizerEntry] = []
     @Published private(set) var isFileOrganizerScanning = false
@@ -60,6 +65,7 @@ final class AtlasAppModel: ObservableObject {
     private let repository: AtlasWorkspaceRepository
     private let workspaceController: AtlasWorkspaceController
     private let updateChecker = AtlasUpdateChecker()
+    private let ledgerNumberStore: any AtlasLedgerNumberStoring
     private let notificationPermissionRequester: @Sendable () async -> Bool
     private var filterCancellationToken: AnyCancellable?
     private var didRequestInitialHealthSnapshot = false
@@ -73,10 +79,12 @@ final class AtlasAppModel: ObservableObject {
         allowScaffoldFallback: Bool? = nil,
         xpcRequestConfiguration: AtlasXPCRequestConfiguration = AtlasXPCRequestConfiguration(),
         xpcRequestExecutor: AtlasXPCDataRequestExecutor? = nil,
-        notificationPermissionRequester: (@Sendable () async -> Bool)? = nil
+        notificationPermissionRequester: (@Sendable () async -> Bool)? = nil,
+        ledgerNumberStore: (any AtlasLedgerNumberStoring)? = nil
     ) {
         let state = repository.loadState()
         self.repository = repository
+        self.ledgerNumberStore = ledgerNumberStore ?? AtlasUserDefaultsLedgerNumberStore()
         self.snapshot = state.snapshot
         self.currentPlan = state.currentPlan
         self.settings = state.settings
@@ -343,6 +351,10 @@ final class AtlasAppModel: ObservableObject {
                 isCurrentSmartCleanPlanFresh = output.actionPlan != nil
                 smartCleanPlanIssue = nil
                 smartCleanExecutionIssue = nil
+            }
+            if output.actionPlan != nil {
+                // Scan produced a plan → assign ledger № + scan receipt (§2.3).
+                assignPlanNumber(for: .smartClean)
             }
         } catch {
             latestScanSummary = error.localizedDescription
@@ -663,6 +675,69 @@ final class AtlasAppModel: ObservableObject {
         withAnimation(.snappy(duration: 0.2)) {
             isTaskCenterPresented.toggle()
         }
+    }
+
+    // MARK: - Workflow ViewState (Calm Ledger §2.3)
+
+    /// Read accessor — returns a default-initialized state for routes that have
+    /// no stored state yet (no dictionary write on read).
+    func workflowState(for route: AtlasRoute) -> AtlasWorkflowViewState {
+        workflowStates[route] ?? AtlasWorkflowViewState()
+    }
+
+    func updateWorkflowState(for route: AtlasRoute, _ mutate: (inout AtlasWorkflowViewState) -> Void) {
+        var state = workflowStates[route] ?? AtlasWorkflowViewState()
+        mutate(&state)
+        workflowStates[route] = state
+    }
+
+    /// Assigns the next ledger № and derives the scan receipt for a freshly
+    /// produced plan (called on scan completion). № change clears the
+    /// plan-scoped selection/filter (spec §2.3 selection scope = single plan).
+    func assignPlanNumber(for route: AtlasRoute, scanDate: Date = Date()) {
+        let number = nextLedgerNumber()
+        let receipt = AtlasLedgerReceipt.code(findings: snapshot.findings, scanDate: scanDate)
+        updateWorkflowState(for: route) { state in
+            if state.planNumber != number {
+                state.selectedIDs = []
+                state.riskFilter = nil
+            }
+            state.planNumber = number
+            state.receiptCode = receipt
+            state.currentStage = AtlasWorkflowStageMap.reviewStage
+            state.displayedStage = AtlasWorkflowStageMap.reviewStage
+            state.rescanConfirmationPending = false
+        }
+    }
+
+    /// Rescan confirmed: the old № is void (its task runs stay in the ledger;
+    /// Batch J renders the superseded status), the workflow returns to ① scan.
+    func supersedePlan(for route: AtlasRoute) {
+        updateWorkflowState(for: route) { state in
+            state.planNumber = nil
+            state.receiptCode = nil
+            state.selectedIDs = []
+            state.riskFilter = nil
+            state.evidenceSelectionID = nil
+            state.drawerPresented = false
+            state.currentStage = AtlasWorkflowStageMap.scanStage
+            state.displayedStage = AtlasWorkflowStageMap.scanStage
+            state.rescanConfirmationPending = false
+        }
+    }
+
+    /// Cmd+Shift+R intent — only raises the flag; the confirmation dialog
+    /// („当前计划 №N 将作废") is presented by the feature screen (Batch I),
+    /// which calls `supersedePlan(for:)` on confirm.
+    func requestRescanConfirmation(for route: AtlasRoute) {
+        updateWorkflowState(for: route) { state in
+            state.rescanConfirmationPending = true
+        }
+    }
+
+    private func nextLedgerNumber() -> Int {
+        // First use seeds from the existing task-run count + 1 (PER da8c42f).
+        ledgerNumberStore.next(fallbackBase: snapshot.taskRuns.count + 1)
     }
 
     // MARK: - Toast Management
