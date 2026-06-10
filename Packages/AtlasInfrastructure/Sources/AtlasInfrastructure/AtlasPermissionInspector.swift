@@ -74,6 +74,12 @@ public struct AtlasPermissionInspector: Sendable {
     }
 
     private static func defaultNotificationsAuthorizationProvider() async -> Bool {
+        // Bare executables (swift run / swift test) have no LaunchServices bundleProxy, and
+        // UNUserNotificationCenter.current() throws an ObjC NSInternalInconsistencyException
+        // that Swift cannot catch. Degrade to "not granted" outside a real .app bundle;
+        // packaged builds (xcodebuild) are unaffected.
+        guard Bundle.main.bundleIdentifier != nil else { return false }
+
         let settings = await withCheckedContinuation { continuation in
             UNUserNotificationCenter.current().getNotificationSettings { settings in
                 continuation.resume(returning: settings)

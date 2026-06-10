@@ -115,7 +115,11 @@ final class AtlasAppModel: ObservableObject {
             worker: workerService ?? defaultWorker
         )
         self.notificationPermissionRequester = notificationPermissionRequester ?? {
-            await withCheckedContinuation { continuation in
+            // Bare executables (swift run) have no LaunchServices bundleProxy, and
+            // UNUserNotificationCenter.current() throws an ObjC NSInternalInconsistencyException
+            // that Swift cannot catch. Degrade to "not granted" outside a real .app bundle.
+            guard Bundle.main.bundleIdentifier != nil else { return false }
+            return await withCheckedContinuation { continuation in
                 UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
                     continuation.resume(returning: granted)
                 }
