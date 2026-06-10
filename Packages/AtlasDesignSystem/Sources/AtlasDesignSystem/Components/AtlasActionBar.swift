@@ -120,7 +120,7 @@ public struct AtlasActionBar: View {
             Button(action: onPrimary) {
                 Text(primaryTitle)
                     .font(AtlasTypography.label)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AtlasColor.onBrand) // AA on both gradient stops (PER #9)
                     .lineLimit(1)
                     .fixedSize() // never truncates (spec §4.2 yield order)
                     .padding(.horizontal, AtlasSpacing.xxl)

@@ -13,11 +13,13 @@ import SwiftUI
 /// a wide banner. This is **explicitly accepted as the diagonal gradient** —
 /// no UnitPoint angle math; the token stays the single gradient truth source.
 ///
-/// **Contrast**: white headline on the darker `brand` origin ≈5.5:1. The
-/// rationale is rendered at 90% white — the sketched 85% measures 4.43:1 on
-/// `#0F766E` (just under AA); 90% measures ≈4.77:1. Text is leading-anchored
-/// over the darker gradient origin; the lighter bottom-trailing region carries
-/// controls (≥3:1 non-text), not body text.
+/// **Contrast** (Batch H, PER Backlog #9): gradient text uses `AtlasColor.onBrand`
+/// (light = white, dark = ink — 暗字亮底), and the gradient end stop is
+/// `bannerEnd`, so onBrand clears AA on both stops in both appearances
+/// (5.47/7.19 on brand, 7.52/8.45 on bannerEnd). The rationale renders at 90%
+/// onBrand — the sketched 85% measured 4.43:1 on `#0F766E` (just under AA).
+/// The white-capsule primary (brand text on white fill) is intentionally NOT
+/// onBrand-driven; it is not gradient-borne text.
 public struct AtlasNextActionBanner: View {
     // Internal (not private) so logic tests can exercise the stored callbacks.
     let headline: String
@@ -31,10 +33,10 @@ public struct AtlasNextActionBanner: View {
     /// Banner headline scale step (per plan: bold 15) — sits between the
     /// `rowTitle` 13 and `sectionTitle` 17 tokens; banner-scoped on purpose.
     private static let headlineFont = Font.system(size: 15, weight: .bold)
-    /// Rationale white opacity — raised from the sketched 85% to clear
+    /// Rationale onBrand opacity — raised from the sketched 85% to clear
     /// 4.5:1 on the `brand` gradient origin (see type doc).
     public static let rationaleOpacity: Double = 0.9
-    /// Dismiss ghost sits at 60% white (icon-only control, ≥3:1 non-text).
+    /// Dismiss ghost sits at 60% onBrand (icon-only control, ≥3:1 non-text).
     private static let dismissOpacity: Double = 0.6
 
     public init(
@@ -75,12 +77,12 @@ public struct AtlasNextActionBanner: View {
                 VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
                     Text(headline)
                         .font(Self.headlineFont)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AtlasColor.onBrand)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(rationale)
                         .font(AtlasTypography.bodySmall)
-                        .foregroundStyle(.white.opacity(Self.rationaleOpacity))
+                        .foregroundStyle(AtlasColor.onBrand.opacity(Self.rationaleOpacity))
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -90,7 +92,7 @@ public struct AtlasNextActionBanner: View {
                     Button(action: onDismiss) {
                         Image(systemName: "xmark")
                             .font(AtlasTypography.caption)
-                            .foregroundStyle(.white.opacity(Self.dismissOpacity))
+                            .foregroundStyle(AtlasColor.onBrand.opacity(Self.dismissOpacity))
                             .frame(width: 20, height: 20)
                             .contentShape(Rectangle())
                     }
@@ -118,13 +120,13 @@ public struct AtlasNextActionBanner: View {
                     Button(action: onSecondary) {
                         Text(secondaryTitle)
                             .font(AtlasTypography.label)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AtlasColor.onBrand)
                             .lineLimit(1)
                             .padding(.horizontal, AtlasSpacing.xl)
                             .padding(.vertical, AtlasSpacing.sm)
                             .overlay(
                                 Capsule(style: .continuous)
-                                    .strokeBorder(.white.opacity(0.45), lineWidth: 1)
+                                    .strokeBorder(AtlasColor.onBrand.opacity(0.45), lineWidth: 1)
                             )
                             .contentShape(Capsule(style: .continuous))
                     }

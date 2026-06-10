@@ -28,6 +28,8 @@
     "AtlasDangerFill":     { "light": "#FDECEA", "dark": "#3A211F" },
     "AtlasInfo":           { "light": "#2B66AE", "dark": "#6FA8E8" },
     "AtlasInfoFill":       { "light": "#EAF2FB", "dark": "#1C2C40" },
+    "AtlasOnBrand":        { "light": "#FFFFFF", "dark": "#0C1614" },
+    "AtlasBannerEnd":      { "light": "#0C5F58", "dark": "#2BC4B1" },
     "AtlasActionBarBg":    { "light": "#10302C", "dark": "#0C2421" },
     "AtlasActionBarText":  { "light": "#9FD4C9", "dark": "#9FD4C9" },
     "AtlasActionBarData":  { "light": "#52E2B5", "dark": "#52E2B5" },
@@ -51,6 +53,8 @@
     { "fg": "AtlasActionBarData",  "bg": "AtlasActionBarBg",    "min": 3.0 },
     { "fg": "AtlasTextSecondary",  "bg": "AtlasSurfaceSubdued", "min": 4.5 },
     { "fg": "AtlasTextTertiary",   "bg": "AtlasSurfaceSubdued", "min": 4.5 },
-    { "fg": "AtlasBrand",          "bg": "AtlasSurface",        "min": 4.5 }
+    { "fg": "AtlasBrand",          "bg": "AtlasSurface",        "min": 4.5 },
+    { "fg": "AtlasOnBrand",        "bg": "AtlasBrand",          "min": 4.5 },
+    { "fg": "AtlasOnBrand",        "bg": "AtlasBannerEnd",      "min": 4.5 }
   ]
 }

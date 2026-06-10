@@ -29,6 +29,13 @@ public enum AtlasColor {
     public static let brandHover = atlasColor("AtlasBrandHover")
     /// Mint accent — non-text uses only (progress, badges, decoration).
     public static let accent = atlasColor("AtlasAccent")
+    /// Text/icon color on brand fills (PER Backlog #9): light = white, dark = dark ink
+    /// (暗字亮底 — dark teal fills are bright, so dark mode flips to ink). AA on both
+    /// gradient stops (≥5.47:1 light / ≥7.19:1 dark).
+    public static let onBrand = atlasColor("AtlasOnBrand")
+    /// Banner-gradient end stop (PER Backlog #9): deepened light teal / brightened dark
+    /// teal so `onBrand` clears AA across the whole gradient run.
+    public static let bannerEnd = atlasColor("AtlasBannerEnd")
 
     // ── Semantic (spec: safe/review/danger/info — API keeps legacy names) ──
     public static let success = atlasColor("AtlasSafe")
@@ -83,9 +90,11 @@ public enum AtlasColor {
     public static var brandGradient: LinearGradient {
         LinearGradient(colors: [brand, accent], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
-    /// Next-action banner gradient (spec §3: brand → brandHover, top-leading → bottom-trailing).
+    /// Next-action banner gradient (brand → bannerEnd, top-leading → bottom-trailing).
+    /// Second stop moved brandHover→bannerEnd in Batch H (PER Backlog #9) so `onBrand`
+    /// text holds AA on both ends in both appearances.
     public static var bannerGradient: LinearGradient {
-        LinearGradient(colors: [brand, brandHover], startPoint: .topLeading, endPoint: .bottomTrailing)
+        LinearGradient(colors: [brand, bannerEnd], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 }
 
@@ -516,7 +525,9 @@ public struct AtlasPrimaryButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(AtlasTypography.label)
-            .foregroundStyle(.white)
+            // onBrand, not .white: light mode is visually identical (onBrand light = white);
+            // dark mode flips to ink-on-bright-teal for AA (PER Backlog #9, approved).
+            .foregroundStyle(AtlasColor.onBrand)
             .padding(.horizontal, AtlasSpacing.xxl)
             .padding(.vertical, AtlasSpacing.md)
             .background(

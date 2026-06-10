@@ -187,6 +187,8 @@ final class AtlasDesignSystemTests: XCTestCase {
         let _ = AtlasColor.actionBarData
         let _ = AtlasColor.actionBarTrack
         let _ = AtlasColor.brandHover
+        let _ = AtlasColor.onBrand      // Batch H (PER #9): text on brand fills
+        let _ = AtlasColor.bannerEnd    // Batch H (PER #9): banner gradient end stop
         let _ = AtlasColor.cardRaised   // v3: no longer @MainActor — plain static let
         let _ = AtlasColor.heroSurface  // v3: no longer @MainActor — plain static let
     }
@@ -202,6 +204,7 @@ final class AtlasDesignSystemTests: XCTestCase {
         "AtlasLedgerPaper", "AtlasLedgerInk", "AtlasLedgerSecondary", "AtlasLedgerBorder", "AtlasLedgerRule",
         "AtlasSafe", "AtlasSafeFill", "AtlasReview", "AtlasReviewFill",
         "AtlasDanger", "AtlasDangerFill", "AtlasInfo", "AtlasInfoFill",
+        "AtlasOnBrand", "AtlasBannerEnd",
         "AtlasActionBarBg", "AtlasActionBarText", "AtlasActionBarData", "AtlasActionBarTrack",
         "AtlasCardRaised", "AtlasHeroSurface",
     ]
@@ -214,7 +217,7 @@ final class AtlasDesignSystemTests: XCTestCase {
         // bundles. Accept either a compiled hit or the raw colorset payload so the
         // drift guard holds on both build paths.
         let names = Self.allColorsetNames
-        XCTAssertEqual(names.count, 33)
+        XCTAssertEqual(names.count, 35)
         for name in names {
             let compiled = NSColor(named: name, bundle: .module) != nil
             let raw = Bundle.module.url(
