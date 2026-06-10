@@ -1047,3 +1047,10 @@
 "apps.preview.metric.reviewOnlyBytes.title" = "Review-Only Size";
 "apps.preview.metric.reviewOnlyBytes.detail" = "Byte size of evidence marked for manual review only.";
 "apps.preview.evidenceGroups.title" = "Evidence Breakdown";
+
+/* Design system — Calm Ledger M2 components (ds.* prefix) */
+"ds.stagebar.label" = "Stages";
+"ds.stagebar.value" = "Stage %d of %d: %@, %@";
+"ds.stagebar.status.current" = "current";
+"ds.stagebar.status.completed" = "completed";
+"ds.stagebar.status.unavailable" = "unavailable, complete earlier stages first";

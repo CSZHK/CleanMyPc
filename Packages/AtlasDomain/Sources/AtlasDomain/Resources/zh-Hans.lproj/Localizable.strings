@@ -1047,3 +1047,10 @@
 "apps.preview.metric.reviewOnlyBytes.title" = "仅供复核大小";
 "apps.preview.metric.reviewOnlyBytes.detail" = "标记为仅限手动复核的证据的字节大小。";
 "apps.preview.evidenceGroups.title" = "证据明细";
+
+/* Design system — Calm Ledger M2 components (ds.* prefix) */
+"ds.stagebar.label" = "阶段";
+"ds.stagebar.value" = "第 %d 阶段，共 %d 个：%@，%@";
+"ds.stagebar.status.current" = "当前";
+"ds.stagebar.status.completed" = "已完成";
+"ds.stagebar.status.unavailable" = "不可用，需先完成前序阶段";
