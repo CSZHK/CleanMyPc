@@ -11,7 +11,7 @@ const manifest = JSON.parse(readFileSync(join(root, "calm-ledger-tokens.json"), 
 function srgb(hex) {
   const h = hex.replace("#", "");
   const v = (i) => parseInt(h.slice(i, i + 2), 16) / 255;
-  return [v(0), v(2), v(4)]; // alpha (if present) ignored: gate checks opaque pairs only
+  return [v(0), v(2), v(4)]; // alpha (if present) ignored: gate checks opaque pairs only — do NOT add 8-digit tokens to contrastPairs
 }
 function luminance(hex) {
   const lin = srgb(hex).map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));

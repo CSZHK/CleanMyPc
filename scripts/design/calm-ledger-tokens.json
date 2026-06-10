@@ -49,6 +49,7 @@
     { "fg": "AtlasActionBarText",  "bg": "AtlasActionBarBg",    "min": 4.5 },
     { "fg": "AtlasActionBarData",  "bg": "AtlasActionBarBg",    "min": 3.0 },
     { "fg": "AtlasTextSecondary",  "bg": "AtlasSurfaceSubdued", "min": 4.5 },
+    { "fg": "AtlasTextTertiary",   "bg": "AtlasSurfaceSubdued", "min": 4.5 },
     { "fg": "AtlasBrand",          "bg": "AtlasSurface",        "min": 4.5 }
   ]
 }

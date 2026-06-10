@@ -9,6 +9,9 @@ const manifest = JSON.parse(readFileSync(join(here, "calm-ledger-tokens.json"), 
 const xcassets = join(here, "../../Packages/AtlasDesignSystem/Sources/AtlasDesignSystem/Resources/AtlasColors.xcassets");
 
 function components(hex) {
+  if (!/^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/.test(hex)) {
+    throw new Error(`invalid hex "${hex}" — must be #RRGGBB or #RRGGBBAA`);
+  }
   const h = hex.replace("#", "");
   const c = (i) => (parseInt(h.slice(i, i + 2), 16) / 255).toFixed(10);
   const alpha = h.length === 8 ? (parseInt(h.slice(6, 8), 16) / 255).toFixed(10) : "1.0000000000";
@@ -21,6 +24,7 @@ function entry(appearanceValue, hex) {
     color: { "color-space": "srgb", components: components(hex) },
   };
 }
+// Note: generator never deletes — renaming/removing a manifest token leaves an orphan colorset; reconcile manually (see M4 plan).
 for (const [name, modes] of Object.entries(manifest.colors)) {
   const dir = join(xcassets, `${name}.colorset`);
   mkdirSync(dir, { recursive: true });
