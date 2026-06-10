@@ -1,8 +1,8 @@
 # Calm Ledger Redesign — ExecPlan（指针文件，不复制内容，避免双真相）
 
 - 规格: Docs/design/2026-06-10-frontend-redesign-calm-ledger.md (v1.1)
-- 当前计划: Docs/plans/2026-06-10-calm-ledger-m0-m1.md
+- 当前计划: Docs/plans/2026-06-10-calm-ledger-m2.md（M2 已收口；M3 计划待编写）
 - REQ: iterations/REQ-calm-ledger-redesign/
-- 当前 CHG: changes/CHG-2026-06-calm-ledger-m0m1/
-- 里程碑: M0 ✓ M1 ✓ M2 ▷ M3 ▷ M4 ▷（M2 计划待编写）
+- 当前 CHG: changes/CHG-2026-06-calm-ledger-m2/（已关闭；前序 m0m1 / m2-prework 均已关闭）
+- 里程碑: M0 ✓ M1 ✓ M2 ✓ M3 ▶ M4 ▷
 - 中断协议: 规格 §0.3（签名凭据到位 → 当前里程碑边界暂停，EPIC-D 恢复）

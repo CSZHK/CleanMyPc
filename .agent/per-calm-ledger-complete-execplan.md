@@ -8,7 +8,7 @@
 
 ## Progress
 - [x] Phase 1: 范围确认（用户指令「全部干完」，无暂停点）
-- [ ] Phase 2/3: M2 组件层（Batch E 前置修复 + Batch F/G 组件）
+- [x] Phase 2/3: M2 组件层（Batch E 前置修复 + Batch F/G 组件；CHG-m2 6/6 PASS 已关闭）
 - [ ] Phase 2/3: M3 屏幕迁移（Batch H 壳层/改名 → I 智能清理样板间 → J 台账 → K 概览 → L 应用/整理 → M 权限/设置/关于）
 - [ ] Phase 2/3: M4 收尾（L10n / 文档同步 / 截图 / 门禁）
 - [ ] Phase 4: 跨边界回归（全量测试 + 门禁 + 构建）
@@ -19,10 +19,10 @@
 |---|----------|----------|--------|-------------|--------|
 | 1 | P0 | 测试阻塞 | findings L7 | Apps E2E 测试替身缺 scanFolders(_:destinationBasePath:recursive:)，阻塞 M3 门禁 | FIXED |
 | 2 | P0 | 开发路径 | findings L6 | swift run 下 32 colorset 解析 nil → 生成式 Swift 回退表（同一 manifest，保单一真相源） | FIXED |
-| 3 | P1 | M2 | 规格 §4.2/§4.3 | 9 新组件 + AtlasScreen actionBar/drawer 插槽 + 修改/吸收/扩展清单 | TODO |
+| 3 | P1 | M2 | 规格 §4.2/§4.3 | 9 新组件 + AtlasScreen actionBar/drawer 插槽 + 修改/吸收/扩展清单 | FIXED |
 | 4 | P1 | M3 | 规格 §2/§3 | 壳层（侧栏/工具栏/菜单/任务中心/窗口）+ 路由改名 + ViewState + 8 屏迁移 | TODO |
 | 5 | P1 | M4 | 规格 §0.4/§7 | L10n 键迁移（~120×2）+ 9 文档同步 + 截图基线 + 全量门禁 | TODO |
-| 6 | P2 | 视觉 | findings L5 | 宋体粗体 face/traits（台账标题观感不足时） | DEFERRED→M2 内顺带评估 |
+| 6 | P2 | 视觉 | findings L5 | 宋体粗体 face/traits（台账标题观感不足时） | FIXED（M2 Batch F 评审修复 068a4da：cascade 描述符按 weight 带 face，bold 实测解析 STSongti-SC-Bold，测试锁定） |
 | 7 | P0 | 测试阻塞 | Batch E 发现 | AtlasAppModel.swift:696 `NSApp.appearance` 强解包——裸 swift test 无 NSApplication，29 测试全崩（来源 main 4ff6c08，此前被编译失败掩盖） | FIXED |
 | 8 | P0 | 开发路径 | Batch E 发现 | 裸 swift-run 无 .app bundle，UNUserNotificationCenter 权限链抛 NSException 启动即崩（stash 基线证明 pre-existing） | FIXED |
 
