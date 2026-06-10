@@ -453,6 +453,8 @@ Week 13: Polish + validation
 
 ## 6. Decision Gate
 
+> **Sequencing note (D-012, 2026-06-10)**: The Calm Ledger frontend redesign (EPIC-E) executes **before** Phase 2A implementation — new modules build on the new workspace skeleton. Phase 2A Week 0 user validation may run in parallel. See `Docs/DECISIONS.md` D-012 and design spec §0.3.
+
 ### Decisions Required Before Execution
 
 1. **D-010 Update**: Approve Startup & Background Service Manager as a new MVP module (currently outside frozen scope). Requires explicit decision log entry.

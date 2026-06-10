@@ -8,7 +8,7 @@
 
 ## Blast Radius
 - Packages/AtlasDesignSystem: token 全量重铸 + 9 新组件 + AtlasScreen 插槽
-- Packages/AtlasFeatures*: 全部 6 个 feature 包视图重写/拆分
+- Packages/AtlasFeatures*: 8 个路由屏对应的 feature 包（6 个重写/拆分，Settings/About 换装级；AtlasFeaturesStorage 无路由不触碰）
 - Apps/AtlasApp: 壳层（侧栏/工具栏/任务中心/菜单/窗口尺寸）+ AtlasAppModel ViewState
 - Packages/AtlasDomain: AtlasRoute 改名 + L10n 键迁移（~120 键 × 2 语言）
 - 不触碰: AtlasProtocol / AtlasInfrastructure / XPC / Helpers / Go
@@ -20,12 +20,12 @@
 - 人工: 手动矩阵 + zh/en 台账声部对比 + VoiceOver 抽查
 
 ## Docs Sync（规格 §0.4 全表）
-DECISIONS(D-012) / Backlog(EPIC-E) / IA / COPY_GUIDELINES / DESIGN_SPEC(头注) / PRD / ROADMAP / HELP_CENTER_OUTLINE / WORKSPACE_LAYOUT / README 截图 / Docs/product 入库
+DECISIONS(D-012) / Backlog(EPIC-E + A/B/C 完成标记，后者随 M4) / IA / COPY_GUIDELINES / DESIGN_SPEC(头注) / PRD / ROADMAP / HELP_CENTER_OUTLINE / WORKSPACE_LAYOUT / README 截图 / Docs/product 入库
 
 ## Planned Verification
 | Phase | Verify Command | Status |
 |-------|---------------|--------|
-| M0 | git log 检查 5 个治理 commit；ls iterations/REQ-calm-ledger-redesign | PENDING |
+| M0 | git log 检查 5 个内容提交 + 1 个收口提交；ls iterations/REQ-calm-ledger-redesign | PASS |
 | M1 | node scripts/design/contrast-check.mjs && swift test --package-path Packages && swift build --package-path Apps | PENDING |
 | M2 | swift test --package-path Packages（新组件单测全绿） | PENDING |
 | M3 | swift test --package-path Packages && swift test --package-path Apps + 每屏手动矩阵 | PENDING |
@@ -33,6 +33,7 @@ DECISIONS(D-012) / Backlog(EPIC-E) / IA / COPY_GUIDELINES / DESIGN_SPEC(头注) 
 
 ## Actual Verification
 （执行时填写）
+- M0 (2026-06-10): 分支 redesign/calm-ledger，main..HEAD 6 commits（5 内容 + 1 收口），16 文件 883 插入 0 删除，治理工件齐备（spec 审查字节级一致）
 
 ## Actual Deliverables
 （执行时填写）
