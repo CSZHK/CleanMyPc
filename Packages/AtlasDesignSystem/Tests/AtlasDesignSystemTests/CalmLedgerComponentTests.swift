@@ -189,6 +189,29 @@ final class CalmLedgerComponentTests: XCTestCase {
         )
     }
 
+    // MARK: - F5 AtlasStampBadge
+
+    func testStampBadgeStyleVariants() {
+        // badge = full presence, interactive layer behaves normally
+        XCTAssertEqual(AtlasStampBadge.Style.badge.opacity, 1.0)
+        XCTAssertEqual(AtlasStampBadge.Style.badge.sizeMultiplier, 1.0)
+        XCTAssertTrue(AtlasStampBadge.Style.badge.allowsHitTesting)
+        // watermark = 0.45 opacity, ×1.4 size, never intercepts clicks (spec §4.2)
+        XCTAssertEqual(AtlasStampBadge.Style.watermark.opacity, 0.45)
+        XCTAssertEqual(AtlasStampBadge.Style.watermark.sizeMultiplier, 1.4)
+        XCTAssertFalse(AtlasStampBadge.Style.watermark.allowsHitTesting)
+    }
+
+    func testStampBadgeConstruction() {
+        // Both variants construct with full and minimal content (default style = .badge).
+        let badge = AtlasStampBadge(
+            title: "恢复点已建立", subtitle: "1.2 GB · 保留 7 天", numberText: "№42"
+        )
+        XCTAssertNotNil(badge.body)
+        let watermark = AtlasStampBadge(title: "已验证", subtitle: nil, numberText: nil, style: .watermark)
+        XCTAssertNotNil(watermark.body)
+    }
+
     func testStageBarCircledNumeralAndHighlightClamp() {
         XCTAssertEqual(AtlasStageBar.circledNumeral(1), "①")
         XCTAssertEqual(AtlasStageBar.circledNumeral(4), "④")
