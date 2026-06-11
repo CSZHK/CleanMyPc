@@ -1031,6 +1031,53 @@
 "smartclean.undo.banner.message" = "Cleanup plan executed successfully.";
 "smartclean.undo.banner.action" = "Undo";
 
+/* Calm Ledger M3 Batch I — Smart Clean skeleton (stage bar / receipt / rescan confirm) */
+"smartclean.stage.scan" = "Scan";
+"smartclean.stage.review" = "Review";
+"smartclean.stage.execute" = "Run";
+"smartclean.stage.receipt" = "Receipt";
+"smartclean.stage.plan.number" = "Plan №%d";
+"smartclean.stage.plan.number.a11y" = "Plan number %d";
+"smartclean.stage.readonly.banner" = "Viewing a completed stage — read-only snapshot.";
+"smartclean.stage.readonly.return" = "Back to Current Stage";
+"smartclean.stage.review.zero.title" = "Nothing to clean up";
+"smartclean.stage.review.zero.detail" = "This scan found no cleanable items. You can rescan later.";
+"smartclean.stage.evidence.open" = "View Evidence";
+"smartclean.stage.evidence.recovery.single" = "A restore point is created before the run · kept %d days · restorable from the Ledger at its original path.";
+"smartclean.stage.evidence.recovery.aggregate" = "All %d selected items are recoverable · kept %d days · a restore point is created before the run.";
+"smartclean.stage.actionbar.execute" = "Run %d Selected";
+"smartclean.stage.actionbar.rescan" = "Rescan";
+"smartclean.stage.actionbar.newScan" = "New Scan";
+"smartclean.stage.actionbar.viewReceipt" = "View Receipt";
+"smartclean.stage.metric.selected" = "%@ · %d items";
+"smartclean.stage.execute.failure.suggestion" = "Partially completed runs are recorded too; see the receipt and the Ledger for details.";
+"smartclean.promise.full" = "Restore point created before the run · kept %d days · fully recorded in the Ledger";
+"smartclean.promise.partial" = "%d/%d items recoverable · kept %d days · fully recorded in the Ledger";
+"smartclean.evidence.path" = "Path";
+"smartclean.evidence.path.more" = "%d more paths";
+"smartclean.evidence.size" = "Size";
+"smartclean.evidence.category" = "Category";
+"smartclean.evidence.lastModified" = "Last Modified";
+"smartclean.evidence.created" = "Created";
+"smartclean.evidence.source" = "Source";
+"smartclean.rescan.title" = "Rescan?";
+"smartclean.rescan.message" = "Plan №%d will be voided. A new scan assigns a fresh number; the old plan stays in the Ledger marked as superseded.";
+"smartclean.rescan.confirm" = "Void & Rescan";
+"smartclean.receipt.title" = "Cleanup Receipt";
+"smartclean.receipt.items.label" = "Items Run";
+"smartclean.receipt.items.value" = "%d items";
+"smartclean.receipt.estimated.label" = "Estimated Freed";
+"smartclean.receipt.completed.label" = "Completed";
+"smartclean.receipt.code.label" = "Scan Receipt";
+"smartclean.receipt.stamp.title" = "Restore point created";
+"smartclean.receipt.stamp.facts" = "%@ · kept %d days";
+"smartclean.receipt.stamp.facts.a11y" = "Restore point created · %@ · kept %d days";
+"smartclean.receipt.viewInLedger" = "View in Ledger →";
+"smartclean.receipt.missing.title" = "No receipt in this session yet";
+"smartclean.receipt.missing.detail" = "After a cleanup plan runs, its receipt appears here.";
+"smartclean.toast.recorded" = "Recorded as №%d";
+"smartclean.drawer.close" = "Close evidence drawer";
+
 // MARK: - Apps Filter
 "apps.filter.leftoversOnly" = "Leftovers Only";
 

@@ -2,8 +2,18 @@ import AtlasDesignSystem
 import AtlasDomain
 import SwiftUI
 
+/// Smart Clean — first full assembly of the Calm Ledger workflow skeleton
+/// (spec §2.3): plan-№ title area, four-stage bar, stage-routed content,
+/// evidence panel (≥880pt) or non-modal drawer (<880pt), pinned action bar
+/// with the state-driven recovery promise (§1.6). Stage truth is
+/// resolve-on-render (decision A): the shell derives `state.currentStage` from
+/// live model state and this view never writes it; user-mutable view state
+/// flows back through `onStateChange` and persists per-route on the app model.
 public struct SmartCleanFeatureView: View {
     @Environment(\.atlasContentWidth) private var contentWidth
+    @FocusState private var evidenceFocus: String?
+    @State private var showExecuteConfirmation = false
+    @State private var actionBarInset: CGFloat = 0
 
     private let findings: [Finding]
     private let plan: ActionPlan
@@ -15,20 +25,24 @@ public struct SmartCleanFeatureView: View {
     private let canExecutePlan: Bool
     private let planIssue: String?
     private let executionIssue: String?
-    private let executionCompleted: Bool
+    private let executionReceipt: SmartCleanExecutionReceipt?
+    private let retentionDays: Int
+    private let searchText: String
+    private let state: SmartCleanWorkflowState
+    private let onStateChange: (SmartCleanWorkflowState) -> Void
     private let onStartScan: () -> Void
     private let onRefreshPreview: () -> Void
-    private let onExecutePlan: () -> Void
+    private let onRequestRescan: () -> Void
+    private let onConfirmRescan: () -> Void
+    private let onCancelRescan: () -> Void
+    private let onExecuteSelection: ([UUID]) -> Void
     private let onUndoExecution: (() -> Void)?
-
-    @State private var showExecuteConfirmation = false
-    @State private var showUndoBanner = true
-    @State private var selectedRiskFilter: RiskLevel?
+    private let onNavigateToLedger: () -> Void
 
     public init(
-        findings: [Finding] = AtlasScaffoldFixtures.findings,
-        plan: ActionPlan = AtlasScaffoldFixtures.actionPlan,
-        scanSummary: String = AtlasL10n.string("model.scan.ready"),
+        findings: [Finding] = [],
+        plan: ActionPlan = ActionPlan(title: "", items: [], estimatedBytes: 0),
+        scanSummary: String = "",
         scanProgress: Double = 0,
         isScanning: Bool = false,
         isExecutingPlan: Bool = false,
@@ -36,11 +50,19 @@ public struct SmartCleanFeatureView: View {
         canExecutePlan: Bool = false,
         planIssue: String? = nil,
         executionIssue: String? = nil,
-        executionCompleted: Bool = false,
+        executionReceipt: SmartCleanExecutionReceipt? = nil,
+        retentionDays: Int = 7,
+        searchText: String = "",
+        state: SmartCleanWorkflowState = SmartCleanWorkflowState(),
+        onStateChange: @escaping (SmartCleanWorkflowState) -> Void = { _ in },
         onStartScan: @escaping () -> Void = {},
         onRefreshPreview: @escaping () -> Void = {},
-        onExecutePlan: @escaping () -> Void = {},
-        onUndoExecution: (() -> Void)? = nil
+        onRequestRescan: @escaping () -> Void = {},
+        onConfirmRescan: @escaping () -> Void = {},
+        onCancelRescan: @escaping () -> Void = {},
+        onExecuteSelection: @escaping ([UUID]) -> Void = { _ in },
+        onUndoExecution: (() -> Void)? = nil,
+        onNavigateToLedger: @escaping () -> Void = {}
     ) {
         self.findings = findings
         self.plan = plan
@@ -52,458 +74,74 @@ public struct SmartCleanFeatureView: View {
         self.canExecutePlan = canExecutePlan
         self.planIssue = planIssue
         self.executionIssue = executionIssue
-        self.executionCompleted = executionCompleted
+        self.executionReceipt = executionReceipt
+        self.retentionDays = retentionDays
+        self.searchText = searchText
+        self.state = state
+        self.onStateChange = onStateChange
         self.onStartScan = onStartScan
         self.onRefreshPreview = onRefreshPreview
-        self.onExecutePlan = onExecutePlan
+        self.onRequestRescan = onRequestRescan
+        self.onConfirmRescan = onConfirmRescan
+        self.onCancelRescan = onCancelRescan
+        self.onExecuteSelection = onExecuteSelection
         self.onUndoExecution = onUndoExecution
+        self.onNavigateToLedger = onNavigateToLedger
     }
 
     public var body: some View {
         AtlasScreen(
             title: AtlasL10n.string("smartclean.screen.title"),
             subtitle: AtlasL10n.string("smartclean.screen.subtitle"),
-            maxContentWidth: AtlasLayout.maxWorkflowWidth
+            maxContentWidth: AtlasLayout.maxWorkflowWidth,
+            actionBar: { AnyView(actionBar) }
         ) {
-            AtlasCallout(
-                title: statusTitle,
-                detail: statusDetail,
-                tone: statusTone,
-                systemImage: statusSymbol
-            )
+            stageHeader
 
-            if executionCompleted, showUndoBanner, let undoAction = onUndoExecution {
-                AtlasUndoBanner(
-                    message: AtlasL10n.string("smartclean.undo.banner.message"),
-                    actionTitle: AtlasL10n.string("smartclean.undo.banner.action"),
-                    tone: .success,
-                    onUndo: undoAction,
-                    onDismiss: { showUndoBanner = false }
-                )
-                .transition(.move(edge: .top).combined(with: .opacity))
+            if isReadOnly {
+                SmartCleanReadOnlyBanner { mutate { $0.displayedStage = $0.currentStage } }
             }
 
-            AtlasInfoCard(
-                title: AtlasL10n.string("smartclean.controls.title"),
-                subtitle: AtlasL10n.string("smartclean.controls.subtitle"),
-                tone: statusTone
-            ) {
-                if isScanning || isExecutingPlan {
-                    VStack(spacing: AtlasSpacing.lg) {
-                        AtlasCircularProgress(
-                            progress: scanProgress == 0 ? (isScanning ? 0.15 : 0.5) : scanProgress,
-                            tone: isScanning ? .neutral : .warning,
-                            lineWidth: 8,
-                            icon: isScanning ? "sparkles" : "play.circle.fill"
-                        )
-                        .frame(width: 80, height: 80)
-
-                        AtlasLoadingState(
-                            title: isScanning ? AtlasL10n.string("smartclean.loading.scan") : AtlasL10n.string("smartclean.loading.execute"),
-                            detail: scanSummary,
-                            progress: scanProgress == 0 ? nil : scanProgress
-                        )
-                    }
-                } else {
-                    VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
-                        Text(scanSummary)
-                            .font(AtlasTypography.body)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        if scanProgress > 0 {
-                            ProgressView(value: max(scanProgress, 0), total: 1)
-                                .controlSize(.large)
-                                .tint(AtlasColor.brand)
-                        }
-
-                        Text(primaryAction.detail)
-                            .font(AtlasTypography.body)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        ViewThatFits(in: .horizontal) {
-                            HStack(alignment: .center, spacing: AtlasSpacing.md) {
-                                primaryActionButton
-                                supportingActionButtons
-                                Spacer(minLength: 0)
-                            }
-
-                            VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                                primaryActionButton
-                                HStack(alignment: .center, spacing: AtlasSpacing.md) {
-                                    supportingActionButtons
-                                    Spacer(minLength: 0)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            LazyVGrid(columns: metricColumns, spacing: AtlasSpacing.lg) {
-                AtlasMetricCard(
-                    title: AtlasL10n.string("smartclean.metric.previewSize.title"),
-                    value: AtlasFormatters.byteCount(resolvedPlanEstimatedBytes),
-                    detail: AtlasL10n.string("smartclean.metric.previewSize.detail"),
-                    tone: .success,
-                    systemImage: "internaldrive"
-                )
-                AtlasMetricCard(
-                    title: AtlasL10n.string("smartclean.metric.actions.title"),
-                    value: "\(plan.items.count)",
-                    detail: AtlasL10n.string("smartclean.metric.actions.detail"),
-                    tone: .neutral,
-                    systemImage: "checklist"
-                )
-                AtlasMetricCard(
-                    title: AtlasL10n.string("smartclean.metric.review.title"),
-                    value: "\(manualReviewCount)",
-                    detail: manualReviewCount == 0 ? AtlasL10n.string("smartclean.metric.review.none") : AtlasL10n.string("smartclean.metric.review.some"),
-                    tone: manualReviewCount == 0 ? .success : .warning,
-                    systemImage: "exclamationmark.bubble"
-                )
-            }
-
-            AtlasInfoCard(
-                title: AtlasL10n.string("smartclean.preview.title"),
-                subtitle: plan.title,
-                tone: manualReviewCount == 0 ? .success : .warning
-            ) {
-                if !plan.items.isEmpty {
-                    AtlasMetricCard(
-                        title: AtlasL10n.string("smartclean.preview.metric.space.title"),
-                        value: AtlasFormatters.byteCount(resolvedPlanEstimatedBytes),
-                        detail: AtlasL10n.string(
-                            plan.items.count == 1
-                                ? "smartclean.preview.metric.space.detail.one"
-                                : "smartclean.preview.metric.space.detail.other",
-                            plan.items.count
-                        ),
-                        tone: .success,
-                        systemImage: "internaldrive",
-                        elevation: .prominent
-                    )
-                }
-
-                if !plan.items.isEmpty, !hasExecutionFailure {
-                    AtlasCallout(
-                        title: planValidationCalloutTitle,
-                        detail: planValidationCalloutDetail,
-                        tone: planValidationCalloutTone,
-                        systemImage: planValidationCalloutSymbol
-                    )
-                }
-
-                if !hasExecutionFailure && (plan.items.isEmpty || manualReviewCount > 0) {
-                    AtlasCallout(
-                        title: manualReviewCount == 0 ? AtlasL10n.string("smartclean.preview.callout.safe.title") : AtlasL10n.string("smartclean.preview.callout.review.title"),
-                        detail: manualReviewCount == 0
-                            ? AtlasL10n.string("smartclean.preview.callout.safe.detail")
-                            : AtlasL10n.string("smartclean.preview.callout.review.detail"),
-                        tone: manualReviewCount == 0 ? .success : .warning,
-                        systemImage: manualReviewCount == 0 ? "checkmark.shield.fill" : "exclamationmark.triangle.fill"
-                    )
-                }
-
-                if plan.items.isEmpty {
-                    AtlasEmptyState(
-                        title: AtlasL10n.string("smartclean.preview.empty.title"),
-                        detail: AtlasL10n.string("smartclean.preview.empty.detail"),
-                        systemImage: "list.bullet.clipboard",
-                        tone: .neutral,
-                        actionTitle: AtlasL10n.string("emptystate.action.startScan"),
-                        onAction: onStartScan
-                    )
-                } else {
-                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                        ForEach(plan.items) { item in
-                            let executionBoundary = effectiveExecutionBoundary(for: item)
-                            AtlasDetailRow(
-                                title: item.title,
-                                subtitle: item.detail,
-                                footnote: supportText(for: item, boundary: executionBoundary),
-                                systemImage: item.kind.atlasSystemImage,
-                                tone: item.recoverable ? .success : .warning
-                            ) {
-                                AtlasStatusChip(
-                                    executionBoundaryTitle(for: executionBoundary),
-                                    tone: executionBoundary.isExecutable ? .success : .warning
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if findings.isEmpty {
-                AtlasEmptyState(
-                    title: AtlasL10n.string("smartclean.empty.title"),
-                    detail: AtlasL10n.string("smartclean.empty.detail"),
-                    systemImage: "sparkles.tv",
-                    tone: .neutral,
-                    actionTitle: AtlasL10n.string("emptystate.action.startScan"),
-                    onAction: onStartScan
-                )
+            if effectiveStage == SmartCleanStage.receipt {
+                receiptContent
             } else {
-                filterChips
+                HStack(alignment: .top, spacing: AtlasSpacing.xl) {
+                    stageContent
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
 
-                AggregateSummaryCard(findings: filteredFindings)
-
-                ForEach(RiskLevel.allCases, id: \.self) { risk in
-                    riskSection(risk)
-                }
-            }
-        }
-        .animation(AtlasMotion.standard, value: showUndoBanner)
-    }
-
-    private var metricColumns: [GridItem] {
-        AtlasLayout.adaptiveMetricColumns(for: contentWidth)
-    }
-
-    // MARK: - Risk Filter
-
-    private var filteredFindings: [Finding] {
-        guard let selectedRiskFilter else {
-            return findings
-        }
-        return findings.filter { $0.risk == selectedRiskFilter }
-    }
-
-    @ViewBuilder
-    private var filterChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AtlasSpacing.sm) {
-                AtlasFilterChip(
-                    title: AtlasL10n.string("smartclean.filter.all"),
-                    isSelected: selectedRiskFilter == nil,
-                    count: findings.count
-                ) {
-                    selectedRiskFilter = nil
-                }
-
-                ForEach(RiskLevel.allCases, id: \.self) { risk in
-                    let count = findings.filter { $0.risk == risk }.count
-                    AtlasFilterChip(
-                        title: risk.title,
-                        isSelected: selectedRiskFilter == risk,
-                        count: count
-                    ) {
-                        selectedRiskFilter = risk
+                    if showsSidePanel {
+                        evidencePanel
+                            .frame(width: AtlasLayout.evidencePanelMinWidth)
                     }
                 }
             }
         }
-    }
-
-    @ViewBuilder
-    private func riskSection(_ risk: RiskLevel) -> some View {
-        let items = filteredFindings.filter { $0.risk == risk }
-
-        if !items.isEmpty {
-            AtlasSectionDisclosure(
-                title: risk.title,
-                count: items.count,
-                defaultExpanded: risk == .safe
-            ) {
-                let grouped = Dictionary(grouping: items) { finding in
-                    finding.storageCategory?.title ?? AtlasL10n.localizedCategory(finding.category)
-                }
-
-                let sortedCategories = grouped.keys.sorted()
-
-                ForEach(sortedCategories, id: \.self) { categoryTitle in
-                    let categoryItems = grouped[categoryTitle] ?? []
-
-                    if grouped.count > 1 {
-                        AtlasSectionDisclosure(
-                            title: categoryTitle,
-                            count: categoryItems.count,
-                            defaultExpanded: false
-                        ) {
-                            VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                                ForEach(categoryItems) { finding in
-                                    FindingRowView(finding: finding)
-                                }
-                            }
-                        }
-                    } else {
-                        VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                            ForEach(categoryItems) { finding in
-                                FindingRowView(finding: finding)
-                            }
-                        }
-                    }
+        .simultaneousGesture(outsideTapGesture)
+        .overlay(alignment: .trailing) {
+            if isDrawerLayout, state.drawerPresented {
+                SmartCleanEvidenceDrawer(bottomInset: actionBarInset, onDismiss: dismissDrawer) {
+                    evidencePanel
                 }
             }
         }
-    }
-
-    private var resolvedPlanEstimatedBytes: Int64 {
-        if plan.estimatedBytes > 0 {
-            return plan.estimatedBytes
+        .onPreferenceChange(AtlasActionBarHeightKey.self) { actionBarInset = $0 }
+        .confirmationDialog(
+            AtlasL10n.string("smartclean.rescan.title"),
+            isPresented: rescanDialogBinding,
+            titleVisibility: .visible
+        ) {
+            Button(AtlasL10n.string("smartclean.rescan.confirm"), role: .destructive, action: onConfirmRescan)
+            Button(AtlasL10n.string("confirm.cancel"), role: .cancel, action: onCancelRescan)
+        } message: {
+            Text(AtlasL10n.string("smartclean.rescan.message", state.planNumber ?? 0))
         }
-
-        let planItemIDs = Set(plan.items.map(\.id))
-        if !planItemIDs.isEmpty {
-            let matchingFindings = findings.filter { planItemIDs.contains($0.id) }
-            if !matchingFindings.isEmpty {
-                return matchingFindings.map(\.bytes).reduce(0, +)
-            }
-        }
-
-        return findings.map(\.bytes).reduce(0, +)
-    }
-
-    private var executablePlanItemCount: Int {
-        plan.items.filter { effectiveExecutionBoundary(for: $0).isExecutable }.count
-    }
-
-    private var reviewOnlyPlanItemCount: Int {
-        max(plan.items.count - executablePlanItemCount, 0)
-    }
-
-    private var executionCoverageTitle: String {
-        if reviewOnlyPlanItemCount == 0 {
-            return AtlasL10n.string("smartclean.execution.coverage.full", executablePlanItemCount)
-        }
-        return AtlasL10n.string("smartclean.execution.coverage.partial", executablePlanItemCount, plan.items.count)
-    }
-
-    private var executionCoverageDetail: String {
-        if reviewOnlyPlanItemCount == 0 {
-            return AtlasL10n.string("smartclean.execution.coverage.full.detail")
-        }
-        return AtlasL10n.string("smartclean.execution.coverage.partial.detail", reviewOnlyPlanItemCount)
-    }
-
-    private func isPhysicallyExecutable(_ item: ActionItem) -> Bool {
-        item.effectiveExecutionBoundary(findings: findings).isExecutable
-    }
-
-    private func effectiveExecutionBoundary(for item: ActionItem) -> ActionItem.ExecutionBoundary {
-        item.effectiveExecutionBoundary(findings: findings)
-    }
-
-    private var manualReviewCount: Int {
-        plan.items.filter { !$0.recoverable }.count
-    }
-
-    private var hasPlanRevalidationFailure: Bool {
-        !isCurrentPlanFresh && planIssue != nil
-    }
-
-    private var hasExecutionFailure: Bool {
-        executionIssue != nil
-    }
-
-    private var isShowingCachedPlanState: Bool {
-        !isCurrentPlanFresh && !plan.items.isEmpty
-    }
-
-    private var planValidationCalloutTitle: String {
-        if isCurrentPlanFresh {
-            return executionCoverageTitle
-        }
-        if hasPlanRevalidationFailure {
-            return AtlasL10n.string("smartclean.revalidationFailed.title")
-        }
-        return AtlasL10n.string("smartclean.cached.title")
-    }
-
-    private var planValidationCalloutDetail: String {
-        if isCurrentPlanFresh {
-            return executionCoverageDetail
-        }
-        return planIssue ?? AtlasL10n.string("smartclean.cached.detail")
-    }
-
-    private var planValidationCalloutTone: AtlasTone {
-        if hasPlanRevalidationFailure {
-            return .danger
-        }
-        return isCurrentPlanFresh && reviewOnlyPlanItemCount == 0 ? .success : .warning
-    }
-
-    private var planValidationCalloutSymbol: String {
-        if hasPlanRevalidationFailure {
-            return "xmark.octagon.fill"
-        }
-        return isCurrentPlanFresh && reviewOnlyPlanItemCount == 0 ? "play.circle.fill" : "externaldrive.badge.exclamationmark"
-    }
-
-    private var statusTitle: String {
-        if isScanning { return AtlasL10n.string("smartclean.status.scanning") }
-        if isExecutingPlan { return AtlasL10n.string("smartclean.status.executing") }
-        if hasExecutionFailure { return AtlasL10n.string("smartclean.status.executionFailed") }
-        if hasPlanRevalidationFailure { return AtlasL10n.string("smartclean.status.revalidationFailed") }
-        if isShowingCachedPlanState { return AtlasL10n.string("smartclean.status.cached") }
-        if findings.isEmpty { return AtlasL10n.string("smartclean.status.empty") }
-        return AtlasL10n.string("smartclean.status.ready")
-    }
-
-    private var statusDetail: String {
-        if isScanning || isExecutingPlan { return scanSummary }
-        if hasExecutionFailure { return executionIssue ?? scanSummary }
-        if hasPlanRevalidationFailure { return planIssue ?? AtlasL10n.string("smartclean.cached.detail") }
-        if isShowingCachedPlanState { return AtlasL10n.string("smartclean.cached.detail") }
-        if findings.isEmpty { return AtlasL10n.string("smartclean.status.empty.detail") }
-        return AtlasL10n.string("smartclean.status.ready.detail", findings.count)
-    }
-
-    private var statusTone: AtlasTone {
-        if isExecutingPlan { return .warning }
-        if isScanning { return .neutral }
-        if hasExecutionFailure { return .danger }
-        if hasPlanRevalidationFailure { return .danger }
-        if isShowingCachedPlanState { return .warning }
-        return manualReviewCount == 0 ? .success : .warning
-    }
-
-    private var statusSymbol: String {
-        if isScanning { return "sparkles" }
-        if isExecutingPlan { return "play.circle.fill" }
-        if hasExecutionFailure { return "xmark.octagon.fill" }
-        if hasPlanRevalidationFailure { return "xmark.octagon.fill" }
-        if isShowingCachedPlanState { return "externaldrive.badge.exclamationmark" }
-        return manualReviewCount == 0 ? "checkmark.shield.fill" : "exclamationmark.triangle.fill"
-    }
-
-    private var primaryAction: SmartCleanPrimaryAction {
-        if plan.items.isEmpty {
-            return findings.isEmpty ? .scan : .refresh
-        }
-        if isCurrentPlanFresh && canExecutePlan {
-            return .execute
-        }
-        return .refresh
-    }
-
-    private func primaryActionTapped() {
-        if primaryAction == .execute {
-            showExecuteConfirmation = true
-        } else {
-            primaryAction.handler(startScan: onStartScan, refreshPreview: onRefreshPreview, executePlan: onExecutePlan)()
-        }
-    }
-
-    private var primaryActionButton: some View {
-        Button(action: primaryActionTapped) {
-            Label(primaryAction.buttonTitle, systemImage: primaryAction.buttonSystemImage)
-        }
-        .buttonStyle(.atlasPrimary)
-        .keyboardShortcut(.defaultAction)
-        .disabled(primaryAction.isDisabled(canExecutePlan: canExecutePlan))
-        .accessibilityIdentifier(primaryAction.accessibilityIdentifier)
-        .accessibilityHint(primaryAction.accessibilityHint)
         .confirmationDialog(
             AtlasL10n.string("smartclean.confirm.execute.title"),
             isPresented: $showExecuteConfirmation,
             titleVisibility: .visible
         ) {
             Button(AtlasL10n.string("smartclean.action.execute"), role: .destructive) {
-                onExecutePlan()
+                onExecuteSelection(selectedFindingUUIDs)
             }
             Button(AtlasL10n.string("confirm.cancel"), role: .cancel) {}
         } message: {
@@ -511,204 +149,202 @@ public struct SmartCleanFeatureView: View {
         }
     }
 
+    // MARK: Derived stage state
+
+    private var effectiveStage: Int {
+        SmartCleanEvidenceBuilder.effectiveStage(
+            displayedStage: state.displayedStage,
+            currentStage: state.currentStage,
+            hasReceipt: executionReceipt != nil
+        )
+    }
+
+    private var isReadOnly: Bool {
+        SmartCleanEvidenceBuilder.isReadOnly(displayedStage: effectiveStage, currentStage: state.currentStage)
+    }
+
+    private var isDrawerLayout: Bool { contentWidth < AtlasLayout.evidencePanelBreakpoint }
+
+    private var showsSidePanel: Bool { !isDrawerLayout && effectiveStage != SmartCleanStage.receipt }
+
+    private var selectedFindingIDs: Set<String> {
+        state.selectedIDs.intersection(Set(findings.map(\.id.uuidString)))
+    }
+
+    private var selectedFindings: [Finding] {
+        findings.filter { selectedFindingIDs.contains($0.id.uuidString) }
+    }
+
+    private var selectedFindingUUIDs: [UUID] { selectedFindings.map(\.id) }
+
+    // MARK: Header (plan № + stage bar)
+
+    private var stageHeader: some View {
+        SmartCleanStageHeader(
+            planNumber: state.planNumber,
+            receiptCode: state.receiptCode,
+            effectiveStage: effectiveStage,
+            completedStages: SmartCleanEvidenceBuilder.completedStages(
+                currentStage: state.currentStage,
+                effectiveStage: effectiveStage
+            ),
+            onSelectStage: { index in mutate { $0.displayedStage = index } }
+        )
+    }
+
+    // MARK: Stage content router
+
     @ViewBuilder
-    private var supportingActionButtons: some View {
-        if primaryAction != .scan {
-            Button(action: onStartScan) {
-                Label(AtlasL10n.string("smartclean.action.runScan"), systemImage: "sparkles")
+    private var stageContent: some View {
+        switch effectiveStage {
+        case SmartCleanStage.scan:
+            SmartCleanScanStageView(
+                isScanning: state.isScanInProgress || isScanning,
+                scanSummary: scanSummary,
+                scanProgress: scanProgress,
+                hasCachedFindings: !findings.isEmpty || !plan.items.isEmpty,
+                planIssue: planIssue,
+                onStartScan: onStartScan,
+                onRefreshPreview: onRefreshPreview
+            )
+        case SmartCleanStage.review:
+            SmartCleanReviewStageView(
+                findings: findings,
+                searchQuery: searchText,
+                riskFilter: state.riskFilter,
+                selectedIDs: selectedFindingIDs,
+                evidenceSelectionID: state.evidenceSelectionID,
+                isReadOnly: isReadOnly,
+                showsEvidenceButton: isDrawerLayout,
+                isReviewEmpty: state.isReviewEmpty && findings.isEmpty,
+                evidenceFocus: $evidenceFocus,
+                onToggle: { id in mutate { $0.selectedIDs.formSymmetricDifference([id]) } },
+                onSetRiskFilter: { filter in mutate { $0.riskFilter = filter } },
+                onSelectEvidence: { id in mutate { $0.evidenceSelectionID = id } },
+                onOpenEvidence: { id in mutate { $0.evidenceSelectionID = id; $0.drawerPresented = true } },
+                onRequestRescan: rescanTapped
+            )
+        default:
+            SmartCleanExecuteStageView(
+                plan: plan,
+                isExecuting: isExecutingPlan,
+                progress: scanProgress,
+                summary: scanSummary,
+                executionIssue: state.isExecutionError ? executionIssue : nil,
+                onViewReceipt: { mutate { $0.displayedStage = SmartCleanStage.receipt } }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var receiptContent: some View {
+        if let executionReceipt {
+            SmartCleanReceiptView(
+                receipt: executionReceipt,
+                onUndo: onUndoExecution,
+                onNavigateToLedger: onNavigateToLedger
+            )
+        } else {
+            AtlasEmptyState(
+                title: AtlasL10n.string("smartclean.receipt.missing.title"),
+                detail: AtlasL10n.string("smartclean.receipt.missing.detail"),
+                systemImage: "doc.text",
+                tone: .neutral
+            )
+        }
+    }
+
+    // MARK: Evidence panel
+
+    private var evidencePanel: some View {
+        AtlasEvidencePanel(state: SmartCleanEvidenceBuilder.panelState(
+            effectiveStage: effectiveStage,
+            isExecutionError: state.isExecutionError,
+            executionIssue: executionIssue,
+            evidenceSelectionID: state.evidenceSelectionID,
+            findings: findings,
+            selectedFindings: selectedFindings,
+            plan: plan,
+            retentionDays: retentionDays
+        ))
+    }
+
+    // MARK: Action bar (promise = state-driven 三式, §1.6 — resolved purely)
+
+    private var actionBar: some View {
+        let stats = SmartCleanEvidenceBuilder.recoveryStats(selectedFindingIDs: selectedFindingIDs, plan: plan)
+        let model = SmartCleanActionBarModel.resolve(SmartCleanActionBarModel.Inputs(
+            effectiveStage: effectiveStage,
+            isReadOnly: isReadOnly,
+            isScanning: isScanning || state.isScanInProgress,
+            isExecuting: isExecutingPlan,
+            isReviewZero: state.isReviewEmpty && findings.isEmpty,
+            canExecutePlan: canExecutePlan,
+            scanProgress: scanProgress,
+            selectedCount: selectedFindingIDs.count,
+            selectedBytes: selectedFindings.reduce(Int64(0)) { $0 + $1.bytes },
+            recoverableCount: stats.recoverable,
+            retentionDays: retentionDays,
+            hasReceipt: executionReceipt != nil,
+            receiptFreedBytes: executionReceipt?.estimatedFreedBytes ?? 0,
+            hasPlanNumber: state.planNumber != nil
+        ))
+        return AtlasActionBar(
+            primaryTitle: model.title,
+            primaryEnabled: model.isEnabled,
+            onPrimary: { perform(model.intent) },
+            promise: model.promise,
+            metricText: model.metricText,
+            progress: model.progress
+        )
+    }
+
+    private func perform(_ intent: SmartCleanActionBarModel.Intent) {
+        switch intent {
+        case .execute:
+            showExecuteConfirmation = true
+        case .returnToCurrent:
+            mutate { $0.displayedStage = $0.currentStage }
+        case .viewReceipt:
+            mutate { $0.displayedStage = SmartCleanStage.receipt }
+        case .rescan:
+            rescanTapped()
+        case .none:
+            break
+        }
+    }
+
+    // MARK: Intents
+
+    /// Rescan / new-scan entry — same confirmation path as Cmd+Shift+R
+    /// (decision B): an active № raises the flag (dialog supersedes on
+    /// confirm); without one the scan starts directly.
+    private func rescanTapped() {
+        state.planNumber != nil ? onRequestRescan() : onStartScan()
+    }
+
+    private var rescanDialogBinding: Binding<Bool> {
+        Binding(
+            get: { state.rescanConfirmationPending },
+            set: { presented in
+                if !presented { onCancelRescan() }
             }
-            .buttonStyle(.atlasSecondary)
-            .keyboardShortcut("s", modifiers: [.command, .option])
-            .disabled(isScanning || isExecutingPlan)
-            .accessibilityIdentifier("smartclean.runScan")
-            .accessibilityHint(AtlasL10n.string("smartclean.action.runScan.hint"))
-        }
-
-        if primaryAction != .refresh, !findings.isEmpty {
-            Button(action: onRefreshPreview) {
-                Label(AtlasL10n.string("smartclean.action.refreshPreview"), systemImage: "arrow.clockwise")
-            }
-            .buttonStyle(.atlasGhost)
-            .disabled(isScanning || isExecutingPlan)
-            .accessibilityIdentifier("smartclean.refreshPreview")
-            .accessibilityHint(AtlasL10n.string("smartclean.action.refreshPreview.hint"))
-        }
+        )
     }
 
-    private func supportText(for item: ActionItem, boundary: ActionItem.ExecutionBoundary) -> String {
-        switch boundary {
-        case .direct:
-            switch item.kind {
-            case .removeCache:
-                return AtlasL10n.string("smartclean.support.removeCache")
-            case .removeApp:
-                return AtlasL10n.string("smartclean.support.removeApp")
-            case .archiveFile:
-                return AtlasL10n.string("smartclean.support.archiveFile")
-            case .inspectPermission:
-                return AtlasL10n.string("smartclean.support.inspectPermission")
-            case .reviewEvidence:
-                return AtlasL10n.string("smartclean.support.archiveFile")
-            case .organizeFile:
-                return AtlasL10n.string("smartclean.support.organizeFile")
-            }
-        case .helper:
-            return AtlasL10n.string("smartclean.support.helper")
-        case .reviewOnly:
-            if item.kind == .inspectPermission {
-                return AtlasL10n.string("smartclean.support.inspectPermission")
-            }
-            return AtlasL10n.string("smartclean.support.reviewOnly")
-        }
+    private var outsideTapGesture: some Gesture {
+        TapGesture().onEnded { if state.drawerPresented { dismissDrawer() } }
     }
 
-    private func executionBoundaryTitle(for boundary: ActionItem.ExecutionBoundary) -> String {
-        switch boundary {
-        case .direct:
-            return AtlasL10n.string("smartclean.execution.real")
-        case .helper:
-            return AtlasL10n.string("smartclean.execution.helper")
-        case .reviewOnly:
-            return AtlasL10n.string("smartclean.execution.reviewOnly")
-        }
+    private func dismissDrawer() {
+        mutate { $0.drawerPresented = false }
+        // Focus returns to the triggering row's ⓘ control (spec §2.4).
+        evidenceFocus = state.evidenceSelectionID
     }
 
-    private func sectionDetail(for risk: RiskLevel) -> String {
-        switch risk {
-        case .safe:
-            return AtlasL10n.string("smartclean.section.safe")
-        case .review:
-            return AtlasL10n.string("smartclean.section.review")
-        case .advanced:
-            return AtlasL10n.string("smartclean.section.advanced")
-        }
-    }
-
-    private func actionExpectation(for risk: RiskLevel) -> String {
-        switch risk {
-        case .safe:
-            return AtlasL10n.string("smartclean.expectation.safe")
-        case .review:
-            return AtlasL10n.string("smartclean.expectation.review")
-        case .advanced:
-            return AtlasL10n.string("smartclean.expectation.advanced")
-        }
-    }
-
-}
-
-private enum SmartCleanPrimaryAction: Equatable {
-    case scan
-    case refresh
-    case execute
-
-    var title: String {
-        switch self {
-        case .scan:
-            return AtlasL10n.string("smartclean.primary.scan.title")
-        case .refresh:
-            return AtlasL10n.string("smartclean.primary.refresh.title")
-        case .execute:
-            return AtlasL10n.string("smartclean.primary.execute.title")
-        }
-    }
-
-    var detail: String {
-        switch self {
-        case .scan:
-            return AtlasL10n.string("smartclean.primary.scan.detail")
-        case .refresh:
-            return AtlasL10n.string("smartclean.primary.refresh.detail")
-        case .execute:
-            return AtlasL10n.string("smartclean.primary.execute.detail")
-        }
-    }
-
-    var tone: AtlasTone {
-        switch self {
-        case .scan, .refresh:
-            return .neutral
-        case .execute:
-            return .warning
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .scan:
-            return "sparkles"
-        case .refresh:
-            return "arrow.clockwise"
-        case .execute:
-            return "play.circle.fill"
-        }
-    }
-
-    var buttonTitle: String {
-        switch self {
-        case .scan:
-            return AtlasL10n.string("smartclean.action.runScan")
-        case .refresh:
-            return AtlasL10n.string("smartclean.action.refreshPreview")
-        case .execute:
-            return AtlasL10n.string("smartclean.action.execute")
-        }
-    }
-
-    var buttonSystemImage: String {
-        switch self {
-        case .scan:
-            return "sparkles"
-        case .refresh:
-            return "arrow.clockwise"
-        case .execute:
-            return "play.fill"
-        }
-    }
-
-    var accessibilityIdentifier: String {
-        switch self {
-        case .scan:
-            return "smartclean.runScan"
-        case .refresh:
-            return "smartclean.refreshPreview"
-        case .execute:
-            return "smartclean.executePreview"
-        }
-    }
-
-    var accessibilityHint: String {
-        switch self {
-        case .scan:
-            return AtlasL10n.string("smartclean.action.runScan.hint")
-        case .refresh:
-            return AtlasL10n.string("smartclean.action.refreshPreview.hint")
-        case .execute:
-            return AtlasL10n.string("smartclean.action.execute.hint")
-        }
-    }
-
-    func isDisabled(canExecutePlan: Bool) -> Bool {
-        switch self {
-        case .execute:
-            return !canExecutePlan
-        case .scan, .refresh:
-            return false
-        }
-    }
-
-    func handler(
-        startScan: @escaping () -> Void,
-        refreshPreview: @escaping () -> Void,
-        executePlan: @escaping () -> Void
-    ) -> () -> Void {
-        switch self {
-        case .scan:
-            return startScan
-        case .refresh:
-            return refreshPreview
-        case .execute:
-            return executePlan
-        }
+    private func mutate(_ transform: (inout SmartCleanWorkflowState) -> Void) {
+        var newState = state
+        transform(&newState)
+        onStateChange(newState)
     }
 }

@@ -1031,6 +1031,53 @@
 "smartclean.undo.banner.message" = "清理计划已成功执行。";
 "smartclean.undo.banner.action" = "撤销";
 
+/* Calm Ledger M3 Batch I — 智能清理骨架（阶段条 / 回执 / 重扫确认） */
+"smartclean.stage.scan" = "扫描";
+"smartclean.stage.review" = "复核";
+"smartclean.stage.execute" = "执行";
+"smartclean.stage.receipt" = "回执";
+"smartclean.stage.plan.number" = "计划 №%d";
+"smartclean.stage.plan.number.a11y" = "计划编号 %d";
+"smartclean.stage.readonly.banner" = "正在回看已完成阶段，内容为只读快照。";
+"smartclean.stage.readonly.return" = "返回当前阶段";
+"smartclean.stage.review.zero.title" = "未发现可清理项";
+"smartclean.stage.review.zero.detail" = "本次扫描没有发现可清理项目。可以稍后重新扫描。";
+"smartclean.stage.evidence.open" = "查看证据";
+"smartclean.stage.evidence.recovery.single" = "执行前自动建立恢复点 · 保留 %d 天 · 可在台账中按原路径还原。";
+"smartclean.stage.evidence.recovery.aggregate" = "已选 %d 项均可恢复 · 保留 %d 天 · 执行前自动建立恢复点。";
+"smartclean.stage.actionbar.execute" = "执行已选 %d 项";
+"smartclean.stage.actionbar.rescan" = "重新扫描";
+"smartclean.stage.actionbar.newScan" = "新扫描";
+"smartclean.stage.actionbar.viewReceipt" = "查看回执";
+"smartclean.stage.metric.selected" = "%@ · %d 项";
+"smartclean.stage.execute.failure.suggestion" = "部分完成的执行也会入账；可在回执与台账中查看详情。";
+"smartclean.promise.full" = "执行前自动建立恢复点 · 保留 %d 天 · 全程录入台账";
+"smartclean.promise.partial" = "%d/%d 项可恢复 · 保留 %d 天 · 全程录入台账";
+"smartclean.evidence.path" = "路径";
+"smartclean.evidence.path.more" = "另有 %d 个路径";
+"smartclean.evidence.size" = "大小";
+"smartclean.evidence.category" = "类别";
+"smartclean.evidence.lastModified" = "最近修改";
+"smartclean.evidence.created" = "创建时间";
+"smartclean.evidence.source" = "来源";
+"smartclean.rescan.title" = "重新扫描？";
+"smartclean.rescan.message" = "当前计划 №%d 将作废。新扫描会分配新的编号，旧计划在台账中保留为已作废记录。";
+"smartclean.rescan.confirm" = "作废并重新扫描";
+"smartclean.receipt.title" = "清理回执";
+"smartclean.receipt.items.label" = "执行项目";
+"smartclean.receipt.items.value" = "%d 项";
+"smartclean.receipt.estimated.label" = "预计释放";
+"smartclean.receipt.completed.label" = "完成时间";
+"smartclean.receipt.code.label" = "扫描回执";
+"smartclean.receipt.stamp.title" = "恢复点已建立";
+"smartclean.receipt.stamp.facts" = "%@ · 保留 %d 天";
+"smartclean.receipt.stamp.facts.a11y" = "恢复点已建立 · %@ · 保留 %d 天";
+"smartclean.receipt.viewInLedger" = "在台账中查看 →";
+"smartclean.receipt.missing.title" = "本次会话还没有回执";
+"smartclean.receipt.missing.detail" = "执行一次清理计划后，这里会显示该计划的回执。";
+"smartclean.toast.recorded" = "已入账 №%d";
+"smartclean.drawer.close" = "收起证据抽屉";
+
 // MARK: - Apps Filter
 "apps.filter.leftoversOnly" = "仅残留文件";
 
