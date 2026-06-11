@@ -14,7 +14,11 @@ struct AtlasWorkflowViewState: Equatable {
     /// The stage the user is looking at (≠ `currentStage` while reviewing a
     /// completed stage read-only — spec §2.3 回看 = 只读快照).
     var displayedStage: Int = 0
-    /// The real workflow stage derived from model state (`AtlasWorkflowStageMap`).
+    /// Last-known stage cache, written by `assignPlanNumber`/`supersedePlan`
+    /// for bookkeeping only — NOT render truth (Batch I decision A,
+    /// resolve-on-render): screens derive the current stage from live model
+    /// state via `AtlasWorkflowStageMap.resolve` on every render and never
+    /// read this stored value for display.
     var currentStage: Int = 0
     /// Ledger plan number (№) — assigned when a scan completes with a plan.
     var planNumber: Int?

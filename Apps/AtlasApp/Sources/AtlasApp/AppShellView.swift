@@ -86,7 +86,9 @@ struct AppShellView: View {
             .ignoresSafeArea(.container, edges: .top)
         }
         .overlay(alignment: .bottomTrailing) {
-            AtlasToastContainer(items: $model.toasts)
+            // 8s dwell per spec §3.1 (undo toasts need the longer window);
+            // queue/concurrency behavior unchanged.
+            AtlasToastContainer(items: $model.toasts, autoDismissInterval: 8.0)
                 .padding(AtlasSpacing.lg)
                 // Coexistence with the pinned action bar: toasts sit above it.
                 .padding(.bottom, actionBarHeight)
@@ -169,7 +171,7 @@ struct AppShellView: View {
             )
         case .smartClean:
             SmartCleanFeatureView(
-                findings: model.filteredFindings,
+                findings: model.snapshot.findings,
                 plan: model.currentPlan,
                 scanSummary: model.latestScanSummary,
                 scanProgress: model.latestScanProgress,
@@ -179,17 +181,59 @@ struct AppShellView: View {
                 canExecutePlan: model.canExecuteCurrentSmartCleanPlan,
                 planIssue: model.smartCleanPlanIssue,
                 executionIssue: model.smartCleanExecutionIssue,
-                executionCompleted: model.smartCleanExecutionIssue == nil && !model.isPlanRunning && !model.currentPlan.items.isEmpty,
+                executionReceipt: model.smartCleanExecutionReceipt,
+                retentionDays: model.settings.recoveryRetentionDays,
+                searchText: model.searchText(for: .smartClean),
+                state: smartCleanWorkflowState,
+                onStateChange: { newState in
+                    model.updateWorkflowState(for: .smartClean) { state in
+                        // Decision A (resolve-on-render): the view never writes
+                        // currentStage — only user-mutable presentation state.
+                        state.displayedStage = newState.displayedStage
+                        state.selectedIDs = newState.selectedIDs
+                        state.riskFilter = newState.riskFilter
+                        state.evidenceSelectionID = newState.evidenceSelectionID
+                        state.drawerPresented = newState.drawerPresented
+                    }
+                },
                 onStartScan: {
                     Task { await model.runSmartCleanScan() }
                 },
                 onRefreshPreview: {
                     Task { await model.refreshPlanPreview() }
                 },
-                onExecutePlan: {
-                    Task { await model.executeCurrentPlan() }
+                onRequestRescan: {
+                    // Decision B: the on-screen rescan button raises the same
+                    // confirmation flag as Cmd+Shift+R (one shared flow).
+                    model.requestRescanConfirmation(for: .smartClean)
                 },
-                onUndoExecution: nil // TODO: wire when SmartClean undo is implemented
+                onConfirmRescan: {
+                    model.supersedePlan(for: .smartClean)
+                    Task { await model.runSmartCleanScan() }
+                },
+                onCancelRescan: {
+                    model.updateWorkflowState(for: .smartClean) { state in
+                        state.rescanConfirmationPending = false
+                    }
+                },
+                onExecuteSelection: { findingIDs in
+                    Task {
+                        // Execute exactly the reviewed selection: when it differs
+                        // from the current plan, re-preview through the existing
+                        // controller API first (fail-closed: stop on failure).
+                        let planIDs = Set(model.currentPlan.items.map(\.id))
+                        if Set(findingIDs) != planIDs {
+                            guard await model.refreshPlanPreview(findingIDs: findingIDs) else { return }
+                        }
+                        await model.executeCurrentPlan()
+                    }
+                },
+                onUndoExecution: {
+                    Task { await model.undoSmartCleanExecution() }
+                },
+                onNavigateToLedger: {
+                    model.navigate(to: .ledger)
+                }
             )
         case .fileOrganizer:
             FileOrganizerFeatureView(
@@ -304,6 +348,37 @@ struct AppShellView: View {
         case .about:
             AboutFeatureView()
         }
+    }
+
+    /// Decision A (resolve-on-render): the smart-clean stage is derived from
+    /// live model state via `AtlasWorkflowStageMap.resolve` on every render.
+    /// The stored ViewState contributes only user-mutable presentation fields
+    /// (displayed stage, selection, filter, drawer, rescan flag) — there is no
+    /// second written stage truth.
+    private var smartCleanWorkflowState: SmartCleanWorkflowState {
+        let stored = model.workflowState(for: .smartClean)
+        let resolution = AtlasWorkflowStageMap.resolve(AtlasWorkflowStageMap.Inputs(
+            isScanning: model.isScanRunning,
+            isExecuting: model.isPlanRunning,
+            executionFailed: model.smartCleanExecutionIssue != nil,
+            executionCompleted: model.smartCleanExecutionCompleted,
+            isPlanFresh: model.isCurrentSmartCleanPlanFresh,
+            findingsCount: model.snapshot.findings.count
+        ))
+        return SmartCleanWorkflowState(
+            currentStage: resolution.current,
+            displayedStage: stored.displayedStage,
+            planNumber: stored.planNumber,
+            receiptCode: stored.receiptCode,
+            selectedIDs: stored.selectedIDs,
+            riskFilter: stored.riskFilter,
+            evidenceSelectionID: stored.evidenceSelectionID,
+            drawerPresented: stored.drawerPresented,
+            rescanConfirmationPending: stored.rescanConfirmationPending,
+            isScanInProgress: resolution.isScanInProgress,
+            isReviewEmpty: resolution.isReviewEmpty,
+            isExecutionError: resolution.isExecutionError
+        )
     }
 
     private var activeTaskCount: Int {

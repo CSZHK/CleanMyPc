@@ -209,7 +209,17 @@ private struct AtlasReadmeAssetExporter {
                     isExecutingPlan: false,
                     isCurrentPlanFresh: true,
                     canExecutePlan: canExecuteSmartCleanPlan,
-                    planIssue: nil
+                    planIssue: nil,
+                    state: SmartCleanWorkflowState(
+                        currentStage: SmartCleanStage.review,
+                        displayedStage: SmartCleanStage.review,
+                        planNumber: state.snapshot.taskRuns.count + 1,
+                        receiptCode: AtlasLedgerReceipt.code(
+                            findings: state.snapshot.findings,
+                            scanDate: Date(timeIntervalSince1970: 1_760_000_000)
+                        ),
+                        selectedIDs: Set(state.snapshot.findings.map(\.id.uuidString))
+                    )
                 )
             },
             fileName: "atlas-smart-clean.png"

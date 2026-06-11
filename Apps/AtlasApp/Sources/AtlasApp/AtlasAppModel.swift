@@ -2,6 +2,7 @@ import AtlasApplication
 import AtlasCoreAdapters
 import AtlasDesignSystem
 import AtlasDomain
+import AtlasFeaturesSmartClean
 import AtlasInfrastructure
 import Combine
 import SwiftUI
@@ -33,6 +34,12 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var isCurrentSmartCleanPlanFresh: Bool
     @Published private(set) var smartCleanPlanIssue: String?
     @Published private(set) var smartCleanExecutionIssue: String?
+    // Smart-clean execution outcome (Batch I): drives the ④ receipt stage via
+    // AtlasWorkflowStageMap resolve-on-render. Reset whenever a new scan starts
+    // or the plan is superseded. The receipt holds only real execution facts
+    // (recovery delta, retention at run time — spec §1.6 fail-closed).
+    @Published private(set) var smartCleanExecutionCompleted = false
+    @Published private(set) var smartCleanExecutionReceipt: SmartCleanExecutionReceipt?
     @Published private(set) var latestUpdateResult: AtlasAppUpdate?
     @Published private(set) var isCheckingForUpdate = false
     @Published private(set) var updateCheckNotice: String?
@@ -340,6 +347,9 @@ final class AtlasAppModel: ObservableObject {
         latestScanSummary = AtlasL10n.string("model.scan.submitting")
         latestScanProgress = 0
         smartCleanExecutionIssue = nil
+        // A new scan cycle supersedes the previous execution outcome (§2.3).
+        smartCleanExecutionCompleted = false
+        smartCleanExecutionReceipt = nil
 
         do {
             let output = try await workspaceController.startScan()
@@ -353,8 +363,13 @@ final class AtlasAppModel: ObservableObject {
                 smartCleanExecutionIssue = nil
             }
             if output.actionPlan != nil {
-                // Scan produced a plan → assign ledger № + scan receipt (§2.3).
+                // Scan produced a plan → assign ledger № + scan receipt (§2.3),
+                // then seed the plan-scoped selection with every finding so the
+                // default review state matches the legacy execute-all behavior.
                 assignPlanNumber(for: .smartClean)
+                updateWorkflowState(for: .smartClean) { state in
+                    state.selectedIDs = Set(output.snapshot.findings.map(\.id.uuidString))
+                }
             }
         } catch {
             latestScanSummary = error.localizedDescription
@@ -365,11 +380,15 @@ final class AtlasAppModel: ObservableObject {
         isScanRunning = false
     }
 
+    /// Rebuilds the plan preview. `findingIDs == nil` keeps the legacy
+    /// behavior (all current findings); the ② review screen passes the checked
+    /// subset so the executed plan matches the selection (Batch I — same
+    /// controller API, FileOrganizer-style optional parameter).
     @discardableResult
-    func refreshPlanPreview() async -> Bool {
+    func refreshPlanPreview(findingIDs: [UUID]? = nil) async -> Bool {
         smartCleanExecutionIssue = nil
         do {
-            let output = try await workspaceController.previewPlan(findingIDs: snapshot.findings.map(\.id))
+            let output = try await workspaceController.previewPlan(findingIDs: findingIDs ?? snapshot.findings.map(\.id))
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = output.snapshot
                 currentPlan = output.actionPlan
@@ -378,6 +397,15 @@ final class AtlasAppModel: ObservableObject {
                 isCurrentSmartCleanPlanFresh = true
                 smartCleanPlanIssue = nil
                 smartCleanExecutionIssue = nil
+            }
+            if workflowState(for: .smartClean).planNumber == nil, !output.actionPlan.items.isEmpty {
+                // First numbered appearance of this plan (cached findings
+                // revalidated without a scan): assign № + receipt so every
+                // executable plan is ledger-addressable, then seed selection.
+                assignPlanNumber(for: .smartClean)
+                updateWorkflowState(for: .smartClean) { state in
+                    state.selectedIDs = Set(output.actionPlan.items.map(\.id.uuidString))
+                }
             }
             return true
         } catch {
@@ -395,6 +423,11 @@ final class AtlasAppModel: ObservableObject {
         selection = .smartClean
         isPlanRunning = true
         smartCleanExecutionIssue = nil
+        // Receipt provenance (Batch I): plan facts + recovery baseline, so the
+        // ④ receipt and the undo toast carry only real execution outcomes.
+        let executedPlan = currentPlan
+        let recoveryIDsBefore = Set(snapshot.recoveryItems.map(\.id))
+        let workflowSnapshot = workflowState(for: .smartClean)
 
         do {
             let output = try await workspaceController.executePlan(planID: currentPlan.id)
@@ -405,6 +438,21 @@ final class AtlasAppModel: ObservableObject {
                 smartCleanPlanIssue = nil
                 smartCleanExecutionIssue = nil
             }
+            let newRecoveryItems = output.snapshot.recoveryItems.filter { !recoveryIDsBefore.contains($0.id) }
+            let receipt = SmartCleanExecutionReceipt(
+                planNumber: workflowSnapshot.planNumber,
+                receiptCode: workflowSnapshot.receiptCode,
+                completedAt: Date(),
+                executedItemCount: executedPlan.items.count,
+                estimatedFreedBytes: executedPlan.estimatedBytes,
+                summary: output.summary,
+                recoveryItemIDs: newRecoveryItems.map(\.id),
+                recoveryBytes: newRecoveryItems.reduce(Int64(0)) { $0 + $1.bytes },
+                retentionDays: settings.recoveryRetentionDays
+            )
+            smartCleanExecutionReceipt = receipt
+            smartCleanExecutionCompleted = true
+            postSmartCleanExecutionToast(for: receipt)
             let didRefreshPlan = await refreshPlanPreview()
             if !didRefreshPlan {
                 isCurrentSmartCleanPlanFresh = false
@@ -412,9 +460,69 @@ final class AtlasAppModel: ObservableObject {
         } catch {
             latestScanSummary = error.localizedDescription
             smartCleanExecutionIssue = error.localizedDescription
+            // Partial-completion receipt (③ error → 「查看回执」, spec §2.3):
+            // failure reason only — no invented recovery facts (fail-closed).
+            smartCleanExecutionReceipt = SmartCleanExecutionReceipt(
+                planNumber: workflowSnapshot.planNumber,
+                receiptCode: workflowSnapshot.receiptCode,
+                completedAt: Date(),
+                executedItemCount: executedPlan.items.count,
+                estimatedFreedBytes: executedPlan.estimatedBytes,
+                summary: error.localizedDescription,
+                recoveryItemIDs: [],
+                recoveryBytes: 0,
+                retentionDays: settings.recoveryRetentionDays,
+                failureReason: error.localizedDescription
+            )
         }
 
         isPlanRunning = false
+    }
+
+    /// 「已入账 №N · 撤销」 global toast (spec §2.3 Undo): tap opens the ledger
+    /// (回链红线 §1.6); the undo action restores exactly the recovery items
+    /// this run created — same items the ledger restore buttons target — and
+    /// only renders when the run really produced recovery items (fail-closed).
+    private func postSmartCleanExecutionToast(for receipt: SmartCleanExecutionReceipt) {
+        let toastID = UUID()
+        let message = receipt.planNumber.map { AtlasL10n.string("smartclean.toast.recorded", $0) } ?? receipt.summary
+        let hasUndo = !receipt.recoveryItemIDs.isEmpty
+        var undoAction: (@MainActor @Sendable () -> Void)?
+        if hasUndo {
+            undoAction = { [weak self] in
+                self?.dismissToast(id: toastID)
+                Task { await self?.undoSmartCleanExecution() }
+            }
+        }
+        let toast = AtlasToastItem(
+            id: toastID,
+            message: message,
+            tone: .success,
+            systemImage: "checkmark.seal",
+            actionTitle: hasUndo ? AtlasL10n.string("smartclean.undo.banner.action") : nil,
+            onAction: undoAction,
+            onTap: { [weak self] in
+                self?.navigate(to: .ledger)
+            }
+        )
+        withAnimation(AtlasMotion.standard) {
+            toasts.append(toast)
+        }
+    }
+
+    /// Undo of the latest smart-clean run: sequentially restores the recovery
+    /// items recorded on the execution receipt through the existing
+    /// `restoreRecoveryItem` chain (same recovery point as the ledger's
+    /// restore entry points — 双入口一份真相, spec §2.3).
+    func undoSmartCleanExecution() async {
+        guard let receipt = smartCleanExecutionReceipt else {
+            return
+        }
+        for itemID in receipt.recoveryItemIDs where snapshot.recoveryItems.contains(where: { $0.id == itemID }) {
+            await restoreRecoveryItem(itemID)
+        }
+        smartCleanExecutionCompleted = false
+        smartCleanExecutionReceipt = nil
     }
 
     func refreshApps() async {
@@ -713,6 +821,14 @@ final class AtlasAppModel: ObservableObject {
     /// Rescan confirmed: the old № is void (its task runs stay in the ledger;
     /// Batch J renders the superseded status), the workflow returns to ① scan.
     func supersedePlan(for route: AtlasRoute) {
+        if route == .smartClean {
+            // The superseded plan is void: its execution outcome and freshness
+            // go with it, so resolve-on-render lands on ① (无计划/已失效) and
+            // can never get stuck on ② or ④ between confirm and the new scan.
+            smartCleanExecutionCompleted = false
+            smartCleanExecutionReceipt = nil
+            isCurrentSmartCleanPlanFresh = false
+        }
         updateWorkflowState(for: route) { state in
             state.planNumber = nil
             state.receiptCode = nil
