@@ -39,6 +39,9 @@
 - 2026-06-10 ~18:0x: Batch E 实施子代理（agentId a185efceb1cc29996）撞会话用量上限（19:00 Asia/Shanghai 重置），24 次工具调用后中断。
 - Batch E Part 1 进行中发现：Apps 测试漂移比 findings 记录的更广——不止两个 E2E 替身缺 `scanFolders(_:destinationBasePath:recursive:)`，`refreshFileOrganizerPreview()` 也已改签名为 `refreshFileOrganizerPreview(entryIDs:)`，多处调用点需机械同步（子代理已改约 4+ 处，未跑测试、未提交）。
 
+## CHECKPOINT-2026-06-11-1430（Batch I 中断）
+- 14:30 限额重置后恢复：I0 已提交（93bc7e5）；**I1–I4 半成品在工作树未提交**（SmartCleanFeatureView 改写中 + 三个新文件 EvidenceBuilder/ReceiptView/StageViews + AtlasAppModel/双语 strings 改动）——不要 checkout/clean。向 agentId `a89c6bf7663d48d0b` SendMessage：继续完成 Batch I（先 swift build 看缺口补完，跑测试组，按原指令收尾验证+commit+报告，含裁决 A/B 落点与 undo 考证）。后续序照旧：I 审查 → J → K → L → M → M4 → 回归 → 收口。
+
 ## CHECKPOINT（恢复指令，更新于 Batch H 收口后）
 - **工作树状态**: 干净（Batch H 全部已提交，HEAD = H5 治理注记提交）。
 - **恢复后续序**: M3 计划（Docs/plans/2026-06-10-calm-ledger-m3.md）→ Batch I 智能清理样板间（消费 H2 状态机：阶段条 + 回看只读 + 重扫确认对话框「当前计划 №N 将作废」接 rescanConfirmationPending/supersedePlan + 行动栏 promise 三式 + 入账 Toast）→ J 台账 → K 概览 → L 应用/整理 → M 权限/设置/关于 + M3 治理收口 → M4 Batch N → Phase 4 全量回归 → Phase 5 收口。
