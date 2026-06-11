@@ -13,42 +13,60 @@ import SwiftUI
 struct AppShellView: View {
     @ObservedObject var model: AtlasAppModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Action-bar height reported by the AtlasScreen actionBar slot — lifts the
+    /// toast container above the pinned bar (spec §4.3 共存规则).
+    @State private var actionBarHeight: CGFloat = 0
 
     var body: some View {
         NavigationSplitView {
-            List(selection: $model.selection) {
-                ForEach(AtlasRoute.SidebarSection.allCases) { section in
-                    Section(section.title) {
-                        ForEach(section.routes) { route in
-                            SidebarRouteRow(route: route, context: sidebarContext)
-                                .tag(route)
+            VStack(alignment: .leading, spacing: 0) {
+                AtlasSidebarWordmark()
+                    .padding(.horizontal, AtlasSpacing.lg)
+                    .padding(.top, AtlasSpacing.md)
+                    .padding(.bottom, AtlasSpacing.xs)
+
+                List(selection: $model.selection) {
+                    ForEach(AtlasRoute.SidebarSection.allCases) { section in
+                        Section(section.title) {
+                            ForEach(section.routes) { route in
+                                SidebarRouteRow(route: route, context: sidebarContext)
+                                    .tag(route)
+                            }
                         }
                     }
-                }
 
-                Section {
-                    SidebarRouteRow(route: .settings)
-                        .tag(AtlasRoute.settings)
-                    SidebarRouteRow(route: .about)
-                        .tag(AtlasRoute.about)
+                    Section {
+                        SidebarRouteRow(route: .settings)
+                            .tag(AtlasRoute.settings)
+                        SidebarRouteRow(route: .about)
+                            .tag(AtlasRoute.about)
+                    }
                 }
+                .listStyle(.sidebar)
             }
             .id(model.appLanguage)
             .navigationTitle(AtlasL10n.string("app.name"))
             .navigationSplitViewColumnWidth(min: AtlasLayout.sidebarMinWidth, ideal: AtlasLayout.sidebarIdealWidth)
-            .listStyle(.sidebar)
             .accessibilityIdentifier("atlas.sidebar")
         } detail: {
             let route = model.selection ?? .overview
 
             detailContent(for: route)
                 .toolbar {
+                    // Scan-receipt chip (spec §2.1): current module's latest
+                    // receipt; hidden when the route has none.
+                    if let receiptCode = model.workflowState(for: route).receiptCode {
+                        ToolbarItem {
+                            ReceiptChip(code: receiptCode)
+                        }
+                    }
                     ToolbarItem {
                         taskCenterToolbarButton
                     }
                 }
                 .animation(AtlasMotion.slow, value: model.selection)
         }
+        .tint(AtlasColor.brand)
         .navigationSplitViewStyle(.balanced)
         .preferredColorScheme(model.settings.theme.colorScheme)
         .overlay(alignment: .topTrailing) {
@@ -70,7 +88,12 @@ struct AppShellView: View {
         .overlay(alignment: .bottomTrailing) {
             AtlasToastContainer(items: $model.toasts)
                 .padding(AtlasSpacing.lg)
+                // Coexistence with the pinned action bar: toasts sit above it.
+                .padding(.bottom, actionBarHeight)
                 .allowsHitTesting(!model.toasts.isEmpty)
+        }
+        .onPreferenceChange(AtlasActionBarHeightKey.self) { height in
+            actionBarHeight = height
         }
         .task {
             await model.refreshHealthSnapshotIfNeeded()
@@ -87,7 +110,8 @@ struct AppShellView: View {
         .popover(isPresented: $model.isTaskCenterPresented) {
             TaskCenterView(
                 taskRuns: model.taskCenterTaskRuns,
-                summary: model.taskCenterSummary
+                summary: model.taskCenterSummary,
+                planNumber: { model.workflowPlanNumber(for: $0) }
             ) {
                 model.closeTaskCenter()
                 model.navigate(to: .ledger)
@@ -330,6 +354,38 @@ struct AppShellView: View {
         .accessibilityIdentifier("toolbar.taskCenter")
         .accessibilityLabel(AtlasL10n.string("toolbar.taskcenter.accessibilityLabel"))
         .accessibilityHint(AtlasL10n.string("toolbar.taskcenter.accessibilityHint"))
+    }
+}
+
+/// `ATLAS.` serif wordmark at the sidebar top (spec §2.1) — ledger voice with a
+/// brand-colored full stop. Decorative: the app name is announced elsewhere.
+private struct AtlasSidebarWordmark: View {
+    var body: some View {
+        (Text("ATLAS").foregroundStyle(AtlasColor.ink)
+            + Text(".").foregroundStyle(AtlasColor.brand))
+            .font(AtlasTypography.ledgerFont(size: 15, weight: .bold))
+            .accessibilityHidden(true)
+    }
+}
+
+/// Toolbar scan-receipt chip (spec §2.1/§5.4): mono `#XXXX`, hidden when the
+/// current route has no receipt (handled by the caller).
+private struct ReceiptChip: View {
+    let code: String
+
+    var body: some View {
+        Text("#\(code)")
+            .font(AtlasTypography.dataCaption)
+            .monospacedDigit()
+            .foregroundStyle(AtlasColor.textSecondary)
+            .padding(.horizontal, AtlasSpacing.sm)
+            .padding(.vertical, AtlasSpacing.xxs)
+            .background(
+                Capsule(style: .continuous)
+                    .strokeBorder(AtlasColor.border, lineWidth: 1)
+            )
+            .help(AtlasL10n.string("toolbar.receipt.help"))
+            .accessibilityLabel(AtlasL10n.string("toolbar.receipt.accessibilityLabel", "#\(code)"))
     }
 }
 

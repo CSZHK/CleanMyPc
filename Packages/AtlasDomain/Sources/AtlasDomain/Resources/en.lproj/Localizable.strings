@@ -234,6 +234,9 @@
 "taskcenter.openHistory.hint" = "Moves to the History screen with the full audit trail and recovery items.";
 "taskcenter.openLedger" = "Open Ledger";
 "taskcenter.openLedger.hint" = "Moves to the Ledger screen with the full audit trail and recovery items.";
+"toolbar.receipt.help" = "Receipt code of this module's latest scan";
+"toolbar.receipt.accessibilityLabel" = "Scan receipt %@";
+"taskcenter.planNumber.a11y" = "Plan number %d";
 "taskcenter.timeline.finished" = "Started %@ • Finished %@";
 "taskcenter.timeline.running" = "Started %@ • Still in progress";
 
@@ -714,6 +717,8 @@
 
 "sidebar.section.core" = "Core";
 "sidebar.section.manage" = "Manage";
+"sidebar.section.work" = "Work";
+"sidebar.section.records" = "Records";
 "about.window.title" = "About Atlas";
 "commands.about" = "About Atlas";
 

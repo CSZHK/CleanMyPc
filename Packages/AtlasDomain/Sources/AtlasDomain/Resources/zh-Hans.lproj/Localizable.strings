@@ -234,6 +234,9 @@
 "taskcenter.openHistory.hint" = "进入历史页面，查看完整审计轨迹和恢复项。";
 "taskcenter.openLedger" = "打开台账";
 "taskcenter.openLedger.hint" = "进入台账页面，查看完整审计轨迹和恢复项。";
+"toolbar.receipt.help" = "当前模块最近一次扫描的回执编号";
+"toolbar.receipt.accessibilityLabel" = "扫描回执 %@";
+"taskcenter.planNumber.a11y" = "计划编号 %d";
 "taskcenter.timeline.finished" = "开始于 %@ • 结束于 %@";
 "taskcenter.timeline.running" = "开始于 %@ • 仍在进行中";
 
@@ -714,6 +717,8 @@
 
 "sidebar.section.core" = "核心";
 "sidebar.section.manage" = "管理";
+"sidebar.section.work" = "工作";
+"sidebar.section.records" = "记录";
 "about.window.title" = "关于 Atlas";
 "commands.about" = "关于 Atlas";
 

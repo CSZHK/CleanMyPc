@@ -73,6 +73,10 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Atlas for Mac
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_NSPrincipalClass: NSApplication
+        # Brand selection capsule in sidebar/system controls (Calm Ledger §2.1).
+        # Values mirror AtlasBrand in scripts/design/calm-ledger-tokens.json —
+        # keep in sync manually (app-level asset; outside the generator's scope).
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     dependencies:
       - target: AtlasWorkerXPC
         embed: true

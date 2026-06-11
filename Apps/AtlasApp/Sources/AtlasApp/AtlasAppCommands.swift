@@ -36,8 +36,18 @@ struct AtlasAppCommands: Commands {
             .keyboardShortcut("r", modifiers: .command)
 
             Button(AtlasL10n.string("commands.actions.runScan")) {
-                Task {
-                    await model.runSmartCleanScan()
+                // Re-scan with an active plan № needs explicit confirmation
+                // (spec §2.3: 「当前计划 №N 将作废」). The menu only raises the
+                // intent flag; the dialog is presented by the screen (Batch I)
+                // and calls supersedePlan(for:) on confirm. Without a plan the
+                // scan starts directly, as before.
+                if model.workflowState(for: .smartClean).planNumber != nil {
+                    model.navigate(to: .smartClean)
+                    model.requestRescanConfirmation(for: .smartClean)
+                } else {
+                    Task {
+                        await model.runSmartCleanScan()
+                    }
                 }
             }
             .keyboardShortcut("r", modifiers: [.command, .shift])

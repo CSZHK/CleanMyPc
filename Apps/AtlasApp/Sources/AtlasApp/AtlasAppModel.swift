@@ -740,6 +740,22 @@ final class AtlasAppModel: ObservableObject {
         ledgerNumberStore.next(fallbackBase: snapshot.taskRuns.count + 1)
     }
 
+    /// Ledger № prefix for an ACTIVE task-center row (spec §3.1): only
+    /// queued/running runs of a workflow that currently holds a plan №.
+    func workflowPlanNumber(for taskRun: TaskRun) -> Int? {
+        guard taskRun.status == .running || taskRun.status == .queued else {
+            return nil
+        }
+        switch taskRun.kind {
+        case .scan, .executePlan:
+            return workflowStates[.smartClean]?.planNumber
+        case .organizeFiles:
+            return workflowStates[.fileOrganizer]?.planNumber
+        case .uninstallApp, .restore, .inspectPermissions:
+            return nil
+        }
+    }
+
     // MARK: - Toast Management
 
     func showToast(_ message: String, tone: AtlasTone = .neutral, systemImage: String? = nil) {

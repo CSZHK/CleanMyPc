@@ -15,10 +15,11 @@ struct AtlasApp: App {
             } else {
                 AppShellView(model: model)
                     .environment(\.locale, model.appLanguage.locale)
-                    .frame(minWidth: 940, minHeight: 640)
+                    // Calm Ledger §2.1: min 980×640 — keep in sync with window.minSize below.
+                    .frame(minWidth: 980, minHeight: 640)
                     .onAppear {
                         if let window = NSApp.windows.first(where: { $0.isVisible }) {
-                            window.minSize = NSSize(width: 940, height: 640)
+                            window.minSize = NSSize(width: 980, height: 640)
                         }
                     }
             }
@@ -26,7 +27,9 @@ struct AtlasApp: App {
         .commands {
             AtlasAppCommands(model: model)
         }
-        .defaultSize(width: 1024, height: 680)
+        // Calm Ledger §2.1: default 1180×740. Frame autosave keeps existing users'
+        // sizes (≈1024×680 → drawer tier) — accepted behavior (D-012).
+        .defaultSize(width: 1180, height: 740)
         .windowStyle(.hiddenTitleBar)
     }
 

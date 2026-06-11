@@ -91,6 +91,10 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
 
     // MARK: - Sidebar
 
+    /// Sidebar groups (Calm Ledger §2.1): 工作 work (overview/smart clean/file
+    /// organizer/apps) and 记录 records (ledger/permissions); settings/about sink
+    /// to the bottom outside the sections. Case names stay `core`/`manage` as
+    /// stable identifiers — only the display titles changed.
     public enum SidebarSection: String, CaseIterable, Identifiable, Sendable {
         case core
         case manage
@@ -100,9 +104,9 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
         public var title: String {
             switch self {
             case .core:
-                return AtlasL10n.string("sidebar.section.core")
+                return AtlasL10n.string("sidebar.section.work")
             case .manage:
-                return AtlasL10n.string("sidebar.section.manage")
+                return AtlasL10n.string("sidebar.section.records")
             }
         }
 
