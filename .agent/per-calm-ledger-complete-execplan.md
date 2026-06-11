@@ -20,7 +20,7 @@
 | 1 | P0 | 测试阻塞 | findings L7 | Apps E2E 测试替身缺 scanFolders(_:destinationBasePath:recursive:)，阻塞 M3 门禁 | FIXED |
 | 2 | P0 | 开发路径 | findings L6 | swift run 下 32 colorset 解析 nil → 生成式 Swift 回退表（同一 manifest，保单一真相源） | FIXED |
 | 3 | P1 | M2 | 规格 §4.2/§4.3 | 9 新组件 + AtlasScreen actionBar/drawer 插槽 + 修改/吸收/扩展清单 | FIXED |
-| 4 | P1 | M3 | 规格 §2/§3 | 壳层（侧栏/工具栏/菜单/任务中心/窗口）+ 路由改名 + ViewState + 8 屏迁移 | IN_PROGRESS（Batch H done：H1 tokens 103f672 · H2 ViewState/№/回执 188b422 · H3 改名 2cef84b · H4 壳层 134f0f6；门禁 Packages 411/0 · Apps 49/0 · contrast 36/36 · 0 warning · swift run 烟测过 · 改名残留 grep 0。余 Batch I→M） |
+| 4 | P1 | M3 | 规格 §2/§3 | 壳层（侧栏/工具栏/菜单/任务中心/窗口）+ 路由改名 + ViewState + 8 屏迁移 | IN_PROGRESS（Batch H done：H1 tokens 103f672 · H2 ViewState/№/回执 188b422 · H3 改名 2cef84b · H4 壳层 134f0f6。Batch I done：I0 评审修复 93bc7e5 · 样板间 5b59e5d · 接线 e4f7dd0；门禁 Packages 415/0 · Apps 58/0 · contrast 36/36 · 0 warning · swift run 烟测过 · 文件 ≤350。余 Batch J→M） |
 | 5 | P1 | M4 | 规格 §0.4/§7 | L10n 键迁移（~120×2）+ 9 文档同步 + 截图基线 + 全量门禁 | TODO |
 | 6 | P2 | 视觉 | findings L5 | 宋体粗体 face/traits（台账标题观感不足时） | FIXED（M2 Batch F 评审修复 068a4da：cascade 描述符按 weight 带 face，bold 实测解析 STSongti-SC-Bold，测试锁定） |
 | 7 | P0 | 测试阻塞 | Batch E 发现 | AtlasAppModel.swift:696 `NSApp.appearance` 强解包——裸 swift test 无 NSApplication，29 测试全崩（来源 main 4ff6c08，此前被编译失败掩盖） | FIXED |
@@ -39,11 +39,8 @@
 - 2026-06-10 ~18:0x: Batch E 实施子代理（agentId a185efceb1cc29996）撞会话用量上限（19:00 Asia/Shanghai 重置），24 次工具调用后中断。
 - Batch E Part 1 进行中发现：Apps 测试漂移比 findings 记录的更广——不止两个 E2E 替身缺 `scanFolders(_:destinationBasePath:recursive:)`，`refreshFileOrganizerPreview()` 也已改签名为 `refreshFileOrganizerPreview(entryIDs:)`，多处调用点需机械同步（子代理已改约 4+ 处，未跑测试、未提交）。
 
-## CHECKPOINT-2026-06-11-1430（Batch I 中断）
-- 14:30 限额重置后恢复：I0 已提交（93bc7e5）；**I1–I4 半成品在工作树未提交**（SmartCleanFeatureView 改写中 + 三个新文件 EvidenceBuilder/ReceiptView/StageViews + AtlasAppModel/双语 strings 改动）——不要 checkout/clean。向 agentId `a89c6bf7663d48d0b` SendMessage：继续完成 Batch I（先 swift build 看缺口补完，跑测试组，按原指令收尾验证+commit+报告，含裁决 A/B 落点与 undo 考证）。后续序照旧：I 审查 → J → K → L → M → M4 → 回归 → 收口。
-
-## CHECKPOINT（恢复指令，更新于 Batch H 收口后）
-- **工作树状态**: 干净（Batch H 全部已提交，HEAD = H5 治理注记提交）。
-- **恢复后续序**: M3 计划（Docs/plans/2026-06-10-calm-ledger-m3.md）→ Batch I 智能清理样板间（消费 H2 状态机：阶段条 + 回看只读 + 重扫确认对话框「当前计划 №N 将作废」接 rescanConfirmationPending/supersedePlan + 行动栏 promise 三式 + 入账 Toast）→ J 台账 → K 概览 → L 应用/整理 → M 权限/设置/关于 + M3 治理收口 → M4 Batch N → Phase 4 全量回归 → Phase 5 收口。
-- **门禁基线**（Batch H 收口）: Packages 411/0 · Apps 49/0（29 基线 + 16 H2 + 4 H4）· contrast 36 checks ALL PASS（35 colorsets）· Apps build 0 warning · swift run 烟测 8s 无崩溃 · 改名残留 grep（route.history|\.history，非测试）= 0。
-- **Batch H 接口备忘**（Batch I 消费）: `model.workflowState(for:)/updateWorkflowState/assignPlanNumber/supersedePlan/requestRescanConfirmation`；纯函数 `AtlasWorkflowStageMap.resolve`（§2.3 表）与 `AtlasLedgerReceipt.code`；№ 计数器 `AtlasLedgerNumberStoring`（UserDefaults key `atlas.ledger.nextNumber`，注入点 AtlasAppModel.init）；回执芯片已在工具栏（读当前路由 receiptCode）。
+## CHECKPOINT（恢复指令，更新于 Batch I 收口后）
+- **工作树状态**: 干净（Batch I 全部已提交：I0 评审修复 93bc7e5 · 样板间 5b59e5d · 接线+测试 e4f7dd0；中断恢复轨迹见 487ecbb）。
+- **恢复后续序**: M3 计划（Docs/plans/2026-06-10-calm-ledger-m3.md）→ Batch I 合并审查 → Batch J 台账（LedgerFeature/Timeline/Detail/Archive/ExportBuilder，旧 HistoryFeatureView 删除）→ K 概览 → L 应用/整理 → M 权限/设置/关于 + M3 治理收口 → M4 Batch N → Phase 4 全量回归 → Phase 5 收口。
+- **门禁基线**（Batch I 收口）: Packages 415/0（411 基线 −12 旧 SmartClean 测试 +16 新）· Apps 58/0（49+9 flow）· contrast 36 checks ALL PASS · Apps build 0 warning · swift run 烟测过 · 截图导出 5 资产（/tmp/calm-ledger-shots-i/）· 新/改源文件 wc -l 全 ≤350。
+- **Batch I 接口备忘**（Batch J/L 消费）: 裁决 A=resolve-on-render——AppShellView 渲染时经 `AtlasWorkflowStageMap.resolve` 推导 currentStage（输入含新增 `model.smartCleanExecutionCompleted`），ViewState 存储 currentStage 仅 bookkeeping（注释已锁），FileOrganizer Batch L 必须同模式；裁决 B=重扫确认单一路径——菜单/屏内按钮 → `rescanConfirmationPending` → 屏内 `.confirmationDialog`（`smartclean.rescan.*`）→ confirm=`supersedePlan`+scan / cancel=清标志；`supersedePlan(.smartClean)` 同步清 executionCompleted/Receipt/isCurrentSmartCleanPlanFresh；执行回执 `SmartCleanExecutionReceipt`（真实 recovery delta + 留存天数，StampBadge fail-closed）；Toast「已入账 №N · 撤销」undo=`undoSmartCleanExecution()` 串行 `restoreRecoveryItem`（与台账还原同一恢复点，真实文件回滚已测）；`refreshPlanPreview(findingIDs:)` 可选子集（执行已选 N 项路径，首个有项计划自动取 №）；Toast 容器 dwell 8s（§3.1）。
