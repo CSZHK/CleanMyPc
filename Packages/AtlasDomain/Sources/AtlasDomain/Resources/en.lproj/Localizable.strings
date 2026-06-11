@@ -227,7 +227,7 @@
 "taskcenter.callout.empty.title" = "No matching task activity";
 "taskcenter.callout.empty.detail" = "Run a scan, run a cleanup plan, uninstall an app, or restore an item to start the task timeline.";
 "taskcenter.callout.active.title" = "Recent task activity stays visible here";
-"taskcenter.callout.active.detail" = "Open History for the full audit trail and available recovery items.";
+"taskcenter.callout.active.detail" = "Open Ledger for the full audit trail and available recovery items.";
 "taskcenter.empty.title" = "No tasks yet";
 "taskcenter.empty.detail" = "Try another search, or run a new Smart Clean scan to populate the task timeline.";
 "taskcenter.openHistory" = "Open History";

@@ -284,19 +284,8 @@ final class AtlasWorkflowViewStateTests: XCTestCase {
 }
 
 // MARK: - Test doubles
-
-/// In-memory ledger counter — keeps real UserDefaults untouched.
-private final class InMemoryLedgerNumberStore: AtlasLedgerNumberStoring {
-    private var counter = 0
-    private(set) var recordedFallbackBases: [Int] = []
-
-    func next(fallbackBase: Int) -> Int {
-        recordedFallbackBases.append(fallbackBase)
-        let number = counter > 0 ? counter : max(fallbackBase, 1)
-        counter = number + 1
-        return number
-    }
-}
+// (InMemoryLedgerNumberStore moved to the shared test helper file so the
+// legacy AtlasAppModelTests can inject it too — Batch H review fix.)
 
 private struct ScanFixtureProvider: AtlasSmartCleanScanProviding {
     func collectSmartCleanScan() async throws -> AtlasSmartCleanScanResult {

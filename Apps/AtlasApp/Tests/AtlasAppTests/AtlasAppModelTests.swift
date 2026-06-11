@@ -9,7 +9,7 @@ import AtlasProtocol
 final class AtlasAppModelTests: XCTestCase {
 
     func testCurrentSmartCleanPlanStartsAsCachedUntilSessionRefresh() {
-        let model = AtlasAppModel(repository: makeRepository(), workerService: AtlasScaffoldWorkerService(allowStateOnlyCleanExecution: true))
+        let model = AtlasAppModel(repository: makeRepository(), workerService: AtlasScaffoldWorkerService(allowStateOnlyCleanExecution: true), ledgerNumberStore: InMemoryLedgerNumberStore())
 
         XCTAssertFalse(model.isCurrentSmartCleanPlanFresh)
         XCTAssertFalse(model.canExecuteCurrentSmartCleanPlan)
@@ -22,7 +22,7 @@ final class AtlasAppModelTests: XCTestCase {
             repository: repository,
             smartCleanScanProvider: FailingSmartCleanProvider()
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.runSmartCleanScan()
 
@@ -35,7 +35,7 @@ final class AtlasAppModelTests: XCTestCase {
     func testRefreshPlanPreviewKeepsPlanNonExecutableWhenFindingsLackTargets() async {
         let repository = makeRepository()
         let worker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: true)
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         let refreshed = await model.refreshPlanPreview()
 
@@ -72,7 +72,7 @@ final class AtlasAppModelTests: XCTestCase {
             settings: AtlasScaffoldWorkspace.state().settings
         )
         _ = try? repository.saveState(state)
-        let model = AtlasAppModel(repository: repository, workerService: AtlasScaffoldWorkerService(allowStateOnlyCleanExecution: true))
+        let model = AtlasAppModel(repository: repository, workerService: AtlasScaffoldWorkerService(allowStateOnlyCleanExecution: true), ledgerNumberStore: InMemoryLedgerNumberStore())
 
         XCTAssertFalse(model.currentSmartCleanPlanHasExecutableTargets)
         XCTAssertFalse(model.canExecuteCurrentSmartCleanPlan)
@@ -118,7 +118,7 @@ final class AtlasAppModelTests: XCTestCase {
             settings: AtlasScaffoldWorkspace.state().settings
         )
         _ = try? repository.saveState(state)
-        let model = AtlasAppModel(repository: repository, workerService: AtlasScaffoldWorkerService(allowStateOnlyCleanExecution: true))
+        let model = AtlasAppModel(repository: repository, workerService: AtlasScaffoldWorkerService(allowStateOnlyCleanExecution: true), ledgerNumberStore: InMemoryLedgerNumberStore())
 
         XCTAssertTrue(model.currentSmartCleanPlanHasExecutableTargets)
     }
@@ -130,7 +130,7 @@ final class AtlasAppModelTests: XCTestCase {
             smartCleanScanProvider: FakeSmartCleanProvider(),
             allowStateOnlyCleanExecution: true
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.runSmartCleanScan()
 
@@ -144,7 +144,7 @@ final class AtlasAppModelTests: XCTestCase {
             repository: repository,
             smartCleanScanProvider: FakeSmartCleanProvider()
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.runSmartCleanScan()
 
@@ -161,7 +161,7 @@ final class AtlasAppModelTests: XCTestCase {
             smartCleanScanProvider: FakeSmartCleanProvider(),
             allowStateOnlyCleanExecution: true
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
         let initialRecoveryCount = model.snapshot.recoveryItems.count
 
         await model.runSmartCleanScan()
@@ -176,7 +176,8 @@ final class AtlasAppModelTests: XCTestCase {
         let repository = makeRepository()
         let model = AtlasAppModel(
             repository: repository,
-            workerService: RejectingWorker(code: .executionUnavailable, reason: "XPC worker offline")
+            workerService: RejectingWorker(code: .executionUnavailable, reason: "XPC worker offline"),
+            ledgerNumberStore: InMemoryLedgerNumberStore()
         )
 
         await model.executeCurrentPlan()
@@ -205,7 +206,8 @@ final class AtlasAppModelTests: XCTestCase {
             preferXPCWorker: true,
             allowScaffoldFallback: false,
             xpcRequestConfiguration: AtlasXPCRequestConfiguration(timeout: 1, retryCount: 0, retryDelay: 0),
-            xpcRequestExecutor: { _ in responseData }
+            xpcRequestExecutor: { _ in responseData },
+            ledgerNumberStore: InMemoryLedgerNumberStore()
         )
 
         await model.runSmartCleanScan()
@@ -221,7 +223,7 @@ final class AtlasAppModelTests: XCTestCase {
             repository: repository,
             appsInventoryProvider: FakeInventoryProvider()
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.refreshApps()
 
@@ -279,7 +281,7 @@ final class AtlasAppModelTests: XCTestCase {
             appUninstallEvidenceAnalyzer: AtlasAppUninstallEvidenceAnalyzer(homeDirectoryURL: homeRoot),
             allowStateOnlyCleanExecution: true
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.previewAppUninstall(appID: app.id)
 
@@ -292,7 +294,7 @@ final class AtlasAppModelTests: XCTestCase {
     func testRestoreRecoveryItemReturnsFindingToWorkspace() async throws {
         let repository = makeRepository()
         let worker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: true)
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.executeCurrentPlan()
         let recoveryItemID = try XCTUnwrap(model.snapshot.recoveryItems.first?.id)
@@ -316,7 +318,8 @@ final class AtlasAppModelTests: XCTestCase {
                 code: .executionUnavailable,
                 reason: "XPC worker offline",
                 restoreWorker: realWorker
-            )
+            ),
+            ledgerNumberStore: InMemoryLedgerNumberStore()
         )
 
         await model.executeCurrentPlan()
@@ -376,7 +379,7 @@ final class AtlasAppModelTests: XCTestCase {
             repository: repository,
             appsInventoryProvider: RestoredInventoryProvider()
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.previewAppUninstall(appID: app.id)
         XCTAssertNotNil(model.currentAppPreview)
@@ -445,7 +448,7 @@ final class AtlasAppModelTests: XCTestCase {
             repository: repository,
             appsInventoryProvider: MissingRestoredInventoryProvider()
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.restoreRecoveryItem(recoveryItem.id)
 
@@ -498,7 +501,7 @@ final class AtlasAppModelTests: XCTestCase {
             nowProvider: { clock.now },
             allowStateOnlyCleanExecution: true
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
         XCTAssertTrue(model.snapshot.recoveryItems.contains(where: { $0.id == recoveryItem.id }))
 
         clock.now = baseDate.addingTimeInterval(60)
@@ -528,7 +531,8 @@ final class AtlasAppModelTests: XCTestCase {
         let model = AtlasAppModel(
             repository: repository,
             workerService: worker,
-            notificationPermissionRequester: { true }
+            notificationPermissionRequester: { true },
+            ledgerNumberStore: InMemoryLedgerNumberStore()
         )
 
         await model.setRecoveryRetentionDays(14)
@@ -546,7 +550,7 @@ final class AtlasAppModelTests: XCTestCase {
             repository: repository,
             appsInventoryProvider: FakeInventoryProvider()
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         model.navigate(to: .apps)
         await model.refreshCurrentRoute()
@@ -575,7 +579,8 @@ final class AtlasAppModelTests: XCTestCase {
         let model = AtlasAppModel(
             repository: repository,
             workerService: worker,
-            notificationPermissionRequester: { await recorder.request() }
+            notificationPermissionRequester: { await recorder.request() },
+            ledgerNumberStore: InMemoryLedgerNumberStore()
         )
 
         await model.setNotificationsEnabled(false)
@@ -599,7 +604,7 @@ final class AtlasAppModelTests: XCTestCase {
             permissionInspector: permissionInspector,
             allowStateOnlyCleanExecution: true
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.refreshPermissionsIfNeeded()
 
@@ -609,7 +614,7 @@ final class AtlasAppModelTests: XCTestCase {
     }
 
     func testToggleTaskCenterFlipsPresentationState() {
-        let model = AtlasAppModel(repository: makeRepository(), workerService: AtlasScaffoldWorkerService(allowStateOnlyCleanExecution: true))
+        let model = AtlasAppModel(repository: makeRepository(), workerService: AtlasScaffoldWorkerService(allowStateOnlyCleanExecution: true), ledgerNumberStore: InMemoryLedgerNumberStore())
 
         XCTAssertFalse(model.isTaskCenterPresented)
         model.toggleTaskCenter()
@@ -622,7 +627,7 @@ final class AtlasAppModelTests: XCTestCase {
     func testSetLanguagePersistsThroughWorkerAndUpdatesLocalization() async throws {
         let repository = makeRepository()
         let worker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: true)
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.setLanguage(.en)
 
@@ -815,7 +820,7 @@ extension AtlasAppModelTests {
             repository: repository,
             fileOrganizerScanProvider: scanner
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         // Step 1: Scan
         await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
@@ -865,7 +870,7 @@ extension AtlasAppModelTests {
             repository: repository,
             fileOrganizerScanProvider: FailingE2EFileOrganizerScanner()
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.runFileOrganizerScan(folderPaths: ["~/Desktop"])
 
@@ -902,7 +907,7 @@ extension AtlasAppModelTests {
             repository: repository,
             fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: entries)
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
         await model.refreshFileOrganizerPreview(entryIDs: [])
@@ -948,7 +953,7 @@ extension AtlasAppModelTests {
             repository: repository,
             fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: entries)
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         // Full pipeline: scan → preview → execute
         await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
@@ -1009,7 +1014,7 @@ extension AtlasAppModelTests {
             repository: repository,
             fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: firstEntries)
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         // First scan + preview
         await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
@@ -1059,7 +1064,7 @@ extension AtlasAppModelTests {
             repository: repository,
             fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: entries)
         )
-        let model = AtlasAppModel(repository: repository, workerService: worker)
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
         // Initially not busy
         XCTAssertFalse(model.isWorkflowBusy)

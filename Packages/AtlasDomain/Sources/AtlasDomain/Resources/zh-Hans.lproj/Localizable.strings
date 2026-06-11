@@ -227,7 +227,7 @@
 "taskcenter.callout.empty.title" = "当前没有匹配的任务活动";
 "taskcenter.callout.empty.detail" = "运行扫描、执行清理计划、卸载应用或恢复项目后，任务时间线就会出现在这里。";
 "taskcenter.callout.active.title" = "最近任务活动会集中显示在这里";
-"taskcenter.callout.active.detail" = "想看完整审计轨迹和可恢复项目时，可以打开历史页面。";
+"taskcenter.callout.active.detail" = "想看完整审计轨迹和可恢复项目时，可以打开台账页面。";
 "taskcenter.empty.title" = "还没有任务";
 "taskcenter.empty.detail" = "试试新的搜索词，或者运行一次智能清理扫描来填充任务时间线。";
 "taskcenter.openHistory" = "打开历史";
