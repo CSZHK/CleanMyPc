@@ -28,7 +28,7 @@ DECISIONS(D-012) / Backlog(EPIC-E + A/B/C 完成标记，后者随 M4) / IA / CO
 | M0 | git log 检查 5 个内容提交 + 1 个收口提交；ls iterations/REQ-calm-ledger-redesign | PASS |
 | M1 | node scripts/design/contrast-check.mjs && swift test --package-path Packages && swift build --package-path Apps | PASS |
 | M2 | swift test --package-path Packages（新组件单测全绿） | PASS |
-| M3 | swift test --package-path Packages && swift test --package-path Apps + 每屏手动矩阵 | PENDING |
+| M3 | swift test --package-path Packages && swift test --package-path Apps + 每屏手动矩阵 | PASS |
 | M4 | ./scripts/test.sh + 截图重导 + 双语言键集合 diff 脚本 0 缺失 | PENDING |
 
 ## Actual Verification
@@ -53,6 +53,13 @@ DECISIONS(D-012) / Backlog(EPIC-E + A/B/C 完成标记，后者随 M4) / IA / CO
 - 修改清单: CircularProgress conic 渐变（起止同色防接缝）/ Toast undo+回链 action（模型零改动兼容）/ AtlasTone fill→语义 fill colorset / FilterChip+EmptyState+LoadingState token 复核（含 reduce-motion 守卫）/ EvidenceGroupCard 弃用标记（typealias 保零 warning，M3 删除）
 - L10n: ds.* 19→26 键（zh/en 同步）；colorset 33 不变
 - 测试: M2 净增 25（自 prework 基线 386：Batch F +14 → 400，Batch G +11 → 411），共 411 绿 + Apps 29 绿
+
+## M3 Closeout Addendum (2026-06-11)
+**Actual**: Packages 578/0（自 M2 基线 411 净增 167：H+16 Apps flow/state · I+9 · J+11 · K+50 · L1+25 · L2+66 · M+perm9）· Apps 58/0 · contrast 36/36 · Apps build 0 新 warning（1 pre-existing AtlasFileOrganizerScanner:25 from 9aab570）· 路由改名残留 grep 0 · rebase main no-op（behind 0）· 裁决 A resolve-on-render 双模块落地（SmartClean 四段 + FileOrganizer 五段）· 裁决 B 重扫确认单一路径 · 恢复红线 restoreRecoveryItem 同一 API（Batch I undo + 台账还原双入口）。
+
+**Deliverables**: 壳层（窗口 1180×740/980×640 + 侧栏两组工作/记录 + ATLAS.字标 + 回执芯片 + toast offset + 菜单 Cmd+Shift+R + 任务中心换装）· 路由改名 history→ledger（编译期清单，契约测试 D-012 解冻）+ history.* 121×2 键清理（零交叉引用）· ViewState（AtlasWorkflowViewState per-route + 阶段映射纯函数 + № 计数器 UserDefaults + 回执 SHA256 + resolve-on-render 裁决 A）· 8 屏全迁移（概览指挥台+台账流+推荐 5 行优先级+snooze / 智能清理四段+证据面板+回执+真实 undo / 台账暖面四件套+导出+№降级 / 应用单选+10 类足迹+弃用件删 / 文件整理五段+StageMap / 权限证据三段式 / 设置恢复足迹 mono / 关于换装）· token 增 AtlasOnBrand/BannerEnd（深色白字 on brand AA 修复）+ ActionBarTrack · 测试净增 167 共 578 绿 + Apps 58 绿。
+
+**逐批审查**: H/I/J/K/L1 APPROVE（0 Critical）；L2/M 因 529 服务端过载由控制器收口（代码门禁全绿 controller 验证），深审统一延 M4 终审。
 
 ## Close Gate
 M0–M4 全部 Planned Verification = PASS + 手动矩阵 + 人工 UI 审查通过
