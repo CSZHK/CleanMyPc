@@ -129,13 +129,13 @@ public struct LedgerFeatureView: View {
     private var browserLayout: some View {
         if isWideLayout {
             HStack(alignment: .top, spacing: AtlasSpacing.xl) {
-                timelineColumn.frame(width: sidebarWidth).frame(maxHeight: 480, alignment: .topLeading)
-                detailColumn.frame(maxWidth: .infinity, maxHeight: 480, alignment: .topLeading)
+                timelineColumn.frame(width: sidebarWidth).frame(minHeight: 440, alignment: .topLeading)
+                detailColumn.frame(maxWidth: .infinity, minHeight: 440, alignment: .topLeading)
             }
         } else {
             VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-                timelineColumn.frame(minHeight: 240, idealHeight: 320, maxHeight: 400)
-                detailColumn.frame(maxWidth: .infinity)
+                timelineColumn.frame(minHeight: 240, idealHeight: 320)
+                detailColumn.frame(maxWidth: .infinity, minHeight: 240)
             }
         }
     }
@@ -147,9 +147,13 @@ public struct LedgerFeatureView: View {
             if primaryEntries.isEmpty {
                 AtlasEmptyState(title: AtlasL10n.string("ledger.timeline.empty.title"), detail: AtlasL10n.string("ledger.timeline.empty.detail"), systemImage: "list.bullet.rectangle", tone: .neutral)
             } else {
-                LedgerTimelineView(entries: primaryEntries, selection: entrySelectionBinding)
-                if !archivedEntries.isEmpty {
-                    LedgerArchiveView(entries: archivedEntries, title: AtlasL10n.string("ledger.archive.section.older"), isExpanded: $isOlderArchiveExpanded, selection: entrySelectionBinding)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                        LedgerTimelineView(entries: primaryEntries, selection: entrySelectionBinding)
+                        if !archivedEntries.isEmpty {
+                            LedgerArchiveView(entries: archivedEntries, title: AtlasL10n.string("ledger.archive.section.older"), isExpanded: $isOlderArchiveExpanded, selection: entrySelectionBinding)
+                        }
+                    }
                 }
             }
         }
@@ -260,7 +264,16 @@ public struct LedgerFeatureView: View {
 
     private func syncSelection() {
         withAnimation(.easeInOut(duration: 0.2)) {
-            if selectedEntryID == nil, let first = primaryEntries.first { selectedEntryID = first.id }
+            // Auto-select first only when nothing is selected OR the current
+            // selection fell out of the visible (filtered) list — never clobber
+            // an active user selection just because the filter/list changed
+            // (review fix: 布局/过滤切换后用户选择被重置 → 交互异常).
+            let currentValid = selectedEntryID.flatMap { id in
+                primaryEntries.contains(where: { $0.id == id }) ? id : nil
+            }
+            if currentValid == nil, let first = primaryEntries.first {
+                selectedEntryID = first.id
+            }
         }
     }
 }
