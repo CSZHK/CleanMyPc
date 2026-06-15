@@ -265,7 +265,13 @@ public struct AppsFeatureView: View {
 
     private var selectedApp: AppFootprint? {
         guard let selectedAppID else { return nil }
-        return sortedApps.first(where: { $0.id == selectedAppID })
+        // Resolve against the FULL unfiltered set, not the filter-narrowed list,
+        // so toggling "leftovers only" doesn't clobber a selected app that has
+        // no leftovers — the evidence panel keeps showing it; the list just
+        // shows no row highlight under the filter (mirrors the Ledger round-9
+        // fix; syncSelection then only auto-selects when the id is genuinely
+        // absent from all apps).
+        return Self.sortedApps(apps).first(where: { $0.id == selectedAppID })
     }
 
     private var selectedAppMatchingPreview: ActionPlan? {
