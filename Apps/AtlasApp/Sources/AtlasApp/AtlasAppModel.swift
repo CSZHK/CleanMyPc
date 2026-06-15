@@ -972,6 +972,17 @@ final class AtlasAppModel: ObservableObject {
         }
     }
 
+    /// Ledger entry id ("run.<uuid>") of the most recent task run of the given
+    /// kinds, so a receipt's 「在台账中查看」back-link opens the Ledger on the
+    /// matching run instead of the default first entry (round-5 回链红线 §1.6).
+    func ledgerEntryIDForLatestRun(matching kinds: Set<TaskKind>) -> String? {
+        guard let run = snapshot.taskRuns
+            .filter({ kinds.contains($0.kind) })
+            .max(by: { ($0.finishedAt ?? $0.startedAt) < ($1.finishedAt ?? $1.startedAt) })
+        else { return nil }
+        return "run.\(run.id.uuidString)"
+    }
+
     // MARK: - Toast Management
 
     func showToast(_ message: String, tone: AtlasTone = .neutral, systemImage: String? = nil) {

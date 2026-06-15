@@ -252,6 +252,9 @@ struct AppShellView: View {
                     Task { await model.undoSmartCleanExecution() }
                 },
                 onNavigateToLedger: {
+                    // Back-link red line §1.6: open the Ledger on the run this
+                    // receipt just executed, not the default first entry (round-5).
+                    model.pendingLedgerEntryID = model.ledgerEntryIDForLatestRun(matching: [.scan, .executePlan])
                     model.navigate(to: .ledger)
                 }
             )
@@ -315,6 +318,9 @@ struct AppShellView: View {
                     Task { await model.undoFileOrganizerExecution() }
                 },
                 onNavigateToLedger: {
+                    // Back-link red line §1.6: open the Ledger on the run this
+                    // receipt just executed, not the default first entry (round-5).
+                    model.pendingLedgerEntryID = model.ledgerEntryIDForLatestRun(matching: [.organizeFiles])
                     model.navigate(to: .ledger)
                 }
             )
@@ -347,10 +353,21 @@ struct AppShellView: View {
                 recoveryItems: model.filteredRecoveryItems,
                 restoringItemID: model.restoringRecoveryItemID,
                 retentionDays: model.settings.recoveryRetentionDays,
-                initialSelectionID: model.pendingLedgerEntryID,
+                // pendingLedgerEntryID (Overview/receipt back-link) wins once;
+                // otherwise restore the model-persisted selection (round-5 §7).
+                initialSelectionID: model.pendingLedgerEntryID ?? model.workflowState(for: .ledger).ledgerEntrySelectionID,
+                initialFilter: LedgerFilter(rawValue: model.workflowState(for: .ledger).ledgerFilter) ?? .all,
+                initialArchiveExpanded: model.workflowState(for: .ledger).ledgerArchiveExpanded,
                 planNumber: { run in model.workflowPlanNumber(for: run) },
                 onRestoreItem: { itemID in
                     Task { await model.restoreRecoveryItem(itemID) }
+                },
+                onSelectionChange: { filter, entryID, archiveExpanded in
+                    model.updateWorkflowState(for: .ledger) { state in
+                        state.ledgerFilter = filter.rawValue
+                        state.ledgerEntrySelectionID = entryID
+                        state.ledgerArchiveExpanded = archiveExpanded
+                    }
                 }
             )
             .onAppear { model.pendingLedgerEntryID = nil }

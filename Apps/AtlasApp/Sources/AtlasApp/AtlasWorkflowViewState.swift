@@ -36,6 +36,16 @@ struct AtlasWorkflowViewState: Equatable {
     /// dialog itself is presented by the feature screen (Batch I). Confirming
     /// runs `supersedePlan(for:)`, cancelling just clears the flag.
     var rescanConfirmationPending: Bool = false
+
+    // MARK: Ledger presentation state (round-5: hosted so it survives the
+    // .id(route) view rebuild on tab round-trips — §7 red line. LedgerFilter
+    // lives in AtlasFeaturesHistory, so the filter is stored as its rawValue).
+    /// Active filter chip (LedgerFilter.rawValue: "all" / "recoverable" / "archive").
+    var ledgerFilter: String = "all"
+    /// Selected timeline entry id ("run.<uuid>" / "recovery.<uuid>").
+    var ledgerEntrySelectionID: String?
+    /// Older-archive section expanded.
+    var ledgerArchiveExpanded: Bool = false
 }
 
 // MARK: - Stage derivation (pure, unit-tested)

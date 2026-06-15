@@ -515,7 +515,7 @@
 "apps.evidence.residualEstimate" = "Residual estimate";
 "apps.evidence.residual.reclaimable" = "Move to recovery: %@";
 "apps.evidence.residual.withReview" = "Recoverable %@ · Review-only %@";
-"apps.evidence.recovery" = "%d recoverable · bundle moves to the recovery area, purged after 14 days";
+"apps.evidence.recovery" = "%d recoverable · bundle moves to the recovery area, purged after %d days";
 "apps.actionbar.promise.full" = "Auto recovery point before execution · retained %d days · recorded in ledger";
 "apps.actionbar.promise.partial" = "%d/%d items recoverable · retained %d days · recorded in ledger";
 "apps.panel.selectHint" = "Select an app to view evidence";

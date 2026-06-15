@@ -515,7 +515,7 @@
 "apps.evidence.residualEstimate" = "残留估计";
 "apps.evidence.residual.reclaimable" = "可移入恢复区：%@";
 "apps.evidence.residual.withReview" = "可恢复 %@ · 仅供复核 %@";
-"apps.evidence.recovery" = "%d 项可恢复 · 应用包将移入恢复区，保留 14 天后清理";
+"apps.evidence.recovery" = "%d 项可恢复 · 应用包将移入恢复区，保留 %d 天后清理";
 "apps.actionbar.promise.full" = "执行前自动建立恢复点 · 保留 %d 天 · 全程录入台账";
 "apps.actionbar.promise.partial" = "%d/%d 项可恢复 · 保留 %d 天 · 全程录入台账";
 "apps.panel.selectHint" = "选择一个应用查看证据";

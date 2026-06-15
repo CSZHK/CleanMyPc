@@ -23,11 +23,12 @@ public struct LedgerFeatureView: View {
     private let retentionDays: Int
     private let planNumber: (TaskRun) -> Int?
     private let onRestoreItem: (UUID) -> Void
+    private let onSelectionChange: (LedgerFilter, String?, Bool) -> Void
 
     @State private var browserWidth: CGFloat?
-    @State private var selectedFilter: LedgerFilter = .all
+    @State private var selectedFilter: LedgerFilter
     @State private var selectedEntryID: String?
-    @State private var isOlderArchiveExpanded = false
+    @State private var isOlderArchiveExpanded: Bool
     @State private var isExporting = false
 
     public init(
@@ -36,8 +37,11 @@ public struct LedgerFeatureView: View {
         restoringItemID: UUID? = nil,
         retentionDays: Int = 7,
         initialSelectionID: String? = nil,
+        initialFilter: LedgerFilter = .all,
+        initialArchiveExpanded: Bool = false,
         planNumber: @escaping (TaskRun) -> Int? = { _ in nil },
-        onRestoreItem: @escaping (UUID) -> Void = { _ in }
+        onRestoreItem: @escaping (UUID) -> Void = { _ in },
+        onSelectionChange: @escaping (LedgerFilter, String?, Bool) -> Void = { _, _, _ in }
     ) {
         self.taskRuns = taskRuns
         self.recoveryItems = recoveryItems
@@ -45,12 +49,14 @@ public struct LedgerFeatureView: View {
         self.retentionDays = retentionDays
         self.planNumber = planNumber
         self.onRestoreItem = onRestoreItem
-        // Seed from the Overview feed's tapped entry (round-4 back-link). nil ⇒
-        // syncSelection auto-selects the first entry as before. syncSelection
-        // still validates the seeded id against all rendered entries, so a stale
-        // id (e.g. since-archived) falls back gracefully instead of selecting
-        // nothing.
+        self.onSelectionChange = onSelectionChange
+        // Seed from the Overview feed's tapped entry (round-4 back-link) and the
+        // model-persisted presentation state (round-5: survives route switches).
+        // syncSelection still validates the seeded id against all rendered
+        // entries, so a stale id (e.g. since-archived) falls back gracefully.
         _selectedEntryID = State(initialValue: initialSelectionID)
+        _selectedFilter = State(initialValue: initialFilter)
+        _isOlderArchiveExpanded = State(initialValue: initialArchiveExpanded)
     }
 
     public var body: some View {
@@ -70,10 +76,20 @@ public struct LedgerFeatureView: View {
                 }
             }
         }
-        .onAppear(perform: syncSelection)
+        .onAppear {
+            syncSelection()
+            // Persist the resolved (possibly back-link-seeded) selection so a
+            // tab round-trip right after a back-link still lands on №N (round-5).
+            persistLedgerState()
+        }
         .onChange(of: sortedTaskRunIDs) { _, _ in syncSelection() }
         .onChange(of: sortedRecoveryItemIDs) { _, _ in syncSelection() }
-        .onChange(of: selectedFilter) { _, _ in syncSelection() }
+        .onChange(of: selectedFilter) { _, _ in
+            syncSelection()
+            persistLedgerState()
+        }
+        .onChange(of: selectedEntryID) { _, _ in persistLedgerState() }
+        .onChange(of: isOlderArchiveExpanded) { _, _ in persistLedgerState() }
         .sheet(isPresented: $isExporting) { exportPanel }
     }
 
@@ -295,6 +311,13 @@ public struct LedgerFeatureView: View {
                 }
             }
         }
+    }
+
+    /// Write the current filter / selection / archive-expand back to the model
+    /// so they survive the .id(route) view rebuild on tab round-trips (round-5,
+    /// §7 red line — feature-local @State is otherwise destroyed on navigation).
+    private func persistLedgerState() {
+        onSelectionChange(selectedFilter, selectedEntryID, isOlderArchiveExpanded)
     }
 }
 
