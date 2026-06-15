@@ -208,7 +208,7 @@ public struct LedgerFeatureView: View {
     private var sortedRecoveryItemIDs: [UUID] { sortedRecoveryItems.map(\.id) }
     private var activeTaskCount: Int { taskRuns.filter(\.isActive).count }
     private var totalRecoveryBytes: Int64 { recoveryItems.map(\.bytes).reduce(0, +) }
-    private var recoveryTone: AtlasTone { recoveryItems.contains(where: \.isExpiringSoon_pkg) ? .warning : .success }
+    private var recoveryTone: AtlasTone { recoveryItems.contains(where: \.isExpiringSoon) ? .warning : .success }
 
     private var runNumbers: [UUID: Int] {
         LedgerEntryMapping.chronologicalDisplayNumbers(for: taskRuns, planNumber: planNumber)
@@ -281,8 +281,8 @@ public enum LedgerFilter: String, CaseIterable, Identifiable {
     public func matches(recovery item: RecoveryItem) -> Bool {
         switch self {
         case .all: return true
-        case .recoverable: return !item.isExpired_pkg
-        case .archive: return item.isExpired_pkg
+        case .recoverable: return !item.isExpired
+        case .archive: return item.isExpired
         }
     }
 }
@@ -290,8 +290,8 @@ public enum LedgerFilter: String, CaseIterable, Identifiable {
 // MARK: - Private helpers (legacy behavior preserved, keys renamed)
 
 private extension RecoveryItem {
-    var isExpired_pkg: Bool { expiresAt.map { $0 <= Date() } ?? false }
-    var isExpiringSoon_pkg: Bool {
+    var isExpired: Bool { expiresAt.map { $0 <= Date() } ?? false }
+    var isExpiringSoon: Bool {
         guard let expiresAt else { return false }
         let cutoff = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
         return expiresAt <= cutoff
