@@ -506,6 +506,20 @@
 "apps.restore.divergence.detail" = "%@ 恢复后，以下类别的残留数量发生变化：%@。建议重新扫描以获取最新证据。";
 "apps.restore.divergence.rescan" = "重新扫描残留";
 
+// Calm Ledger M3 Batch L1 — Apps evidence panel + action bar (spec §3 Apps row)
+"apps.evidence.why.idle" = "%@ 的占用与残留足迹。先预览卸载计划，再逐项确认可恢复步骤。";
+"apps.evidence.why.ready" = "%@ 的卸载计划已就绪。下面是 10 类证据足迹与可恢复范围，复核后再执行。";
+"apps.evidence.bundlePath" = "应用路径";
+"apps.evidence.bundleBytes" = "应用占用";
+"apps.evidence.leftoverItems" = "残留条目";
+"apps.evidence.residualEstimate" = "残留估计";
+"apps.evidence.residual.reclaimable" = "可移入恢复区：%@";
+"apps.evidence.residual.withReview" = "可恢复 %@ · 仅供复核 %@";
+"apps.evidence.recovery" = "%d 项可恢复 · 应用包将移入恢复区，保留 14 天后清理";
+"apps.actionbar.promise.full" = "执行前自动建立恢复点 · 保留 %d 天 · 全程录入台账";
+"apps.actionbar.promise.partial" = "%d/%d 项可恢复 · 保留 %d 天 · 全程录入台账";
+"apps.panel.selectHint" = "选择一个应用查看证据";
+
 "ledger.screen.title" = "维护台账";
 "ledger.screen.subtitle" = "查看执行过的任务、发生的变更，以及在恢复窗口关闭前仍可找回的项目。";
 "ledger.surface.title" = "维护台账";

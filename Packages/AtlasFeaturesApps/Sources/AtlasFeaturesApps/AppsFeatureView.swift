@@ -2,6 +2,18 @@ import AtlasDesignSystem
 import AtlasDomain
 import SwiftUI
 
+/// Apps screen (Calm Ledger Batch L1 — simplified skeleton, spec §2.3 Apps 段).
+///
+/// Single-select app browser: a grouped list on the left, a persistent
+/// `AtlasEvidencePanel` on the right showing the selected app's 10-category
+/// evidence footprint + uninstall-plan preview + residual estimate (spec §3).
+/// The pinned action bar appears only when an app is selected AND its preview
+/// plan is ready (no batch uninstall — regression red line).
+///
+/// Uninstall behavior is unchanged: the primary action delegates to
+/// `onPreviewAppUninstall` (build/refresh plan) and `onExecuteAppUninstall`
+/// (confirm + execute). The legacy `AppDetailView` with embedded buttons is
+/// replaced by the shared `AtlasEvidencePanel` + `AtlasActionBar` chrome.
 public struct AppsFeatureView: View {
     @Environment(\.atlasContentWidth) private var contentWidth
 
@@ -21,6 +33,9 @@ public struct AppsFeatureView: View {
     @State private var selectedAppID: UUID?
     @State private var browserWidth: CGFloat?
     @State private var showLeftoversOnly = false
+    @State private var showUninstallConfirmation = false
+
+    private let retentionDays: Int
 
     public init(
         apps: [AppFootprint] = AtlasScaffoldFixtures.apps,
@@ -48,6 +63,9 @@ public struct AppsFeatureView: View {
         self.onPreviewAppUninstall = onPreviewAppUninstall
         self.onExecuteAppUninstall = onExecuteAppUninstall
         self.onRescanLeftovers = onRescanLeftovers
+        // Retention window is a fixed Atlas default (14d) — Apps does not yet
+        // carry its own retention field; mirroring the legacy detail copy.
+        self.retentionDays = 14
         _selectedAppID = State(initialValue: Self.sortedApps(apps).first?.id)
     }
 
@@ -55,134 +73,215 @@ public struct AppsFeatureView: View {
         AtlasScreen(
             title: AtlasL10n.string("apps.screen.title"),
             subtitle: AtlasL10n.string("apps.screen.subtitle"),
-            maxContentWidth: AtlasLayout.maxWorkspaceWidth
+            maxContentWidth: AtlasLayout.maxWorkspaceWidth,
+            actionBar: { AnyView(actionBar) }
         ) {
             if previewPlan != nil || restoreRefreshStatus != nil {
+                let callout = screenCallout
                 AtlasCallout(
-                    title: screenCalloutTitle,
-                    detail: screenCalloutDetail,
-                    tone: screenCalloutTone,
-                    systemImage: screenCalloutSystemImage
+                    title: callout.title,
+                    detail: callout.detail,
+                    tone: callout.tone,
+                    systemImage: callout.systemImage
                 )
             }
 
-            AtlasInfoCard(
-                title: AtlasL10n.string("apps.inventory.title"),
-                subtitle: AtlasL10n.string("apps.inventory.subtitle")
-            ) {
-                VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
-                    Text(summary)
-                        .font(AtlasTypography.body)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+            inventoryCard
 
-                    LazyVGrid(columns: inventoryMetricColumns, spacing: AtlasSpacing.lg) {
-                        AtlasMetricCard(
-                            title: AtlasL10n.string("apps.metric.listed.title"),
-                            value: "\(sortedApps.count)",
-                            detail: AtlasL10n.string("apps.metric.listed.detail"),
-                            tone: .neutral,
-                            systemImage: "square.stack.3d.up"
-                        )
-                        AtlasMetricCard(
-                            title: AtlasL10n.string("apps.metric.footprint.title"),
-                            value: AtlasFormatters.byteCount(sortedApps.map(\.bytes).reduce(0, +)),
-                            detail: AtlasL10n.string("apps.metric.footprint.detail"),
-                            tone: .warning,
-                            systemImage: "shippingbox"
-                        )
-                        AtlasMetricCard(
-                            title: AtlasL10n.string("apps.metric.leftovers.title"),
-                            value: "\(sortedApps.map(\.leftoverItems).reduce(0, +))",
-                            detail: AtlasL10n.string("apps.metric.leftovers.detail"),
-                            tone: .warning,
-                            systemImage: "tray.full"
-                        )
-                    }
-
-                    Button(action: onRefreshApps) {
-                        Label(isRunning ? AtlasL10n.string("apps.refresh.running") : AtlasL10n.string("apps.refresh.action"), systemImage: "arrow.clockwise")
-                    }
-                    .buttonStyle(.atlasSecondary)
-                    .disabled(isRunning)
-                    .accessibilityIdentifier("apps.refresh")
-                    .accessibilityHint(AtlasL10n.string("apps.refresh.hint"))
-                }
-            }
-
-            leftoversFilterChip
-
-            AtlasInfoCard(
-                title: AtlasL10n.string("apps.browser.title"),
-                subtitle: AtlasL10n.string("apps.browser.subtitle"),
-                tone: selectedAppMatchingPreview == nil ? .neutral : .warning
-            ) {
-                Group {
-                    if isWideBrowserLayout {
-                        HStack(alignment: .top, spacing: AtlasSpacing.xl) {
-                            appsSidebar
-                                .frame(width: sidebarWidth)
-                                .frame(maxHeight: .infinity)
-
-                            appDetailPanel
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                        }
-                    } else {
-                        VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-                            appsSidebar
-                                .frame(minHeight: 240, idealHeight: 320, maxHeight: 400)
-
-                            appDetailPanel
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                .frame(minHeight: isWideBrowserLayout ? 460 : nil, alignment: .topLeading)
-                .background(
-                    GeometryReader { proxy in
-                        Color.clear.preference(key: BrowserWidthKey.self, value: proxy.size.width)
-                    }
-                )
-                .onPreferenceChange(BrowserWidthKey.self) { newWidth in
-                    if newWidth > 0 {
-                        browserWidth = newWidth
-                    }
-                }
-            }
+            browserCard
         }
         .onAppear(perform: syncSelection)
-        .onChange(of: sortedAppIDs) { _, _ in
-            syncSelection()
+        .onChange(of: sortedAppIDs) { _, _ in syncSelection() }
+        .confirmationDialog(
+            AtlasL10n.string("apps.confirm.uninstall.title"),
+            isPresented: $showUninstallConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(AtlasL10n.string("apps.uninstall.action"), role: .destructive) {
+                if let id = selectedApp?.id { onExecuteAppUninstall(id) }
+            }
+            Button(AtlasL10n.string("confirm.cancel"), role: .cancel) {}
+        } message: {
+            if let app = selectedApp {
+                Text(AtlasL10n.string("apps.confirm.uninstall.message", app.name))
+            }
         }
+    }
+
+    // MARK: - Inventory
+
+    private var inventoryCard: some View {
+        AtlasInfoCard(
+            title: AtlasL10n.string("apps.inventory.title"),
+            subtitle: AtlasL10n.string("apps.inventory.subtitle")
+        ) {
+            VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
+                Text(summary)
+                    .font(AtlasTypography.body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                LazyVGrid(columns: inventoryMetricColumns, spacing: AtlasSpacing.lg) {
+                    AtlasMetricCard(
+                        title: AtlasL10n.string("apps.metric.listed.title"),
+                        value: "\(sortedApps.count)",
+                        detail: AtlasL10n.string("apps.metric.listed.detail"),
+                        tone: .neutral,
+                        systemImage: "square.stack.3d.up"
+                    )
+                    AtlasMetricCard(
+                        title: AtlasL10n.string("apps.metric.footprint.title"),
+                        value: AtlasFormatters.byteCount(sortedApps.map(\.bytes).reduce(0, +)),
+                        detail: AtlasL10n.string("apps.metric.footprint.detail"),
+                        tone: .warning,
+                        systemImage: "shippingbox"
+                    )
+                    AtlasMetricCard(
+                        title: AtlasL10n.string("apps.metric.leftovers.title"),
+                        value: "\(sortedApps.map(\.leftoverItems).reduce(0, +))",
+                        detail: AtlasL10n.string("apps.metric.leftovers.detail"),
+                        tone: .warning,
+                        systemImage: "tray.full"
+                    )
+                }
+
+                Button(action: onRefreshApps) {
+                    Label(isRunning ? AtlasL10n.string("apps.refresh.running") : AtlasL10n.string("apps.refresh.action"), systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.atlasSecondary)
+                .disabled(isRunning)
+                .accessibilityIdentifier("apps.refresh")
+                .accessibilityHint(AtlasL10n.string("apps.refresh.hint"))
+            }
+        }
+    }
+
+    // MARK: - Browser (list + evidence panel)
+
+    private var browserCard: some View {
+        AtlasInfoCard(
+            title: AtlasL10n.string("apps.browser.title"),
+            subtitle: AtlasL10n.string("apps.browser.subtitle"),
+            tone: selectedAppMatchingPreview == nil ? .neutral : .warning
+        ) {
+            Group {
+                if isWideBrowserLayout {
+                    HStack(alignment: .top, spacing: AtlasSpacing.xl) {
+                        listPanel.frame(width: sidebarWidth)
+                            .frame(maxHeight: .infinity)
+                        evidencePanel.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
+                        listPanel.frame(minHeight: 240, idealHeight: 320, maxHeight: 400)
+                        evidencePanel.frame(maxWidth: .infinity)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .frame(minHeight: isWideBrowserLayout ? 460 : nil, alignment: .topLeading)
+            .background(
+                GeometryReader { proxy in
+                    Color.clear.preference(key: BrowserWidthKey.self, value: proxy.size.width)
+                }
+            )
+            .onPreferenceChange(BrowserWidthKey.self) { newWidth in
+                if newWidth > 0 { browserWidth = newWidth }
+            }
+        }
+    }
+
+    private var listPanel: some View {
+        AppsListView(
+            apps: sortedApps,
+            selectedAppID: $selectedAppID,
+            showLeftoversOnly: showLeftoversOnly,
+            onToggleLeftoversFilter: { showLeftoversOnly.toggle() },
+            leftoversCount: Self.sortedApps(apps).filter { $0.leftoverItems > 0 }.count,
+            onRefresh: onRefreshApps,
+            isRunning: isRunning
+        )
+    }
+
+    private var evidencePanel: some View {
+        AtlasEvidencePanel(state: evidenceState) {
+            if let status = selectedAppRestoreRefreshStatus {
+                AppsRestoreRefreshSection(status: status, isRunning: isRunning) {
+                    if let id = selectedApp?.id { onRescanLeftovers(id) }
+                }
+            }
+        }
+    }
+
+    // MARK: - Action bar
+
+    @ViewBuilder
+    private var actionBar: some View {
+        if AppsEvidencePanelBuilder.shouldShowActionBar(
+            selectedApp: selectedApp,
+            previewPlan: previewPlan,
+            currentPreviewedAppID: currentPreviewedAppID
+        ) {
+            AppsActionBar(
+                selectedApp: selectedApp,
+                previewPlan: previewPlan,
+                isRunning: isRunning,
+                activePreviewAppID: activePreviewAppID,
+                activeUninstallAppID: activeUninstallAppID,
+                retentionDays: retentionDays,
+                onPrimary: { handlePrimaryAction() }
+            )
+        }
+    }
+
+    /// Uninstall flow behavior unchanged (spec red line):
+    /// - No plan yet → `onPreviewAppUninstall` (build/refresh the preview).
+    /// - Plan ready → confirm dialog → `onExecuteAppUninstall` (execute).
+    private func handlePrimaryAction() {
+        guard let app = selectedApp else { return }
+        if previewPlan != nil {
+            showUninstallConfirmation = true
+        } else {
+            onPreviewAppUninstall(app.id)
+        }
+    }
+
+    // MARK: - Derived
+
+    private var evidenceState: AtlasEvidenceState {
+        AppsEvidencePanelBuilder.panelState(
+            app: selectedApp,
+            previewPlan: selectedAppMatchingPreview,
+            retentionDays: retentionDays
+        )
     }
 
     private var sortedApps: [AppFootprint] {
         let all = Self.sortedApps(apps)
-        if showLeftoversOnly {
-            return all.filter { $0.leftoverItems > 0 }
-        }
-        return all
+        return showLeftoversOnly ? all.filter { $0.leftoverItems > 0 } : all
     }
 
-    private var sortedAppIDs: [UUID] {
-        sortedApps.map(\.id)
+    private var sortedAppIDs: [UUID] { sortedApps.map(\.id) }
+
+    private var selectedApp: AppFootprint? {
+        guard let selectedAppID else { return nil }
+        return sortedApps.first(where: { $0.id == selectedAppID })
     }
 
-    @ViewBuilder
-    private var leftoversFilterChip: some View {
-        AtlasFilterChip(
-            title: AtlasL10n.string("apps.filter.leftoversOnly"),
-            isSelected: showLeftoversOnly,
-            count: Self.sortedApps(apps).filter { $0.leftoverItems > 0 }.count
-        ) {
-            showLeftoversOnly.toggle()
-        }
+    private var selectedAppMatchingPreview: ActionPlan? {
+        guard currentPreviewedAppID == selectedApp?.id else { return nil }
+        return previewPlan
+    }
+
+    private var selectedAppRestoreRefreshStatus: AtlasAppPostRestoreRefreshStatus? {
+        guard let selectedApp, let restoreRefreshStatus else { return nil }
+        guard restoreRefreshStatus.bundlePath == selectedApp.bundlePath
+            || restoreRefreshStatus.bundleIdentifier == selectedApp.bundleIdentifier else { return nil }
+        return restoreRefreshStatus
     }
 
     private var effectiveBrowserWidth: CGFloat {
-        let measuredWidth = browserWidth ?? contentWidth
-        return max(measuredWidth, 0)
+        max(browserWidth ?? contentWidth, 0)
     }
 
     private var isWideBrowserLayout: Bool {
@@ -193,729 +292,46 @@ public struct AppsFeatureView: View {
         min(max(effectiveBrowserWidth * 0.3, 220), 280)
     }
 
-    private var detailMetricColumns: [GridItem] {
-        let estimatedDetailWidth = isWideBrowserLayout
-            ? max(effectiveBrowserWidth - sidebarWidth - AtlasSpacing.xl - (AtlasSpacing.xl * 2), 320)
-            : effectiveBrowserWidth
-        return AtlasLayout.adaptiveMetricColumns(for: estimatedDetailWidth)
-    }
-
     private var inventoryMetricColumns: [GridItem] {
         AtlasLayout.adaptiveMetricColumns(for: contentWidth)
     }
 
-    private var groupedApps: [AppGroup] {
-        var groups: [AppGroup] = []
-        let grouped = Dictionary(grouping: sortedApps, by: \.bucket)
+    // MARK: - Screen callout
 
-        for bucket in AppBucket.displayOrder {
-            guard let items = grouped[bucket], !items.isEmpty else {
-                continue
-            }
-            groups.append(AppGroup(id: bucket.rawValue, title: bucket.title, tone: bucket.tone, apps: items))
+    private var screenCallout: (title: String, detail: String, tone: AtlasTone, systemImage: String) {
+        if let restoreRefreshStatus {
+            let s = restoreRefreshStatus.state
+            return (s.calloutTitle, s.calloutDetail(status: restoreRefreshStatus), s.tone, s.systemImage)
         }
-
-        return groups
-    }
-
-    private var selectedApp: AppFootprint? {
-        guard let selectedAppID else {
-            return nil
+        if previewPlan == nil {
+            return (
+                AtlasL10n.string("apps.callout.default.title"),
+                AtlasL10n.string("apps.callout.default.detail"),
+                .neutral,
+                "app.badge.minus"
+            )
         }
-        return sortedApps.first(where: { $0.id == selectedAppID })
-    }
-
-    private var selectedAppMatchingPreview: ActionPlan? {
-        guard currentPreviewedAppID == selectedApp?.id else {
-            return nil
-        }
-        return previewPlan
-    }
-
-    private var selectedAppRestoreRefreshStatus: AtlasAppPostRestoreRefreshStatus? {
-        guard let selectedApp, let restoreRefreshStatus else {
-            return nil
-        }
-        guard restoreRefreshStatus.bundlePath == selectedApp.bundlePath
-            || restoreRefreshStatus.bundleIdentifier == selectedApp.bundleIdentifier else {
-            return nil
-        }
-        return restoreRefreshStatus
-    }
-
-    private var screenCalloutTitle: String {
-        guard let restoreRefreshStatus else {
-            return previewPlan == nil
-                ? AtlasL10n.string("apps.callout.default.title")
-                : AtlasL10n.string("apps.callout.preview.title")
-        }
-        return restoreRefreshStatus.state.calloutTitle
-    }
-
-    private var screenCalloutDetail: String {
-        guard let restoreRefreshStatus else {
-            return previewPlan == nil
-                ? AtlasL10n.string("apps.callout.default.detail")
-                : AtlasL10n.string("apps.callout.preview.detail")
-        }
-        return restoreRefreshStatus.state.calloutDetail(status: restoreRefreshStatus)
-    }
-
-    private var screenCalloutTone: AtlasTone {
-        guard let restoreRefreshStatus else {
-            return previewPlan == nil ? .neutral : .warning
-        }
-        return restoreRefreshStatus.state.tone
-    }
-
-    private var screenCalloutSystemImage: String {
-        guard let restoreRefreshStatus else {
-            return previewPlan == nil ? "app.badge.minus" : "list.clipboard.fill"
-        }
-        return restoreRefreshStatus.state.systemImage
-    }
-
-    private var appsSidebar: some View {
-        VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-            Text(AtlasL10n.string("apps.list.title"))
-                .font(AtlasTypography.label)
-                .foregroundStyle(.secondary)
-
-            if sortedApps.isEmpty {
-                AtlasEmptyState(
-                    title: AtlasL10n.string("apps.list.empty.title"),
-                    detail: AtlasL10n.string("apps.list.empty.detail"),
-                    systemImage: "square.stack.3d.up.slash",
-                    tone: .neutral,
-                    actionTitle: AtlasL10n.string("emptystate.action.refresh"),
-                    onAction: onRefreshApps
-                )
-            } else {
-                List(selection: $selectedAppID) {
-                    ForEach(groupedApps) { group in
-                        Section {
-                            ForEach(group.apps) { app in
-                                AppSidebarRow(app: app)
-                                    .tag(app.id)
-                                    .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
-                            }
-                        } header: {
-                            AppSidebarSectionHeader(title: group.title, count: group.apps.count, tone: group.tone)
-                        }
-                    }
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(AtlasSpacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
-                .fill(AtlasColor.cardRaised)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
-                .strokeBorder(AtlasColor.border, lineWidth: 1)
-        )
-    }
-
-    private var appDetailPanel: some View {
-        VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
-            Text(AtlasL10n.string("apps.detail.title"))
-                .font(AtlasTypography.label)
-                .foregroundStyle(.secondary)
-
-            Group {
-                ScrollView {
-                    Group {
-                        if let selectedApp {
-                            AppDetailView(
-                                app: selectedApp,
-                                previewPlan: selectedAppMatchingPreview,
-                                restoreRefreshStatus: selectedAppRestoreRefreshStatus,
-                                metricColumns: detailMetricColumns,
-                                isBuildingPreview: activePreviewAppID == selectedApp.id,
-                                isUninstalling: activeUninstallAppID == selectedApp.id,
-                                isBusy: isRunning,
-                                onPreview: { onPreviewAppUninstall(selectedApp.id) },
-                                onUninstall: { onExecuteAppUninstall(selectedApp.id) },
-                                onRescanLeftovers: { onRescanLeftovers(selectedApp.id) }
-                            )
-                        } else {
-                            AtlasEmptyState(
-                                title: AtlasL10n.string("apps.detail.empty.title"),
-                                detail: AtlasL10n.string("apps.detail.empty.detail"),
-                                systemImage: "cursorarrow.click",
-                                tone: .neutral
-                            )
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                }
-            }
-            .animation(.easeInOut(duration: 0.2), value: selectedAppID)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(AtlasSpacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
-                .fill(AtlasColor.cardRaised)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
-                .strokeBorder(AtlasColor.border, lineWidth: 1)
+        return (
+            AtlasL10n.string("apps.callout.preview.title"),
+            AtlasL10n.string("apps.callout.preview.detail"),
+            .warning,
+            "list.clipboard.fill"
         )
     }
 
     private func syncSelection() {
-        if selectedApp == nil {
-            selectedAppID = sortedApps.first?.id
-        }
+        if selectedApp == nil { selectedAppID = sortedApps.first?.id }
     }
 
     private static func sortedApps(_ apps: [AppFootprint]) -> [AppFootprint] {
-        apps.sorted { lhs, rhs in
-            if lhs.bytes == rhs.bytes {
-                if lhs.leftoverItems == rhs.leftoverItems {
-                    return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
-                }
-                return lhs.leftoverItems > rhs.leftoverItems
-            }
-            return lhs.bytes > rhs.bytes
-        }
+        AppsListView.sortedApps(apps)
     }
 }
 
-private struct AppSidebarRow: View {
-    let app: AppFootprint
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
-            HStack(alignment: .center, spacing: AtlasSpacing.sm) {
-                Image(systemName: "app.fill")
-                    .font(AtlasTypography.caption)
-                    .foregroundStyle(app.leftoverItems > 0 ? AtlasColor.warning : AtlasColor.brand)
-                    .accessibilityHidden(true)
-
-                Text(app.name)
-                    .font(AtlasTypography.rowTitle)
-                    .lineLimit(1)
-
-                Spacer(minLength: AtlasSpacing.sm)
-
-                Text(AtlasFormatters.byteCount(app.bytes))
-                    .font(AtlasTypography.captionSmall)
-                    .foregroundStyle(.secondary)
-            }
-
-            Text(app.bundleIdentifier)
-                .font(AtlasTypography.bodySmall)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-
-            HStack(alignment: .center, spacing: AtlasSpacing.sm) {
-                AtlasStatusChip(
-                    AtlasL10n.string("apps.list.row.leftovers", app.leftoverItems),
-                    tone: app.leftoverItems > 0 ? .warning : .success
-                )
-
-                Spacer(minLength: AtlasSpacing.sm)
-
-                Text(app.bucket.title)
-                    .font(AtlasTypography.captionSmall)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, AtlasSpacing.xxs)
-        .accessibilityElement(children: .contain)
-    }
-}
-
-private struct AppSidebarSectionHeader: View {
-    let title: String
-    let count: Int
-    let tone: AtlasTone
-
-    var body: some View {
-        HStack(alignment: .center, spacing: AtlasSpacing.sm) {
-            Text(title)
-                .font(AtlasTypography.caption)
-                .foregroundStyle(.secondary)
-
-            Spacer(minLength: AtlasSpacing.sm)
-
-            Text("\(count)")
-                .font(AtlasTypography.captionSmall)
-                .foregroundStyle(tone.tint)
-        }
-        .textCase(nil)
-    }
-}
-
-private struct AppDetailView: View {
-    let app: AppFootprint
-    let previewPlan: ActionPlan?
-    let restoreRefreshStatus: AtlasAppPostRestoreRefreshStatus?
-    let metricColumns: [GridItem]
-    let isBuildingPreview: Bool
-    let isUninstalling: Bool
-    let isBusy: Bool
-    let onPreview: () -> Void
-    let onUninstall: () -> Void
-    let onRescanLeftovers: () -> Void
-
-    @State private var showUninstallConfirmation = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: AtlasSpacing.lg) {
-                    headerCopy
-                    Spacer(minLength: AtlasSpacing.lg)
-                    headerMeta
-                }
-
-                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                    headerCopy
-                    headerMeta
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-
-            AtlasCallout(
-                title: isBuildingPreview
-                    ? AtlasL10n.string("apps.detail.callout.building.title")
-                    : previewPlan == nil
-                        ? AtlasL10n.string("apps.detail.callout.preview.title")
-                        : AtlasL10n.string("apps.detail.callout.ready.title"),
-                detail: isBuildingPreview
-                    ? AtlasL10n.string("apps.detail.callout.building.detail")
-                    : previewPlan == nil
-                        ? AtlasL10n.string("apps.detail.callout.preview.detail")
-                        : AtlasL10n.string("apps.detail.callout.ready.detail"),
-                tone: isBuildingPreview ? .neutral : (previewPlan == nil ? .neutral : .warning),
-                systemImage: isBuildingPreview ? "arrow.triangle.2.circlepath" : (previewPlan == nil ? "eye" : "checkmark.shield.fill")
-            )
-
-            VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                AtlasKeyValueRow(
-                    title: AtlasL10n.string("apps.detail.size"),
-                    value: AtlasFormatters.byteCount(app.bytes),
-                    detail: AtlasL10n.string("apps.metric.footprint.detail")
-                )
-                AtlasKeyValueRow(
-                    title: AtlasL10n.string("apps.detail.leftovers"),
-                    value: "\(app.leftoverItems)",
-                    detail: AtlasL10n.string("apps.metric.leftovers.detail")
-                )
-                AtlasMachineTextBlock(
-                    title: AtlasL10n.string("apps.detail.path"),
-                    value: app.bundlePath,
-                    detail: app.bucket.title
-                )
-            }
-
-            if let restoreRefreshStatus {
-                AtlasInfoCard(
-                    title: AtlasL10n.string("apps.restore.refresh.card.title"),
-                    subtitle: AtlasL10n.string("apps.restore.refresh.card.subtitle"),
-                    tone: restoreRefreshTone
-                ) {
-                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                        AtlasCallout(
-                            title: restoreRefreshTitle,
-                            detail: restoreRefreshDetail,
-                            tone: restoreRefreshTone,
-                            systemImage: restoreRefreshSystemImage
-                        )
-
-                        AtlasKeyValueRow(
-                            title: AtlasL10n.string("apps.restore.refresh.recorded.title"),
-                            value: "\(restoreRefreshStatus.recordedLeftoverItems)",
-                            detail: AtlasL10n.string("apps.restore.refresh.recorded.detail")
-                        )
-
-                        if let refreshedLeftoverItems = restoreRefreshStatus.refreshedLeftoverItems {
-                            AtlasKeyValueRow(
-                                title: AtlasL10n.string("apps.restore.refresh.current.title"),
-                                value: "\(refreshedLeftoverItems)",
-                                detail: AtlasL10n.string("apps.restore.refresh.current.detail")
-                            )
-                        }
-                    }
-                }
-            }
-
-            if let restoreRefreshStatus, restoreRefreshStatus.evidenceDivergenceDetected {
-                AtlasCallout(
-                    title: AtlasL10n.string("apps.restore.divergence.title"),
-                    detail: AtlasL10n.string(
-                        "apps.restore.divergence.detail",
-                        restoreRefreshStatus.appName,
-                        restoreRefreshStatus.divergentCategories.map(\.title).joined(separator: ", ")
-                    ),
-                    tone: .warning,
-                    systemImage: "exclamationmark.arrow.triangle.2.circlepath"
-                )
-
-                Button {
-                    onRescanLeftovers()
-                } label: {
-                    Label(AtlasL10n.string("apps.restore.divergence.rescan"), systemImage: "arrow.triangle.2.circlepath")
-                }
-                .buttonStyle(.atlasPrimary)
-                .disabled(isBusy)
-                .accessibilityIdentifier("apps.restore.divergence.rescan")
-            }
-
-            if let previewPlan {
-                let recoverableItems = previewPlan.items.filter(\.recoverable)
-                let reviewOnlyItems = previewPlan.items.filter { !$0.recoverable }
-                AtlasInfoCard(
-                    title: AtlasL10n.string("apps.preview.title"),
-                    subtitle: previewPlan.title,
-                    tone: .warning
-                ) {
-                    LazyVGrid(columns: metricColumns, spacing: AtlasSpacing.lg) {
-                        AtlasMetricCard(
-                            title: AtlasL10n.string("apps.preview.metric.size.title"),
-                            value: AtlasFormatters.byteCount(previewPlan.estimatedBytes),
-                            detail: AtlasL10n.string("apps.preview.metric.size.detail"),
-                            tone: .warning,
-                            systemImage: "shippingbox"
-                        )
-                        AtlasMetricCard(
-                            title: AtlasL10n.string("apps.preview.metric.actions.title"),
-                            value: "\(previewPlan.items.count)",
-                            detail: AtlasL10n.string("apps.preview.metric.actions.detail"),
-                            tone: .neutral,
-                            systemImage: "list.bullet.rectangle"
-                        )
-                        AtlasMetricCard(
-                            title: AtlasL10n.string("apps.preview.metric.recoverable.title"),
-                            value: "\(recoverableItems.count)",
-                            detail: AtlasL10n.string("apps.preview.metric.recoverable.detail"),
-                            tone: .success,
-                            systemImage: "arrow.uturn.backward.circle"
-                        )
-                        AtlasMetricCard(
-                            title: AtlasL10n.string("apps.preview.metric.reviewOnly.title"),
-                            value: "\(reviewOnlyItems.count)",
-                            detail: AtlasL10n.string("apps.preview.metric.reviewOnly.detail"),
-                            tone: reviewOnlyItems.isEmpty ? .neutral : .warning,
-                            systemImage: "doc.text.magnifyingglass"
-                        )
-                    }
-
-                    if let reviewOnlyBytes = previewPlan.estimatedReviewOnlyBytes, reviewOnlyBytes > 0 {
-                        AtlasMetricCard(
-                            title: AtlasL10n.string("apps.preview.metric.reviewOnlyBytes.title"),
-                            value: AtlasFormatters.byteCount(reviewOnlyBytes),
-                            detail: AtlasL10n.string("apps.preview.metric.reviewOnlyBytes.detail"),
-                            tone: .warning,
-                            systemImage: "doc.text.magnifyingglass"
-                        )
-                    }
-
-                    if let evidenceGroups = previewPlan.evidenceGroups, !evidenceGroups.isEmpty {
-                        AtlasSectionDisclosure(
-                            title: AtlasL10n.string("apps.preview.evidenceGroups.title"),
-                            count: evidenceGroups.count,
-                            defaultExpanded: true
-                        ) {
-                            VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                                ForEach(evidenceGroups) { group in
-                                    AtlasEvidenceGroupCard(group: group, mode: .preview)
-                                }
-                            }
-                        }
-                    }
-
-                    AtlasCallout(
-                        title: AtlasL10n.string(
-                            reviewOnlyItems.isEmpty
-                                ? "apps.preview.callout.safe.title"
-                                : "apps.preview.callout.review.title"
-                        ),
-                        detail: AtlasL10n.string(
-                            reviewOnlyItems.isEmpty
-                                ? "apps.preview.callout.safe.detail"
-                                : "apps.preview.callout.review.detail"
-                        ),
-                        tone: reviewOnlyItems.isEmpty ? .success : .warning,
-                        systemImage: reviewOnlyItems.isEmpty ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
-                    )
-
-                    if !recoverableItems.isEmpty {
-                        VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                            ForEach(recoverableItems) { item in
-                                AtlasDetailRow(
-                                    title: item.title,
-                                    subtitle: item.detail,
-                                    footnote: AtlasL10n.string("apps.preview.row.recoverable"),
-                                    systemImage: item.kind.atlasSystemImage,
-                                    tone: .success
-                                ) {
-                                    AtlasStatusChip(
-                                        AtlasL10n.string("common.recoverable"),
-                                        tone: .success
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    if !reviewOnlyItems.isEmpty {
-                        AtlasSectionDisclosure(
-                            title: AtlasL10n.string("apps.preview.reviewOnly.title"),
-                            count: reviewOnlyItems.count,
-                            defaultExpanded: false
-                        ) {
-                            VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                                ForEach(reviewOnlyItems) { item in
-                                    VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
-                                        AtlasDetailRow(
-                                            title: item.title,
-                                            subtitle: item.detail,
-                                            footnote: AtlasL10n.string("apps.preview.reviewOnly.footnote"),
-                                            systemImage: item.kind.atlasSystemImage,
-                                            tone: .neutral
-                                        ) {
-                                            AtlasStatusChip(
-                                                AtlasL10n.string("common.manualReview"),
-                                                tone: .warning
-                                            )
-                                        }
-
-                                        if let evidencePaths = item.evidencePaths, !evidencePaths.isEmpty {
-                                            AtlasMachineTextBlock(
-                                                title: AtlasL10n.string("apps.preview.reviewOnly.paths.title"),
-                                                value: evidencePaths.joined(separator: "\n"),
-                                                detail: AtlasL10n.string(
-                                                    evidencePaths.count == 1
-                                                        ? "apps.preview.reviewOnly.paths.detail.one"
-                                                        : "apps.preview.reviewOnly.paths.detail.other",
-                                                    evidencePaths.count
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .center, spacing: AtlasSpacing.md) {
-                    previewButton
-                    uninstallButton
-                }
-
-                VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                    previewButton
-                    uninstallButton
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var headerCopy: some View {
-        VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
-            Text(app.name)
-                .font(AtlasTypography.sectionTitle)
-
-            Text(app.bundleIdentifier)
-                .font(AtlasTypography.body)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var headerMeta: some View {
-        VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
-            Text(AtlasFormatters.byteCount(app.bytes))
-                .font(AtlasTypography.dataMetric)
-                .foregroundStyle(.primary)
-
-            AtlasStatusChip(
-                AtlasL10n.string("apps.list.row.leftovers", app.leftoverItems),
-                tone: app.leftoverItems > 0 ? .warning : .success
-            )
-        }
-    }
-
-    private var previewButton: some View {
-        HStack(spacing: AtlasSpacing.sm) {
-            if isBuildingPreview {
-                ProgressView()
-                    .controlSize(.small)
-            }
-
-            Group {
-                if previewPlan == nil {
-                    Button(isBuildingPreview ? AtlasL10n.string("apps.preview.running") : AtlasL10n.string("apps.preview.action")) {
-                        onPreview()
-                    }
-                    .buttonStyle(.atlasPrimary)
-                } else {
-                    Button(isBuildingPreview ? AtlasL10n.string("apps.preview.running") : AtlasL10n.string("apps.preview.action")) {
-                        onPreview()
-                    }
-                    .buttonStyle(.atlasSecondary)
-                }
-            }
-        }
-        .disabled(isBusy)
-        .accessibilityIdentifier("apps.preview.\(app.id.uuidString)")
-        .accessibilityHint(AtlasL10n.string("apps.preview.hint"))
-    }
-
-    private var uninstallButton: some View {
-        Button(isUninstalling ? AtlasL10n.string("apps.uninstall.running") : AtlasL10n.string("apps.uninstall.action")) {
-            showUninstallConfirmation = true
-        }
-        .buttonStyle(.atlasPrimary)
-        .disabled(isBusy || previewPlan == nil)
-        .accessibilityIdentifier("apps.uninstall.\(app.id.uuidString)")
-        .accessibilityHint(AtlasL10n.string("apps.uninstall.hint"))
-        .confirmationDialog(
-            AtlasL10n.string("apps.confirm.uninstall.title"),
-            isPresented: $showUninstallConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button(AtlasL10n.string("apps.uninstall.action"), role: .destructive) {
-                onUninstall()
-            }
-            Button(AtlasL10n.string("confirm.cancel"), role: .cancel) {}
-        } message: {
-            Text(AtlasL10n.string("apps.confirm.uninstall.message", app.name))
-        }
-    }
-
-    private var restoreRefreshTitle: String {
-        if let state = restoreRefreshStatus?.state {
-            return state.calloutTitle
-        }
-        return AtlasL10n.string("apps.restore.refresh.card.title")
-    }
-
-    private var restoreRefreshDetail: String {
-        guard let restoreRefreshStatus else {
-            return AtlasL10n.string("apps.restore.refresh.card.subtitle")
-        }
-        return restoreRefreshStatus.state.calloutDetail(status: restoreRefreshStatus)
-    }
-
-    private var restoreRefreshTone: AtlasTone {
-        restoreRefreshStatus?.state.tone ?? .neutral
-    }
-
-    private var restoreRefreshSystemImage: String {
-        restoreRefreshStatus?.state.systemImage ?? "arrow.triangle.2.circlepath"
-    }
-
-}
-
-// MARK: - Shared Restore Refresh UI Mapping
-
-extension AtlasAppPostRestoreRefreshState {
-    var calloutTitle: String {
-        switch self {
-        case .refreshing: return AtlasL10n.string("apps.restore.refresh.pending.title")
-        case .refreshed:  return AtlasL10n.string("apps.restore.refresh.refreshed.title")
-        case .stale:      return AtlasL10n.string("apps.restore.refresh.stale.title")
-        }
-    }
-
-    func calloutDetail(status: AtlasAppPostRestoreRefreshStatus) -> String {
-        switch self {
-        case .refreshing:
-            return AtlasL10n.string("apps.restore.refresh.pending.detail", status.appName)
-        case .refreshed:
-            return AtlasL10n.string(
-                "apps.restore.refresh.refreshed.detail",
-                status.appName,
-                status.refreshedLeftoverItems ?? 0,
-                status.recordedLeftoverItems
-            )
-        case .stale:
-            return AtlasL10n.string(
-                "apps.restore.refresh.stale.detail",
-                status.appName,
-                status.recordedLeftoverItems
-            )
-        }
-    }
-
-    var tone: AtlasTone {
-        switch self {
-        case .refreshing: return .neutral
-        case .refreshed:  return .success
-        case .stale:      return .warning
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .refreshing: return "arrow.triangle.2.circlepath"
-        case .refreshed:  return "checkmark.arrow.trianglehead.clockwise"
-        case .stale:      return "exclamationmark.arrow.trianglehead.clockwise"
-        }
-    }
-}
-
-private struct AppGroup: Identifiable {
-    let id: String
-    let title: String
-    let tone: AtlasTone
-    let apps: [AppFootprint]
-}
-
-private enum AppBucket: String, CaseIterable {
-    case large
-    case leftovers
-    case other
-
-    static let displayOrder: [AppBucket] = [.large, .leftovers, .other]
-
-    var title: String {
-        switch self {
-        case .large:
-            return AtlasL10n.string("apps.group.large")
-        case .leftovers:
-            return AtlasL10n.string("apps.group.leftovers")
-        case .other:
-            return AtlasL10n.string("apps.group.other")
-        }
-    }
-
-    var tone: AtlasTone {
-        switch self {
-        case .large:
-            return .warning
-        case .leftovers:
-            return .neutral
-        case .other:
-            return .success
-        }
-    }
-}
-
-private extension AppFootprint {
-    var bucket: AppBucket {
-        if bytes >= 2_000_000_000 {
-            return .large
-        }
-        if leftoverItems > 0 {
-            return .leftovers
-        }
-        return .other
-    }
-}
+// MARK: - Restore refresh UI mapping
+// The `AtlasAppPostRestoreRefreshState` presentation mapping lives in
+// AppsRestoreRefreshUIMapping.swift (pure localization/tone logic, kept out of
+// this view file for the 350-line feature-view discipline).
 
 private struct BrowserWidthKey: PreferenceKey {
     static var defaultValue: CGFloat = 0

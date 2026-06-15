@@ -506,6 +506,20 @@
 "apps.restore.divergence.detail" = "After restoring %@, leftover counts changed in these categories: %@. Re-scan to get the latest evidence.";
 "apps.restore.divergence.rescan" = "Re-scan leftovers";
 
+// Calm Ledger M3 Batch L1 — Apps evidence panel + action bar (spec §3 Apps row)
+"apps.evidence.why.idle" = "Footprint and leftovers for %@. Preview the uninstall plan first, then review recoverable steps.";
+"apps.evidence.why.ready" = "Uninstall plan ready for %@. Below is the 10-category evidence footprint and recoverable scope — review before executing.";
+"apps.evidence.bundlePath" = "App path";
+"apps.evidence.bundleBytes" = "App size";
+"apps.evidence.leftoverItems" = "Leftover items";
+"apps.evidence.residualEstimate" = "Residual estimate";
+"apps.evidence.residual.reclaimable" = "Move to recovery: %@";
+"apps.evidence.residual.withReview" = "Recoverable %@ · Review-only %@";
+"apps.evidence.recovery" = "%d recoverable · bundle moves to the recovery area, purged after 14 days";
+"apps.actionbar.promise.full" = "Auto recovery point before execution · retained %d days · recorded in ledger";
+"apps.actionbar.promise.partial" = "%d/%d items recoverable · retained %d days · recorded in ledger";
+"apps.panel.selectHint" = "Select an app to view evidence";
+
 "ledger.screen.title" = "Maintenance Ledger";
 "ledger.screen.subtitle" = "See what ran, what changed, and what you can still restore before recovery retention expires.";
 "ledger.surface.title" = "Maintenance Ledger";
