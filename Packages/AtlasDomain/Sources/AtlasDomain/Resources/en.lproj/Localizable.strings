@@ -292,6 +292,58 @@
 "overview.action.permissions" = "Fix Permissions";
 "overview.action.permissions.hint" = "Navigate to Permissions to check and grant access.";
 
+"overview.greeting.morning" = "Hi — how is this Mac today?";
+"overview.capsule.disk" = "Disk %d%%";
+"overview.capsule.disk.unknown" = "Disk usage unknown";
+"overview.capsule.recovery" = "%d recoverable";
+"overview.capsule.permissions.ready" = "Permissions ready";
+"overview.capsule.permissions.partial" = "Permissions %d/%d";
+
+"overview.command.health.title" = "System Health";
+"overview.command.health.subtitle" = "Live disk usage and health ring.";
+"overview.command.entry.smartclean.title" = "Smart Clean";
+"overview.command.entry.smartclean.status.idle" = "Not scanned yet";
+"overview.command.entry.smartclean.status.findings" = "%d findings to review";
+"overview.command.entry.apps.title" = "Apps";
+"overview.command.entry.apps.status" = "%d apps";
+"overview.command.entry.organizer.title" = "File Organizer";
+"overview.command.entry.organizer.status" = "%d entries";
+"overview.command.entry.ledger.title" = "Ledger";
+"overview.command.entry.ledger.status" = "%d records";
+
+"overview.feed.title" = "Ledger Feed";
+"overview.feed.empty.title" = "No ledger entries yet";
+"overview.feed.empty.detail" = "After your first scan or cleanup, recent ledger entries will appear here.";
+"overview.feed.viewAll" = "View full ledger";
+"overview.feed.viewAll.hint" = "Open the full ledger screen.";
+"overview.feed.row.chevron" = "→";
+"overview.feed.row.a11y" = "Ledger entry No. %d, %@";
+"overview.feed.metric.running" = "In progress";
+
+"overview.recommend.permission.headline" = "Authorize to unlock full features";
+"overview.recommend.permission.rationale" = "At least one required permission is still missing, so Atlas stays in restricted mode.";
+"overview.recommend.permission.primary" = "Go to permissions";
+
+"overview.recommend.plan.headline" = "Run No. %d — your plan is ready";
+"overview.recommend.plan.primary" = "Run No. %d";
+"overview.recommend.plan.rationale" = "Based on the current plan, this will clean %d findings and reclaim %@.";
+"overview.recommend.plan.rationale.receipt" = "Based on the current plan, this will clean %d findings and reclaim %@. %@";
+
+"overview.recommend.scan.none.headline" = "Run a scan to update your plan";
+"overview.recommend.scan.stale.headline" = "Your last scan is stale — rescan";
+"overview.recommend.scan.primary" = "Run scan";
+"overview.recommend.scan.none.rationale" = "No scan has run yet — scan first to build an actionable cleanup plan.";
+"overview.recommend.scan.stale.rationale" = "Scan results are older than 7 days — rescan to reflect the current state.";
+"overview.recommend.scan.stale.rationale.receipt" = "%@";
+
+"overview.recommend.disk.headline" = "Disk space is tight — deep scan recommended";
+"overview.recommend.disk.rationale" = "Disk usage is at %d%% — prioritize clearing large caches and leftovers.";
+"overview.recommend.disk.primary" = "Go to Smart Clean";
+
+"overview.recommend.timeliness" = "Based on %@ receipt #%@";
+"overview.recommend.allclear.title" = "All clear";
+"overview.recommend.allclear.detail" = "Nothing needs your attention right now. Your latest ledger entry is shown in the ledger feed on the right.";
+
 "smartclean.screen.title" = "Smart Clean";
 "smartclean.screen.subtitle" = "Turn scan results into a clear cleanup plan before you decide to run anything destructive.";
 "smartclean.controls.title" = "Scan & Plan";

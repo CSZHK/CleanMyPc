@@ -3,14 +3,37 @@ import AtlasDesignSystem
 import AtlasDomain
 import SwiftUI
 
+// MARK: - Overview feature (Calm Ledger spec §3 概览 — Batch K)
+
+/// The product's front door (spec §3 概览):
+/// 1. Greeting + status capsule row (disk / recovery / permissions)
+/// 2. 「下一步」banner — driven by `OverviewRecommendation.recommend` (5-row table)
+/// 3. Two-column body: left command column (health ring + module entries),
+///    right ledger feed (recent № entries). Stacks vertically below 880pt.
+///
+/// Coordinator only — all logic lives in the pure enums:
+/// `OverviewRecommendation`, `OverviewCommandColumn`, `OverviewLedgerFeed`.
 public struct OverviewFeatureView: View {
     private let snapshot: AtlasWorkspaceSnapshot
     private let isRefreshingHealthSnapshot: Bool
     private let isLoading: Bool
+    private let requiredPermissionsGranted: Int
+    private let requiredPermissionsTotal: Int
+    private let isCurrentSmartCleanPlanFresh: Bool
+    private let currentPlanReclaimableBytes: Int64
+    private let currentPlanFindingCount: Int
+    private let currentPlanNumber: Int?
+    private let latestScanReceiptCode: String?
+    private let snoozeStore: OverviewSnoozeStore
+    private let planNumberForRun: (TaskRun) -> Int?
+
     private let onStartSmartClean: (() -> Void)?
     private let onNavigateToSmartClean: (() -> Void)?
-    private let onNavigateToHistory: (() -> Void)?
+    private let onNavigateToApps: (() -> Void)?
+    private let onNavigateToFileOrganizer: (() -> Void)?
+    private let onNavigateToLedger: (() -> Void)?
     private let onNavigateToPermissions: (() -> Void)?
+    private let onSelectLedgerEntry: ((String) -> Void)?
 
     @Environment(\.atlasContentWidth) private var contentWidth
 
@@ -18,18 +41,42 @@ public struct OverviewFeatureView: View {
         snapshot: AtlasWorkspaceSnapshot = AtlasScaffoldWorkspace.snapshot(),
         isRefreshingHealthSnapshot: Bool = false,
         isLoading: Bool = false,
+        requiredPermissionsGranted: Int = 0,
+        requiredPermissionsTotal: Int = 0,
+        isCurrentSmartCleanPlanFresh: Bool = false,
+        currentPlanReclaimableBytes: Int64 = 0,
+        currentPlanFindingCount: Int = 0,
+        currentPlanNumber: Int? = nil,
+        latestScanReceiptCode: String? = nil,
+        snoozeStore: OverviewSnoozeStore = OverviewUserDefaultsSnoozeStore(),
+        planNumberForRun: @escaping (TaskRun) -> Int? = { _ in nil },
         onStartSmartClean: (() -> Void)? = nil,
         onNavigateToSmartClean: (() -> Void)? = nil,
-        onNavigateToHistory: (() -> Void)? = nil,
-        onNavigateToPermissions: (() -> Void)? = nil
+        onNavigateToApps: (() -> Void)? = nil,
+        onNavigateToFileOrganizer: (() -> Void)? = nil,
+        onNavigateToLedger: (() -> Void)? = nil,
+        onNavigateToPermissions: (() -> Void)? = nil,
+        onSelectLedgerEntry: ((String) -> Void)? = nil
     ) {
         self.snapshot = snapshot
         self.isRefreshingHealthSnapshot = isRefreshingHealthSnapshot
         self.isLoading = isLoading
+        self.requiredPermissionsGranted = requiredPermissionsGranted
+        self.requiredPermissionsTotal = requiredPermissionsTotal
+        self.isCurrentSmartCleanPlanFresh = isCurrentSmartCleanPlanFresh
+        self.currentPlanReclaimableBytes = currentPlanReclaimableBytes
+        self.currentPlanFindingCount = currentPlanFindingCount
+        self.currentPlanNumber = currentPlanNumber
+        self.latestScanReceiptCode = latestScanReceiptCode
+        self.snoozeStore = snoozeStore
+        self.planNumberForRun = planNumberForRun
         self.onStartSmartClean = onStartSmartClean
         self.onNavigateToSmartClean = onNavigateToSmartClean
-        self.onNavigateToHistory = onNavigateToHistory
+        self.onNavigateToApps = onNavigateToApps
+        self.onNavigateToFileOrganizer = onNavigateToFileOrganizer
+        self.onNavigateToLedger = onNavigateToLedger
         self.onNavigateToPermissions = onNavigateToPermissions
+        self.onSelectLedgerEntry = onSelectLedgerEntry
     }
 
     public var body: some View {
@@ -45,388 +92,246 @@ public struct OverviewFeatureView: View {
         }
     }
 
-    // MARK: - Skeleton Content
+    // MARK: - Skeleton
 
     @ViewBuilder
     private var skeletonContent: some View {
-        // Hero metric skeleton
-        AtlasSkeletonCard(height: 140)
-
-        // Secondary metrics skeleton
-        LazyVGrid(columns: secondaryColumns, spacing: AtlasSpacing.lg) {
-            AtlasSkeletonCard(height: 100)
-            AtlasSkeletonCard(height: 100)
+        AtlasSkeletonCard(height: 60) // greeting + capsule row
+        AtlasSkeletonCard(height: 110) // banner
+        HStack(spacing: AtlasSpacing.lg) {
+            AtlasSkeletonCard(height: 240)
+            AtlasSkeletonCard(height: 240)
         }
-
-        // System snapshot skeleton
-        VStack(spacing: AtlasSpacing.lg) {
-            AtlasSkeletonCard(height: 16)
-            AtlasSkeletonCard(height: 16)
-        }
-
-        // Detail rows skeleton
-        AtlasSkeletonCard(height: 200)
-        AtlasSkeletonCard(height: 200)
     }
 
-    // MARK: - Loaded Content
+    // MARK: - Loaded content
 
     @ViewBuilder
     private var loadedContent: some View {
-            AtlasCallout(
-                title: overviewCalloutTitle,
-                detail: overviewCalloutDetail,
-                tone: overviewCalloutTone,
-                systemImage: overviewCalloutTone.symbol
-            )
+        // (1) Greeting + status capsule row
+        greetingHeader
 
-            // MARK: - Hero metric — AtlasHeroCard with progress ring
-            AtlasHeroCard(
-                progress: heroDiskProgress,
-                value: AtlasFormatters.byteCount(snapshot.reclaimableSpaceBytes),
-                subtitle: AtlasL10n.string("overview.metric.reclaimable.detail"),
-                tone: .success,
-                icon: "sparkles",
-                ringSize: 120,
-                lineWidth: 10
-            )
+        // (2) 「下一步」banner (or all-clear card)
+        nextStepSection
 
-            // MARK: - Secondary metrics — adaptive 2/1 columns
-            LazyVGrid(columns: secondaryColumns, spacing: AtlasSpacing.lg) {
-                AtlasMetricCard(
-                    title: AtlasL10n.string("overview.metric.findings.title"),
-                    value: "\(snapshot.findings.count)",
-                    detail: AtlasL10n.string("overview.metric.findings.detail"),
+        // (3) Two-column body — stacks below 880pt
+        if contentWidth >= OverviewFeatureView.twoColumnThreshold {
+            HStack(alignment: .top, spacing: AtlasSpacing.lg) {
+                OverviewCommandColumn(
+                    snapshot: snapshot,
+                    requiredPermissionsReady: requiredPermissionsReady,
+                    onNavigateToSmartClean: onNavigateToSmartClean,
+                    onNavigateToApps: onNavigateToApps,
+                    onNavigateToFileOrganizer: onNavigateToFileOrganizer,
+                    onNavigateToLedger: onNavigateToLedger
+                )
+                .frame(maxWidth: .infinity)
+
+                OverviewLedgerFeed(
+                    feed: ledgerFeed,
+                    onNavigateToLedger: onNavigateToLedger,
+                    onSelectEntry: onSelectLedgerEntry
+                )
+                .frame(maxWidth: .infinity)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
+                OverviewCommandColumn(
+                    snapshot: snapshot,
+                    requiredPermissionsReady: requiredPermissionsReady,
+                    onNavigateToSmartClean: onNavigateToSmartClean,
+                    onNavigateToApps: onNavigateToApps,
+                    onNavigateToFileOrganizer: onNavigateToFileOrganizer,
+                    onNavigateToLedger: onNavigateToLedger
+                )
+                OverviewLedgerFeed(
+                    feed: ledgerFeed,
+                    onNavigateToLedger: onNavigateToLedger,
+                    onSelectEntry: onSelectLedgerEntry
+                )
+            }
+        }
+    }
+
+    // MARK: - Greeting + status capsules
+
+    @ViewBuilder
+    private var greetingHeader: some View {
+        VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+            Text(AtlasL10n.string("overview.greeting.morning"))
+                .font(AtlasTypography.screenTitle)
+                .tracking(-0.3)
+
+            HStack(spacing: AtlasSpacing.sm) {
+                statusCapsule(
+                    label: diskLabel,
+                    tone: diskTone,
+                    systemImage: "internaldrive"
+                )
+                statusCapsule(
+                    label: AtlasL10n.string("overview.capsule.recovery", snapshot.recoveryItems.count),
                     tone: .neutral,
-                    systemImage: "line.3.horizontal.decrease.circle"
+                    systemImage: "checkmark.shield"
                 )
-                .atlasTooltip(AtlasL10n.string("overview.metric.findings.detail"), placement: .bottom)
-                if requiredPermissionCount > 0 {
-                    AtlasMetricCard(
-                        title: AtlasL10n.string("overview.metric.permissions.title"),
-                        value: "\(grantedRequiredPermissionCount)/\(requiredPermissionCount)",
-                        detail: requiredPermissionsReady
-                            ? AtlasL10n.string("overview.metric.permissions.ready")
-                            : AtlasL10n.string("overview.metric.permissions.limited"),
-                        tone: requiredPermissionsReady ? .success : .warning,
-                        systemImage: "lock.shield"
-                    )
-                    .atlasTooltip(
-                        requiredPermissionsReady
-                            ? AtlasL10n.string("overview.metric.permissions.ready")
-                            : AtlasL10n.string("overview.metric.permissions.limited"),
-                        placement: .bottom
-                    )
-                }
-            }
-
-            // MARK: - Quick actions bar
-            quickActionsBar
-
-            // MARK: - System Snapshot (flattened — no InfoCard wrapper)
-            systemSnapshotSection
-
-            // MARK: - Recommended Actions
-            AtlasInfoCard(
-                title: AtlasL10n.string("overview.actions.title"),
-                subtitle: AtlasL10n.string("overview.actions.subtitle")
-            ) {
-                if snapshot.findings.isEmpty {
-                    AtlasEmptyState(
-                        title: AtlasL10n.string("overview.actions.empty.title"),
-                        detail: AtlasL10n.string("overview.actions.empty.detail"),
-                        systemImage: "sparkles.slash",
-                        tone: .neutral
-                    )
-                } else {
-                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                        ForEach(Array(snapshot.findings.prefix(4))) { finding in
-                            AtlasDetailRow(
-                                title: finding.title,
-                                subtitle: finding.detail,
-                                footnote: "\(AtlasL10n.localizedCategory(finding.category)) • \(riskSupport(for: finding.risk))",
-                                systemImage: AtlasCategoryIcon.systemImage(for: finding.category),
-                                tone: finding.risk.atlasTone
-                            ) {
-                                VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
-                                    AtlasStatusChip(finding.risk.title, tone: finding.risk.atlasTone)
-                                    Text(AtlasFormatters.byteCount(finding.bytes))
-                                        .font(AtlasTypography.label)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-
-                        if snapshot.findings.count > 4, let onNavigateToSmartClean {
-                            Button {
-                                onNavigateToSmartClean()
-                            } label: {
-                                Label(
-                                    AtlasL10n.string("overview.actions.viewAll", snapshot.findings.count),
-                                    systemImage: "arrow.right.circle"
-                                )
-                            }
-                            .buttonStyle(.atlasGhost)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        }
-                    }
-                }
-            }
-
-            // MARK: - Recent Activity
-            AtlasInfoCard(
-                title: AtlasL10n.string("overview.activity.title"),
-                subtitle: AtlasL10n.string("overview.activity.subtitle")
-            ) {
-                if snapshot.taskRuns.isEmpty {
-                    AtlasEmptyState(
-                        title: AtlasL10n.string("overview.activity.empty.title"),
-                        detail: AtlasL10n.string("overview.activity.empty.detail"),
-                        systemImage: "clock.badge.questionmark",
-                        tone: .neutral
-                    )
-                } else {
-                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                        ForEach(snapshot.taskRuns.prefix(3)) { taskRun in
-                            AtlasDetailRow(
-                                title: taskRun.kind.title,
-                                subtitle: taskRun.summary,
-                                footnote: timelineFootnote(for: taskRun),
-                                systemImage: taskRun.kind.atlasSystemImage,
-                                tone: taskRun.status.atlasTone
-                            ) {
-                                AtlasStatusChip(taskRun.status.title, tone: taskRun.status.atlasTone)
-                            }
-                        }
-
-                        if snapshot.taskRuns.count > 3, let onNavigateToHistory {
-                            Button {
-                                onNavigateToHistory()
-                            } label: {
-                                Label(
-                                    AtlasL10n.string("overview.activity.viewAll"),
-                                    systemImage: "arrow.right.circle"
-                                )
-                            }
-                            .buttonStyle(.atlasGhost)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        }
-                    }
-                }
-            }
-    }
-
-    // MARK: - Quick Actions Bar
-
-    @ViewBuilder
-    private var quickActionsBar: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: AtlasSpacing.lg) {
-                quickActionButtons
-            }
-
-            VStack(spacing: AtlasSpacing.md) {
-                quickActionButtons
+                statusCapsule(
+                    label: requiredPermissionsReady
+                        ? AtlasL10n.string("overview.capsule.permissions.ready")
+                        : AtlasL10n.string(
+                            "overview.capsule.permissions.partial",
+                            requiredPermissionsGranted, requiredPermissionsTotal
+                        ),
+                    tone: requiredPermissionsReady ? .success : .warning,
+                    systemImage: "lock.shield"
+                )
+                Spacer(minLength: 0)
             }
         }
     }
 
-    @ViewBuilder
-    private var quickActionButtons: some View {
-        if let onStartSmartClean {
-            Button {
-                onStartSmartClean()
-            } label: {
-                Label(
-                    AtlasL10n.string("overview.action.smartClean"),
-                    systemImage: AtlasIcon.smartClean
-                )
-            }
-            .buttonStyle(.atlasPrimary)
-            .accessibilityHint(AtlasL10n.string("overview.action.smartClean.hint"))
+    private func statusCapsule(label: String, tone: AtlasTone, systemImage: String) -> some View {
+        HStack(spacing: AtlasSpacing.xxs) {
+            Image(systemName: systemImage)
+                .font(AtlasTypography.caption)
+            Text(label)
+                .font(AtlasTypography.caption)
+                .lineLimit(1)
         }
+        .foregroundStyle(tone.tint)
+        .padding(.horizontal, AtlasSpacing.sm)
+        .padding(.vertical, AtlasSpacing.xxs)
+        .background(Capsule(style: .continuous).fill(tone.fill))
+    }
 
-        if !requiredPermissionsReady, let onNavigateToPermissions {
-            Button {
-                onNavigateToPermissions()
-            } label: {
-                Label(
-                    AtlasL10n.string("overview.action.permissions"),
-                    systemImage: AtlasIcon.permissions
-                )
-            }
-            .buttonStyle(.atlasSecondary)
-            .accessibilityHint(AtlasL10n.string("overview.action.permissions.hint"))
+    private var diskLabel: String {
+        guard let health = snapshot.healthSnapshot else {
+            return AtlasL10n.string("overview.capsule.disk.unknown")
+        }
+        return AtlasL10n.string("overview.capsule.disk", Int(health.diskUsedPercent.rounded()))
+    }
+
+    private var diskTone: AtlasTone {
+        OverviewCommandColumn.tone(forDiskPercent: snapshot.healthSnapshot?.diskUsedPercent ?? 0)
+    }
+
+    // MARK: - Next step / banner
+
+    @ViewBuilder
+    private var nextStepSection: some View {
+        let banner = recommendation
+        if let banner {
+            AtlasNextActionBanner(
+                headline: banner.headline,
+                rationale: banner.rationale,
+                primaryTitle: banner.primaryTitle,
+                onPrimary: { handlePrimary(banner) },
+                secondaryTitle: banner.secondaryTitle,
+                onSecondary: banner.secondaryTitle != nil
+                    ? { handleSecondary(banner) }
+                    : nil,
+                onDismiss: banner.isSnoozeable
+                    ? { snoozeStore.snooze(
+                        id: banner.id,
+                        durationDays: OverviewRecommendation.snoozeDurationDays,
+                        now: Date()
+                    ) }
+                    : nil
+            )
+        } else {
+            // All clear card — no button, shows most recent ledger entry teaser.
+            allClearCard
         }
     }
 
-    // MARK: - System Snapshot Section (flattened)
-
     @ViewBuilder
-    private var systemSnapshotSection: some View {
-        VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
-            // Section header
-            VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
-                Text(AtlasL10n.string("overview.snapshot.title"))
+    private var allClearCard: some View {
+        VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
+            HStack(spacing: AtlasSpacing.sm) {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(AtlasColor.success)
+                Text(AtlasL10n.string("overview.recommend.allclear.title"))
                     .font(AtlasTypography.sectionTitle)
-
-                Text(AtlasL10n.string("overview.snapshot.subtitle"))
-                    .font(AtlasTypography.body)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
+            Text(AtlasL10n.string("overview.recommend.allclear.detail"))
+                .font(AtlasTypography.body)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AtlasSpacing.xl)
+        .background(
+            RoundedRectangle(cornerRadius: AtlasRadius.lg, style: .continuous)
+                .fill(AtlasColor.successFill)
+        )
+    }
 
-            if isRefreshingHealthSnapshot, snapshot.healthSnapshot == nil {
-                VStack(spacing: AtlasSpacing.lg) {
-                    AtlasSkeletonCard(height: 100)
-                    AtlasSkeletonCard(height: 100)
-                    AtlasSkeletonCard(height: 100)
-                }
-            } else if let healthSnapshot = snapshot.healthSnapshot {
-                LazyVGrid(columns: adaptiveColumns, spacing: AtlasSpacing.lg) {
-                    AtlasMetricCard(
-                        title: AtlasL10n.string("overview.snapshot.memory.title"),
-                        value: "\(formatted(healthSnapshot.memoryUsedGB))/\(formatted(healthSnapshot.memoryTotalGB)) GB",
-                        detail: AtlasL10n.string("overview.snapshot.memory.detail"),
-                        tone: healthSnapshot.memoryUsedGB / max(healthSnapshot.memoryTotalGB, 1) > 0.75 ? .warning : .neutral,
-                        systemImage: "memorychip"
-                    )
-                    AtlasMetricCard(
-                        title: AtlasL10n.string("overview.snapshot.disk.title"),
-                        value: "\(formatted(healthSnapshot.diskUsedPercent))%",
-                        detail: AtlasL10n.string("overview.snapshot.disk.detail", formatted(healthSnapshot.diskUsedGB), formatted(healthSnapshot.diskTotalGB)),
-                        tone: healthSnapshot.diskUsedPercent > 80 ? .warning : .success,
-                        systemImage: "internaldrive"
-                    )
-                    .atlasTooltip(
-                        AtlasL10n.string("overview.snapshot.disk.detail", formatted(healthSnapshot.diskUsedGB), formatted(healthSnapshot.diskTotalGB)),
-                        placement: .bottom
-                    )
-                    AtlasMetricCard(
-                        title: AtlasL10n.string("overview.snapshot.uptime.title"),
-                        value: "\(formatted(healthSnapshot.uptimeDays)) \(AtlasL10n.string("common.days"))",
-                        detail: AtlasL10n.string("overview.snapshot.uptime.detail"),
-                        tone: .neutral,
-                        systemImage: "clock"
-                    )
-                }
+    // MARK: - Banner action routing (one-tap start NEVER skips review)
 
-                AtlasCallout(
-                    title: healthSnapshot.diskUsedPercent > 80 ? AtlasL10n.string("overview.snapshot.callout.warning.title") : AtlasL10n.string("overview.snapshot.callout.ok.title"),
-                    detail: healthSnapshot.diskUsedPercent > 80
-                        ? AtlasL10n.string("overview.snapshot.callout.warning.detail")
-                        : AtlasL10n.string("overview.snapshot.callout.ok.detail"),
-                    tone: healthSnapshot.diskUsedPercent > 80 ? .warning : .success,
-                    systemImage: healthSnapshot.diskUsedPercent > 80 ? "exclamationmark.triangle.fill" : "checkmark.circle.fill"
-                )
-
-                AtlasSectionDisclosure(
-                    title: AtlasL10n.string("overview.snapshot.optimizations.title"),
-                    count: healthSnapshot.optimizations.count,
-                    defaultExpanded: healthSnapshot.optimizations.count <= 4
-                ) {
-                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                        ForEach(healthSnapshot.optimizations) { optimization in
-                            AtlasDetailRow(
-                                title: optimization.name,
-                                subtitle: optimization.detail,
-                                footnote: AtlasL10n.localizedCategory(optimization.category).capitalized,
-                                systemImage: optimization.isSafe ? "checkmark.shield" : "slider.horizontal.3",
-                                tone: optimization.isSafe ? .success : .warning
-                            ) {
-                                AtlasStatusChip(optimization.isSafe ? AtlasL10n.string("risk.safe") : AtlasL10n.string("risk.review"), tone: optimization.isSafe ? .success : .warning)
-                            }
-                        }
-                    }
-                }
-            } else {
-                AtlasEmptyState(
-                    title: AtlasL10n.string("overview.snapshot.empty.title"),
-                    detail: AtlasL10n.string("overview.snapshot.empty.detail"),
-                    systemImage: "waveform.path.ecg",
-                    tone: .warning
-                )
-            }
+    private func handlePrimary(_ banner: OverviewRecommendation.BannerConfig) {
+        switch banner.primaryTarget {
+        case .authorizePermissions:
+            onNavigateToPermissions?()
+        case .executePlan:
+            // Navigate to smart clean review (②) — the plan is fresh and Batch I
+            // pre-selects the safe group by default. We do NOT skip review:
+            // the user still confirms on ② before ③ execute.
+            onNavigateToSmartClean?()
+        case .runScan:
+            // Navigate + trigger scan (existing onStartSmartClean wiring).
+            onStartSmartClean?()
         }
     }
 
-    // MARK: - Adaptive Columns
-
-    private var adaptiveColumns: [GridItem] {
-        AtlasLayout.adaptiveMetricColumns(for: contentWidth)
+    private func handleSecondary(_ banner: OverviewRecommendation.BannerConfig) {
+        switch banner.secondaryTarget {
+        case .navigateToPermissions: onNavigateToPermissions?()
+        case .navigateToSmartClean: onNavigateToSmartClean?()
+        case .none: break
+        }
     }
 
-    private var secondaryColumns: [GridItem] {
-        contentWidth >= 420
-            ? [
-                GridItem(.flexible(minimum: 180), spacing: AtlasSpacing.lg),
-                GridItem(.flexible(minimum: 180), spacing: AtlasSpacing.lg),
-              ]
-            : [
-                GridItem(.flexible(minimum: 180), spacing: AtlasSpacing.lg),
-              ]
+    // MARK: - Pure derived values
+
+    /// The active recommendation, or nil when all-clear. Re-evaluated each
+    /// render so a snooze write / a permission grant is reflected immediately.
+    private var recommendation: OverviewRecommendation.BannerConfig? {
+        OverviewRecommendation.recommend(inputs)
     }
 
-    // MARK: - Computed Properties
-
-    private var requiredPermissionStates: [PermissionState] {
-        snapshot.permissions.filter { $0.kind.isRequiredForCurrentWorkflows }
+    private var inputs: OverviewRecommendation.Inputs {
+        OverviewRecommendation.Inputs(
+            requiredPermissionsGranted: requiredPermissionsGranted,
+            requiredPermissionsTotal: requiredPermissionsTotal,
+            isCurrentSmartCleanPlanFresh: isCurrentSmartCleanPlanFresh,
+            currentPlanReclaimableBytes: currentPlanReclaimableBytes,
+            currentPlanFindingCount: currentPlanFindingCount,
+            currentPlanNumber: currentPlanNumber,
+            lastScanDate: lastScanDate,
+            diskUsedPercent: snapshot.healthSnapshot?.diskUsedPercent,
+            latestScanReceiptCode: latestScanReceiptCode,
+            snoozedIDs: snoozeStore.activeSnoozes(now: Date()),
+            now: Date()
+        )
     }
 
-    private var requiredPermissionCount: Int {
-        requiredPermissionStates.count
+    /// Most recent scan activity date (finishedAt ?? startedAt of the latest
+    /// .scan or .executePlan run). nil ⇒ no scan ever.
+    private var lastScanDate: Date? {
+        let scanRuns = snapshot.taskRuns.filter { $0.kind == .scan || $0.kind == .executePlan }
+        return scanRuns.map { $0.finishedAt ?? $0.startedAt }.max()
     }
 
-    private var grantedRequiredPermissionCount: Int {
-        requiredPermissionStates.filter(\.isGranted).count
+    private var ledgerFeed: OverviewLedgerFeed.FeedData {
+        OverviewLedgerFeed.feedData(
+            taskRuns: snapshot.taskRuns,
+            planNumber: planNumberForRun
+        )
     }
 
     private var requiredPermissionsReady: Bool {
-        requiredPermissionCount > 0 && grantedRequiredPermissionCount == requiredPermissionCount
+        requiredPermissionsTotal > 0
+            && requiredPermissionsGranted == requiredPermissionsTotal
     }
 
-    private var overviewCalloutTitle: String {
-        requiredPermissionsReady
-            ? AtlasL10n.string("overview.callout.ready.title")
-            : AtlasL10n.string("overview.callout.limited.title")
-    }
-
-    private var overviewCalloutDetail: String {
-        requiredPermissionsReady
-            ? AtlasL10n.string("overview.callout.ready.detail")
-            : AtlasL10n.string("overview.callout.limited.detail")
-    }
-
-    private var overviewCalloutTone: AtlasTone {
-        requiredPermissionsReady ? .success : .warning
-    }
-
-    private var heroDiskProgress: Double {
-        guard let health = snapshot.healthSnapshot else { return 0 }
-        return min(max(health.diskUsedPercent / 100.0, 0), 1)
-    }
-
-    private func formatted(_ value: Double) -> String {
-        value.formatted(.number.precision(.fractionLength(1)))
-    }
-
-    private func riskSupport(for risk: RiskLevel) -> String {
-        switch risk {
-        case .safe:
-            return AtlasL10n.string("overview.risk.safe")
-        case .review:
-            return AtlasL10n.string("overview.risk.review")
-        case .advanced:
-            return AtlasL10n.string("overview.risk.advanced")
-        }
-    }
-
-    private func timelineFootnote(for taskRun: TaskRun) -> String {
-        let start = AtlasFormatters.relativeDate(taskRun.startedAt)
-        if let finishedAt = taskRun.finishedAt {
-            return AtlasL10n.string("overview.activity.timeline.finished", start, AtlasFormatters.relativeDate(finishedAt))
-        }
-        return AtlasL10n.string("overview.activity.timeline.running", start)
-    }
-
+    /// Two-column body kicks in at 880pt content width (spec §3 <880 纵向堆叠).
+    static let twoColumnThreshold: CGFloat = 880
 }

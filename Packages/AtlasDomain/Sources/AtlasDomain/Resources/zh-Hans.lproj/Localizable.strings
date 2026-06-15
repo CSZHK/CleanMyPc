@@ -292,6 +292,58 @@
 "overview.action.permissions" = "修复权限";
 "overview.action.permissions.hint" = "前往权限页面检查并授权。";
 
+"overview.greeting.morning" = "你好，这台 Mac 今天怎么样";
+"overview.capsule.disk" = "磁盘 %d%%";
+"overview.capsule.disk.unknown" = "磁盘占用未知";
+"overview.capsule.recovery" = "可恢复 %d 项";
+"overview.capsule.permissions.ready" = "权限就绪";
+"overview.capsule.permissions.partial" = "权限 %d/%d";
+
+"overview.command.health.title" = "系统健康";
+"overview.command.health.subtitle" = "实时磁盘占用与健康环。";
+"overview.command.entry.smartclean.title" = "智能清理";
+"overview.command.entry.smartclean.status.idle" = "尚未扫描";
+"overview.command.entry.smartclean.status.findings" = "%d 项发现待处理";
+"overview.command.entry.apps.title" = "应用";
+"overview.command.entry.apps.status" = "%d 个应用";
+"overview.command.entry.organizer.title" = "文件整理";
+"overview.command.entry.organizer.status" = "%d 条整理项";
+"overview.command.entry.ledger.title" = "台账";
+"overview.command.entry.ledger.status" = "%d 条记录";
+
+"overview.feed.title" = "台账流";
+"overview.feed.empty.title" = "还没有台账记录";
+"overview.feed.empty.detail" = "执行第一次扫描或清理后，这里会出现最近的台账条目。";
+"overview.feed.viewAll" = "查看完整台账";
+"overview.feed.viewAll.hint" = "打开完整台账页面。";
+"overview.feed.row.chevron" = "→";
+"overview.feed.row.a11y" = "台账条目 №%d，%@";
+"overview.feed.metric.running" = "进行中";
+
+"overview.recommend.permission.headline" = "先授权以解锁完整功能";
+"overview.recommend.permission.rationale" = "当前仍缺少至少一项主流程必需权限，Atlas 因此保持受限模式。";
+"overview.recommend.permission.primary" = "前往授权";
+
+"overview.recommend.plan.headline" = "执行 №%d：清理计划已就绪";
+"overview.recommend.plan.primary" = "执行 №%d";
+"overview.recommend.plan.rationale" = "基于当前计划，预计清理 %d 项发现、释放 %@。";
+"overview.recommend.plan.rationale.receipt" = "基于当前计划，预计清理 %d 项发现、释放 %@。%@";
+
+"overview.recommend.scan.none.headline" = "运行扫描，更新你的清理计划";
+"overview.recommend.scan.stale.headline" = "上次扫描已过期，建议重新扫描";
+"overview.recommend.scan.primary" = "运行扫描";
+"overview.recommend.scan.none.rationale" = "尚未运行过扫描，先扫描才能生成可执行的清理计划。";
+"overview.recommend.scan.stale.rationale" = "扫描结果已超过 7 天，建议重新扫描以反映当前状态。";
+"overview.recommend.scan.stale.rationale.receipt" = "%@";
+
+"overview.recommend.disk.headline" = "磁盘空间紧张，建议深度扫描";
+"overview.recommend.disk.rationale" = "当前磁盘占用已达 %d%%，建议优先清理大体积缓存与残留。";
+"overview.recommend.disk.primary" = "前往智能清理";
+
+"overview.recommend.timeliness" = "基于 %@ 回执 #%@";
+"overview.recommend.allclear.title" = "状态良好";
+"overview.recommend.allclear.detail" = "没有需要立即处理的事项。最近一次台账记录已显示在右侧台账流。";
+
 "smartclean.screen.title" = "智能清理";
 "smartclean.screen.subtitle" = "先把扫描结果变成清晰的清理计划，再决定是否执行任何具有破坏性的操作。";
 "smartclean.controls.title" = "扫描与计划";

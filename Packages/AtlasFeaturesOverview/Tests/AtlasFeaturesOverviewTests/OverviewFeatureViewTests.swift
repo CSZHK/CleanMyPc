@@ -27,25 +27,31 @@ final class OverviewFeatureViewTests: XCTestCase {
         XCTAssertNotNil(view)
     }
 
-    // MARK: - Callbacks
+    // MARK: - Callbacks (new Batch K signature)
 
     func testCallbackActionsCanBeStored() {
         var smartCleanTriggered = false
         var navigateToSmartCleanTriggered = false
-        var navigateToHistoryTriggered = false
+        var navigateToLedgerTriggered = false
         var navigateToPermissionsTriggered = false
+        var navigateToAppsTriggered = false
+        var navigateToFileOrganizerTriggered = false
 
         let view = OverviewFeatureView(
             onStartSmartClean: { smartCleanTriggered = true },
             onNavigateToSmartClean: { navigateToSmartCleanTriggered = true },
-            onNavigateToHistory: { navigateToHistoryTriggered = true },
+            onNavigateToApps: { navigateToAppsTriggered = true },
+            onNavigateToFileOrganizer: { navigateToFileOrganizerTriggered = true },
+            onNavigateToLedger: { navigateToLedgerTriggered = true },
             onNavigateToPermissions: { navigateToPermissionsTriggered = true }
         )
         XCTAssertNotNil(view)
         XCTAssertFalse(smartCleanTriggered)
         XCTAssertFalse(navigateToSmartCleanTriggered)
-        XCTAssertFalse(navigateToHistoryTriggered)
+        XCTAssertFalse(navigateToLedgerTriggered)
         XCTAssertFalse(navigateToPermissionsTriggered)
+        XCTAssertFalse(navigateToAppsTriggered)
+        XCTAssertFalse(navigateToFileOrganizerTriggered)
     }
 
     // MARK: - Data Variations
@@ -103,6 +109,33 @@ final class OverviewFeatureViewTests: XCTestCase {
             Finding(id: UUID(), title: "Finding \(i)", detail: "\(i * 10) MB", bytes: Int64(i * 10_000_000), risk: .safe, category: "System", targetPaths: [])
         }
         let view = OverviewFeatureView(snapshot: snapshot, onNavigateToSmartClean: {})
+        XCTAssertNotNil(view)
+    }
+
+    // MARK: - New Batch K fields (recommendation inputs)
+
+    func testInitWithPermissionInputs() {
+        let view = OverviewFeatureView(
+            requiredPermissionsGranted: 1,
+            requiredPermissionsTotal: 3
+        )
+        XCTAssertNotNil(view)
+    }
+
+    func testInitWithFreshPlanInputs() {
+        let view = OverviewFeatureView(
+            isCurrentSmartCleanPlanFresh: true,
+            currentPlanReclaimableBytes: 1_000_000_000,
+            currentPlanFindingCount: 7,
+            currentPlanNumber: 42,
+            latestScanReceiptCode: "ABCD"
+        )
+        XCTAssertNotNil(view)
+    }
+
+    func testInitWithInMemorySnoozeStore() {
+        let store = InMemorySnoozeStore()
+        let view = OverviewFeatureView(snoozeStore: store)
         XCTAssertNotNil(view)
     }
 }

@@ -154,6 +154,14 @@ struct AppShellView: View {
                 snapshot: model.filteredSnapshot,
                 isRefreshingHealthSnapshot: model.isHealthSnapshotRefreshing,
                 isLoading: model.isHealthSnapshotRefreshing && model.filteredSnapshot.healthSnapshot == nil,
+                requiredPermissionsGranted: overviewRequiredPermissionsGranted,
+                requiredPermissionsTotal: overviewRequiredPermissionsTotal,
+                isCurrentSmartCleanPlanFresh: model.isCurrentSmartCleanPlanFresh,
+                currentPlanReclaimableBytes: overviewPlanReclaimableBytes,
+                currentPlanFindingCount: model.currentPlan.items.count,
+                currentPlanNumber: model.workflowState(for: .smartClean).planNumber,
+                latestScanReceiptCode: model.workflowState(for: .smartClean).receiptCode,
+                planNumberForRun: { model.workflowPlanNumber(for: $0) },
                 onStartSmartClean: {
                     model.navigate(to: .smartClean)
                     Task { await model.runSmartCleanScan() }
@@ -161,12 +169,21 @@ struct AppShellView: View {
                 onNavigateToSmartClean: {
                     model.navigate(to: .smartClean)
                 },
-                onNavigateToHistory: {
+                onNavigateToApps: {
+                    model.navigate(to: .apps)
+                },
+                onNavigateToFileOrganizer: {
+                    model.navigate(to: .fileOrganizer)
+                },
+                onNavigateToLedger: {
                     model.navigate(to: .ledger)
                 },
                 onNavigateToPermissions: {
                     model.navigate(to: .permissions)
                     Task { await model.inspectPermissions() }
+                },
+                onSelectLedgerEntry: { _ in
+                    model.navigate(to: .ledger)
                 }
             )
         case .smartClean:
@@ -387,6 +404,22 @@ struct AppShellView: View {
         model.snapshot.taskRuns.filter { taskRun in
             taskRun.status == .queued || taskRun.status == .running
         }.count
+    }
+
+    // Overview: required-permission counts for the recommendation banner.
+    private var overviewRequiredPerms: [PermissionState] {
+        model.filteredSnapshot.permissions.filter { $0.kind.isRequiredForCurrentWorkflows }
+    }
+    private var overviewRequiredPermissionsGranted: Int {
+        overviewRequiredPerms.filter(\.isGranted).count
+    }
+    private var overviewRequiredPermissionsTotal: Int {
+        overviewRequiredPerms.count
+    }
+    // Overview: reclaimable bytes for the fresh-plan banner (snapshot value is
+    // the authoritative estimate; falls back to 0 when no scan has run).
+    private var overviewPlanReclaimableBytes: Int64 {
+        model.filteredSnapshot.reclaimableSpaceBytes
     }
 
     private var sidebarContext: AtlasSidebarContext {
