@@ -242,6 +242,33 @@ final class AtlasDesignSystemTests: XCTestCase {
         XCTAssertEqual(brand!.dark.r, 31.0 / 255.0, accuracy: 0.0001)
     }
 
+    /// round-2 AA fix guard: AtlasOnWhite (#0F766E in both modes) renders on a
+    /// white capsule fill, so it must clear WCAG-AA 4.5:1 in BOTH appearances
+    /// (dark-mode `brand` #1FB5A3 on white was only 2.56:1). Pins the invariant
+    /// so a future edit to the onWhite fallback cannot silently regress it.
+    func testOnWhiteClearsAAOnWhiteInBothModes() {
+        let onWhite = AtlasColorFallback.table["AtlasOnWhite"]
+        XCTAssertNotNil(onWhite, "AtlasOnWhite must have a generated fallback entry")
+        let white = AtlasColorFallback.RGBA(r: 1, g: 1, b: 1, a: 1)
+        for mode in [("light", onWhite!.light), ("dark", onWhite!.dark)] {
+            let ratio = Self.wcagContrast(fg: mode.1, bg: white)
+            XCTAssertGreaterThanOrEqual(ratio, 4.5, "AtlasOnWhite (\(mode.0)) must clear WCAG-AA 4.5:1 on white — was \(ratio)")
+        }
+    }
+
+    private static func relativeLuminance(_ c: AtlasColorFallback.RGBA) -> Double {
+        func adapt(_ v: CGFloat) -> Double {
+            let d = Double(v)
+            return d <= 0.03928 ? d / 12.92 : pow((d + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * adapt(c.r) + 0.7152 * adapt(c.g) + 0.0722 * adapt(c.b)
+    }
+
+    private static func wcagContrast(fg: AtlasColorFallback.RGBA, bg: AtlasColorFallback.RGBA) -> Double {
+        let l1 = relativeLuminance(fg), l2 = relativeLuminance(bg)
+        return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
+    }
+
     func testAtlasColorFallbackPathProducesRenderableColor() {
         // Directly exercises the PRODUCTION fallback branch (atlasFallbackNSColor is
         // exactly what atlasColor(_:) consumes when the compiled catalog is absent)

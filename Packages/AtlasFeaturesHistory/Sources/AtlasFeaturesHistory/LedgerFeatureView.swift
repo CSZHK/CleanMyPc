@@ -35,6 +35,7 @@ public struct LedgerFeatureView: View {
         recoveryItems: [RecoveryItem] = AtlasScaffoldFixtures.recoveryItems,
         restoringItemID: UUID? = nil,
         retentionDays: Int = 7,
+        initialSelectionID: String? = nil,
         planNumber: @escaping (TaskRun) -> Int? = { _ in nil },
         onRestoreItem: @escaping (UUID) -> Void = { _ in }
     ) {
@@ -44,6 +45,12 @@ public struct LedgerFeatureView: View {
         self.retentionDays = retentionDays
         self.planNumber = planNumber
         self.onRestoreItem = onRestoreItem
+        // Seed from the Overview feed's tapped entry (round-4 back-link). nil ⇒
+        // syncSelection auto-selects the first entry as before. syncSelection
+        // still validates the seeded id against all rendered entries, so a stale
+        // id (e.g. since-archived) falls back gracefully instead of selecting
+        // nothing.
+        _selectedEntryID = State(initialValue: initialSelectionID)
     }
 
     public var body: some View {

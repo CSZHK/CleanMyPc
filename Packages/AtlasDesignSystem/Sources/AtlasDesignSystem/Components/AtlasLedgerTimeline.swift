@@ -136,9 +136,14 @@ public struct AtlasLedgerTimeline: View {
 
                 VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
                     HStack(alignment: .firstTextBaseline, spacing: AtlasSpacing.sm) {
-                        Text("№\(entry.number)")
-                            .font(AtlasTypography.ledgerNumber)
-                            .foregroundStyle(AtlasColor.brand)
+                        // № is a monotonic plan counter (spec §1.6). Recovery
+                        // items are not plan-numbered (number == 0) — suppress the
+                        // glyph so they don't render a misleading "№0" (round-4).
+                        if entry.number > 0 {
+                            Text("№\(entry.number)")
+                                .font(AtlasTypography.ledgerNumber)
+                                .foregroundStyle(AtlasColor.brand)
+                        }
 
                         Text(entry.title)
                             .font(AtlasTypography.rowTitle)
@@ -178,7 +183,9 @@ public struct AtlasLedgerTimeline: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(Self.accessibilityLabel(number: entry.number, title: entry.title)))
+        .accessibilityLabel(Text(entry.number > 0
+            ? Self.accessibilityLabel(number: entry.number, title: entry.title)
+            : entry.title))
         .accessibilityValue(Text(accessibilityValue(badge: badge, metricText: entry.metricText)))
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }

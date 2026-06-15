@@ -242,7 +242,9 @@ private struct SmartCleanReviewRow: View {
                     Image(systemName: "info.circle")
                         .font(AtlasTypography.caption)
                         .foregroundStyle(AtlasColor.brand)
-                        .frame(width: 22, height: 22)
+                        // 44pt hit target — the visible glyph stays at caption
+                        // (round-4 a11y; matches the Toast close pattern).
+                        .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

@@ -28,6 +28,11 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var activePreviewAppID: UUID?
     @Published private(set) var activeUninstallAppID: UUID?
     @Published private(set) var restoringRecoveryItemID: UUID?
+    /// Entry id tapped on the Overview ledger feed, threaded into the Ledger
+    /// screen's initial selection so tapping №N lands on №N (round-4 back-link).
+    /// Set by AppShellView.onSelectLedgerEntry; cleared once the Ledger consumes
+    /// it on appear (a plain var — navigation's route change drives the redraw).
+    var pendingLedgerEntryID: String?
     @Published private(set) var latestScanSummary: String
     @Published private(set) var latestAppsSummary: String
     @Published private(set) var latestPermissionsSummary: String
@@ -67,6 +72,11 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var fileOrganizerProgress: Double = 0
     @Published private(set) var currentFileOrganizerPlan: ActionPlan
     @Published private(set) var isFileOrganizerPlanFresh = false
+    /// True only after a successful dry-run (③ preview). Distinct from
+    /// isPlanFresh (② rules): a fresh plan lands on ② rules until the user
+    /// explicitly previews, so hasPreviewResults gates ③ (round-4 — previously
+    /// `isPlanFresh && !items.isEmpty` collapsed ② into ③, skipping rules).
+    @Published private(set) var fileOrganizerHasPreviewResults = false
     @Published private(set) var fileOrganizerPlanIssue: String?
     @Published private(set) var fileOrganizerExecutionIssue: String?
     @Published private(set) var scannedFolders: [String] = []
@@ -1038,6 +1048,7 @@ final class AtlasAppModel: ObservableObject {
                     fileOrganizerScanSummary = output.summary
                     fileOrganizerProgress = output.progressFraction
                     isFileOrganizerPlanFresh = false
+                    fileOrganizerHasPreviewResults = false
                     fileOrganizerPlanIssue = nil
                 }
             } catch {
@@ -1059,6 +1070,7 @@ final class AtlasAppModel: ObservableObject {
                     fileOrganizerScanSummary = output.summary
                     fileOrganizerProgress = output.progressFraction
                     isFileOrganizerPlanFresh = false
+                    fileOrganizerHasPreviewResults = false
                     fileOrganizerPlanIssue = nil
                 }
             } catch {
@@ -1100,6 +1112,7 @@ final class AtlasAppModel: ObservableObject {
                 currentFileOrganizerPlan = output.actionPlan
                 fileOrganizerScanSummary = output.summary
                 isFileOrganizerPlanFresh = true
+                fileOrganizerHasPreviewResults = false
                 fileOrganizerPlanIssue = nil
                 fileOrganizerExecutionIssue = nil
             }
@@ -1157,6 +1170,7 @@ final class AtlasAppModel: ObservableObject {
                 fileOrganizerEntries = []
                 currentFileOrganizerPlan = ActionPlan(title: "", items: [], estimatedBytes: 0)
                 isFileOrganizerPlanFresh = false
+                fileOrganizerHasPreviewResults = false
                 fileOrganizerExecutionCompleted = false
                 fileOrganizerMovedCount = 0
                 fileOrganizerExecutionReceipt = nil
@@ -1176,6 +1190,7 @@ final class AtlasAppModel: ObservableObject {
                     fileOrganizerEntries = []
                     currentFileOrganizerPlan = ActionPlan(title: "", items: [], estimatedBytes: 0)
                     isFileOrganizerPlanFresh = false
+                    fileOrganizerHasPreviewResults = false
                     fileOrganizerExecutionCompleted = false
                     fileOrganizerMovedCount = 0
                     fileOrganizerExecutionReceipt = nil
@@ -1204,6 +1219,7 @@ final class AtlasAppModel: ObservableObject {
                 fileOrganizerScanSummary = AtlasL10n.string("fileorganizer.callout.executionComplete.detail", movedCount)
                 fileOrganizerProgress = output.progressFraction
                 isFileOrganizerPlanFresh = false
+                fileOrganizerHasPreviewResults = false
                 fileOrganizerPlanIssue = nil
                 fileOrganizerExecutionIssue = nil
                 fileOrganizerExecutionCompleted = true
@@ -1255,6 +1271,8 @@ final class AtlasAppModel: ObservableObject {
                 snapshot = output.snapshot
                 currentFileOrganizerPlan = output.actionPlan
                 fileOrganizerScanSummary = output.summary
+                // Dry-run success advances ② rules → ③ preview (round-4).
+                fileOrganizerHasPreviewResults = true
             }
             let sizeStr = ByteCountFormatter.string(fromByteCount: estimatedBytes, countStyle: .file)
             let msg = AtlasL10n.string(

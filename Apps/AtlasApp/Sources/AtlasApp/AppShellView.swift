@@ -182,7 +182,10 @@ struct AppShellView: View {
                     model.navigate(to: .permissions)
                     Task { await model.inspectPermissions() }
                 },
-                onSelectLedgerEntry: { _ in
+                onSelectLedgerEntry: { id in
+                    // Thread the tapped entry id so the Ledger opens on №N, not
+                    // its default first entry (round-4 back-link red line).
+                    model.pendingLedgerEntryID = id
                     model.navigate(to: .ledger)
                 }
             )
@@ -344,11 +347,13 @@ struct AppShellView: View {
                 recoveryItems: model.filteredRecoveryItems,
                 restoringItemID: model.restoringRecoveryItemID,
                 retentionDays: model.settings.recoveryRetentionDays,
+                initialSelectionID: model.pendingLedgerEntryID,
                 planNumber: { run in model.workflowPlanNumber(for: run) },
                 onRestoreItem: { itemID in
                     Task { await model.restoreRecoveryItem(itemID) }
                 }
             )
+            .onAppear { model.pendingLedgerEntryID = nil }
         case .permissions:
             PermissionsFeatureView(
                 permissionStates: model.filteredPermissionStates,
@@ -435,7 +440,7 @@ struct AppShellView: View {
             executionFailed: model.fileOrganizerExecutionIssue != nil,
             executionCompleted: model.fileOrganizerExecutionCompleted,
             isPlanFresh: model.isFileOrganizerPlanFresh,
-            hasPreviewResults: model.isFileOrganizerPlanFresh && !model.currentFileOrganizerPlan.items.isEmpty,
+            hasPreviewResults: model.fileOrganizerHasPreviewResults,
             entriesCount: model.filteredFileOrganizerEntries.count
         ))
         return FileOrganizerWorkflowState(

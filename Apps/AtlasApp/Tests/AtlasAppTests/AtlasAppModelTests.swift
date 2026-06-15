@@ -772,6 +772,34 @@ private actor ExecuteRejectingRestoreDelegatingWorker: AtlasWorkerServing {
     }
 }
 
+/// Rejects `.fileOrganizerExecutePlan` on the 2nd+ call so a test can drive a
+/// successful execute (establishing a non-zero movedCount) then a failing one,
+/// pinning the fail-closed receipt invariant (round-4 test gap).
+private actor FileOrganizerExecuteRejectAfterSuccessWorker: AtlasWorkerServing {
+    let realWorker: AtlasScaffoldWorkerService
+    private var executeCount = 0
+    init(realWorker: AtlasScaffoldWorkerService) { self.realWorker = realWorker }
+
+    func submit(_ request: AtlasRequestEnvelope) async throws -> AtlasWorkerCommandResult {
+        if case .fileOrganizerExecutePlan = request.command {
+            executeCount += 1
+            if executeCount > 1 {
+                return AtlasWorkerCommandResult(
+                    request: request,
+                    response: AtlasResponseEnvelope(
+                        requestID: request.id,
+                        response: .rejected(code: .executionUnavailable, reason: "simulated mid-run failure")
+                    ),
+                    events: [],
+                    snapshot: AtlasScaffoldWorkspace.snapshot(language: .en),
+                    previewPlan: nil
+                )
+            }
+        }
+        return try await realWorker.submit(request)
+    }
+}
+
 // MARK: - File Organizer E2E Tests
 
 extension AtlasAppModelTests {
@@ -862,6 +890,65 @@ extension AtlasAppModelTests {
         XCTAssertFalse(fm.fileExists(atPath: file2.path))
         XCTAssertTrue(fm.fileExists(atPath: destDir.appendingPathComponent("Images/photo.png").path))
         XCTAssertTrue(fm.fileExists(atPath: destDir.appendingPathComponent("Documents/report.pdf").path))
+    }
+
+    /// round-3 fail-closed guard: when executeFileOrganizerPlan() fails AFTER a
+    /// prior successful run left fileOrganizerMovedCount > 0, the failure
+    /// receipt's movedItemCount must read 0 — never the stale prior count
+    /// (which previously made the receipt falsely claim moves that did not
+    /// happen). Pins the exact regression the round-3 fix prevents.
+    func testFileOrganizerExecuteFailureEmitsFailClosedReceiptWithZeroMovedCount() async throws {
+        let repository = makeRepository()
+        let fm = FileManager.default
+        let sourceDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Caches/AtlasFO-Fail-\(UUID().uuidString)", isDirectory: true)
+        let destDir = fm.homeDirectoryForCurrentUser.appendingPathComponent("Organized", isDirectory: true)
+        try fm.createDirectory(at: sourceDir, withIntermediateDirectories: true)
+        addTeardownBlock {
+            try? fm.removeItem(at: sourceDir)
+            try? fm.removeItem(at: destDir)
+        }
+
+        let entry = FileOrganizerEntry(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000A1")!,
+            path: sourceDir.appendingPathComponent("photo.png").path,
+            fileName: "photo.png",
+            bytes: 100,
+            category: .images,
+            proposedDestination: "~/Organized/Images/photo.png"
+        )
+        func seedFile() throws {
+            try Data(repeating: 0x1, count: 100).write(to: URL(fileURLWithPath: entry.path))
+        }
+
+        let realWorker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: [entry])
+        )
+        let model = AtlasAppModel(
+            repository: repository,
+            workerService: FileOrganizerExecuteRejectAfterSuccessWorker(realWorker: realWorker),
+            ledgerNumberStore: InMemoryLedgerNumberStore()
+        )
+
+        // 1st execute succeeds → movedItemCount = 1 (establishes a stale count).
+        try seedFile()
+        await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
+        await model.refreshFileOrganizerPreview(entryIDs: [])
+        await model.executeFileOrganizerPlan()
+        XCTAssertEqual(model.fileOrganizerExecutionReceipt?.movedItemCount, 1)
+        XCTAssertNil(model.fileOrganizerExecutionReceipt?.failureReason)
+
+        // 2nd execute rejects → fail-closed receipt must read 0, NOT the stale 1.
+        try seedFile()
+        await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
+        await model.refreshFileOrganizerPreview(entryIDs: [])
+        await model.executeFileOrganizerPlan()
+        XCTAssertEqual(
+            model.fileOrganizerExecutionReceipt?.movedItemCount, 0,
+            "failure receipt must not carry the prior run's moved count (round-3 fail-closed)"
+        )
+        XCTAssertNotNil(model.fileOrganizerExecutionReceipt?.failureReason)
     }
 
     func testFileOrganizerScanFailureExposesError() async {
