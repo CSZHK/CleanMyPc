@@ -364,9 +364,11 @@ struct FileOrganizerConfigurationSection: View {
             Image(systemName: isRecursiveScan ? "folder.fill" : "folder")
                 .foregroundStyle(AtlasColor.textTertiary)
                 .font(AtlasTypography.body)
+                .accessibilityHidden(true) // decorative — the Toggle carries the label
             Text(AtlasL10n.string("fileorganizer.recursive.title"))
                 .font(AtlasTypography.body)
                 .foregroundStyle(AtlasColor.textPrimary)
+                .accessibilityHidden(true) // title is the switch's a11y label below
             Spacer()
             Toggle("", isOn: Binding(
                 get: { isRecursiveScan },
@@ -375,6 +377,10 @@ struct FileOrganizerConfigurationSection: View {
             .labelsHidden()
             .toggleStyle(.switch)
             .controlSize(.small)
+            // Name the switch (round-10): with an empty visual label +
+            // labelsHidden the native Toggle is otherwise announced as a bare
+            // "switch, on/off" with no name.
+            .accessibilityLabel(Text(AtlasL10n.string("fileorganizer.recursive.title")))
         }
     }
 }
