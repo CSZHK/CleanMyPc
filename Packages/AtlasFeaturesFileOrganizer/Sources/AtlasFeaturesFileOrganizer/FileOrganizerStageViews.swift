@@ -264,6 +264,7 @@ struct FileOrganizerEntryRow: View {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(isSelected ? AtlasColor.brand : AtlasColor.textTertiary)
                     .font(.system(size: AtlasLayout.iconLG))
+                    .accessibilityHidden(true) // decorative — selection state is the row's accessibilityValue + .isSelected (round-11)
 
                 if showThumbnail {
                     FileThumbnailView(path: entry.path)
