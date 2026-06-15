@@ -97,18 +97,38 @@ enum AtlasWorkflowStageMap {
 // MARK: - Receipt derivation (pure, deterministic)
 
 /// Scan receipt `#XXXX` derivation (PER Decision Log): SHA256 over a stable
-/// digest string — sorted `id:bytes` pairs of the findings plus the scan
-/// timestamp — truncated to the first 4 hex digits, uppercase.
+/// digest string plus the scan timestamp, truncated to the first 4 hex digits,
+/// uppercase. The digest must fingerprint the plan being numbered — SmartClean
+/// uses its findings; FileOrganizer uses its action-plan items. (round-2: the
+/// FileOrganizer receipt previously hashed SmartClean's `snapshot.findings`,
+/// which are unrelated to the organizer plan, so distinct plans could share a
+/// code or collide when SmartClean had never run.)
 enum AtlasLedgerReceipt {
+    /// Generic core: hash a stable digest + the scan timestamp.
+    static func code(digest: String, scanDate: Date) -> String {
+        let payload = "\(digest)@\(scanDate.timeIntervalSince1970)"
+        let hash = SHA256.hash(data: Data(payload.utf8))
+        let hex = hash.map { String(format: "%02X", $0) }.joined()
+        return String(hex.prefix(4))
+    }
+
+    /// SmartClean: fingerprint the scan's findings (sorted `id:bytes` pairs).
     static func code(findings: [Finding], scanDate: Date) -> String {
         let stableDigest = findings
             .map { "\($0.id.uuidString):\($0.bytes)" }
             .sorted()
             .joined(separator: "|")
-        let payload = "\(stableDigest)@\(scanDate.timeIntervalSince1970)"
-        let hash = SHA256.hash(data: Data(payload.utf8))
-        let hex = hash.map { String(format: "%02X", $0) }.joined()
-        return String(hex.prefix(4))
+        return code(digest: stableDigest, scanDate: scanDate)
+    }
+
+    /// FileOrganizer: fingerprint the plan's action items (id + target paths)
+    /// so the receipt reflects the files being moved, not SmartClean's findings.
+    static func code(forPlan plan: ActionPlan, scanDate: Date) -> String {
+        let stableDigest = plan.items
+            .map { "\($0.id.uuidString):\($0.targetPaths?.joined(separator: ",") ?? "")" }
+            .sorted()
+            .joined(separator: "|")
+        return code(digest: stableDigest, scanDate: scanDate)
     }
 }
 

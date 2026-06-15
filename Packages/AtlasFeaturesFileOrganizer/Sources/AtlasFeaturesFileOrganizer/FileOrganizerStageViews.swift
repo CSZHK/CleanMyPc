@@ -25,7 +25,8 @@ struct FileOrganizerScanStageView: View {
                         progress: scanProgress == 0 ? 0.15 : scanProgress,
                         tone: .neutral,
                         lineWidth: 8,
-                        icon: isScanning ? "sparkles" : "doc.text.magnifyingglass"
+                        icon: isScanning ? "sparkles" : "doc.text.magnifyingglass",
+                        accessibilityLabel: AtlasL10n.string(isScanning ? "fileorganizer.status.scanning" : "fileorganizer.status.classifying")
                     )
                     .frame(width: 80, height: 80)
 
@@ -91,6 +92,11 @@ struct FileOrganizerRulesStageView: View {
     let largeFileIDs: Set<UUID>
     let duplicateFileIDs: Set<UUID>
     let onToggle: (UUID) -> Void
+    /// Batched select-all / deselect-all as a single state mutation. A per-entry
+    /// `onToggle` loop reads a stale `selectedIDs` snapshot (SwiftUI refreshes
+    /// the view's `let state` next render, not mid-synchronous-loop) and
+    /// last-write-wins, so 全选 left only the final entry selected (round-2 P1).
+    let onSelectAll: (Bool) -> Void
     let onSelectEvidence: (UUID) -> Void
     let onOpenEvidence: (UUID) -> Void
     let onOpenRuleEditor: () -> Void
@@ -183,14 +189,9 @@ struct FileOrganizerRulesStageView: View {
     }
 
     private func onToggleAll(_ select: Bool) {
-        for entry in entries {
-            let currentlySelected = selectedIDs.contains(entry.id)
-            if select && !currentlySelected {
-                onToggle(entry.id)
-            } else if !select && currentlySelected {
-                onToggle(entry.id)
-            }
-        }
+        // Single batched mutation via onSelectAll — see the property doc. The
+        // old per-entry onToggle loop clobbered selection (round-2 P1).
+        onSelectAll(select)
     }
 
     @ViewBuilder
@@ -472,7 +473,8 @@ struct FileOrganizerExecuteStageView: View {
                         progress: isExecuting ? max(progress, 0.05) : progress,
                         tone: .warning,
                         lineWidth: 8,
-                        icon: "play.circle.fill"
+                        icon: "play.circle.fill",
+                        accessibilityLabel: AtlasL10n.string("fileorganizer.status.executing")
                     )
                     .frame(width: 80, height: 80)
 

@@ -127,9 +127,16 @@ public struct OverviewLedgerFeed: View {
     /// Build a `FeedData` from task runs. The display № follows the same rule
     /// as `LedgerEntryMapping.chronologicalDisplayNumbers` (Batch J):
     /// - stored № (from `planNumber(for:)`) wins;
-    /// - otherwise a chronological fallback is computed, newest run highest,
-    ///   with `seedBase = max(runs.count, storedMax) + 1` so a later counter
-    ///   allocation (which starts above `runs.count`) never collides.
+    /// - otherwise a chronological fallback is computed over the FULL run set,
+    ///   newest run highest, band strictly above `storedMax` so no fallback
+    ///   collides with a stored №.
+    ///
+    /// IMPORTANT: the № map is computed over the FULL `taskRuns` set BEFORE
+    /// slicing to the recent 5 for rendering — this matches the Ledger screen
+    /// (which numbers all runs) so a given run shows the SAME № on both screens
+    /// (round-2: numbering only the 5-run slice used a slice-local storedMax
+    /// and diverged from the Ledger, e.g. showing №5 on Overview vs №55 on the
+    /// Ledger for the same run).
     ///
     /// `planNumber(for:)` returns the shell-counter № for active scan/execute
     /// runs; for everything else it returns nil and the fallback fills in.
@@ -138,7 +145,10 @@ public struct OverviewLedgerFeed: View {
         planNumber: (TaskRun) -> Int?,
         now: Date = Date()
     ) -> FeedData {
-        // Limit to recent runs by activity date (newest first), then take 5.
+        // Number the FULL run set first (matches the Ledger screen), then slice
+        // to the 5 most recent by activity date for rendering.
+        let numbers = chronologicalDisplayNumbers(for: taskRuns, planNumber: planNumber)
+
         let recent = taskRuns
             .sorted { lhs, rhs in
                 let lhsDate = lhs.finishedAt ?? lhs.startedAt
@@ -146,8 +156,6 @@ public struct OverviewLedgerFeed: View {
                 return lhsDate > rhsDate
             }
             .prefix(maxEntries)
-
-        let numbers = chronologicalDisplayNumbers(for: Array(recent), planNumber: planNumber)
 
         let entries = recent.map { run -> AtlasLedgerEntryModel in
             let number = numbers[run.id] ?? 0

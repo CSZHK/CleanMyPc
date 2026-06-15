@@ -55,7 +55,8 @@ public struct OverviewCommandColumn: View {
                 progress: min(max(pct / 100.0, 0), 1),
                 tone: OverviewCommandColumn.tone(forDiskPercent: pct),
                 lineWidth: 10,
-                text: "\(Int(pct.rounded()))%"
+                text: "\(Int(pct.rounded()))%",
+                accessibilityLabel: AtlasL10n.string("overview.command.health.title")
             )
             .frame(width: 92, height: 92)
 

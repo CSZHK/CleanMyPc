@@ -159,7 +159,9 @@ struct FileOrganizerEvidenceDrawer<Content: View>: View {
                     Image(systemName: "xmark")
                         .font(.system(size: AtlasLayout.iconXS, weight: .bold))
                         .foregroundStyle(AtlasColor.textSecondary)
-                        .frame(width: 24, height: 24)
+                        // 44pt hit target — the visible glyph stays at iconXS
+                        // (round-2 a11y; matches the Toast close pattern).
+                        .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

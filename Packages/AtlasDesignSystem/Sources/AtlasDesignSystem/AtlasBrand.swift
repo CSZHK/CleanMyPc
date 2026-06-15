@@ -33,6 +33,11 @@ public enum AtlasColor {
     /// (暗字亮底 — dark teal fills are bright, so dark mode flips to ink). AA on both
     /// gradient stops (≥5.47:1 light / ≥7.19:1 dark).
     public static let onBrand = atlasColor("AtlasOnBrand")
+    /// Brand-teal label on a **white** fill (round-2 AA fix): pinned to #0F766E
+    /// in BOTH appearances so it clears AA on white in dark mode too (dark-mode
+    /// `brand` #1FB5A3 on white is only 2.56:1). Used by the banner's white
+    /// primary capsule. 5.47:1 on white in both modes.
+    public static let onWhite = atlasColor("AtlasOnWhite")
     /// Banner-gradient end stop (PER Backlog #9): deepened light teal / brightened dark
     /// teal so `onBrand` clears AA across the whole gradient run.
     public static let bannerEnd = atlasColor("AtlasBannerEnd")

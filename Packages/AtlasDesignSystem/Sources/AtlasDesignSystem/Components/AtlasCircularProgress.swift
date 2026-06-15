@@ -10,6 +10,7 @@ public struct AtlasCircularProgress: View {
     private let icon: String?
     private let text: String?
     private let textSize: CGFloat
+    private let accessibilityLabel: String?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -20,7 +21,8 @@ public struct AtlasCircularProgress: View {
         showTrack: Bool = true,
         icon: String? = nil,
         text: String? = nil,
-        textSize: CGFloat = 16
+        textSize: CGFloat = 16,
+        accessibilityLabel: String? = nil
     ) {
         self.progress = progress
         self.tone = tone
@@ -29,6 +31,7 @@ public struct AtlasCircularProgress: View {
         self.icon = icon
         self.text = text
         self.textSize = textSize
+        self.accessibilityLabel = accessibilityLabel
     }
 
     public var body: some View {
@@ -54,6 +57,11 @@ public struct AtlasCircularProgress: View {
 
             centerContent
         }
+        // Collapse into one element so VoiceOver speaks "<label>, <value>"
+        // instead of a bare "50%" with no context (round-2 a11y). Hosts pass an
+        // already-resolved (localized) label string; nil ⇒ value-only fallback.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel ?? "")
         .accessibilityValue(Text("\(Int(round(clampedProgress * 100)))%"))
     }
 

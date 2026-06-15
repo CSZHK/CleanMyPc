@@ -240,6 +240,7 @@ public struct FileOrganizerFeatureView: View {
             largeFileIDs: FileOrganizerEvidenceBuilder.largeFileIDs(entries),
             duplicateFileIDs: FileOrganizerEvidenceBuilder.duplicateFileIDs(entries),
             onToggle: { id in mutate { if state.selectedIDs.contains(id) { $0.selectedIDs.remove(id) } else { $0.selectedIDs.insert(id) } } },
+            onSelectAll: { select in mutate { $0.selectedIDs = select ? Set(entries.map(\.id)) : [] } },
             onSelectEvidence: { id in mutate { $0.evidenceSelectionID = id } },
             onOpenEvidence: { id in mutate { $0.evidenceSelectionID = id; $0.drawerPresented = true } },
             onOpenRuleEditor: { isRuleEditorPresented = true },

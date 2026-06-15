@@ -1112,7 +1112,7 @@ final class AtlasAppModel: ObservableObject {
             // so the receipt chip / №N markers / task-center row stayed empty.)
             if workflowState(for: .fileOrganizer).planNumber == nil, !output.actionPlan.items.isEmpty {
                 let number = nextLedgerNumber()
-                let receipt = AtlasLedgerReceipt.code(findings: snapshot.findings, scanDate: Date())
+                let receipt = AtlasLedgerReceipt.code(forPlan: output.actionPlan, scanDate: Date())
                 updateWorkflowState(for: .fileOrganizer) { state in
                     state.planNumber = number
                     state.receiptCode = receipt

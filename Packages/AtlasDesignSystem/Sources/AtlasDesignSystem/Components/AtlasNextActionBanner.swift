@@ -105,7 +105,7 @@ public struct AtlasNextActionBanner: View {
                 Button(action: onPrimary) {
                     Text(primaryTitle)
                         .font(AtlasTypography.label)
-                        .foregroundStyle(AtlasColor.brand)
+                        .foregroundStyle(AtlasColor.onWhite)
                         .lineLimit(1)
                         .padding(.horizontal, AtlasSpacing.xl)
                         .padding(.vertical, AtlasSpacing.sm)

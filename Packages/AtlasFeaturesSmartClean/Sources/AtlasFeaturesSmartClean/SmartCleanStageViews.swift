@@ -23,7 +23,8 @@ struct SmartCleanScanStageView: View {
                         progress: scanProgress == 0 ? 0.15 : scanProgress,
                         tone: .neutral,
                         lineWidth: 8,
-                        icon: "sparkles"
+                        icon: "sparkles",
+                        accessibilityLabel: AtlasL10n.string("smartclean.loading.scan")
                     )
                     .frame(width: 80, height: 80)
 
@@ -291,7 +292,8 @@ struct SmartCleanExecuteStageView: View {
                         progress: isExecuting ? max(progress, 0.05) : progress,
                         tone: .warning,
                         lineWidth: 8,
-                        icon: "play.circle.fill"
+                        icon: "play.circle.fill",
+                        accessibilityLabel: AtlasL10n.string("smartclean.loading.execute")
                     )
                     .frame(width: 80, height: 80)
 

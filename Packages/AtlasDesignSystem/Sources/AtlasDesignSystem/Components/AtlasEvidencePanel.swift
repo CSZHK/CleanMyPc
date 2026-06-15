@@ -194,7 +194,9 @@ public struct AtlasEvidencePanel<Actions: View>: View {
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                             .font(AtlasTypography.captionSmall)
                             .foregroundStyle(AtlasColor.textSecondary)
-                            .frame(width: 20, height: 20)
+                            // 44pt hit target — the visible glyph stays small
+                            // (round-2 a11y; matches the Toast close pattern).
+                            .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
