@@ -62,7 +62,11 @@ struct SmartCleanScanStageView: View {
                     systemImage: "sparkles",
                     tone: .neutral,
                     actionTitle: AtlasL10n.string("emptystate.action.startScan"),
-                    onAction: onStartScan
+                    onAction: onStartScan,
+                    // UI-test contract (review fix I3): the scan empty-state action
+                    // is the canonical `smartclean.runScan` entry — both this action
+                    // and the action-bar primary on the scan stage carry the id.
+                    actionIdentifier: "smartclean.runScan"
                 )
 
                 if hasCachedFindings {

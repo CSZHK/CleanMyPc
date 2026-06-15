@@ -134,6 +134,49 @@ final class CalmLedgerComponentTests: XCTestCase {
         XCTAssertNotNil(bar.body)
     }
 
+    // MARK: - F3b Action bar identifier + keyboard shortcut (review fix I3 / #9)
+
+    func testActionBarAcceptsIdentifierAndKeyboardShortcut() {
+        // The new optional params default to nil so existing call sites are
+        // unaffected; when supplied they pin a stable UI-test contract
+        // (`smartclean.runScan`) and make the primary reachable via the keyboard.
+        let withIdentifier = AtlasActionBar(
+            primaryTitle: "开始扫描", primaryEnabled: true, onPrimary: {},
+            promise: nil, metricText: nil, progress: nil,
+            primaryIdentifier: "smartclean.runScan",
+            primaryKeyboardShortcut: .defaultAction
+        )
+        XCTAssertNotNil(withIdentifier.body)
+
+        // Defaults: nil identifier / nil shortcut still construct.
+        let defaults = AtlasActionBar(
+            primaryTitle: "执行清理计划", primaryEnabled: true, onPrimary: {},
+            promise: nil, metricText: nil, progress: nil
+        )
+        XCTAssertNotNil(defaults.body)
+    }
+
+    // MARK: - F3c Empty-state action identifier (review fix I3)
+
+    func testEmptyStateActionCarriesIdentifierWhenProvided() {
+        // The scan empty-state action is the canonical `smartclean.runScan`
+        // entry — the identifier is attached to the Button itself, not the
+        // surrounding container, so `app.buttons["smartclean.runScan"]` resolves.
+        let withID = AtlasEmptyState(
+            title: "尚未扫描", detail: "点击开始", systemImage: "sparkles",
+            tone: .neutral, actionTitle: "开始扫描", onAction: {},
+            actionIdentifier: "smartclean.runScan"
+        )
+        XCTAssertNotNil(withID.body)
+
+        // Without an explicit identifier the action falls back to its title.
+        let fallback = AtlasEmptyState(
+            title: "t", detail: "d", systemImage: "x",
+            actionTitle: "重新校验", onAction: {}
+        )
+        XCTAssertNotNil(fallback.body)
+    }
+
     // MARK: - F4 AtlasLedgerTimeline
 
     private func ledgerEntry(_ id: String, number: Int, status: AtlasLedgerEntryStatus) -> AtlasLedgerEntryModel {

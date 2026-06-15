@@ -40,6 +40,10 @@ final class AtlasAppModel: ObservableObject {
     // (recovery delta, retention at run time — spec §1.6 fail-closed).
     @Published private(set) var smartCleanExecutionCompleted = false
     @Published private(set) var smartCleanExecutionReceipt: SmartCleanExecutionReceipt?
+    /// Transient per-call success flag set by `restoreRecoveryItemCore`
+    /// (review fix #6); read by the undo path to decide whether to clear
+    /// `smartCleanExecutionCompleted` or surface a failure toast instead.
+    private var lastRestoreDidSucceed = false
     @Published private(set) var latestUpdateResult: AtlasAppUpdate?
     @Published private(set) var isCheckingForUpdate = false
     @Published private(set) var updateCheckNotice: String?
@@ -423,6 +427,10 @@ final class AtlasAppModel: ObservableObject {
         selection = .smartClean
         isPlanRunning = true
         smartCleanExecutionIssue = nil
+        // Narrow-layout drawer residue (review fix #12): collapse the evidence
+        // drawer when execution starts so the progress/receipt view isn't
+        // obscured by a stale evidence panel left open from ②.
+        updateWorkflowState(for: .smartClean) { state in state.drawerPresented = false }
         // Receipt provenance (Batch I): plan facts + recovery baseline, so the
         // ④ receipt and the undo toast carry only real execution outcomes.
         let executedPlan = currentPlan
@@ -486,7 +494,12 @@ final class AtlasAppModel: ObservableObject {
     private func postSmartCleanExecutionToast(for receipt: SmartCleanExecutionReceipt) {
         let toastID = UUID()
         let message = receipt.planNumber.map { AtlasL10n.string("smartclean.toast.recorded", $0) } ?? receipt.summary
-        let hasUndo = !receipt.recoveryItemIDs.isEmpty
+        // Undo gate aligned with the ④ receipt stamp (review fix #5): the same
+        // `hasRestorePoint` predicate (IDs non-empty AND bytes > 0) decides
+        // whether the undo action is offered. A run that recorded recovery
+        // entries but zero bytes (e.g. metadata-only) can't meaningfully undo,
+        // so the toast omits the action and the receipt hides its stamp too.
+        let hasUndo = receipt.hasRestorePoint
         var undoAction: (@MainActor @Sendable () -> Void)?
         if hasUndo {
             undoAction = { [weak self] in
@@ -514,15 +527,64 @@ final class AtlasAppModel: ObservableObject {
     /// items recorded on the execution receipt through the existing
     /// `restoreRecoveryItem` chain (same recovery point as the ledger's
     /// restore entry points — 双入口一份真相, spec §2.3).
+    ///
+    /// Review fix #6: only clear `smartCleanExecutionCompleted` when at least one
+    /// restore actually succeeded. If every restore failed (helper offline,
+    /// files missing), the execution result stays recorded and a failure toast is
+    /// surfaced — never silently clear state we could not reverse.
     func undoSmartCleanExecution() async {
         guard let receipt = smartCleanExecutionReceipt else {
             return
         }
-        for itemID in receipt.recoveryItemIDs where snapshot.recoveryItems.contains(where: { $0.id == itemID }) {
-            await restoreRecoveryItem(itemID)
+        // Determine which recorded recovery items are still present and restorable.
+        let restorableIDs = receipt.recoveryItemIDs.filter { itemID in
+            snapshot.recoveryItems.contains { $0.id == itemID }
         }
-        smartCleanExecutionCompleted = false
-        smartCleanExecutionReceipt = nil
+        // Nothing recorded AND nothing restorable ⇒ no-op success: clear the
+        // execution state as before (a run with no recovery delta has nothing to
+        // reverse). This is distinct from #6's failure case below.
+        if receipt.recoveryItemIDs.isEmpty && restorableIDs.isEmpty {
+            smartCleanExecutionCompleted = false
+            smartCleanExecutionReceipt = nil
+            return
+        }
+        var anyRestored = false
+        for itemID in restorableIDs {
+            let didRestore = await restoreRecoveryItemReportingSuccess(itemID)
+            if didRestore { anyRestored = true }
+        }
+        if anyRestored {
+            smartCleanExecutionCompleted = false
+            smartCleanExecutionReceipt = nil
+        } else if !restorableIDs.isEmpty {
+            // #6: items were present to restore but every restore failed — surface
+            // it instead of silently clearing execution state we could not reverse.
+            postSmartCleanUndoFailedToast()
+        } else {
+            // Items were recorded but none are currently restorable (already
+            // consumed / evicted elsewhere): treat as no-op success and clear.
+            smartCleanExecutionCompleted = false
+            smartCleanExecutionReceipt = nil
+        }
+    }
+
+    /// Failure toast for an undo that could not reverse any recovery item
+    /// (review fix #6): the user tapped 「撤销」 and nothing came back. Tapping
+    /// the toast opens the ledger where the recovery entries still live.
+    private func postSmartCleanUndoFailedToast() {
+        let toastID = UUID()
+        let toast = AtlasToastItem(
+            id: toastID,
+            message: AtlasL10n.string("smartclean.undo.failed.message"),
+            tone: .warning,
+            systemImage: "exclamationmark.triangle",
+            onTap: { [weak self] in
+                self?.navigate(to: .ledger)
+            }
+        )
+        withAnimation(AtlasMotion.standard) {
+            toasts.append(toast)
+        }
     }
 
     func refreshApps() async {
@@ -626,6 +688,26 @@ final class AtlasAppModel: ObservableObject {
             return
         }
 
+        await restoreRecoveryItemCore(itemID)
+    }
+
+    /// Core restore that reports per-call success (review fix #6): the undo path
+    /// needs to know whether at least one item really came back before it is safe
+    /// to clear `smartCleanExecutionCompleted`. Existing callers (apps restore,
+    /// ledger) still use `restoreRecoveryItem` which ignores the result.
+    @discardableResult
+    private func restoreRecoveryItemReportingSuccess(_ itemID: UUID) async -> Bool {
+        guard restoringRecoveryItemID == nil else {
+            return false
+        }
+        await restoreRecoveryItemCore(itemID)
+        return lastRestoreDidSucceed
+    }
+
+    /// Shared restore body; sets `lastRestoreDidSucceed` so callers can branch.
+    private func restoreRecoveryItemCore(_ itemID: UUID) async {
+        lastRestoreDidSucceed = false
+
         let restoredItem = snapshot.recoveryItems.first(where: { $0.id == itemID })
         // Capture snapshot category counts for divergence detection after reload
         pendingRestoreSnapshotCategoryCounts = restoredItem?.appRecoveryPayload.flatMap {
@@ -665,6 +747,7 @@ final class AtlasAppModel: ObservableObject {
                     latestAppsSummary = output.summary
                 }
             }
+            lastRestoreDidSucceed = true
             if shouldRefreshAppsAfterRestore {
                 await reloadAppsInventory(
                     navigateToApps: false,

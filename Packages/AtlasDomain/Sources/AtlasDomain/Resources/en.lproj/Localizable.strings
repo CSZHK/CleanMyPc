@@ -1030,6 +1030,7 @@
 "smartclean.filter.all" = "All";
 "smartclean.undo.banner.message" = "Cleanup plan executed successfully.";
 "smartclean.undo.banner.action" = "Undo";
+"smartclean.undo.failed.message" = "Undo could not restore any items; the recovery records remain in the ledger.";
 
 /* Calm Ledger M3 Batch I — Smart Clean skeleton (stage bar / receipt / rescan confirm) */
 "smartclean.stage.scan" = "Scan";
@@ -1065,6 +1066,7 @@
 "smartclean.rescan.confirm" = "Void & Rescan";
 "smartclean.receipt.title" = "Cleanup Receipt";
 "smartclean.receipt.items.label" = "Items Run";
+"smartclean.receipt.items.planned.label" = "Planned Items";
 "smartclean.receipt.items.value" = "%d items";
 "smartclean.receipt.estimated.label" = "Estimated Freed";
 "smartclean.receipt.completed.label" = "Completed";

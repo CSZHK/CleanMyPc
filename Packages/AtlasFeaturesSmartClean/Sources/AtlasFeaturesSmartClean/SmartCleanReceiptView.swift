@@ -145,15 +145,27 @@ struct SmartCleanReceiptView: View {
 
     private var factRows: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
-            factRow(
-                label: AtlasL10n.string("smartclean.receipt.items.label"),
-                value: AtlasL10n.string("smartclean.receipt.items.value", receipt.executedItemCount)
-            )
-            if receipt.estimatedFreedBytes > 0 {
+            // Fact-only failure receipt (review fix #4): on a failure path the
+            // count/bytes on the receipt are the *planned* figures, not measured
+            // execution outcomes. We never claim 「执行 N 项 / 释放 X」 we did not
+            // witness — the count is labelled 「计划 N 项」 (planned) and the freed
+            // bytes row is suppressed entirely until execution actually succeeded.
+            if receipt.failureReason != nil {
                 factRow(
-                    label: AtlasL10n.string("smartclean.receipt.estimated.label"),
-                    value: AtlasFormatters.byteCount(receipt.estimatedFreedBytes)
+                    label: AtlasL10n.string("smartclean.receipt.items.planned.label"),
+                    value: AtlasL10n.string("smartclean.receipt.items.value", receipt.executedItemCount)
                 )
+            } else {
+                factRow(
+                    label: AtlasL10n.string("smartclean.receipt.items.label"),
+                    value: AtlasL10n.string("smartclean.receipt.items.value", receipt.executedItemCount)
+                )
+                if receipt.estimatedFreedBytes > 0 {
+                    factRow(
+                        label: AtlasL10n.string("smartclean.receipt.estimated.label"),
+                        value: AtlasFormatters.byteCount(receipt.estimatedFreedBytes)
+                    )
+                }
             }
             factRow(
                 label: AtlasL10n.string("smartclean.receipt.completed.label"),

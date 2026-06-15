@@ -16,6 +16,13 @@ public struct AtlasActionBar: View {
     private let promise: String?
     private let metricText: String?
     private let progress: Double?
+    /// Stable identifier for the primary button (UI-test contract, review fix I3).
+    /// Nil ⇒ no identifier attached. Only applied to the button mode, not progress.
+    private let primaryIdentifier: String?
+    /// Optional keyboard shortcut for the primary button (review fix #9). When
+    /// non-nil and the bar is in button mode, the shortcut is attached so the
+    /// primary action is reachable from the keyboard (e.g. `.defaultAction`).
+    private let primaryKeyboardShortcut: KeyboardShortcut?
 
     @Environment(\.atlasContentWidth) private var contentWidth
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -26,7 +33,9 @@ public struct AtlasActionBar: View {
         onPrimary: @escaping () -> Void,
         promise: String?,
         metricText: String?,
-        progress: Double?
+        progress: Double?,
+        primaryIdentifier: String? = nil,
+        primaryKeyboardShortcut: KeyboardShortcut? = nil
     ) {
         self.primaryTitle = primaryTitle
         self.primaryEnabled = primaryEnabled
@@ -34,6 +43,8 @@ public struct AtlasActionBar: View {
         self.promise = promise
         self.metricText = metricText
         self.progress = progress
+        self.primaryIdentifier = primaryIdentifier
+        self.primaryKeyboardShortcut = primaryKeyboardShortcut
     }
 
     // MARK: Pure layout logic (unit-tested)
@@ -132,6 +143,8 @@ public struct AtlasActionBar: View {
             .buttonStyle(.plain)
             .disabled(!primaryEnabled)
             .accessibilityLabel(Text(primaryTitle))
+            .accessibilityIdentifier(primaryIdentifier ?? primaryTitle)
+            .applyKeyboardShortcut(primaryKeyboardShortcut)
 
         case .progress(let value):
             HStack(spacing: AtlasSpacing.sm) {
@@ -188,6 +201,21 @@ public struct AtlasActionBar: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text(promise))
             }
+        }
+    }
+}
+
+// MARK: - Keyboard shortcut helper (review fix #9)
+
+private extension View {
+    /// Applies an optional `.keyboardShortcut` only when one is supplied, so the
+    /// default `nil` leaves the bar's primary button untouched.
+    @ViewBuilder
+    func applyKeyboardShortcut(_ shortcut: KeyboardShortcut?) -> some View {
+        if let shortcut {
+            self.keyboardShortcut(shortcut)
+        } else {
+            self
         }
     }
 }

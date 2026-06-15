@@ -802,14 +802,26 @@ public struct AtlasEmptyState: View {
     private let tone: AtlasTone
     private let actionTitle: String?
     private let onAction: (() -> Void)?
+    /// Optional identifier attached to the action button (review fix I3): lets a
+    /// caller pin a stable UI-test contract on the action regardless of copy.
+    private let actionIdentifier: String?
 
-    public init(title: String, detail: String, systemImage: String, tone: AtlasTone = .neutral, actionTitle: String? = nil, onAction: (() -> Void)? = nil) {
+    public init(
+        title: String,
+        detail: String,
+        systemImage: String,
+        tone: AtlasTone = .neutral,
+        actionTitle: String? = nil,
+        onAction: (() -> Void)? = nil,
+        actionIdentifier: String? = nil
+    ) {
         self.title = title
         self.detail = detail
         self.systemImage = systemImage
         self.tone = tone
         self.actionTitle = actionTitle
         self.onAction = onAction
+        self.actionIdentifier = actionIdentifier
     }
 
     public var body: some View {
@@ -851,6 +863,7 @@ public struct AtlasEmptyState: View {
                     onAction()
                 }
                 .buttonStyle(.atlasSecondary)
+                .accessibilityIdentifier(actionIdentifier ?? actionTitle)
             }
         }
         .frame(maxWidth: .infinity)

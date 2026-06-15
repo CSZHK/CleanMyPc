@@ -124,6 +124,39 @@ final class SmartCleanFeatureViewTests: XCTestCase {
         XCTAssertFalse(SmartCleanEvidenceBuilder.isReadOnly(displayedStage: 3, currentStage: 2))
     }
 
+    // MARK: - Look-back disables every completed stage (review fix C1)
+
+    func testReadOnlyAppliesToScanStageLookBack() {
+        // Looking back at ① scan from any later stage (②/③/④) is read-only — the
+        // old gap let ①'s 「开始扫描 / 重新校验」 stay tappable and silently overwrite
+        // № / ④ receipt via runSmartCleanScan(). The container now disables the
+        // whole stageContent subtree whenever isReadOnly is true.
+        for current in [SmartCleanStage.review, SmartCleanStage.execute, SmartCleanStage.receipt] {
+            XCTAssertTrue(
+                SmartCleanEvidenceBuilder.isReadOnly(displayedStage: SmartCleanStage.scan, currentStage: current),
+                "scan look-back from stage \(current) must be read-only"
+            )
+        }
+        // The live scan stage is NOT read-only (the user is actually on ①).
+        XCTAssertFalse(SmartCleanEvidenceBuilder.isReadOnly(displayedStage: SmartCleanStage.scan, currentStage: SmartCleanStage.scan))
+    }
+
+    func testScanStageViewConstructsWithoutReadOnlyParameter() {
+        // The scan-stage view stayed parameter-free on the read-only axis — the
+        // container-level `.disabled(isReadOnly)` enforces look-back instead.
+        // This construction smoke guards the view shape against regressions.
+        let view = SmartCleanScanStageView(
+            isScanning: false,
+            scanSummary: "",
+            scanProgress: 0,
+            hasCachedFindings: false,
+            planIssue: nil,
+            onStartScan: {},
+            onRefreshPreview: {}
+        )
+        XCTAssertNotNil(view.body)
+    }
+
     func testEffectiveStageFollowsCurrentAndAllowsLookBack() {
         // Look-back: displayed below current renders read-only at displayed.
         XCTAssertEqual(SmartCleanEvidenceBuilder.effectiveStage(displayedStage: 1, currentStage: 3, hasReceipt: true), 1)
@@ -229,6 +262,46 @@ final class SmartCleanFeatureViewTests: XCTestCase {
         XCTAssertFalse(receipt.hasRestorePoint, "zero bytes ⇒ no stamp badge")
         receipt = Self.receipt(recoveryItemIDs: [UUID()], recoveryBytes: 512)
         XCTAssertTrue(receipt.hasRestorePoint)
+    }
+
+    // MARK: - Toast undo gate aligned with receipt stamp (review fix #5)
+
+    func testUndoGateRequiresRestorePointNotJustNonEmptyIDs() {
+        // The undo action must use the SAME predicate as the ④ stamp badge
+        // (hasRestorePoint = IDs non-empty AND bytes > 0). A run that recorded
+        // recovery entries but zero bytes can't meaningfully undo, so neither
+        // the toast action nor the receipt stamp should appear.
+        let zeroBytes = Self.receipt(recoveryItemIDs: [UUID(), UUID()], recoveryBytes: 0)
+        XCTAssertFalse(zeroBytes.hasRestorePoint, "zero bytes ⇒ no undo action offered")
+
+        let realRestorePoint = Self.receipt(recoveryItemIDs: [UUID()], recoveryBytes: 1_024)
+        XCTAssertTrue(realRestorePoint.hasRestorePoint, "IDs + bytes ⇒ undo action offered")
+    }
+
+    // MARK: - Fact-only failure receipt (review fix #4)
+
+    func testFailureReceiptHasNoRestorePointAndCarriesReason() {
+        // The executeCurrentPlan catch path builds a failure receipt with empty
+        // recovery IDs / zero bytes and a failureReason. hasRestorePoint must be
+        // false so neither the stamp nor the undo action nor the freed-bytes row
+        // is rendered from unverified plan figures.
+        let failure = SmartCleanExecutionReceipt(
+            planNumber: 5,
+            receiptCode: "CD34",
+            completedAt: Date(timeIntervalSince1970: 1_700_000_001),
+            executedItemCount: 3,
+            estimatedFreedBytes: 2_048,
+            summary: "helper offline",
+            recoveryItemIDs: [],
+            recoveryBytes: 0,
+            retentionDays: 7,
+            failureReason: "helper offline"
+        )
+        XCTAssertFalse(failure.hasRestorePoint, "failure path ⇒ no restore-point claim")
+        XCTAssertEqual(failure.failureReason, "helper offline")
+        // The planned count is still carried (labelled 「计划项目」 on the receipt),
+        // but the freed-bytes row is suppressed because execution did not succeed.
+        XCTAssertEqual(failure.executedItemCount, 3)
     }
 
     // MARK: - View construction smoke (new init shape)

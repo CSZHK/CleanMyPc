@@ -1030,6 +1030,7 @@
 "smartclean.filter.all" = "全部";
 "smartclean.undo.banner.message" = "清理计划已成功执行。";
 "smartclean.undo.banner.action" = "撤销";
+"smartclean.undo.failed.message" = "撤销未能还原任何项目，恢复记录仍在台账中。";
 
 /* Calm Ledger M3 Batch I — 智能清理骨架（阶段条 / 回执 / 重扫确认） */
 "smartclean.stage.scan" = "扫描";
@@ -1065,6 +1066,7 @@
 "smartclean.rescan.confirm" = "作废并重新扫描";
 "smartclean.receipt.title" = "清理回执";
 "smartclean.receipt.items.label" = "执行项目";
+"smartclean.receipt.items.planned.label" = "计划项目";
 "smartclean.receipt.items.value" = "%d 项";
 "smartclean.receipt.estimated.label" = "预计释放";
 "smartclean.receipt.completed.label" = "完成时间";

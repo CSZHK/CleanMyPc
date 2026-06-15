@@ -106,8 +106,14 @@ public struct SmartCleanFeatureView: View {
                 receiptContent
             } else {
                 HStack(alignment: .top, spacing: AtlasSpacing.xl) {
+                    // Look-back read-only enforcement (review fix C1, spec §2.3
+                    // 回看 = 只读快照): disable the whole stage-content subtree when
+                    // isReadOnly — every action (① 开始扫描/重新校验, ② checkboxes/
+                    // 重扫, ③ 查看回执) stays inert. The 「返回当前阶段」 banner lives
+                    // outside this subtree and the action bar is gated by the model.
                     stageContent
                         .frame(maxWidth: .infinity, alignment: .topLeading)
+                        .disabled(isReadOnly)
 
                     if showsSidePanel {
                         evidencePanel
@@ -116,7 +122,19 @@ public struct SmartCleanFeatureView: View {
                 }
             }
         }
-        .simultaneousGesture(outsideTapGesture)
+        // Drawer outside-tap (review fix I2, spec §2.4): a scrim replaces
+        // `.simultaneousGesture` which raced row/checkbox mutations (toggle +
+        // dismiss from one render snapshot; dismiss clobbered the toggle). The
+        // scrim sits above the list, below the drawer: row taps hit the row and
+        // never reach the scrim, so the mutations can't collide; empty-area taps
+        // hit the scrim and dismiss.
+        .overlay {
+            if isDrawerLayout, state.drawerPresented {
+                Color.clear.contentShape(Rectangle())
+                    .onTapGesture { dismissDrawer() }
+                    .accessibilityHidden(true)
+            }
+        }
         .overlay(alignment: .trailing) {
             if isDrawerLayout, state.drawerPresented {
                 SmartCleanEvidenceDrawer(bottomInset: actionBarInset, onDismiss: dismissDrawer) {
@@ -289,13 +307,16 @@ public struct SmartCleanFeatureView: View {
             receiptFreedBytes: executionReceipt?.estimatedFreedBytes ?? 0,
             hasPlanNumber: state.planNumber != nil
         ))
+        // UI-test contract (review fix I3) + keyboard (review fix #9): the scan
+        // stage primary carries `smartclean.runScan` + `.defaultAction`. The
+        // receipt stage's 「新的扫描」 is a different surface (copy-derived id).
+        let isScanPrimary = (model.intent == .rescan && effectiveStage == SmartCleanStage.scan)
         return AtlasActionBar(
-            primaryTitle: model.title,
-            primaryEnabled: model.isEnabled,
+            primaryTitle: model.title, primaryEnabled: model.isEnabled,
             onPrimary: { perform(model.intent) },
-            promise: model.promise,
-            metricText: model.metricText,
-            progress: model.progress
+            promise: model.promise, metricText: model.metricText, progress: model.progress,
+            primaryIdentifier: isScanPrimary ? "smartclean.runScan" : nil,
+            primaryKeyboardShortcut: isScanPrimary ? .defaultAction : nil
         )
     }
 
@@ -330,10 +351,6 @@ public struct SmartCleanFeatureView: View {
                 if !presented { onCancelRescan() }
             }
         )
-    }
-
-    private var outsideTapGesture: some Gesture {
-        TapGesture().onEnded { if state.drawerPresented { dismissDrawer() } }
     }
 
     private func dismissDrawer() {
