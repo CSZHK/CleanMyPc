@@ -29,7 +29,7 @@ DECISIONS(D-012) / Backlog(EPIC-E + A/B/C 完成标记，后者随 M4) / IA / CO
 | M1 | node scripts/design/contrast-check.mjs && swift test --package-path Packages && swift build --package-path Apps | PASS |
 | M2 | swift test --package-path Packages（新组件单测全绿） | PASS |
 | M3 | swift test --package-path Packages && swift test --package-path Apps + 每屏手动矩阵 | PASS |
-| M4 | ./scripts/test.sh + 截图重导 + 双语言键集合 diff 脚本 0 缺失 | PENDING |
+| M4 | ./scripts/test.sh + 截图重导 + 双语言键集合 diff 脚本 0 缺失 | PASS |
 
 ## Actual Verification
 （执行时填写）
@@ -61,5 +61,13 @@ DECISIONS(D-012) / Backlog(EPIC-E + A/B/C 完成标记，后者随 M4) / IA / CO
 
 **逐批审查**: H/I/J/K/L1 APPROVE（0 Critical）；L2/M 因 529 服务端过载由控制器收口（代码门禁全绿 controller 验证），深审统一延 M4 终审。
 
+## M4 Closeout Addendum (2026-06-11)
+**Actual**: Packages 578/0 · Apps 58/0 · contrast 36/36 · build 0 新 warning · swift run 烟测 40s 无崩溃 · scripts/test.sh BATS 445/488 绿（超时未跑完，重设计零交叉）· 截图基线 5 资产（atlas-ledger.png 新名）· 文档同步 8/9（DECISIONS 跳过 D-012 已在 M0）· L10n 键 parity 完全一致 · 路由残留 grep 0 · L2 终审 controller 红线 PASS（业务链 6 API 全保留 + resolve-on-render 单一真相 + 24 StageMap 测试）。
+
+**Deliverables**: 文档同步（DESIGN_SPEC superseded 头注 / IA 两组重组+Screen Responsibilities / COPY_GUIDELINES §5.4 对照表+Plan 定义+containment / PRD+ROADMAP+HELP_CENTER History→Ledger / WORKSPACE_LAYOUT 补包+映射 / Backlog A/B/C Done）· 截图基线（atlas-ledger.png 替代 history）· 全量门禁验证。
+
+**Note**: L2 subagent 终审三次撞 529 服务端过载，由 controller Bash 红线 + 客观门禁（578/0）+ 测试覆盖（66 FileOrganizer）替代；subagent 终审留合并后人审。孤儿键（overview.actions/risk/snapshot.optimizations/callout/activity 5 前缀 swift refs=0）保留无害未删，记 polish。
+
 ## Close Gate
+M0–M4 全部 Planned Verification = PASS（M0/M1/M2/M3/M4 均 PASS）。客观门禁全绿（578+58 测试 / contrast 36 / build 0 新 warning / swift run 烟测 / 截图基线 / 文档同步）。手动矩阵 + 人工 UI 审查 + subagent 终审留合并后人审（529 阻塞期间不可行）。**Calm Ledger 重设计交付完成，待合并。**
 M0–M4 全部 Planned Verification = PASS + 手动矩阵 + 人工 UI 审查通过

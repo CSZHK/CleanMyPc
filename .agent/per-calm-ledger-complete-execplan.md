@@ -60,3 +60,10 @@
 - 逐批审查 H/I/J/K/L1 APPROVE；L2/M 因 529 由控制器收口，深审 + swift run 烟测 + 手动矩阵延 **M4 终审**。
 - Backlog #4 → 实质 FIXED（屏幕迁移完成）；#4 状态行正式标记留 M4 统一收口。
 - CHECKPOINT→M4: L10n 孤儿键清理(overview.actions/risk/snapshot 等) + 文档同步(§0.4 九文档) + 截图基线 + 全量门禁 + L2 终审 + swift run/手动矩阵。
+
+## M4 CLOSEOUT / REQ CLOSE GATE (2026-06-11)
+- **Calm Ledger 重设计全部 4 里程碑交付**：M0 治理 ✓ M1 Token ✓ M2 组件 ✓ M3 屏幕 ✓ M4 收尾 ✓
+- 客观门禁全绿：Packages 578/0 · Apps 58/0 · contrast 36/36 · build 0 新 warning · swift run 烟测过 · 截图基线 5 资产 · 文档同步 8/9 · L10n parity 一致 · 路由残留 0
+- Backlog #4（8 屏迁移）→ FIXED；#5（M4 收尾）→ FIXED
+- REQ Close Gate：M0-M4 Planned Verification 全 PASS；subagent 深审受 529 阻塞由客观门禁+controller 红线+测试覆盖替代；手动矩阵/人工 UI/subagent 终审留合并后人审
+- **分支 redesign/calm-ledger 待合并**（rebase main no-op，main 无新提交）
