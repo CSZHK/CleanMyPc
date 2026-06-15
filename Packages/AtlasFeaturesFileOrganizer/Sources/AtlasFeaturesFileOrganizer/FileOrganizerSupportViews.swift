@@ -291,11 +291,17 @@ struct FileOrganizerConfigurationSection: View {
         } label: {
             HStack(spacing: AtlasSpacing.xxs) {
                 Image(systemName: isSelected ? "checkmark.square" : "square")
+                    .accessibilityHidden(true) // decorative — state is conveyed by the trait/value below
                 Text(label)
             }
             .font(AtlasTypography.body)
         }
         .buttonStyle(.plain)
+        // Expose selection state to VoiceOver (round-8) — the checkmark/square
+        // glyph is color/icon-only otherwise, so a preset's on/off is invisible
+        // to assistive tech.
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityValue(Text(AtlasL10n.string(isSelected ? "fileorganizer.entry.selected.a11y" : "fileorganizer.entry.unselected.a11y")))
     }
 
     private var destinationSelector: some View {

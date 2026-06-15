@@ -8,7 +8,7 @@
 "route.smartclean.subtitle" = "Build and review a cleanup plan before you run anything.";
 "route.apps.title" = "Apps";
 "route.apps.subtitle" = "Review app footprints, leftovers, and uninstall plans before you remove anything.";
-"route.history.title" = "History";
+"route.history.title" = "Ledger";
 "route.history.subtitle" = "Track runs, outcomes, and recovery entry points.";
 "route.ledger.title" = "Ledger";
 "route.ledger.subtitle" = "Every run, its outcome, and its recovery entry point.";
@@ -60,7 +60,7 @@
 
 "fixture.plan.reclaimCommonClutter.title" = "Reclaim Common Clutter";
 "fixture.plan.item.moveDerivedData.title" = "Move Xcode Derived Data to Trash";
-"fixture.plan.item.moveDerivedData.detail" = "Keep recovery available from History and Recovery.";
+"fixture.plan.item.moveDerivedData.detail" = "Keep recovery available from Ledger and Recovery.";
 "fixture.plan.item.reviewRuntimes.title" = "Review Simulator Runtimes";
 "fixture.plan.item.reviewRuntimes.detail" = "Confirm the plan details before execution.";
 "fixture.plan.item.inspectAgents.title" = "Inspect Launch Agents";
@@ -156,7 +156,7 @@
 "infrastructure.plan.review.other" = "Review %d selected findings";
 "infrastructure.plan.uninstall.title" = "Uninstall %@";
 "infrastructure.plan.uninstall.moveBundle.title" = "Move %@ bundle into recovery";
-"infrastructure.plan.uninstall.moveBundle.detail" = "Trash the bundle at %@ while keeping the uninstall visible in History.";
+"infrastructure.plan.uninstall.moveBundle.detail" = "Trash the bundle at %@ while keeping the uninstall visible in Ledger.";
 "infrastructure.plan.uninstall.archive.one" = "Archive 1 leftover item";
 "infrastructure.plan.uninstall.archive.other" = "Archive %d leftover items";
 "infrastructure.plan.uninstall.archive.detail" = "Support files, caches, and launch items remain reviewable through recovery history.";
@@ -189,7 +189,7 @@
 "toolbar.taskcenter" = "Task Center";
 "toolbar.taskcenter.help" = "Open recent task activity (⌘7)";
 "toolbar.taskcenter.accessibilityLabel" = "Open Task Center";
-"toolbar.taskcenter.accessibilityHint" = "Shows recent task activity and a shortcut into History.";
+"toolbar.taskcenter.accessibilityHint" = "Shows recent task activity and a shortcut into Ledger.";
 "toolbar.permissions" = "Permissions";
 "toolbar.permissions.help" = "Check permission status (⌥⌘P)";
 "toolbar.permissions.accessibilityLabel" = "Open Permissions and check status";
@@ -230,8 +230,8 @@
 "taskcenter.callout.active.detail" = "Open Ledger for the full audit trail and available recovery items.";
 "taskcenter.empty.title" = "No tasks yet";
 "taskcenter.empty.detail" = "Try another search, or run a new Smart Clean scan to populate the task timeline.";
-"taskcenter.openHistory" = "Open History";
-"taskcenter.openHistory.hint" = "Moves to the History screen with the full audit trail and recovery items.";
+"taskcenter.openHistory" = "Open Ledger";
+"taskcenter.openHistory.hint" = "Moves to the Ledger screen with the full audit trail and recovery items.";
 "taskcenter.openLedger" = "Open Ledger";
 "taskcenter.openLedger.hint" = "Moves to the Ledger screen with the full audit trail and recovery items.";
 "toolbar.receipt.help" = "Receipt code of this module's latest scan";
@@ -355,7 +355,7 @@
 "smartclean.action.refreshPreview" = "Update Plan";
 "smartclean.action.refreshPreview.hint" = "Regenerates the cleanup plan from current findings without running anything.";
 "smartclean.action.execute" = "Run Plan";
-"smartclean.action.execute.hint" = "Runs the reviewed cleanup plan and keeps recoverable work visible in History.";
+"smartclean.action.execute.hint" = "Runs the reviewed cleanup plan and keeps recoverable work visible in Ledger.";
 "smartclean.primary.scan.title" = "Start with a fresh scan";
 "smartclean.primary.scan.detail" = "Scan first when you do not yet have a current plan to review.";
 "smartclean.primary.refresh.title" = "Refresh the current plan";
@@ -381,7 +381,7 @@
 "smartclean.preview.metric.space.detail.one" = "Estimated across 1 planned step.";
 "smartclean.preview.metric.space.detail.other" = "Estimated across %d planned steps.";
 "smartclean.preview.callout.safe.title" = "This plan stays mostly in the Safe lane";
-"smartclean.preview.callout.safe.detail" = "Most selected steps should remain reviewable through History and Recovery. Physical restore is available only for items with a supported recovery path.";
+"smartclean.preview.callout.safe.detail" = "Most selected steps should remain reviewable through Ledger and Recovery. Physical restore is available only for items with a supported recovery path.";
 "smartclean.preview.empty.detail.postExecution" = "Run a scan or update the plan to turn current findings into concrete cleanup steps. If you just ran a plan, this section shows only the remaining items.";
 "smartclean.preview.callout.review.detail" = "Check the highlighted steps before you run the plan so you understand what stays recoverable and what needs extra judgment.";
 "smartclean.preview.empty.title" = "No cleanup plan yet";
@@ -403,7 +403,7 @@
 "smartclean.support.removeCache" = "Good candidate for a reversible cleanup step.";
 "smartclean.support.removeApp" = "Review the footprint before you uninstall so leftovers are expected.";
 "smartclean.support.archiveFile" = "Atlas will keep this in a reversible path when possible.";
-"smartclean.support.organizeFile" = "Atlas will move this file to an organized subdirectory; you can restore it from History.";
+"smartclean.support.organizeFile" = "Atlas will move this file to an organized subdirectory; you can restore it from Ledger.";
 "smartclean.support.helper" = "Runs through the helper boundary because the target lives in a protected path.";
 "smartclean.support.inspectPermission" = "Requires extra attention before Atlas can safely proceed.";
 "smartclean.support.reviewOnly" = "Atlas can show this step, but it will stay review-only until a supported execution path exists.";
@@ -447,7 +447,7 @@
 "apps.preview.metric.actions.title" = "Plan Steps";
 "apps.preview.metric.actions.detail" = "Every uninstall step is listed before Atlas removes anything.";
 "apps.preview.metric.recoverable.title" = "Recoverable Steps";
-"apps.preview.metric.recoverable.detail" = "These steps stay visible in History and Recovery when supported.";
+"apps.preview.metric.recoverable.detail" = "These steps stay visible in Ledger and Recovery when supported.";
 "apps.preview.metric.reviewOnly.title" = "Review-Only Groups";
 "apps.preview.metric.reviewOnly.detail" = "Evidence Atlas found but does not remove automatically in this uninstall flow.";
 "apps.preview.reviewOnly.title" = "Review-Only Evidence";
@@ -461,7 +461,7 @@
 "apps.preview.callout.safe.detail" = "Atlas preserves a recovery path for the selected app and related files where possible.";
 "apps.preview.callout.review.title" = "Some steps in this uninstall plan need a closer review";
 "apps.preview.callout.review.detail" = "Review each step so the uninstall and leftover cleanup match your expectations.";
-"apps.preview.row.recoverable" = "Recoverable through History when supported.";
+"apps.preview.row.recoverable" = "Recoverable through Ledger when supported.";
 "apps.preview.row.review" = "Review-only evidence. Atlas will not remove this in the uninstall flow today.";
 "apps.preview.action" = "Review Plan";
 "apps.preview.running" = "Building Plan…";
@@ -497,7 +497,7 @@
 "apps.restore.refresh.refreshed.title" = "Restored app evidence refreshed";
 "apps.restore.refresh.refreshed.detail" = "Atlas refreshed %@ after restore. The current inventory shows %2$d leftover item(s), and Atlas had recorded %3$d item(s) when the uninstall evidence was captured.";
 "apps.restore.refresh.stale.title" = "Restored app evidence needs another refresh";
-"apps.restore.refresh.stale.detail" = "Atlas restored %@, but the current app inventory could not confirm fresh leftover evidence. Atlas keeps the recorded uninstall evidence in History and treats the old count of %d item(s) as stale for now.";
+"apps.restore.refresh.stale.detail" = "Atlas restored %@, but the current app inventory could not confirm fresh leftover evidence. Atlas keeps the recorded uninstall evidence in Ledger and treats the old count of %d item(s) as stale for now.";
 "apps.restore.refresh.recorded.title" = "Recorded at uninstall";
 "apps.restore.refresh.recorded.detail" = "Review-only leftover items recorded when Atlas captured the uninstall evidence.";
 "apps.restore.refresh.current.title" = "Current inventory";
@@ -716,12 +716,12 @@
 "confirm.title" = "Confirm";
 "confirm.cancel" = "Cancel";
 "smartclean.confirm.execute.title" = "Run this cleanup plan?";
-"smartclean.confirm.execute.message" = "This will process the reviewed plan. Recoverable items stay visible in History, and on-disk restore is available only when Atlas has a supported recovery path.";
+"smartclean.confirm.execute.message" = "This will process the reviewed plan. Recoverable items stay visible in Ledger, and on-disk restore is available only when Atlas has a supported recovery path.";
 "apps.confirm.uninstall.title" = "Uninstall this app?";
-"apps.confirm.uninstall.message" = "This will remove %@. Review-only leftover evidence stays visible in the plan, and Atlas records the uninstall in History.";
+"apps.confirm.uninstall.message" = "This will remove %@. Review-only leftover evidence stays visible in the plan, and Atlas records the uninstall in Ledger.";
 "emptystate.action.scan" = "Run Smart Clean";
 "emptystate.action.refresh" = "Refresh Apps";
-"emptystate.action.viewHistory" = "View History";
+"emptystate.action.viewHistory" = "View Ledger";
 "emptystate.action.startScan" = "Start Scan";
 "about.screen.title" = "About";
 "about.screen.subtitle" = "The person and vision behind Atlas for Mac.";
@@ -843,7 +843,7 @@
 
 // MARK: - Smart Clean Risk Level Descriptions
 
-"smartclean.risk.safe.description" = "Safe to remove without review. These items are fully recoverable through History.";
+"smartclean.risk.safe.description" = "Safe to remove without review. These items are fully recoverable through Ledger.";
 "smartclean.risk.review.description" = "Worth reviewing before removal. Some items may need your judgment.";
 "smartclean.risk.advanced.description" = "Requires advanced inspection. These items may affect system behavior if removed.";
 
@@ -937,7 +937,7 @@
 "fileorganizer.preview.empty.detail" = "Scan and classify files first, then preview the move plan.";
 
 "fileorganizer.confirm.execute.title" = "Execute file organization?";
-"fileorganizer.confirm.execute.message" = "Files will be moved according to the classification plan. You can restore original locations from History.";
+"fileorganizer.confirm.execute.message" = "Files will be moved according to the classification plan. You can restore original locations from Ledger.";
 
 "fileorganizer.folderpicker.title" = "Select folders to organize";
 "fileorganizer.folderpicker.default.desktop" = "Desktop";
@@ -965,7 +965,7 @@
 "fileorganizer.callout.empty.detail" = "Try selecting different folders, or make sure the selected folders contain files.";
 "fileorganizer.status.executionComplete" = "File organization completed";
 "fileorganizer.callout.executionComplete.title" = "File organization completed";
-"fileorganizer.callout.executionComplete.detail" = "Successfully moved %d files. You can restore original locations from History.";
+"fileorganizer.callout.executionComplete.detail" = "Successfully moved %d files. You can restore original locations from Ledger.";
 
 "fileorganizer.undo.title" = "%d files moved";
 "fileorganizer.undo.detail" = "Tap undo to move files back to their original locations.";

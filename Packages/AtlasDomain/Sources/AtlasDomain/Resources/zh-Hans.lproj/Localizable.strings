@@ -8,7 +8,7 @@
 "route.smartclean.subtitle" = "先生成并复核清理计划，再决定是否执行。";
 "route.apps.title" = "应用";
 "route.apps.subtitle" = "先查看应用占用、残留和卸载计划，再决定是否移除。";
-"route.history.title" = "历史";
+"route.history.title" = "台账";
 "route.history.subtitle" = "跟踪任务、结果和恢复入口。";
 "route.ledger.title" = "台账";
 "route.ledger.subtitle" = "记录每次任务的结果与恢复入口。";
@@ -60,7 +60,7 @@
 
 "fixture.plan.reclaimCommonClutter.title" = "回收常见杂项";
 "fixture.plan.item.moveDerivedData.title" = "将 Xcode 派生数据移入废纸篓";
-"fixture.plan.item.moveDerivedData.detail" = "保留恢复路径，可在历史和恢复中找回。";
+"fixture.plan.item.moveDerivedData.detail" = "保留恢复路径，可在台账和恢复中找回。";
 "fixture.plan.item.reviewRuntimes.title" = "复核模拟器运行时";
 "fixture.plan.item.reviewRuntimes.detail" = "执行前先确认计划细节。";
 "fixture.plan.item.inspectAgents.title" = "检查启动代理";
@@ -156,10 +156,10 @@
 "infrastructure.plan.review.other" = "复核 %d 个已选发现项";
 "infrastructure.plan.uninstall.title" = "卸载 %@";
 "infrastructure.plan.uninstall.moveBundle.title" = "将 %@ 应用包移入恢复区";
-"infrastructure.plan.uninstall.moveBundle.detail" = "将位于 %@ 的应用包移入废纸篓，同时在历史中保留本次卸载记录。";
+"infrastructure.plan.uninstall.moveBundle.detail" = "将位于 %@ 的应用包移入废纸篓，同时在台账中保留本次卸载记录。";
 "infrastructure.plan.uninstall.archive.one" = "归档 1 个残留项目";
 "infrastructure.plan.uninstall.archive.other" = "归档 %d 个残留项目";
-"infrastructure.plan.uninstall.archive.detail" = "支持文件、缓存和启动项仍会通过恢复历史保留可追溯性。";
+"infrastructure.plan.uninstall.archive.detail" = "支持文件、缓存和启动项仍会通过恢复台账保留可追溯性。";
 "infrastructure.plan.uninstall.review.title" = "复核%@（%d项）";
 "infrastructure.plan.uninstall.review.detail" = "发现 %@、共 %d 项。Atlas 目前仅将这些内容保留为复核证据，不会在这次卸载中直接移除。";
 "infrastructure.plan.uninstall.review.supportFiles" = "支持文件";
@@ -171,7 +171,7 @@
 "infrastructure.action.inspectPrivileged" = "检查 %@ 的受权限影响清理项";
 "infrastructure.action.archiveRecovery" = "将 %@ 归档到恢复区";
 "infrastructure.action.moveToTrash" = "将 %@ 移入废纸篓";
-"app.search.prompt" = "搜索发现项、应用、历史";
+"app.search.prompt" = "搜索发现项、应用、台账";
 "app.search.hint" = "搜索当前页面中可见的内容。";
 "app.search.prompt.route" = "搜索 %@";
 "app.search.hint.route" = "搜索 %@ 中当前可见的内容。";
@@ -189,7 +189,7 @@
 "toolbar.taskcenter" = "任务中心";
 "toolbar.taskcenter.help" = "打开最近任务活动（⌘7）";
 "toolbar.taskcenter.accessibilityLabel" = "打开任务中心";
-"toolbar.taskcenter.accessibilityHint" = "显示最近任务活动，并可快速跳转到历史页面。";
+"toolbar.taskcenter.accessibilityHint" = "显示最近任务活动，并可快速跳转到台账页面。";
 "toolbar.permissions" = "权限";
 "toolbar.permissions.help" = "检查权限状态（⌥⌘P）";
 "toolbar.permissions.accessibilityLabel" = "打开权限并检查状态";
@@ -230,8 +230,8 @@
 "taskcenter.callout.active.detail" = "想看完整审计轨迹和可恢复项目时，可以打开台账页面。";
 "taskcenter.empty.title" = "还没有任务";
 "taskcenter.empty.detail" = "试试新的搜索词，或者运行一次智能清理扫描来填充任务时间线。";
-"taskcenter.openHistory" = "打开历史";
-"taskcenter.openHistory.hint" = "进入历史页面，查看完整审计轨迹和恢复项。";
+"taskcenter.openHistory" = "打开台账";
+"taskcenter.openHistory.hint" = "进入台账页面，查看完整审计轨迹和恢复项。";
 "taskcenter.openLedger" = "打开台账";
 "taskcenter.openLedger.hint" = "进入台账页面，查看完整审计轨迹和恢复项。";
 "toolbar.receipt.help" = "当前模块最近一次扫描的回执编号";
@@ -355,7 +355,7 @@
 "smartclean.action.refreshPreview" = "更新计划";
 "smartclean.action.refreshPreview.hint" = "基于当前发现项重新生成清理计划，不会立即执行任何操作。";
 "smartclean.action.execute" = "执行计划";
-"smartclean.action.execute.hint" = "执行已复核的清理计划，并在历史中保留可恢复项目。";
+"smartclean.action.execute.hint" = "执行已复核的清理计划，并在台账中保留可恢复项目。";
 "smartclean.primary.scan.title" = "先运行新的扫描";
 "smartclean.primary.scan.detail" = "当你还没有当前可复核的计划时，扫描应该是唯一主动作。";
 "smartclean.primary.refresh.title" = "先更新当前计划";
@@ -381,7 +381,7 @@
 "smartclean.preview.metric.space.detail.one" = "按当前 1 个计划步骤估算。";
 "smartclean.preview.metric.space.detail.other" = "按当前 %d 个计划步骤估算。";
 "smartclean.preview.callout.safe.title" = "当前计划主要来自“安全”分区";
-"smartclean.preview.callout.safe.detail" = "大多数已选步骤都会在历史和恢复中保留可追溯记录。只有具备受支持恢复路径的项目，才支持磁盘级恢复。";
+"smartclean.preview.callout.safe.detail" = "大多数已选步骤都会在台账和恢复中保留可追溯记录。只有具备受支持恢复路径的项目，才支持磁盘级恢复。";
 "smartclean.preview.empty.detail.postExecution" = "运行一次扫描或更新计划，把当前发现项变成具体的清理步骤。若刚执行完计划，这里只显示剩余项目。";
 "smartclean.preview.callout.review.detail" = "建议在执行前检查高亮步骤，确认哪些仍可恢复、哪些需要额外判断。";
 "smartclean.preview.empty.title" = "还没有清理计划";
@@ -403,7 +403,7 @@
 "smartclean.support.removeCache" = "适合作为可恢复的清理步骤。";
 "smartclean.support.removeApp" = "卸载前先复核占用和残留，更容易形成可预期结果。";
 "smartclean.support.archiveFile" = "在支持的情况下，Atlas 会将此类项目保留在可恢复路径中。";
-"smartclean.support.organizeFile" = "Atlas 会将此文件移动到分类子目录中；可在历史中恢复原始位置。";
+"smartclean.support.organizeFile" = "Atlas 会将此文件移动到分类子目录中；可在台账中恢复原始位置。";
 "smartclean.support.helper" = "这个目标位于受保护路径下，因此会通过辅助工具边界执行。";
 "smartclean.support.inspectPermission" = "在 Atlas 能安全继续之前，需要额外确认。";
 "smartclean.support.reviewOnly" = "Atlas 当前可以展示这一步，但在存在受支持执行路径之前，它仍会保持为仅供复核。";
@@ -447,7 +447,7 @@
 "apps.preview.metric.actions.title" = "计划步骤";
 "apps.preview.metric.actions.detail" = "Atlas 会在真正移除前先列出每一个卸载步骤。";
 "apps.preview.metric.recoverable.title" = "可恢复步骤";
-"apps.preview.metric.recoverable.detail" = "支持恢复的步骤会在历史和恢复中保留。";
+"apps.preview.metric.recoverable.detail" = "支持恢复的步骤会在台账和恢复中保留。";
 "apps.preview.metric.reviewOnly.title" = "仅供复核分组";
 "apps.preview.metric.reviewOnly.detail" = "Atlas 找到了这些证据，但当前不会在这条卸载流程里自动移除。";
 "apps.preview.reviewOnly.title" = "仅供复核的证据";
@@ -461,7 +461,7 @@
 "apps.preview.callout.safe.detail" = "在支持的情况下，Atlas 会为所选应用及相关文件保留恢复路径。";
 "apps.preview.callout.review.title" = "这份卸载计划中仍有步骤需要复核";
 "apps.preview.callout.review.detail" = "建议逐项查看计划，确保卸载结果和残留清理方式符合你的预期。";
-"apps.preview.row.recoverable" = "支持时可通过历史恢复。";
+"apps.preview.row.recoverable" = "支持时可通过台账恢复。";
 "apps.preview.row.review" = "仅供复核的证据项，Atlas 今天不会在这次卸载中直接移除。";
 "apps.preview.action" = "查看计划";
 "apps.preview.running" = "正在生成计划…";
@@ -497,7 +497,7 @@
 "apps.restore.refresh.refreshed.title" = "已刷新恢复后证据";
 "apps.restore.refresh.refreshed.detail" = "Atlas 在恢复 %@ 后已刷新应用清单。当前清单显示有 %2$d 个残留项目，而 Atlas 在记录卸载证据时保存的是 %3$d 个。";
 "apps.restore.refresh.stale.title" = "恢复后的证据仍需再次刷新";
-"apps.restore.refresh.stale.detail" = "Atlas 已恢复 %@，但当前应用清单还无法确认最新的残留证据。Atlas 会继续在历史中保留这次卸载记录，并暂时把之前记录的 %d 个残留项目视为陈旧证据。";
+"apps.restore.refresh.stale.detail" = "Atlas 已恢复 %@，但当前应用清单还无法确认最新的残留证据。Atlas 会继续在台账中保留这次卸载记录，并暂时把之前记录的 %d 个残留项目视为陈旧证据。";
 "apps.restore.refresh.recorded.title" = "卸载时记录";
 "apps.restore.refresh.recorded.detail" = "Atlas 在采集卸载证据时记录的仅供复核残留项目数量。";
 "apps.restore.refresh.current.title" = "当前清单";
@@ -734,12 +734,12 @@
 "confirm.title" = "确认";
 "confirm.cancel" = "取消";
 "smartclean.confirm.execute.title" = "执行这份清理计划？";
-"smartclean.confirm.execute.message" = "将按复核后的计划执行清理。可恢复项目会保留在历史中；只有具备受支持恢复路径的项目，才支持磁盘级恢复。";
+"smartclean.confirm.execute.message" = "将按复核后的计划执行清理。可恢复项目会保留在台账中；只有具备受支持恢复路径的项目，才支持磁盘级恢复。";
 "apps.confirm.uninstall.title" = "卸载这个应用？";
-"apps.confirm.uninstall.message" = "将移除 %@ 应用包。仅供复核的残留证据会继续显示在计划里，本次卸载也会记录到历史中。";
+"apps.confirm.uninstall.message" = "将移除 %@ 应用包。仅供复核的残留证据会继续显示在计划里，本次卸载也会记录到台账中。";
 "emptystate.action.scan" = "运行智能清理";
 "emptystate.action.refresh" = "刷新应用";
-"emptystate.action.viewHistory" = "查看历史";
+"emptystate.action.viewHistory" = "查看台账";
 "emptystate.action.startScan" = "开始扫描";
 "about.screen.title" = "关于";
 "about.screen.subtitle" = "Atlas for Mac 背后的开发者与愿景。";
@@ -861,7 +861,7 @@
 
 // MARK: - Smart Clean Risk Level Descriptions
 
-"smartclean.risk.safe.description" = "可以安全清理而无需复核。这些项目可通过历史记录完整恢复。";
+"smartclean.risk.safe.description" = "可以安全清理而无需复核。这些项目可通过台账记录完整恢复。";
 "smartclean.risk.review.description" = "建议删除前先复核。部分项目可能需要你的判断。";
 "smartclean.risk.advanced.description" = "需要高级检查。删除这些项目可能会影响系统行为。";
 
@@ -955,7 +955,7 @@
 "fileorganizer.preview.empty.detail" = "先扫描并分类文件，再预览移动计划。";
 
 "fileorganizer.confirm.execute.title" = "执行文件整理？";
-"fileorganizer.confirm.execute.message" = "将按分类计划移动文件。可在历史中恢复原始位置。";
+"fileorganizer.confirm.execute.message" = "将按分类计划移动文件。可在台账中恢复原始位置。";
 
 "fileorganizer.folderpicker.title" = "选择要整理的文件夹";
 "fileorganizer.folderpicker.default.desktop" = "桌面";
@@ -983,7 +983,7 @@
 "fileorganizer.callout.empty.detail" = "尝试选择其他文件夹，或确认所选文件夹中存在文件。";
 "fileorganizer.status.executionComplete" = "文件整理已完成";
 "fileorganizer.callout.executionComplete.title" = "文件整理已完成";
-"fileorganizer.callout.executionComplete.detail" = "已成功移动 %d 个文件。可在历史中恢复原始位置。";
+"fileorganizer.callout.executionComplete.detail" = "已成功移动 %d 个文件。可在台账中恢复原始位置。";
 
 "fileorganizer.undo.title" = "已移动 %d 个文件";
 "fileorganizer.undo.detail" = "点击撤销可将文件移回原始位置。";
