@@ -51,11 +51,12 @@ public struct OverviewLedgerFeed: View {
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(feed.entries.prefix(OverviewLedgerFeed.maxEntries).enumerated()), id: \.element.id) { idx, entry in
+                        // Dotted ledger separator between rows only — NOT under
+                        // the last entry (round-12: previously applied to every
+                        // row, leaving a dangling hairline above the "view full
+                        // ledger" button).
                         feedRow(entry)
-                            .atlasLedgerRule() // dotted ledger separator
-                        if idx != min(feed.entries.count, OverviewLedgerFeed.maxEntries) - 1 {
-                            // the rule sits at the bottom of each non-last row
-                        }
+                            .atlasLedgerRule(if: idx != min(feed.entries.count, OverviewLedgerFeed.maxEntries) - 1)
                     }
                 }
 

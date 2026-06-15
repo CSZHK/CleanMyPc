@@ -68,6 +68,17 @@ public extension View {
     func atlasLedgerRule() -> some View {
         modifier(AtlasLedgerRuleModifier())
     }
+
+    /// Conditionally apply the ledger rule — e.g. skip the last row of a feed
+    /// so no dangling hairline renders beneath the final entry (round-12).
+    @ViewBuilder
+    func atlasLedgerRule(if condition: Bool) -> some View {
+        if condition {
+            modifier(AtlasLedgerRuleModifier())
+        } else {
+            self
+        }
+    }
 }
 
 private struct AtlasLedgerRuleModifier: ViewModifier {
