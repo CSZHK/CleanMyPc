@@ -1,6 +1,6 @@
 # PER: Calm Ledger 重设计全量收口（M2 → M3 → M4）
 
-**Status:** IN_PROGRESS
+**Status:** COMPLETED
 **Created:** 2026-06-10
 **Scope:** Packages/AtlasDesignSystem · Packages/AtlasFeatures* · Apps/AtlasApp · AtlasDomain（路由/L10n）· Docs/*（同步清单）
 **Dimension:** 全量 · 深度: 标准（P0+P1）
