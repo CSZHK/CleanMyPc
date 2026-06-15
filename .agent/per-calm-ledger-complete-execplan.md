@@ -39,6 +39,13 @@
 - 2026-06-10 ~18:0x: Batch E 实施子代理（agentId a185efceb1cc29996）撞会话用量上限（19:00 Asia/Shanghai 重置），24 次工具调用后中断。
 - Batch E Part 1 进行中发现：Apps 测试漂移比 findings 记录的更广——不止两个 E2E 替身缺 `scanFolders(_:destinationBasePath:recursive:)`，`refreshFileOrganizerPreview()` 也已改签名为 `refreshFileOrganizerPreview(entryIDs:)`，多处调用点需机械同步（子代理已改约 4+ 处，未跑测试、未提交）。
 
+## CHECKPOINT-2026-06-11-1405（Batch L2 中断 + 服务端 529 过载）
+- glm-5.2 + sonnet 网关双双 529（服务端全面过载，重试无效）。L1(Apps) 审查两次撞 529 0 输出——L1 代码已提交（1e1fd0f，512/0），审查待 model 恢复重试。
+- **L2(FileOrganizer) 中断点**（agentId a33d899a720f97271，76 工具调用后 529）：feature 包重写完成（FileOrganizerFeatureView 协调器 940→~254 + 5 新文件 FileOrganizerActionBarModel/EvidenceBuilder/StageMap/StageViews/SupportViews + zh L10n +46 键）。**缺**：① en.lproj 同步（L2 只改了 zh）② AppShell resolve-on-render 接线（新增 `fileOrganizerWorkflowState` 镜像 smartCleanWorkflowState :377，经 FileOrganizerStageMap.resolve 推导五段）③ 测试（StageMap 五段/EvidenceBuilder/resolve 一致性）④ 收尾验证+commit。WIP 在工作树保留（2 modified + 5 untracked）——**不要 checkout/clean**。
+- **恢复**：服务端 529 恢复后，派 L2 resume（或新实施者读本 CHECKPOINT）——先 `swift build --package-path Packages` 看 en 缺键/AppShell 未接线编译缺口，补完 en+AppShell fileOrganizerWorkflowState+测试+验证+commit；再重派 L1 审查。
+- 后续序：L2 收口 → L2 审查 → Batch M（权限/设置/关于）→ M3 治理收口 → M4 Batch N → Phase 4 全量回归 → Phase 5 收口。
+- **门禁基线**（L1 收口，L2 WIP 编译不过）：Packages 512/0 · Apps 58/0 · contrast 36/36 · 0 新增 warning。
+
 ## CHECKPOINT（恢复指令，更新于 Batch K 收口后）
 - **工作树状态**: Batch L1 已落地（待提交：AppsFeatureView 重写 925→341 + AppsListView/Builder/ActionBar/RestoreRefreshSection/UIMapping 新件 + AtlasEvidenceGroupCard.swift 删除 + L10n 13×2 + PER 4 项修正）。
 - **Batch L1 接口备忘**（Batch L2/M 消费）: AppsFeatureView 公共 init 签名**零变化**（11 输入 + 4 回调保留，AppShellView:306 构造点不动）；卸载流程行为不变——主操作经 `handlePrimaryAction`：无 plan→`onPreviewAppUninstall`（建预览）/ plan 就绪→`.confirmationDialog`→`onExecuteAppUninstall`（执行）；apps 卸载**不走 SmartClean 的 Toast/№ 台账入账**（`executeAppUninstall` 直接落 workspaceController，无 `postSmartCleanExecutionToast`）——这是现状（pre-existing），Batch L1 不引入也不修复，Apps 台账入账接线留 M4（规格 §1.6 Apps 段未列 № 序列）；单选模型沿用 `currentPreviewedAppID`/`selectedAppID`，**不引入复选/批量**（规格 §2.3 Apps 段明确单选——回归红线）；证据面板 `AtlasEvidencePanel(state:)` 单选三段式（why/evidence KV/recovery ⛨ fail-closed）——10 类证据足迹映射：`AppFootprint.evidenceSummary: [AtlasAppEvidenceCategory: Int]?`（appBundle/supportFiles/caches/preferences/logs/launchItems/savedState/containers/groupContainers/miscLeftovers 共 10 类）逐类非零→KV 行（`AtlasAppEvidenceCategory.allCases` 稳定序），bundlePath/bytes 领先；残留估计 = `ActionPlan.estimatedBytes`（可恢复）+ `estimatedReviewOnlyBytes`（仅复核）；`AtlasLegacyEvidenceGroupCard` 弃用件文件 + typealias 已删除（grep 零引用确认）。
