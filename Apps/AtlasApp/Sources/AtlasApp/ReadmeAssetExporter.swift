@@ -245,7 +245,7 @@ private struct AtlasReadmeAssetExporter {
         )
         try renderView(
             AtlasScreenshotShell(activeRoute: .ledger) {
-                HistoryFeatureView(
+                LedgerFeatureView(
                     taskRuns: state.snapshot.taskRuns,
                     recoveryItems: state.snapshot.recoveryItems,
                     restoringItemID: nil

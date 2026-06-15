@@ -309,10 +309,12 @@ struct AppShellView: View {
                 }
             )
         case .ledger:
-            HistoryFeatureView(
+            LedgerFeatureView(
                 taskRuns: model.filteredTaskRuns,
                 recoveryItems: model.filteredRecoveryItems,
                 restoringItemID: model.restoringRecoveryItemID,
+                retentionDays: model.settings.recoveryRetentionDays,
+                planNumber: { run in model.workflowPlanNumber(for: run) },
                 onRestoreItem: { itemID in
                     Task { await model.restoreRecoveryItem(itemID) }
                 }
