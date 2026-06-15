@@ -158,7 +158,7 @@ public struct LedgerFeatureView: View {
             }
         }
         .padding(AtlasSpacing.lg)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: 480, alignment: .topLeading)
         .background(cardBackground)
     }
 
@@ -169,7 +169,7 @@ public struct LedgerFeatureView: View {
             LedgerDetailView(selection: selection, restoringItemID: restoringItemID, retentionDays: retentionDays, onRestoreItem: onRestoreItem)
         }
         .padding(AtlasSpacing.lg)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: 480, alignment: .topLeading)
         .background(cardBackground)
     }
 
@@ -265,11 +265,15 @@ public struct LedgerFeatureView: View {
     private func syncSelection() {
         withAnimation(.easeInOut(duration: 0.2)) {
             // Auto-select first only when nothing is selected OR the current
-            // selection fell out of the visible (filtered) list — never clobber
-            // an active user selection just because the filter/list changed
-            // (review fix: 布局/过滤切换后用户选择被重置 → 交互异常).
+            // selection fell out of EVERY rendered list (primary + archived) —
+            // never clobber an active user selection just because the
+            // filter/list changed. Archived-run selections share the same
+            // selectedEntryID and must survive list/filter refreshes too
+            // (review round-1: a primary-only validity check reset an archived
+            // run the user just opened → 交互异常).
+            let allEntryIDs = Set(primaryEntries.map(\.id)).union(archivedEntries.map(\.id))
             let currentValid = selectedEntryID.flatMap { id in
-                primaryEntries.contains(where: { $0.id == id }) ? id : nil
+                allEntryIDs.contains(id) ? id : nil
             }
             if currentValid == nil, let first = primaryEntries.first {
                 selectedEntryID = first.id

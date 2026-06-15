@@ -125,9 +125,22 @@ public struct LedgerDetailView: View {
 
     private func recoveryHeaderMeta(_ item: RecoveryItem) -> some View {
         VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
-            AtlasStatusChip(item.isExpiringSoon ? AtlasL10n.string("ledger.recovery.badge.expiring") : AtlasL10n.string("ledger.recovery.badge.available"), tone: item.isExpiringSoon ? .warning : .success)
+            AtlasStatusChip(recoveryBadgeText(item), tone: recoveryBadgeTone(item))
             Text(AtlasFormatters.byteCount(item.bytes)).font(AtlasTypography.dataMetric).monospacedDigit().foregroundStyle(.secondary)
         }
+    }
+
+    /// Three-way recovery state label/tone: expired (terminal) beats
+    /// expiring-soon beats available. Keeps the badge from promising
+    /// recoverability for an item whose restore button is already disabled.
+    private func recoveryBadgeText(_ item: RecoveryItem) -> String {
+        if item.isExpired { return AtlasL10n.string("ledger.recovery.badge.expired") }
+        return AtlasL10n.string(item.isExpiringSoon ? "ledger.recovery.badge.expiring" : "ledger.recovery.badge.available")
+    }
+
+    private func recoveryBadgeTone(_ item: RecoveryItem) -> AtlasTone {
+        if item.isExpired { return .neutral }
+        return item.isExpiringSoon ? .warning : .success
     }
 
     /// Mono content manifest (spec §3 「包含清单」) — voice ② data throughout.
@@ -191,6 +204,7 @@ public enum LedgerSelection: Equatable {
 
 private struct RecoveryCalloutCopy {
     func title(_ item: RecoveryItem) -> String {
+        if item.isExpired { return AtlasL10n.string("ledger.detail.recovery.callout.expired.title") }
         switch (item.hasPhysicalRestorePath, item.isExpiringSoon) {
         case (true, true): return AtlasL10n.string("ledger.detail.recovery.callout.expiring.fileBacked.title")
         case (true, false): return AtlasL10n.string("ledger.detail.recovery.callout.available.fileBacked.title")
@@ -199,6 +213,7 @@ private struct RecoveryCalloutCopy {
         }
     }
     func detail(_ item: RecoveryItem) -> String {
+        if item.isExpired { return AtlasL10n.string("ledger.detail.recovery.callout.expired.detail") }
         switch (item.hasPhysicalRestorePath, item.isExpiringSoon) {
         case (true, true): return AtlasL10n.string("ledger.detail.recovery.callout.expiring.fileBacked.detail")
         case (true, false): return AtlasL10n.string("ledger.detail.recovery.callout.available.fileBacked.detail")
@@ -207,10 +222,12 @@ private struct RecoveryCalloutCopy {
         }
     }
     func tone(_ item: RecoveryItem) -> AtlasTone {
+        if item.isExpired { return .neutral }
         if item.isExpiringSoon { return .warning }
         return item.hasPhysicalRestorePath ? .success : .neutral
     }
     func symbol(_ item: RecoveryItem) -> String {
+        if item.isExpired { return "archivebox" }
         if item.isExpiringSoon { return "exclamationmark.triangle.fill" }
         return item.hasPhysicalRestorePath ? "checkmark.circle.fill" : "rectangle.stack.badge.person.crop"
     }

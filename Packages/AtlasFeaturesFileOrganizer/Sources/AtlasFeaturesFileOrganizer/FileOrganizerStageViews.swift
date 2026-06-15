@@ -323,6 +323,8 @@ struct FileOrganizerEntryRow: View {
             }
         }
         .accessibilityElement(children: .combine)
+        .accessibilityValue(Text(AtlasL10n.string(isSelected ? "fileorganizer.entry.selected.a11y" : "fileorganizer.entry.unselected.a11y")))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("fileorganizer.entry.row.\(entry.id.uuidString)")
     }
 }

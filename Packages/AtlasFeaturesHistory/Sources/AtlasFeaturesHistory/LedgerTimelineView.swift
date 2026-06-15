@@ -78,11 +78,13 @@ public enum LedgerEntryMapping {
     /// 1. If the shell's counter has a № for this run (`planNumber(for:)`),
     ///    use it directly.
     /// 2. Otherwise assign a chronological fallback: sort runs by activity
-    ///    date descending, the newest gets `seedBase`, counting down by index.
-    ///    `seedBase = max(runs.count, max(stored №)) + 1` so every fallback №
-    ///    is **strictly greater** than any stored № (no collision) while a
-    ///    later fresh counter allocation (which starts above runs.count) still
-    ///    clears the fallback band. The `+ 1` is load-bearing — see the body.
+    ///    date descending, the newest gets the highest fallback, counting down
+    ///    by index. The whole fallback band is placed STRICTLY ABOVE the stored
+    ///    max (`storedMax + fallbackCount - index`, floor = `storedMax + 1`),
+    ///    so no fallback № can ever equal a stored counter № — no collision,
+    ///    for any number of legacy runs. Fallback №s are display-only and are
+    ///    recomputed each render, so they shift above a growing storedMax
+    ///    without persisting a stale value.
     ///
     /// Returns a `[UUID: Int]` keyed by run id. Recovery items are not plan-
     /// numbered and are excluded.
@@ -103,15 +105,17 @@ public enum LedgerEntryMapping {
 
         guard !fallbackRuns.isEmpty else { return result }
 
-        // Seed the highest fallback so it sits strictly above any stored
-        // counter № AND above any future counter allocation (counter starts
-        // at runs.count + 1, PER da8c42f). The `+ 1` is load-bearing: without
-        // it, when `max(count, storedMax) == storedMax` the index-0 fallback
-        // run would land on `seedBase - 0 == storedMax`, colliding with the
-        // stored entry at that №. Adding 1 makes every fallback № strictly
-        // greater than the stored max (and fresh allocations stay above the
-        // run count, so they never collide with fallback either).
-        let seedBase = max(taskRuns.count, result.values.max() ?? 0) + 1
+        // Place every fallback № STRICTLY ABOVE the stored max. The band is
+        // [storedMax + 1, storedMax + fallbackCount], assigned counting down by
+        // recency so the newest unnumbered run keeps the highest №. Because the
+        // floor is `storedMax + 1`, no fallback can ever equal a stored counter
+        // № — this fixes the collision that occurred when ≥2 legacy runs
+        // counted down into the stored band under the old
+        // `max(count, storedMax) + 1` seed. Fallback №s are display-only and
+        // recomputed each render, so they rise above a growing storedMax
+        // without persisting a stale value.
+        let storedMax = result.values.max() ?? 0
+        let fallbackCount = fallbackRuns.count
         let sortedDesc = fallbackRuns.sorted { lhs, rhs in
             if lhs.activityDate == rhs.activityDate {
                 return lhs.startedAt > rhs.startedAt
@@ -119,8 +123,9 @@ public enum LedgerEntryMapping {
             return lhs.activityDate > rhs.activityDate
         }
         for (index, run) in sortedDesc.enumerated() {
-            // Newest unnumbered run = highest fallback, counting down.
-            result[run.id] = seedBase - index
+            // Newest unnumbered run = highest fallback (storedMax + count),
+            // counting down to storedMax + 1 — never into the stored band.
+            result[run.id] = storedMax + fallbackCount - index
         }
         return result
     }

@@ -26,7 +26,7 @@ public struct AtlasSegmentedControl<Option: Hashable>: View {
                 } label: {
                     Text(label(option))
                         .font(AtlasTypography.caption)
-                        .foregroundStyle(isSelected ? .white : AtlasColor.textSecondary)
+                        .foregroundStyle(isSelected ? AtlasColor.onBrand : AtlasColor.textSecondary)
                         .padding(.horizontal, AtlasSpacing.lg)
                         .padding(.vertical, AtlasSpacing.xs)
                         .frame(maxWidth: .infinity)

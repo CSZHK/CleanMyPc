@@ -209,7 +209,7 @@ public struct AtlasStageBar: View {
     private func foreground(for state: StageState) -> Color {
         switch state {
         case .completed: return AtlasColor.success
-        case .current:   return .white
+        case .current:   return AtlasColor.onBrand
         case .future:    return AtlasColor.textTertiary
         }
     }

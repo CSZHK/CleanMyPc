@@ -1103,6 +1103,21 @@ final class AtlasAppModel: ObservableObject {
                 fileOrganizerPlanIssue = nil
                 fileOrganizerExecutionIssue = nil
             }
+            // Calm Ledger §2.3: every executable plan is ledger-addressable.
+            // Assign № + receipt on the plan's first fresh appearance — WITHOUT
+            // the SmartClean-specific side effects (the shared assignPlanNumber
+            // also clears selectedIDs/riskFilter and forces stage; FileOrganizer
+            // owns its own entry selection and stage is resolve-on-render
+            // anyway). (review round-1: FileOrganizer plans were never numbered,
+            // so the receipt chip / №N markers / task-center row stayed empty.)
+            if workflowState(for: .fileOrganizer).planNumber == nil, !output.actionPlan.items.isEmpty {
+                let number = nextLedgerNumber()
+                let receipt = AtlasLedgerReceipt.code(findings: snapshot.findings, scanDate: Date())
+                updateWorkflowState(for: .fileOrganizer) { state in
+                    state.planNumber = number
+                    state.receiptCode = receipt
+                }
+            }
         } catch {
             fileOrganizerScanSummary = error.localizedDescription
             fileOrganizerPlanIssue = error.localizedDescription

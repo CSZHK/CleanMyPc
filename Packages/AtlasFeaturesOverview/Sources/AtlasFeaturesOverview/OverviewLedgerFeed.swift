@@ -182,11 +182,14 @@ public struct OverviewLedgerFeed: View {
         }
         guard !fallbackRuns.isEmpty else { return result }
 
-        // +1 is load-bearing (Batch J review fix): without it, when
-        // max(count, storedMax) == storedMax the index-0 fallback would
-        // collide with the stored entry at that №. Adding 1 keeps every
-        // fallback strictly above any stored №.
-        let seedBase = max(taskRuns.count, result.values.max() ?? 0) + 1
+        // Place every fallback № STRICTLY ABOVE the stored max (mirror of
+        // LedgerEntryMapping): band = [storedMax + 1, storedMax + count],
+        // newest unnumbered run highest, counting down but never into the
+        // stored band. Fixes the multi-fallback collision the old
+        // `max(count, storedMax) + 1` seed had when ≥2 legacy runs counted
+        // down onto a stored №. Display-only; recomputed each render.
+        let storedMax = result.values.max() ?? 0
+        let fallbackCount = fallbackRuns.count
         let sortedDesc = fallbackRuns.sorted { lhs, rhs in
             let lhsDate = lhs.finishedAt ?? lhs.startedAt
             let rhsDate = rhs.finishedAt ?? rhs.startedAt
@@ -196,7 +199,7 @@ public struct OverviewLedgerFeed: View {
             return lhsDate > rhsDate
         }
         for (index, run) in sortedDesc.enumerated() {
-            result[run.id] = seedBase - index
+            result[run.id] = storedMax + fallbackCount - index
         }
         return result
     }

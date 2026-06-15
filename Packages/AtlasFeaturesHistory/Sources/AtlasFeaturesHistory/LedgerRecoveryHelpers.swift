@@ -19,9 +19,15 @@ extension RecoveryItem {
     var isExpired: Bool { expiresAt.map { $0 <= Date() } ?? false }
 
     /// True when the window closes within the next ~3 days (warning band).
-    /// Items without an expiry never enter the warning band.
+    /// Items without an expiry never enter the warning band, and **already-
+    /// expired items do not either** — they are in a distinct terminal state
+    /// (`isExpired`). Without the expired guard the warning band swallowed
+    /// expired items, so the detail panel labelled a dead, un-restorable
+    /// record as "still available for a few days" while the restore button was
+    /// correctly disabled (review round-1).
     var isExpiringSoon: Bool {
         guard let expiresAt else { return false }
+        guard expiresAt > Date() else { return false }
         let cutoff = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
         return expiresAt <= cutoff
     }

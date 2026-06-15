@@ -548,6 +548,7 @@
 "ledger.metric.recovery.detail.available" = "共 %@，仍可恢复。";
 "ledger.recovery.badge.available" = "可恢复";
 "ledger.recovery.badge.expiring" = "即将到期";
+"ledger.recovery.badge.expired" = "已过期";
 "ledger.recovery.meta.noexpiry" = "保留窗口仍然开放";
 "ledger.detail.task.status" = "状态";
 "ledger.detail.task.started" = "开始时间";
@@ -576,6 +577,8 @@
 "ledger.detail.recovery.callout.expiring.fileBacked.detail" = "这个恢复项仍带有磁盘恢复路径，但它的保留窗口已经接近到期。";
 "ledger.detail.recovery.callout.expiring.stateOnly.title" = "如果你还需要这条 Atlas 记录，请尽快恢复";
 "ledger.detail.recovery.callout.expiring.stateOnly.detail" = "这条仅限 Atlas 的恢复记录已经接近保留窗口结束时间，恢复操作不会把文件移回磁盘。";
+"ledger.detail.recovery.callout.expired.title" = "恢复窗口已关闭";
+"ledger.detail.recovery.callout.expired.detail" = "这条记录已超过保留期，无法再恢复到磁盘或工作区状态。";
 "ledger.restore.action" = "恢复";
 "ledger.restore.action.stateOnly" = "在 Atlas 中恢复";
 "ledger.restore.running" = "正在恢复…";
@@ -1080,6 +1083,8 @@
 "fileorganizer.receipt.missing.title" = "暂无回执";
 "fileorganizer.receipt.missing.detail" = "尚未执行整理计划。执行后此处将显示本次计划的回执。";
 "fileorganizer.evidence.open" = "查看证据";
+"fileorganizer.entry.selected.a11y" = "已选择";
+"fileorganizer.entry.unselected.a11y" = "未选择";
 "fileorganizer.evidence.empty.title" = "选择文件查看分类依据";
 "fileorganizer.evidence.empty.detail" = "选中列表中的文件，此处将显示其分类规则命中链与移动目标。";
 "fileorganizer.evidence.source" = "原始路径";

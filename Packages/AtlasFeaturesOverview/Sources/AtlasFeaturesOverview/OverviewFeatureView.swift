@@ -37,6 +37,12 @@ public struct OverviewFeatureView: View {
 
     @Environment(\.atlasContentWidth) private var contentWidth
 
+    /// Bumped after a banner snooze write so the view re-renders and
+    /// `recommendation` (which reads the non-observable snooze store) is
+    /// re-evaluated immediately — otherwise the dismissed banner stays visible
+    /// until some unrelated state change forces a redraw.
+    @State private var snoozeRevision = 0
+
     public init(
         snapshot: AtlasWorkspaceSnapshot = AtlasScaffoldWorkspace.snapshot(),
         isRefreshingHealthSnapshot: Bool = false,
@@ -229,11 +235,14 @@ public struct OverviewFeatureView: View {
                     ? { handleSecondary(banner) }
                     : nil,
                 onDismiss: banner.isSnoozeable
-                    ? { snoozeStore.snooze(
-                        id: banner.id,
-                        durationDays: OverviewRecommendation.snoozeDurationDays,
-                        now: Date()
-                    ) }
+                    ? {
+                        snoozeStore.snooze(
+                            id: banner.id,
+                            durationDays: OverviewRecommendation.snoozeDurationDays,
+                            now: Date()
+                        )
+                        snoozeRevision &+= 1
+                    }
                     : nil
             )
         } else {
@@ -298,7 +307,8 @@ public struct OverviewFeatureView: View {
     }
 
     private var inputs: OverviewRecommendation.Inputs {
-        OverviewRecommendation.Inputs(
+        _ = snoozeRevision // re-evaluate when a banner snooze is written here
+        return OverviewRecommendation.Inputs(
             requiredPermissionsGranted: requiredPermissionsGranted,
             requiredPermissionsTotal: requiredPermissionsTotal,
             isCurrentSmartCleanPlanFresh: isCurrentSmartCleanPlanFresh,

@@ -43,7 +43,7 @@ public struct AtlasFilterChip: View {
                         )
                 }
             }
-            .foregroundStyle(isSelected ? .white : .secondary)
+            .foregroundStyle(isSelected ? AtlasColor.onBrand : .secondary)
             .padding(.horizontal, AtlasSpacing.md)
             .padding(.vertical, AtlasSpacing.xs)
             .background(

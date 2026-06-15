@@ -115,7 +115,13 @@ private struct AtlasToastRow: View {
     private static let fixedHeight: CGFloat = 52
 
     var body: some View {
-        HStack(spacing: AtlasSpacing.md) {
+        // When an inline undo action is present, expose children (.contain) so
+        // VoiceOver can reach the undo and close buttons individually instead
+        // of them being collapsed into one element whose only action is the
+        // whole-toast tap (review round-1). The close button is also surfaced
+        // via .escape and given a 44pt hit target below.
+        let hasInlineAction = AtlasToastItem.showsAction(title: item.actionTitle, action: item.onAction)
+        return HStack(spacing: AtlasSpacing.md) {
             // Tone icon
             Image(systemName: item.systemImage ?? item.tone.symbol)
                 .font(.system(size: 16, weight: .semibold))
@@ -145,14 +151,15 @@ private struct AtlasToastRow: View {
                 .accessibilityLabel(actionTitle)
             }
 
-            // Manual close button
+            // Manual close button — 44pt hit target (the visible glyph stays
+            // 10pt; the frame is the tappable / VoiceOver-activatable area).
             Button {
                 onDismiss()
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(AtlasColor.textTertiary)
-                    .frame(width: 20, height: 20)
+                    .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -191,10 +198,11 @@ private struct AtlasToastRow: View {
         .onAppear {
             scheduleAutoDismiss()
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: hasInlineAction ? .contain : .combine)
         .accessibilityLabel("\(item.tone.accessibilityLabel): \(item.message)")
         .accessibilityHint(item.onTap != nil ? AtlasL10n.string("ds.toast.open") : "")
-        .accessibilityAddTraits(item.onTap != nil ? .isButton : [])
+        .accessibilityAddTraits((item.onTap != nil || hasInlineAction) ? .isButton : [])
+        .accessibilityAction(.escape) { onDismiss() }
     }
 
     private func scheduleAutoDismiss() {

@@ -548,6 +548,7 @@
 "ledger.metric.recovery.detail.available" = "%@ total size available to restore.";
 "ledger.recovery.badge.available" = "Recoverable";
 "ledger.recovery.badge.expiring" = "Expiring soon";
+"ledger.recovery.badge.expired" = "Expired";
 "ledger.recovery.meta.noexpiry" = "Retention window active";
 "ledger.detail.task.status" = "Status";
 "ledger.detail.task.started" = "Started";
@@ -576,6 +577,8 @@
 "ledger.detail.recovery.callout.expiring.fileBacked.detail" = "This recovery item still has an on-disk restore path, but its retention window is close to expiring.";
 "ledger.detail.recovery.callout.expiring.stateOnly.title" = "Restore soon if you still need this Atlas record";
 "ledger.detail.recovery.callout.expiring.stateOnly.detail" = "This Atlas-only recovery record is close to the end of its retention window and will not move a file back on disk.";
+"ledger.detail.recovery.callout.expired.title" = "Recovery window closed";
+"ledger.detail.recovery.callout.expired.detail" = "This record has passed its retention window and can no longer be restored.";
 "ledger.restore.action" = "Restore";
 "ledger.restore.action.stateOnly" = "Restore in Atlas";
 "ledger.restore.running" = "Restoring…";
@@ -1062,6 +1065,8 @@
 "fileorganizer.receipt.missing.title" = "No receipt yet";
 "fileorganizer.receipt.missing.detail" = "No organization plan has been executed yet. Once executed, the receipt for this plan appears here.";
 "fileorganizer.evidence.open" = "View evidence";
+"fileorganizer.entry.selected.a11y" = "Selected";
+"fileorganizer.entry.unselected.a11y" = "Not selected";
 "fileorganizer.evidence.empty.title" = "Select a file to see why it was classified";
 "fileorganizer.evidence.empty.detail" = "Select a file in the list to see its classification rule-hit chain and move target.";
 "fileorganizer.evidence.source" = "Source path";

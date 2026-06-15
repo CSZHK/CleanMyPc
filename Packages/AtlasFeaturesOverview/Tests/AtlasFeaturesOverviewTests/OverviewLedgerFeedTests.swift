@@ -56,7 +56,7 @@ final class OverviewLedgerFeedTests: XCTestCase {
 
     func testFallbackNewestGetsHighestCountingDown() {
         // Three legacy runs (no stored №). Newest gets the highest fallback,
-        // counting down by activity date.
+        // counting down by activity date. storedMax = 0, count = 3 ⇒ band [1, 3].
         let r1 = run(kind: .scan, status: .completed, daysAgo: 1) // newest
         let r2 = run(kind: .scan, status: .completed, daysAgo: 5)
         let r3 = run(kind: .scan, status: .completed, daysAgo: 10) // oldest
@@ -64,22 +64,19 @@ final class OverviewLedgerFeedTests: XCTestCase {
             for: [r1, r2, r3],
             planNumber: { _ in nil }
         )
-        // seedBase = max(3, 0) + 1 = 4. Newest (r1) gets 4, then 3, 2.
-        XCTAssertEqual(nums[r1.id], 4)
-        XCTAssertEqual(nums[r2.id], 3)
-        XCTAssertEqual(nums[r3.id], 2)
+        // Newest (r1) gets 3, then 2, 1 (newest highest, all distinct).
+        XCTAssertEqual(nums[r1.id], 3)
+        XCTAssertEqual(nums[r2.id], 2)
+        XCTAssertEqual(nums[r3.id], 1)
     }
 
+    /// Multi-fallback regression (review round-1 fix): with a stored № and ≥2
+    /// legacy runs, the OLD `max(count, storedMax) + 1` seed counted fallbacks
+    /// DOWN into the stored band (here r3 would have been 5, colliding with the
+    /// stored 5). The strictly-above-storedMax band makes all fallbacks disjoint
+    /// from the stored set for any count — no longer an "accepted" edge.
     func testFallbackDoesNotCollideWithStoredWhenStoredIsMax() {
-        // Batch J review fix: when max(count, storedMax) == storedMax, the
-        // fallback seedBase must be storedMax + 1 (the +1 is load-bearing).
-        // Here count = 3, storedMax = 5 ⇒ seedBase = max(3, 5) + 1 = 6.
-        // Two legacy runs (r2, r3) get fallbacks 6 and 5. r3's fallback 5 would
-        // collide with r1's stored 5 — confirming the documented Batch J edge:
-        // when stored numbers are sparse relative to the legacy count, the
-        // lowest fallback can land on a stored number. This is accepted because
-        // the overview feed only renders the most-recent 5 entries (the live
-        // counter starts above the run count, so new allocations never collide).
+        // count = 3, storedMax = 5 ⇒ fallback band = [6, 7] (storedMax + count).
         let r1 = run(kind: .scan, status: .completed, daysAgo: 1, id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!)
         let r2 = run(kind: .scan, status: .completed, daysAgo: 2)
         let r3 = run(kind: .scan, status: .completed, daysAgo: 3)
@@ -89,8 +86,12 @@ final class OverviewLedgerFeedTests: XCTestCase {
             planNumber: { stored[$0.id] }
         )
         XCTAssertEqual(nums[r1.id], 5, "stored wins")
-        XCTAssertEqual(nums[r2.id], 6, "newest legacy run = seedBase = 6")
-        XCTAssertEqual(nums[r3.id], 5, "second legacy run = seedBase - 1 = 5 (collides with stored — documented Batch J edge, accepted for overview scope)")
+        XCTAssertEqual(nums[r2.id], 7, "newer legacy run = storedMax + count = 7")
+        XCTAssertEqual(nums[r3.id], 6, "older legacy run = storedMax + count - 1 = 6")
+        // Hard invariant: stored and fallback sets are disjoint; all distinct.
+        let allValues = Array(nums.values)
+        XCTAssertEqual(Set(allValues).count, allValues.count, "no two runs share a №")
+        XCTAssertTrue((nums[r2.id]! > 5) && (nums[r3.id]! > 5), "every fallback strictly above stored max (5) — no collision")
     }
 
     // MARK: Status / metric text wiring

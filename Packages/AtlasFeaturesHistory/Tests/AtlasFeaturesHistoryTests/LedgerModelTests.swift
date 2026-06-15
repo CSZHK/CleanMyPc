@@ -107,13 +107,9 @@ final class LedgerModelTests: XCTestCase {
 
     func testChronologicalFallbackNeverCollidesWithCounter() {
         // Three legacy runs (no stored №). Newest gets the highest fallback,
-        // counting down. seedBase = max(count, storedMax) + 1 = max(3, 0) + 1
-        // = 4, so newest = 4, mid = 3, oldest = 2. The `+ 1` keeps every
-        // fallback № strictly above the stored max and above a fresh counter
-        // allocation (counter starts at count + 1 = 4 here, so it would next
-        // allocate 4 — equal to the newest fallback only if this very batch
-        // were re-allocated, which the counter never does; the invariant that
-        // matters is fallback > storedMax, asserted below).
+        // counting down. storedMax = 0, fallbackCount = 3, so the band is
+        // [1, 3]: newest = 3, mid = 2, oldest = 1. Every fallback sits strictly
+        // above the stored max (0 here) and all are distinct.
         let now = Date()
         let newest = TaskRun(id: UUID(uuidString: "00000000-0000-0000-0000-0000000000C1")!, kind: .scan, status: .completed, summary: "newest", startedAt: now, finishedAt: now)
         let mid = TaskRun(id: UUID(uuidString: "00000000-0000-0000-0000-0000000000C2")!, kind: .scan, status: .completed, summary: "mid", startedAt: now.addingTimeInterval(-3600), finishedAt: now.addingTimeInterval(-3500))
@@ -121,14 +117,45 @@ final class LedgerModelTests: XCTestCase {
         let runs = [mid, newest, oldest] // shuffled input order
         let nums = LedgerEntryMapping.chronologicalDisplayNumbers(for: runs) { _ in nil }
 
-        // seedBase = 4; newest = 4, mid = 3, oldest = 2.
-        XCTAssertEqual(nums[newest.id], 4)
-        XCTAssertEqual(nums[mid.id], 3)
-        XCTAssertEqual(nums[oldest.id], 2)
+        // newest = 3, mid = 2, oldest = 1 (newest highest, counting down).
+        XCTAssertEqual(nums[newest.id], 3)
+        XCTAssertEqual(nums[mid.id], 2)
+        XCTAssertEqual(nums[oldest.id], 1)
 
         // No collisions: all distinct.
         let values = Array(nums.values)
         XCTAssertEqual(Set(values).count, values.count)
+    }
+
+    /// Multi-fallback regression (review round-1 fix): when several legacy runs
+    /// coexist with a stored №, the OLD `max(count, storedMax) + 1` seed let
+    /// lower-index fallbacks count DOWN into the stored band — e.g. stored 5 +
+    /// 3 legacy runs yielded fallbacks 6/5/4, with 5 colliding with the stored 5.
+    /// The strictly-above-storedMax band guarantees disjointness for any count.
+    func testChronologicalFallbackManyRunsNeverCollideWithStored() {
+        let now = Date()
+        // One stored run (№5) + three pre-counter legacy runs.
+        let stored = TaskRun(id: UUID(uuidString: "00000000-0000-0000-0000-0000000000F1")!, kind: .scan, status: .running, summary: "stored", startedAt: now)
+        let legacyNewest = TaskRun(id: UUID(uuidString: "00000000-0000-0000-0000-0000000000F2")!, kind: .scan, status: .completed, summary: "legacy1", startedAt: now.addingTimeInterval(-3600), finishedAt: now.addingTimeInterval(-3500))
+        let legacyMid = TaskRun(id: UUID(uuidString: "00000000-0000-0000-0000-0000000000F3")!, kind: .scan, status: .completed, summary: "legacy2", startedAt: now.addingTimeInterval(-7200), finishedAt: now.addingTimeInterval(-7100))
+        let legacyOldest = TaskRun(id: UUID(uuidString: "00000000-0000-0000-0000-0000000000F4")!, kind: .scan, status: .completed, summary: "legacy3", startedAt: now.addingTimeInterval(-10800), finishedAt: now.addingTimeInterval(-10700))
+        let runs = [stored, legacyNewest, legacyMid, legacyOldest]
+        let nums = LedgerEntryMapping.chronologicalDisplayNumbers(for: runs) { run in
+            run.id == stored.id ? 5 : nil
+        }
+
+        // storedMax = 5, fallbackCount = 3 ⇒ band = [6, 8]: 8 / 7 / 6.
+        XCTAssertEqual(nums[stored.id], 5)
+        XCTAssertEqual(nums[legacyNewest.id], 8, "newest legacy = storedMax + count = 8")
+        XCTAssertEqual(nums[legacyMid.id], 7)
+        XCTAssertEqual(nums[legacyOldest.id], 6)
+
+        // Hard invariant: every fallback strictly above storedMax, and all
+        // values distinct (no collision, any number of legacy runs).
+        let allValues = Array(nums.values)
+        XCTAssertEqual(Set(allValues).count, allValues.count, "no two runs share a №")
+        let fallbackValues = [nums[legacyNewest.id]!, nums[legacyMid.id]!, nums[legacyOldest.id]!]
+        XCTAssertTrue(fallbackValues.allSatisfy { $0 > 5 }, "every fallback strictly above stored max (5)")
     }
 
     /// Mixed stored + fallback: the `+ 1` on seedBase is load-bearing. Before
@@ -179,12 +206,12 @@ final class LedgerModelTests: XCTestCase {
             default: return nil
             }
         }
-        // seedBase = max(count=3, storedMax=2) + 1 = 4; legacy (index 0) = 4.
-        // The `+ 1` is what makes 4 (not 2) — without it legacy would be 2,
-        // colliding with stored2. This is the exact boundary the fix targets.
+        // storedMax = 2, fallbackCount = 1 ⇒ legacy = storedMax + 1 = 3. The
+        // band floor is storedMax + 1, so legacy is strictly above every stored
+        // № (1, 2) — never collides, at the exact count-1 boundary.
         XCTAssertEqual(nums[stored1.id], 1)
         XCTAssertEqual(nums[stored2.id], 2)
-        XCTAssertEqual(nums[legacy.id], 4, "boundary: stored max == count-1; fallback must clear it via the +1 (would be 2 and collide pre-fix)")
+        XCTAssertEqual(nums[legacy.id], 3, "boundary: stored max == count-1; fallback = storedMax + 1 = 3 (strictly above the stored band)")
 
         // Hard lock: every fallback № strictly greater than every stored №.
         let storedValues = Set([1, 2])
