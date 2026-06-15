@@ -327,7 +327,11 @@ public struct FileOrganizerFeatureView: View {
             canDryRun: !plan.items.isEmpty && isPlanFresh, canExecutePlan: canExecutePlan,
             scanProgress: scanProgress, selectedCount: state.selectedIDs.count,
             selectedBytes: FileOrganizerEvidenceBuilder.selectedBytes(entries, selectedIDs: state.selectedIDs),
-            hasReceipt: executionReceipt != nil, receiptMovedCount: movedCount,
+            hasReceipt: executionReceipt != nil,
+            // Fail-closed (round-7): on a failure-path receipt the movedCount
+            // is stale (a prior run's); never echo it — the receipt body
+            // suppresses the moved-items row too.
+            receiptMovedCount: executionReceipt?.failureReason == nil ? movedCount : 0,
             hasPlanNumber: state.planNumber != nil
         )
     }

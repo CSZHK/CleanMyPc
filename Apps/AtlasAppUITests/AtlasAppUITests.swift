@@ -13,7 +13,9 @@ final class AtlasAppUITests: XCTestCase {
         let sidebar = app.outlines["atlas.sidebar"]
         XCTAssertTrue(sidebar.waitForExistence(timeout: 5))
 
-        for routeID in ["overview", "smartClean", "apps", "history", "permissions", "settings"] {
+        // Calm Ledger renamed the .history route to .ledger (round-7: the
+        // accessibility identifier is now "route.ledger", not "route.history").
+        for routeID in ["overview", "smartClean", "apps", "ledger", "permissions", "settings"] {
             XCTAssertTrue(app.staticTexts["route.\(routeID)"].waitForExistence(timeout: 3), "Missing route: \(routeID)")
         }
     }

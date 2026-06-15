@@ -325,7 +325,11 @@ struct FileOrganizerEntryRow: View {
                 if !isReadOnly { onToggle() }
             }
         }
-        .accessibilityElement(children: .combine)
+        // .contain (not .combine) so the inline ⓘ open-evidence Button stays
+        // individually VoiceOver-activatable in drawer layout (round-7; mirrors
+        // SmartCleanReviewRow). The row's selected value/trait still apply to
+        // the container element.
+        .accessibilityElement(children: .contain)
         .accessibilityValue(Text(AtlasL10n.string(isSelected ? "fileorganizer.entry.selected.a11y" : "fileorganizer.entry.unselected.a11y")))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("fileorganizer.entry.row.\(entry.id.uuidString)")

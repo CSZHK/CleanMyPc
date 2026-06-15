@@ -185,6 +185,15 @@ final class AtlasAppModelTests: XCTestCase {
         XCTAssertFalse(model.isPlanRunning)
         XCTAssertEqual(model.smartCleanExecutionIssue, AtlasL10n.string("application.error.executionUnavailable", "XPC worker offline"))
         XCTAssertEqual(model.latestScanSummary, AtlasL10n.string("application.error.executionUnavailable", "XPC worker offline"))
+
+        // Round-7: pin the fail-closed receipt shape via the REAL catch path
+        // (not just a hand-built fixture). A failed execute must produce a
+        // receipt that carries the reason and asserts nothing it can't verify.
+        let receipt = model.smartCleanExecutionReceipt
+        XCTAssertNotNil(receipt, "a failed execute must build a receipt")
+        XCTAssertNotNil(receipt?.failureReason, "failure receipt must carry the reason")
+        XCTAssertTrue(receipt?.recoveryItemIDs.isEmpty == true, "failure receipt must not claim recovery items")
+        XCTAssertEqual(receipt?.recoveryBytes, 0, "failure receipt must not claim recovery bytes")
     }
 
     func testPreferredXPCWorkerPathFailsClosedWhenScanIsRejected() async throws {

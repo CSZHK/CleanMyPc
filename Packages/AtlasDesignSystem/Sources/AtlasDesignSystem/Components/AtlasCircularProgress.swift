@@ -57,12 +57,14 @@ public struct AtlasCircularProgress: View {
 
             centerContent
         }
-        // Collapse into one element so VoiceOver speaks "<label>, <value>"
-        // instead of a bare "50%" with no context (round-2 a11y). Hosts pass an
-        // already-resolved (localized) label string; nil ⇒ value-only fallback.
+        // Labeled ⇒ a single "<label>, <value>" element (round-4 a11y). Unlabeled
+        // ⇒ decorative/hidden so a ring without context (e.g. the hero card,
+        // where an adjacent Text already conveys the number) does not become a
+        // blank "NN%" element with no context (round-7).
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel ?? "")
         .accessibilityValue(Text("\(Int(round(clampedProgress * 100)))%"))
+        .accessibilityHidden(accessibilityLabel == nil)
     }
 
     @ViewBuilder

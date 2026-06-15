@@ -304,7 +304,11 @@ public struct SmartCleanFeatureView: View {
             recoverableCount: stats.recoverable,
             retentionDays: retentionDays,
             hasReceipt: executionReceipt != nil,
-            receiptFreedBytes: executionReceipt?.estimatedFreedBytes ?? 0,
+            // Fail-closed (round-7): never echo a planned freed-bytes figure on
+            // a failure-path receipt — the receipt body suppresses it too.
+            receiptFreedBytes: executionReceipt?.failureReason == nil
+                ? (executionReceipt?.estimatedFreedBytes ?? 0)
+                : 0,
             hasPlanNumber: state.planNumber != nil
         ))
         // UI-test contract (review fix I3) + keyboard (review fix #9): the scan
