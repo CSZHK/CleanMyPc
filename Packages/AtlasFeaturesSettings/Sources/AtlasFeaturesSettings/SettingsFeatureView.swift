@@ -7,6 +7,7 @@ public struct SettingsFeatureView: View {
     @State private var presentedDocument: SettingsDocument?
 
     private let settings: AtlasSettings
+    private let recoveryTotalBytes: Int64
     private let onSetLanguage: (AtlasLanguage) -> Void
     private let onSetTheme: (AtlasTheme) -> Void
     private let onSetRecoveryRetention: (Int) -> Void
@@ -14,12 +15,14 @@ public struct SettingsFeatureView: View {
 
     public init(
         settings: AtlasSettings = AtlasScaffoldFixtures.settings,
+        recoveryTotalBytes: Int64 = 0,
         onSetLanguage: @escaping (AtlasLanguage) -> Void = { _ in },
         onSetTheme: @escaping (AtlasTheme) -> Void = { _ in },
         onSetRecoveryRetention: @escaping (Int) -> Void = { _ in },
         onToggleNotifications: @escaping (Bool) -> Void = { _ in }
     ) {
         self.settings = settings
+        self.recoveryTotalBytes = recoveryTotalBytes
         self.onSetLanguage = onSetLanguage
         self.onSetTheme = onSetTheme
         self.onSetRecoveryRetention = onSetRecoveryRetention
@@ -158,6 +161,25 @@ public struct SettingsFeatureView: View {
                 .accessibilityHint(AtlasL10n.string("settings.retention.hint"))
             }
 
+            // Calm Ledger Batch M: recovery footprint mono row (spec §3 设置
+            // 恢复段强化 — data = recoveryItems total bytes, real value; mono).
+            VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
+                Text(AtlasL10n.string("settings.recovery.footprint.title"))
+                    .font(AtlasTypography.rowTitle)
+                Text(recoveryFootprintValue)
+                    .font(AtlasTypography.dataBody)
+                    .monospacedDigit()
+                    .foregroundStyle(AtlasColor.inkData)
+                Text(AtlasL10n.string("settings.recovery.footprint.detail"))
+                    .font(AtlasTypography.body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(AtlasL10n.string("settings.recovery.footprint.title")))
+            .accessibilityValue(Text(recoveryFootprintValue))
+            .accessibilityIdentifier("settings.recoveryFootprint")
+
             Divider()
 
             VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
@@ -271,6 +293,16 @@ public struct SettingsFeatureView: View {
             .accessibilityIdentifier("settings.panel.\(panel.id)")
         }
     }
+
+    /// Recovery footprint display value (spec §3 设置 恢复段强化). Fail-closed:
+    /// zero bytes (no recovery items) renders the empty sentence rather than a
+    /// fabricated 「0 KB」 mono figure.
+    private var recoveryFootprintValue: String {
+        guard recoveryTotalBytes > 0 else {
+            return AtlasL10n.string("settings.recovery.footprint.empty")
+        }
+        return AtlasFormatters.byteCount(recoveryTotalBytes)
+    }
 }
 
 private enum SettingsPanel: String, CaseIterable, Identifiable {
@@ -326,17 +358,25 @@ private struct SettingsDocumentSheet: View {
     let document: SettingsDocument
 
     var body: some View {
-        NavigationStack {
+        // Calm Ledger Batch M: surface container + ledgerTitle header (spec §3.1
+        // 文档 sheet 换装). Content排版沿用; behavior unchanged.
+        VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
+            Text(document.title)
+                .font(AtlasTypography.ledgerTitle)
+                .foregroundStyle(AtlasColor.ledgerInk)
+
+            Divider()
+
             ScrollView {
                 Text(document.bodyText)
                     .font(AtlasTypography.body)
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(AtlasSpacing.xl)
             }
-            .navigationTitle(document.title)
         }
+        .padding(AtlasSpacing.xl)
+        .background(AtlasColor.surface)
         .frame(minWidth: 560, minHeight: 420)
     }
 }

@@ -1207,3 +1207,18 @@
 "ds.tone.success" = "Success";
 "ds.tone.warning" = "Warning";
 "ds.tone.danger" = "Error";
+
+/* Calm Ledger Batch M — permission evidence + recovery footprint */
+"permissions.evidence.toggle" = "View permission details";
+"permissions.evidence.section.why" = "Why it's needed";
+"permissions.evidence.section.scope" = "Impact scope";
+"permissions.evidence.section.authorize" = "How to authorize";
+"permissions.evidence.scope.fullDiskAccess" = "Scans protected Library areas (Mail, Safari, Messages, and other system data) and deeper app remnants.";
+"permissions.evidence.scope.accessibility" = "Triggered only when an uninstall flow needs to safely quit a running app first.";
+"permissions.evidence.scope.notifications" = "Completion and recovery reminders for long tasks; does not affect scanning or cleanup.";
+"permissions.evidence.authorize.fullDiskAccess" = "In System Settings › Privacy & Security › Full Disk Access, enable Atlas, then fully quit and reopen Atlas.";
+"permissions.evidence.authorize.accessibility" = "In System Settings › Privacy & Security › Accessibility, enable Atlas.";
+"permissions.evidence.authorize.notifications" = "Asked by the system when first needed; can also be adjusted in System Settings › Notifications.";
+"settings.recovery.footprint.title" = "Recovery footprint";
+"settings.recovery.footprint.detail" = "Total size of recoverable results currently recorded (mono).";
+"settings.recovery.footprint.empty" = "No recoverable items";

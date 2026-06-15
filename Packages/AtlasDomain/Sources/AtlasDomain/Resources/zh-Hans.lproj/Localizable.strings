@@ -649,6 +649,19 @@
 "permissions.support.accessibility" = "只有在 Atlas 需要先安全关闭正在运行的应用再卸载时才需要。";
 "permissions.support.notifications" = "不是必须项，但对长任务提醒和恢复提醒很有帮助。";
 
+/* Calm Ledger Batch M: per-row evidence three-segment (why / scope / authorize).
+   Maps existing rationale + support fields; behavior unchanged. */
+"permissions.evidence.toggle" = "查看权限说明";
+"permissions.evidence.section.why" = "为什么需要";
+"permissions.evidence.section.scope" = "影响范围";
+"permissions.evidence.section.authorize" = "如何授权";
+"permissions.evidence.scope.fullDiskAccess" = "扫描受保护的 Library 区域（Mail、Safari、Messages 等系统数据）与更深层的应用残留。";
+"permissions.evidence.scope.accessibility" = "仅在卸载流程需要先安全关闭正在运行的应用时触发。";
+"permissions.evidence.scope.notifications" = "长任务完成提醒与恢复提醒；不影响扫描与清理的主流程。";
+"permissions.evidence.authorize.fullDiskAccess" = "在「系统设置 › 隐私与安全性 › 完全磁盘访问」中勾选 Atlas，然后完全退出并重新打开 Atlas。";
+"permissions.evidence.authorize.accessibility" = "在「系统设置 › 隐私与安全性 › 辅助功能」中勾选 Atlas。";
+"permissions.evidence.authorize.notifications" = "首次需要时由系统弹窗询问；也可在「系统设置 › 通知」中手动调整。";
+
 "settings.screen.title" = "设置";
 "settings.screen.subtitle" = "在这里调整语言、恢复保留期、通知、排除项，并查看致谢与说明。";
 "settings.callout.title" = "Atlas 会将状态保存在本地，并让破坏性操作保持可审计";
@@ -689,6 +702,11 @@
 "settings.exclusions.empty.title" = "还没有配置排除项";
 "settings.exclusions.empty.detail" = "在后续迭代前，Atlas 会先使用默认覆盖范围进行扫描。";
 "settings.exclusions.row.subtitle" = "不会纳入清理建议和计划。";
+
+/* Calm Ledger Batch M: recovery footprint mono row (data = recoveryItems total bytes). */
+"settings.recovery.footprint.title" = "恢复区占用";
+"settings.recovery.footprint.detail" = "当前已入账的可恢复结果总大小（mono）。";
+"settings.recovery.footprint.empty" = "暂无可恢复项";
 "settings.trust.title" = "信任";
 "settings.trust.subtitle" = "这些承诺帮助你理解 Atlas 如何安全地处理清理与恢复。";
 "settings.trust.ack.title" = "开源致谢";

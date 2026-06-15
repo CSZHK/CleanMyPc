@@ -42,7 +42,8 @@ public struct AboutUpdateToolbarButton: View {
                 }
 
                 Text("v\(appVersion)")
-                    .font(AtlasTypography.caption)
+                    .font(AtlasTypography.dataBody)
+                    .monospacedDigit()
                     .foregroundStyle(AtlasColor.textPrimary)
 
                 if updateResult?.isUpdateAvailable == true {

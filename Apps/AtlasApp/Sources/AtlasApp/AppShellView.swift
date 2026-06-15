@@ -364,6 +364,7 @@ struct AppShellView: View {
         case .settings:
             SettingsFeatureView(
                 settings: model.settings,
+                recoveryTotalBytes: model.filteredRecoveryItems.reduce(Int64(0)) { $0 + $1.bytes },
                 onSetLanguage: { language in
                     Task { await model.setLanguage(language) }
                 },

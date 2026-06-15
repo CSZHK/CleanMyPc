@@ -115,7 +115,7 @@ public struct PermissionsFeatureView: View {
                 } else {
                     VStack(alignment: .leading, spacing: AtlasSpacing.md) {
                         ForEach(requiredPermissionStates) { state in
-                            permissionRow(state)
+                            PermissionRowView(state: state, onAuthorize: performAction)
                         }
                     }
                 }
@@ -129,7 +129,7 @@ public struct PermissionsFeatureView: View {
                     DisclosureGroup(isExpanded: $isOptionalExpanded) {
                         VStack(alignment: .leading, spacing: AtlasSpacing.md) {
                             ForEach(optionalPermissionStates) { state in
-                                permissionRow(state)
+                                PermissionRowView(state: state, onAuthorize: performAction)
                             }
                         }
                         .padding(.top, AtlasSpacing.md)
@@ -238,56 +238,6 @@ public struct PermissionsFeatureView: View {
         .buttonStyle(.atlasSecondary)
         .accessibilityIdentifier("permissions.refresh")
         .accessibilityHint(AtlasL10n.string("permissions.refresh.hint"))
-    }
-
-    @ViewBuilder
-    private func permissionRow(_ state: PermissionState) -> some View {
-        AtlasDetailRow(
-            title: state.kind.title,
-            subtitle: state.rationale,
-            footnote: rowFootnote(for: state),
-            systemImage: state.kind.systemImage,
-            tone: state.isGranted ? .success : statusTone(for: state)
-        ) {
-            VStack(alignment: .trailing, spacing: AtlasSpacing.sm) {
-                AtlasStatusChip(
-                    statusText(for: state),
-                    tone: statusTone(for: state)
-                )
-
-                if !state.isGranted {
-                    Button(buttonTitle(for: state.kind)) {
-                        performAction(for: state.kind)
-                    }
-                    .buttonStyle(.atlasSecondary)
-                }
-            }
-        }
-    }
-
-    private func rowFootnote(for state: PermissionState) -> String {
-        if state.isGranted {
-            return AtlasL10n.string("permissions.row.ready")
-        }
-        return state.kind.isRequiredForCurrentWorkflows
-            ? AtlasL10n.string("permissions.row.required")
-            : AtlasL10n.string("permissions.row.optional")
-    }
-
-    private func statusText(for state: PermissionState) -> String {
-        if state.isGranted {
-            return AtlasL10n.string("common.granted")
-        }
-        return state.kind.isRequiredForCurrentWorkflows
-            ? AtlasL10n.string("permissions.status.required")
-            : AtlasL10n.string("permissions.status.optional")
-    }
-
-    private func statusTone(for state: PermissionState) -> AtlasTone {
-        if state.isGranted {
-            return .success
-        }
-        return state.kind.isRequiredForCurrentWorkflows ? .warning : .neutral
     }
 
     private func buttonTitle(for kind: PermissionKind) -> String {
