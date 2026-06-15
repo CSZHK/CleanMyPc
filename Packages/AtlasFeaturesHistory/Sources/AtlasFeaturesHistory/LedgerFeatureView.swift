@@ -287,14 +287,20 @@ public enum LedgerFilter: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Private helpers (legacy behavior preserved, keys renamed)
+// MARK: - Private view helpers (RecoveryItem helpers live in LedgerRecoveryHelpers.swift)
 
-private extension RecoveryItem {
-    var isExpired: Bool { expiresAt.map { $0 <= Date() } ?? false }
-    var isExpiringSoon: Bool {
-        guard let expiresAt else { return false }
-        let cutoff = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
-        return expiresAt <= cutoff
+// File-private TaskRun helpers — mirrors the legacy HistoryFeatureView scope
+// (where this was `private` because everything lived in one file). Kept
+// duplicated-and-private rather than module-internal so there is zero risk of
+// a same-name internal symbol colliding; the canonical copy lives next to the
+// numbering rule in LedgerTimelineView.swift. See review fix M-2.
+private extension TaskRun {
+    var activityDate: Date { finishedAt ?? startedAt }
+    var isActive: Bool { status == .queued || status == .running }
+    var isRecentArchive: Bool {
+        guard !isActive else { return false }
+        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        return activityDate >= sevenDaysAgo
     }
 }
 

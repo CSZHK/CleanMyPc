@@ -78,9 +78,11 @@ public enum LedgerEntryMapping {
     /// 1. If the shell's counter has a № for this run (`planNumber(for:)`),
     ///    use it directly.
     /// 2. Otherwise assign a chronological fallback: sort runs by activity
-    ///    date descending, the newest gets `highestFallback`, counting down.
-    ///    `highestFallback` is seeded as the number of runs so a later fresh
-    ///    counter allocation (which starts at runs.count + 1) never collides.
+    ///    date descending, the newest gets `seedBase`, counting down by index.
+    ///    `seedBase = max(runs.count, max(stored №)) + 1` so every fallback №
+    ///    is **strictly greater** than any stored № (no collision) while a
+    ///    later fresh counter allocation (which starts above runs.count) still
+    ///    clears the fallback band. The `+ 1` is load-bearing — see the body.
     ///
     /// Returns a `[UUID: Int]` keyed by run id. Recovery items are not plan-
     /// numbered and are excluded.
@@ -101,9 +103,15 @@ public enum LedgerEntryMapping {
 
         guard !fallbackRuns.isEmpty else { return result }
 
-        // Seed the highest fallback so it sits below any future counter
-        // allocation (counter starts at runs.count + 1, PER da8c42f).
-        let seedBase = max(taskRuns.count, result.values.max() ?? 0)
+        // Seed the highest fallback so it sits strictly above any stored
+        // counter № AND above any future counter allocation (counter starts
+        // at runs.count + 1, PER da8c42f). The `+ 1` is load-bearing: without
+        // it, when `max(count, storedMax) == storedMax` the index-0 fallback
+        // run would land on `seedBase - 0 == storedMax`, colliding with the
+        // stored entry at that №. Adding 1 makes every fallback № strictly
+        // greater than the stored max (and fresh allocations stay above the
+        // run count, so they never collide with fallback either).
+        let seedBase = max(taskRuns.count, result.values.max() ?? 0) + 1
         let sortedDesc = fallbackRuns.sorted { lhs, rhs in
             if lhs.activityDate == rhs.activityDate {
                 return lhs.startedAt > rhs.startedAt
@@ -168,9 +176,9 @@ public struct LedgerTimelineView: View {
     }
 }
 
-// MARK: - Recovery-item helpers (kept private to the package)
+// MARK: - TaskRun helpers (file-private; mirrors legacy HistoryFeatureView scope)
 
-extension TaskRun {
+private extension TaskRun {
     /// Activity date = finishedAt if present else startedAt (mirrors the
     /// legacy history view's grouping key — behavior preserved).
     var activityDate: Date {

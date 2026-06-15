@@ -216,17 +216,8 @@ private struct RecoveryCalloutCopy {
     }
 }
 
-// MARK: - Private recovery-item + task-status helpers (legacy behavior preserved)
-
-private extension RecoveryItem {
-    var hasPhysicalRestorePath: Bool { !(restoreMappings ?? []).isEmpty }
-    var isExpired: Bool { expiresAt.map { $0 <= Date() } ?? false }
-    var isExpiringSoon: Bool {
-        guard let expiresAt else { return false }
-        let cutoff = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
-        return expiresAt <= cutoff
-    }
-}
+// MARK: - Private task-status helpers (legacy behavior preserved; recovery-item
+// helpers now live in LedgerRecoveryHelpers.swift — review fix M-1)
 
 private extension TaskStatus {
     var ledgerCalloutTitle: String {
