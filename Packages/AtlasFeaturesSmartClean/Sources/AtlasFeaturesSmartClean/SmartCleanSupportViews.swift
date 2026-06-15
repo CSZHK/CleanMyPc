@@ -97,7 +97,7 @@ struct SmartCleanEvidenceDrawer<Content: View>: View {
                 Spacer(minLength: 0)
                 Button(action: onDismiss) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: AtlasLayout.iconXS, weight: .bold))
                         .foregroundStyle(AtlasColor.textSecondary)
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())

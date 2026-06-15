@@ -310,6 +310,11 @@ public enum AtlasLayout {
     public static let sidebarIdealWidth: CGFloat = 220
     /// Sidebar icon container size (pill-style like System Settings).
     public static let sidebarIconSize: CGFloat = 32
+    // SF Symbol icon sizes (review-driven icon-size normalization)
+    public static let iconXS: CGFloat = 11
+    public static let iconSM: CGFloat = 14
+    public static let iconMD: CGFloat = 16
+    public static let iconLG: CGFloat = 18
 
     /// Returns an adaptive column layout based on available width.
     /// - 3 columns for widths >= 640

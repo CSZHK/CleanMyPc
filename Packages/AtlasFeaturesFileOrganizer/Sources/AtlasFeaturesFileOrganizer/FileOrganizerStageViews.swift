@@ -262,7 +262,7 @@ struct FileOrganizerEntryRow: View {
             HStack(spacing: AtlasSpacing.xs) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(isSelected ? AtlasColor.brand : AtlasColor.textTertiary)
-                    .font(.system(size: 18))
+                    .font(.system(size: AtlasLayout.iconLG))
 
                 if showThumbnail {
                     FileThumbnailView(path: entry.path)

@@ -136,7 +136,7 @@ public struct OverviewCommandColumn: View {
         } label: {
             HStack(spacing: AtlasSpacing.md) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(size: AtlasLayout.iconMD, weight: .medium))
                     .foregroundStyle(tone.tint)
                     .frame(width: 24)
 
