@@ -42,6 +42,7 @@ public struct FileOrganizerFeatureView: View {
     private let onUpdateDestination: (String) -> Void
     private let onUpdateRecursiveScan: (Bool) -> Void
     private let onUpdateRules: ([FileOrganizerRule]) -> Void
+    private let onUpdateSelectedFolders: ([String]) -> Void
     private let onUndoExecution: (() -> Void)?
     private let onNavigateToLedger: () -> Void
 
@@ -60,6 +61,7 @@ public struct FileOrganizerFeatureView: View {
         executionReceipt: FileOrganizerExecutionReceipt? = nil,
         movedCount: Int = 0,
         scannedFolders: [String] = [],
+        initialSelectedFolders: [String]? = nil,
         rules: [FileOrganizerRule] = [],
         destinationBasePath: String = "~/Organized",
         isRecursiveScan: Bool = false,
@@ -74,6 +76,7 @@ public struct FileOrganizerFeatureView: View {
         onUpdateDestination: @escaping (String) -> Void = { _ in },
         onUpdateRecursiveScan: @escaping (Bool) -> Void = { _ in },
         onUpdateRules: @escaping ([FileOrganizerRule]) -> Void = { _ in },
+        onUpdateSelectedFolders: @escaping ([String]) -> Void = { _ in },
         onUndoExecution: (() -> Void)? = nil,
         onNavigateToLedger: @escaping () -> Void = {}
     ) {
@@ -84,18 +87,19 @@ public struct FileOrganizerFeatureView: View {
         self.planIssue = planIssue; self.executionIssue = executionIssue
         self.executionReceipt = executionReceipt; self.movedCount = movedCount
         self.scannedFolders = scannedFolders; self.rules = rules
-        // Seed from the model's last-scanned folders so a custom selection
-        // survives route switches (feature-local @State is destroyed when
-        // AppShellView rebuilds this view on navigation — §7 red line). The
-        // model persists scannedFolders; empty ⇒ first run ⇒ sensible defaults
-        // (round-3).
-        _selectedFolders = State(initialValue: scannedFolders.isEmpty ? ["~/Desktop", "~/Downloads"] : scannedFolders)
+        // Seed so a custom folder selection survives route switches (§7 red
+        // line): a model-persisted edit wins; else the last-scanned folders;
+        // else the defaults. Edits write back via onUpdateSelectedFolders
+        // (round-6: previously only the last-scanned set was restored, so an
+        // edited-but-not-yet-scanned selection was lost on navigation).
+        _selectedFolders = State(initialValue: initialSelectedFolders ?? (scannedFolders.isEmpty ? ["~/Desktop", "~/Downloads"] : scannedFolders))
         self.destinationBasePath = destinationBasePath; self.isRecursiveScan = isRecursiveScan
         self.searchText = searchText; self.state = state; self.onStateChange = onStateChange
         self.onStartScan = onStartScan; self.onClassify = onClassify
         self.onRefreshPreview = onRefreshPreview; self.onExecutePlan = onExecutePlan
         self.onDryRun = onDryRun; self.onUpdateDestination = onUpdateDestination
         self.onUpdateRecursiveScan = onUpdateRecursiveScan; self.onUpdateRules = onUpdateRules
+        self.onUpdateSelectedFolders = onUpdateSelectedFolders
         self.onUndoExecution = onUndoExecution; self.onNavigateToLedger = onNavigateToLedger
     }
 
@@ -142,6 +146,11 @@ public struct FileOrganizerFeatureView: View {
             }
         }
         .onPreferenceChange(AtlasActionBarHeightKey.self) { actionBarInset = $0 }
+        .onChange(of: selectedFolders) { _, _ in
+            // Persist edits so a custom selection survives the .id(route) rebuild
+            // on navigation even before a scan runs (round-6 §7 red line).
+            onUpdateSelectedFolders(selectedFolders)
+        }
         .confirmationDialog(
             AtlasL10n.string("fileorganizer.confirm.execute.title"),
             isPresented: $showExecuteConfirmation,

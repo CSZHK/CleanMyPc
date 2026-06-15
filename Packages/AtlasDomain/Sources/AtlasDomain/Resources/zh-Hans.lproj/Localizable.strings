@@ -593,6 +593,7 @@
 "ledger.export.panel.detail" = "把当前可见的台账条目导出为 Markdown 文件，保存在本机。";
 "ledger.export.panel.cancel" = "取消";
 "ledger.export.panel.save" = "导出";
+"ledger.export.write.failed.title" = "无法保存报告";
 "ledger.export.generated" = "生成时间 %@";
 "ledger.export.retention" = "恢复保留 %d 天";
 "ledger.export.summary.runs" = "任务记录 %d 条";

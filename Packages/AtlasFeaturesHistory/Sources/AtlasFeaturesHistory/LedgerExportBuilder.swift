@@ -184,8 +184,19 @@ public enum LedgerExportController {
         panel.title = AtlasL10n.string("ledger.export.panel.save")
         panel.nameFieldStringValue = "atlas-ledger.md"
         panel.allowedContentTypes = [.plainText]
-        if panel.runModal() == .OK, let url = panel.url {
-            try? markdown.write(to: url, atomically: true, encoding: .utf8)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try markdown.write(to: url, atomically: true, encoding: .utf8)
+        } catch {
+            // Surface the write failure — the user explicitly tapped 保存, so a
+            // silent `try?` would let them believe the report was saved when it
+            // was not (round-6: read-only mount / disk full / invalid URL).
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = AtlasL10n.string("ledger.export.write.failed.title")
+            alert.informativeText = error.localizedDescription
+            alert.addButton(withTitle: AtlasL10n.string("ledger.export.panel.cancel"))
+            alert.runModal()
         }
     }
 }

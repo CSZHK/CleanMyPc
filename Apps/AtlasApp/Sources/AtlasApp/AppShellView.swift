@@ -274,6 +274,7 @@ struct AppShellView: View {
                 executionReceipt: model.fileOrganizerExecutionReceipt,
                 movedCount: model.fileOrganizerMovedCount,
                 scannedFolders: model.scannedFolders,
+                initialSelectedFolders: model.fileOrganizerSelectedFolders,
                 rules: model.fileOrganizerRules,
                 destinationBasePath: model.settings.fileOrganizerDestinationBasePath,
                 isRecursiveScan: model.settings.fileOrganizerRecursiveScan,
@@ -313,6 +314,9 @@ struct AppShellView: View {
                 },
                 onUpdateRules: { rules in
                     Task { await model.updateFileOrganizerRules(rules) }
+                },
+                onUpdateSelectedFolders: { folders in
+                    model.fileOrganizerSelectedFolders = folders
                 },
                 onUndoExecution: {
                     Task { await model.undoFileOrganizerExecution() }

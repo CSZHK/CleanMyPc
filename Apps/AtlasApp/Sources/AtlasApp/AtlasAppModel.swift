@@ -80,6 +80,11 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var fileOrganizerPlanIssue: String?
     @Published private(set) var fileOrganizerExecutionIssue: String?
     @Published private(set) var scannedFolders: [String] = []
+    /// FileOrganizer folder selection, persisted across route switches so an
+    /// edited-but-not-yet-scanned selection is not lost on navigation (round-6
+    /// §7 red line). nil ⇒ never edited ⇒ seed from scannedFolders/defaults.
+    /// Set externally by AppShellView; a plain var — navigation drives the redraw.
+    var fileOrganizerSelectedFolders: [String]?
     @Published private(set) var fileOrganizerRules: [FileOrganizerRule]
     @Published private(set) var fileOrganizerExecutionCompleted = false
     @Published private(set) var fileOrganizerMovedCount = 0

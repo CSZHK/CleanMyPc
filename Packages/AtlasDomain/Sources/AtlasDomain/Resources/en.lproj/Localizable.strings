@@ -593,6 +593,7 @@
 "ledger.export.panel.detail" = "Save the currently visible ledger entries as a Markdown file on this Mac.";
 "ledger.export.panel.cancel" = "Cancel";
 "ledger.export.panel.save" = "Export";
+"ledger.export.write.failed.title" = "Couldn’t save the report";
 "ledger.export.generated" = "Generated %@";
 "ledger.export.retention" = "Recovery retention %d days";
 "ledger.export.summary.runs" = "Task records: %d";
