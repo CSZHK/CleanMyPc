@@ -28,11 +28,13 @@
 - `Packages/AtlasCoreAdapters/`
 - `Packages/AtlasFeaturesOverview/`
 - `Packages/AtlasFeaturesSmartClean/`
+- `Packages/AtlasFeaturesFileOrganizer/`
 - `Packages/AtlasFeaturesApps/`
 - `Packages/AtlasFeaturesStorage/`
-- `Packages/AtlasFeaturesHistory/`
+- `Packages/AtlasFeaturesHistory/` — package name retained; carries the `Ledger` feature (zh 台账, renamed from `History` by D-012). Protocol/package layer unchanged.
 - `Packages/AtlasFeaturesPermissions/`
 - `Packages/AtlasFeaturesSettings/`
+- `Packages/AtlasFeaturesAbout/`
 
 ### Services
 

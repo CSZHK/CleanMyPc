@@ -14,7 +14,7 @@ Atlas for Mac is a native desktop maintenance application that helps users under
 
 - Help users complete a safe space-recovery decision in minutes.
 - Turn scanning into an explainable action plan.
-- Unify cleanup, uninstall, permissions, history, and recovery into one workflow.
+- Unify cleanup, uninstall, permissions, ledger, and recovery into one workflow.
 - Prefer reversible actions over permanent deletion.
 - Support heavy Mac users and developer-oriented cleanup scenarios.
 
@@ -37,8 +37,9 @@ Atlas for Mac is a native desktop maintenance application that helps users under
 
 - `Overview`
 - `Smart Clean`
+- `File Organizer`
 - `Apps`
-- `History`
+- `Ledger` (was `History`; zh 台账 — renamed by D-012. SPM package `AtlasFeaturesHistory` retained)
 - `Recovery`
 - `Permissions`
 - `Settings`
@@ -65,6 +66,6 @@ Atlas for Mac is a native desktop maintenance application that helps users under
 - Users can run a scan without granting all permissions up front.
 - Findings are grouped by risk and explained before execution.
 - Users can preview app uninstall footprint before removal.
-- Every destructive task produces a history record.
+- Every destructive task produces a ledger record.
 - Recoverable actions expose a restoration path.
 - The app includes a visible open-source acknowledgement and third-party notices page.

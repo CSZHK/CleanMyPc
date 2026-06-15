@@ -22,9 +22,9 @@
 - Why leftovers appear after app removal
 - Background items and login items
 
-## History and Recovery
+## Ledger and Recovery
 
-- Where to find past runs
+- Where to find past runs (the Ledger, zh 台账)
 - When recovery restores a file physically
 - When recovery only restores Atlas workspace state
 - Which actions are recoverable

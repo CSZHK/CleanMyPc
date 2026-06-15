@@ -1,5 +1,7 @@
 # Atlas for Mac — Design Specification v2
 
+> **Superseded** (2026-06-11) by `Docs/design/2026-06-10-frontend-redesign-calm-ledger.md` (Calm Ledger v3). Spacing/radius/motion 基值与按钮层级见新规格附录 A.
+>
 > **Status**: Ready for implementation
 > **Brand Token 文件**: `Packages/AtlasDesignSystem/Sources/AtlasDesignSystem/AtlasBrand.swift` (已创建并编译通过)
 

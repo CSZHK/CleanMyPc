@@ -18,8 +18,9 @@
 - Keep scope inside the frozen MVP modules:
   - `Overview`
   - `Smart Clean`
+  - `File Organizer`
   - `Apps`
-  - `History`
+  - `Ledger` (was `History`; zh 台账 — renamed by D-012)
   - `Recovery`
   - `Permissions`
   - `Settings`
@@ -94,12 +95,12 @@
 - Focus:
   - stabilize the recovery payload schema and versioning contract
   - add migration and compatibility handling for older workspace and history state files
-  - deepen `History` detail evidence for restore payloads, conflicts, expiry, and partial restore outcomes
+  - deepen `Ledger` detail evidence for restore payloads, conflicts, expiry, and partial restore outcomes
   - add regression coverage for conflict, expired payload, and partial-restore scenarios
 - Exit criteria:
   - recovery payloads follow a stable versioned schema
   - older state files migrate cleanly or fail with explicit compatibility behavior
-  - `History` detail can explain real restore evidence and degraded outcomes
+  - `Ledger` detail can explain real restore evidence and degraded outcomes
   - regression coverage exists for the main restore edge cases
 
 ### Milestone 5: Release Readiness

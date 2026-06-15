@@ -313,17 +313,18 @@
 ### Current Status
 
 - `Complete` — internal beta hardening established the current execution-honesty baseline.
-- `Open` — the most visible comparison pressure is now concentrated in `Apps` and `Smart Clean`.
+- `Complete` — `EPIC-A` Apps Evidence Execution, `EPIC-B` Smart Clean Safe Coverage Expansion, and `EPIC-C` Recovery Payload Hardening all delivered in the v1.0.8 stable baseline (confirmed by `Docs/product/next-stage-product-goals-2026-06.md`: all MVP modules production-ready, 377 tests green).
+- `Open` — `EPIC-E` Calm Ledger Frontend Redesign in progress on `redesign/calm-ledger`.
 - `Blocked` — final public-signing work still depends on `Developer ID` and notarization materials, so release mechanics are not the immediate product-path blocker.
 
 ### Order Rule
 
 Execute the next mainline epics in this order only:
 
-1. `EPIC-A` Apps Evidence Execution
-2. `EPIC-B` Smart Clean Safe Coverage Expansion
-3. `EPIC-C` Recovery Payload Hardening
-4. `EPIC-D` Release Readiness
+1. `EPIC-A` Apps Evidence Execution — **Done** (v1.0.8)
+2. `EPIC-B` Smart Clean Safe Coverage Expansion — **Done** (v1.0.8)
+3. `EPIC-C` Recovery Payload Hardening — **Done** (v1.0.8)
+4. `EPIC-D` Release Readiness — blocked on signing credentials
 
 Reason:
 
@@ -342,17 +343,15 @@ Reason:
 
 #### Now
 
-- `EPIC-A` Apps Evidence Execution
 - `EPIC-E` Calm Ledger Redesign — M0 governance + M1 token layer in progress on `redesign/calm-ledger` (interrupt protocol: design spec §0.3)
 
 #### Next
 
-- `EPIC-B` Smart Clean Safe Coverage Expansion
+- `EPIC-D` Release Readiness (unblocks on Apple signing credentials)
 
 #### Later
 
-- `EPIC-C` Recovery Payload Hardening
-- `EPIC-D` Release Readiness
+- Phase 2 product expansion (see `Docs/product/next-stage-product-goals-2026-06.md`), contingent on the redesign merge and EPIC-D release path
 
 ### Seed Issues
 
