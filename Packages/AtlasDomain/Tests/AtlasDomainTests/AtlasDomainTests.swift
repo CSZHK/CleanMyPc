@@ -356,4 +356,14 @@ final class AtlasDomainTests: XCTestCase {
         XCTAssertNil(grouped["browserData"])
     }
 
+    func testBundleResolvesZhHansLowercaseFallback() {
+        // SwiftPM `.process` lowercases .lproj dir names in dev builds (zh-Hans → zh-hans);
+        // release (xcodebuild) preserves canonical case. bundle(for:) must resolve zh strings
+        // in both — guard against silent fallback to English (UI 全英文 regression).
+        let zh = AtlasL10n.string("route.overview.title", language: .zhHans)
+        let en = AtlasL10n.string("route.overview.title", language: .en)
+        XCTAssertNotEqual(zh, en, "zh-Hans bundle must resolve, not fall back to en (got zh='\(zh)')")
+        XCTAssertEqual(zh, "概览")
+    }
+
 }

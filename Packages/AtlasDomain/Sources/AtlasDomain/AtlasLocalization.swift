@@ -102,11 +102,18 @@ public enum AtlasL10n {
     }
 
     private static func bundle(for language: AtlasLanguage) -> Bundle {
-        guard let path = Bundle.module.path(forResource: language.rawValue, ofType: "lproj"),
-              let bundle = Bundle(path: path) else {
-            return Bundle.module
+        if let path = Bundle.module.path(forResource: language.rawValue, ofType: "lproj"),
+           let bundle = Bundle(path: path) {
+            return bundle
         }
-        return bundle
+        // SwiftPM `.process` lowercases `.lproj` dir names in dev builds (zh-Hans.lproj →
+        // zh-hans.lproj); Foundation's lproj lookup is case-sensitive so the canonical
+        // rawValue misses. Release (xcodebuild) preserves canonical case. Fall back to lowercased.
+        if let path = Bundle.module.path(forResource: language.rawValue.lowercased(), ofType: "lproj"),
+           let bundle = Bundle(path: path) {
+            return bundle
+        }
+        return Bundle.module
     }
 }
 
