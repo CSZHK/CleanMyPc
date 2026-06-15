@@ -1030,6 +1030,52 @@
 "fileorganizer.accessibility.notSelected" = "未选中";
 "fileorganizer.accessibility.toggleHint" = "双击切换选中状态";
 
+// File Organizer — Calm Ledger five-segment stage (Batch L2)
+"fileorganizer.stage.scan" = "扫描";
+"fileorganizer.stage.rules" = "规则";
+"fileorganizer.stage.preview" = "预演";
+"fileorganizer.stage.execute" = "执行";
+"fileorganizer.stage.receipt" = "回执";
+"fileorganizer.stage.plan.number" = "计划 №%d";
+"fileorganizer.stage.plan.number.a11y" = "计划编号 %d";
+"fileorganizer.stage.readonly.banner" = "正在回看已完成阶段，内容为只读快照。";
+"fileorganizer.stage.readonly.return" = "返回当前阶段";
+"fileorganizer.stage.actionbar.dryRun" = "预演已选 %d 项";
+"fileorganizer.stage.actionbar.execute" = "执行整理";
+"fileorganizer.stage.actionbar.viewReceipt" = "查看回执";
+"fileorganizer.stage.actionbar.rescan" = "重新扫描";
+"fileorganizer.stage.metric.selected" = "%@ · %d 项";
+"fileorganizer.stage.execute.failure.suggestion" = "部分完成的执行也会入账；可在回执与台账中查看详情。";
+"fileorganizer.promise.dryRun" = "预演不实际移动文件，确认无误后再执行。";
+"fileorganizer.promise.execute" = "执行前自动建立恢复点，可在台账中按原路径还原。";
+"fileorganizer.cached.title" = "存在已缓存结果";
+"fileorganizer.cached.detail" = "上一次扫描的结果仍在。可继续整理或重新扫描。";
+"fileorganizer.rules.count" = "当前 %d 条分类规则";
+"fileorganizer.drawer.close" = "关闭证据面板";
+"fileorganizer.receipt.title" = "整理回执";
+"fileorganizer.receipt.items.label" = "移动项目";
+"fileorganizer.receipt.items.value" = "%d 项";
+"fileorganizer.receipt.completed.label" = "完成时间";
+"fileorganizer.receipt.code.label" = "回执编号";
+"fileorganizer.receipt.moved.metric" = "已移动 %d 项";
+"fileorganizer.receipt.viewInLedger" = "在台账中查看 →";
+"fileorganizer.receipt.missing.title" = "暂无回执";
+"fileorganizer.receipt.missing.detail" = "尚未执行整理计划。执行后此处将显示本次计划的回执。";
+"fileorganizer.evidence.open" = "查看证据";
+"fileorganizer.evidence.empty.title" = "选择文件查看分类依据";
+"fileorganizer.evidence.empty.detail" = "选中列表中的文件，此处将显示其分类规则命中链与移动目标。";
+"fileorganizer.evidence.source" = "原始路径";
+"fileorganizer.evidence.size" = "文件大小";
+"fileorganizer.evidence.category" = "分类";
+"fileorganizer.evidence.destination" = "移动目标";
+"fileorganizer.evidence.conflict" = "冲突";
+"fileorganizer.evidence.conflict.detail" = "目标位置已存在：%@";
+"fileorganizer.evidence.classify.default" = "按扩展名归入「%@」分类。";
+"fileorganizer.evidence.classify.extension" = "规则「%@」匹配扩展名 .%@，归入「%@」。";
+"fileorganizer.evidence.classify.namePattern" = "规则「%@」匹配文件名「%@」，归入「%@」。";
+"fileorganizer.evidence.classify.size" = "规则「%@」按文件大小匹配，归入「%@」。";
+"fileorganizer.evidence.classify.catchall" = "规则「%@」兜底匹配，归入「%@」。";
+
 // Storage — detail
 "storage.largeItems.subtitle" = "占用磁盘空间较多的大文件和旧文件";
 "storage.empty.title" = "暂无大文件";

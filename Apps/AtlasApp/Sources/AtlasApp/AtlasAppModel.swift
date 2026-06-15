@@ -2,6 +2,7 @@ import AtlasApplication
 import AtlasCoreAdapters
 import AtlasDesignSystem
 import AtlasDomain
+import AtlasFeaturesFileOrganizer
 import AtlasFeaturesSmartClean
 import AtlasInfrastructure
 import Combine
@@ -72,6 +73,12 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var fileOrganizerRules: [FileOrganizerRule]
     @Published private(set) var fileOrganizerExecutionCompleted = false
     @Published private(set) var fileOrganizerMovedCount = 0
+    /// Module receipt (spec §2.3 ⑤ / §1.6 fail-closed): populated from real
+    /// execution output when `fileOrganizerExecutionCompleted` flips true;
+    /// cleared by `supersedePlan(.fileOrganizer)` / new scan. Mirrors
+    /// `smartCleanExecutionReceipt` shape. Rendered read-only by the receipt
+    /// stage view; every field is backed by real execution data.
+    @Published private(set) var fileOrganizerExecutionReceipt: FileOrganizerExecutionReceipt?
 
     private let repository: AtlasWorkspaceRepository
     private let workspaceController: AtlasWorkspaceController
@@ -1019,6 +1026,7 @@ final class AtlasAppModel: ObservableObject {
         fileOrganizerExecutionIssue = nil
         fileOrganizerExecutionCompleted = false
         fileOrganizerMovedCount = 0
+        fileOrganizerExecutionReceipt = nil
 
         if folderPaths.count <= 1 {
             // Single folder — scan directly, no per-folder progress
@@ -1136,6 +1144,7 @@ final class AtlasAppModel: ObservableObject {
                 isFileOrganizerPlanFresh = false
                 fileOrganizerExecutionCompleted = false
                 fileOrganizerMovedCount = 0
+                fileOrganizerExecutionReceipt = nil
                 fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.ready")
             }
         } catch {
@@ -1154,6 +1163,7 @@ final class AtlasAppModel: ObservableObject {
                     isFileOrganizerPlanFresh = false
                     fileOrganizerExecutionCompleted = false
                     fileOrganizerMovedCount = 0
+                    fileOrganizerExecutionReceipt = nil
                     fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.ready")
                 }
             } else {
@@ -1182,10 +1192,38 @@ final class AtlasAppModel: ObservableObject {
                 fileOrganizerPlanIssue = nil
                 fileOrganizerExecutionIssue = nil
                 fileOrganizerExecutionCompleted = true
+                // Receipt (§1.6 fail-closed): every field from real execution
+                // output. planNumber/receiptCode come from the workflow state
+                // (assigned at scan completion). Summary uses the localized
+                // callout already computed from movedCount above.
+                let foStored = workflowState(for: .fileOrganizer)
+                fileOrganizerExecutionReceipt = FileOrganizerExecutionReceipt(
+                    planNumber: foStored.planNumber,
+                    receiptCode: foStored.receiptCode,
+                    completedAt: Date(),
+                    movedItemCount: movedCount,
+                    summary: fileOrganizerScanSummary,
+                    failureReason: nil
+                )
             }
         } catch {
             fileOrganizerScanSummary = error.localizedDescription
             fileOrganizerExecutionIssue = error.localizedDescription
+            // Partial-completion receipt (spec §2.3 ④ error → 「查看回执」):
+            // the run may have moved some files before failing. movedCount here
+            // is the pre-run snapshot (the success path overwrote it inside the
+            // do-block); we surface a partial receipt so the user can review
+            // what landed where and restore via the ledger. Fail-closed §1.6:
+            // every field is real — the failureReason is the worker's error.
+            let foStored = workflowState(for: .fileOrganizer)
+            fileOrganizerExecutionReceipt = FileOrganizerExecutionReceipt(
+                planNumber: foStored.planNumber,
+                receiptCode: foStored.receiptCode,
+                completedAt: Date(),
+                movedItemCount: fileOrganizerMovedCount,
+                summary: fileOrganizerScanSummary,
+                failureReason: error.localizedDescription
+            )
         }
 
         isFileOrganizerExecuting = false

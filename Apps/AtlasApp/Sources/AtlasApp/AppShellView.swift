@@ -265,12 +265,25 @@ struct AppShellView: View {
                 canExecutePlan: model.canExecuteFileOrganizerPlan,
                 planIssue: model.fileOrganizerPlanIssue,
                 executionIssue: model.fileOrganizerExecutionIssue,
-                executionCompleted: model.fileOrganizerExecutionCompleted,
+                executionReceipt: model.fileOrganizerExecutionReceipt,
                 movedCount: model.fileOrganizerMovedCount,
                 scannedFolders: model.scannedFolders,
                 rules: model.fileOrganizerRules,
                 destinationBasePath: model.settings.fileOrganizerDestinationBasePath,
                 isRecursiveScan: model.settings.fileOrganizerRecursiveScan,
+                searchText: model.searchText(for: .fileOrganizer),
+                state: fileOrganizerWorkflowState,
+                onStateChange: { newState in
+                    model.updateWorkflowState(for: .fileOrganizer) { state in
+                        // Decision A (resolve-on-render): the view never writes
+                        // currentStage — only user-mutable presentation state.
+                        // UUID→String bridge for the shared per-route host.
+                        state.displayedStage = newState.displayedStage
+                        state.selectedIDs = Set(newState.selectedIDs.map(\.uuidString))
+                        state.evidenceSelectionID = newState.evidenceSelectionID?.uuidString
+                        state.drawerPresented = newState.drawerPresented
+                    }
+                },
                 onStartScan: { folders in
                     Task { await model.runFileOrganizerScan(folderPaths: folders) }
                 },
@@ -286,9 +299,6 @@ struct AppShellView: View {
                 onDryRun: {
                     Task { await model.dryRunFileOrganizerPlan() }
                 },
-                onEditRules: {
-                    // Future: open rule editor
-                },
                 onUpdateDestination: { path in
                     Task { await model.updateFileOrganizerDestination(path) }
                 },
@@ -300,6 +310,9 @@ struct AppShellView: View {
                 },
                 onUndoExecution: {
                     Task { await model.undoFileOrganizerExecution() }
+                },
+                onNavigateToLedger: {
+                    model.navigate(to: .ledger)
                 }
             )
         case .apps:
@@ -396,6 +409,45 @@ struct AppShellView: View {
             rescanConfirmationPending: stored.rescanConfirmationPending,
             isScanInProgress: resolution.isScanInProgress,
             isReviewEmpty: resolution.isReviewEmpty,
+            isExecutionError: resolution.isExecutionError
+        )
+    }
+
+    /// Decision A (resolve-on-render) — FileOrganizer mirror of
+    /// `smartCleanWorkflowState`. The shell derives `currentStage` from live
+    /// model state via `FileOrganizerStageMap.resolve` (five segments: ① scan
+    /// · ② rules · ③ preview · ④ execute · ⑤ receipt) on every render; the
+    /// stored ViewState contributes only user-mutable presentation fields.
+    ///
+    /// Host/feature type bridge: `AtlasWorkflowViewState.selectedIDs` is keyed
+    /// by `String` (Finding-id convention shared with SmartClean) while the
+    /// FileOrganizer feature keys selection by `UUID`. We map String↔UUID here
+    /// so the single per-route host remains the persistence truth (§2.3 —
+    /// feature-local @State does not survive route switches). Invalid UUID
+    /// strings are dropped (fail-closed).
+    private var fileOrganizerWorkflowState: FileOrganizerWorkflowState {
+        let stored = model.workflowState(for: .fileOrganizer)
+        let resolution = FileOrganizerStageMap.resolve(FileOrganizerStageMap.Inputs(
+            isScanning: model.isFileOrganizerScanning,
+            isClassifying: model.isFileOrganizerClassifying,
+            isExecuting: model.isFileOrganizerExecuting,
+            executionFailed: model.fileOrganizerExecutionIssue != nil,
+            executionCompleted: model.fileOrganizerExecutionCompleted,
+            isPlanFresh: model.isFileOrganizerPlanFresh,
+            hasPreviewResults: model.isFileOrganizerPlanFresh && !model.currentFileOrganizerPlan.items.isEmpty,
+            entriesCount: model.filteredFileOrganizerEntries.count
+        ))
+        return FileOrganizerWorkflowState(
+            currentStage: resolution.current,
+            displayedStage: stored.displayedStage,
+            planNumber: stored.planNumber,
+            receiptCode: stored.receiptCode,
+            selectedIDs: Set(stored.selectedIDs.compactMap(UUID.init(uuidString:))),
+            evidenceSelectionID: stored.evidenceSelectionID.flatMap(UUID.init(uuidString:)),
+            drawerPresented: stored.drawerPresented,
+            rescanConfirmationPending: stored.rescanConfirmationPending,
+            isScanInProgress: resolution.isScanInProgress,
+            isRulesEmpty: resolution.isRulesEmpty,
             isExecutionError: resolution.isExecutionError
         )
     }

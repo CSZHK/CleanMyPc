@@ -1030,6 +1030,52 @@
 "fileorganizer.accessibility.notSelected" = "Not selected";
 "fileorganizer.accessibility.toggleHint" = "Double tap to toggle selection";
 
+// File Organizer — Calm Ledger five-segment stage (Batch L2)
+"fileorganizer.stage.scan" = "Scan";
+"fileorganizer.stage.rules" = "Rules";
+"fileorganizer.stage.preview" = "Preview";
+"fileorganizer.stage.execute" = "Execute";
+"fileorganizer.stage.receipt" = "Receipt";
+"fileorganizer.stage.plan.number" = "Plan No. %d";
+"fileorganizer.stage.plan.number.a11y" = "Plan number %d";
+"fileorganizer.stage.readonly.banner" = "You are reviewing a completed stage as a read-only snapshot.";
+"fileorganizer.stage.readonly.return" = "Return to current stage";
+"fileorganizer.stage.actionbar.dryRun" = "Preview %d selected";
+"fileorganizer.stage.actionbar.execute" = "Execute organization";
+"fileorganizer.stage.actionbar.viewReceipt" = "View receipt";
+"fileorganizer.stage.actionbar.rescan" = "Rescan";
+"fileorganizer.stage.metric.selected" = "%@ · %d items";
+"fileorganizer.stage.execute.failure.suggestion" = "Partially completed execution is still recorded; see the receipt and ledger for details.";
+"fileorganizer.promise.dryRun" = "Preview does not move files. Review the manifest, then execute.";
+"fileorganizer.promise.execute" = "A recovery point is created before execution. You can restore original paths from the ledger.";
+"fileorganizer.cached.title" = "Cached results available";
+"fileorganizer.cached.detail" = "Your previous scan results are still available. Continue organizing or rescan.";
+"fileorganizer.rules.count" = "%d classification rules active";
+"fileorganizer.drawer.close" = "Close evidence panel";
+"fileorganizer.receipt.title" = "Organization receipt";
+"fileorganizer.receipt.items.label" = "Moved items";
+"fileorganizer.receipt.items.value" = "%d items";
+"fileorganizer.receipt.completed.label" = "Completed";
+"fileorganizer.receipt.code.label" = "Receipt number";
+"fileorganizer.receipt.moved.metric" = "%d items moved";
+"fileorganizer.receipt.viewInLedger" = "View in ledger →";
+"fileorganizer.receipt.missing.title" = "No receipt yet";
+"fileorganizer.receipt.missing.detail" = "No organization plan has been executed yet. Once executed, the receipt for this plan appears here.";
+"fileorganizer.evidence.open" = "View evidence";
+"fileorganizer.evidence.empty.title" = "Select a file to see why it was classified";
+"fileorganizer.evidence.empty.detail" = "Select a file in the list to see its classification rule-hit chain and move target.";
+"fileorganizer.evidence.source" = "Source path";
+"fileorganizer.evidence.size" = "File size";
+"fileorganizer.evidence.category" = "Category";
+"fileorganizer.evidence.destination" = "Move target";
+"fileorganizer.evidence.conflict" = "Conflict";
+"fileorganizer.evidence.conflict.detail" = "Destination already exists: %@";
+"fileorganizer.evidence.classify.default" = "Filed under the \"%@\" category by extension.";
+"fileorganizer.evidence.classify.extension" = "Rule \"%@\" matched extension .%@, filed under \"%@\".";
+"fileorganizer.evidence.classify.namePattern" = "Rule \"%@\" matched filename \"%@\", filed under \"%@\".";
+"fileorganizer.evidence.classify.size" = "Rule \"%@\" matched by file size, filed under \"%@\".";
+"fileorganizer.evidence.classify.catchall" = "Rule \"%@\" matched as a catch-all, filed under \"%@\".";
+
 // Storage — detail
 "storage.largeItems.subtitle" = "Large files and old files taking up disk space";
 "storage.empty.title" = "No Large Items Found";
