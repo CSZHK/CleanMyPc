@@ -289,21 +289,16 @@ public struct LedgerFeatureView: View {
 
     private func syncSelection() {
         withAnimation(.easeInOut(duration: 0.2)) {
-            // Auto-select first only when nothing is selected OR the current
-            // selection fell out of EVERY rendered list (primary + archived) —
-            // never clobber an active user selection just because the
-            // filter/list changed. Archived-run selections share the same
-            // selectedEntryID and must survive list/filter refreshes too
-            // (review round-1: a primary-only validity check reset an archived
-            // run the user just opened → 交互异常).
-            let allEntryIDs = Set(primaryEntries.map(\.id)).union(archivedEntries.map(\.id))
-            let currentValid = selectedEntryID.flatMap { id in
-                allEntryIDs.contains(id) ? id : nil
-            }
-            if currentValid == nil {
-                // Fall back to the first visible entry — primary first, then the
-                // archive, so a Ledger with only old runs still populates the
-                // detail panel instead of showing an empty state (round-3).
+            // Auto-select first only when the current selection is genuinely
+            // unresolvable — never clobber an active user selection just because
+            // the filter narrowed the VISIBLE list. `selection` resolves the id
+            // against the FULL unfiltered taskRuns/recoveryItems sets, so a
+            // recovery item that a filter chip narrowed out of the timeline
+            // stays selected (the detail panel still shows it; the timeline just
+            // shows no highlight under the new filter) instead of being silently
+            // replaced (round-9: the filter-narrowed allEntryIDs check clobbered
+            // it; round-1/round-3 covered the archived-run dimension only).
+            if selection == .none {
                 if let first = primaryEntries.first {
                     selectedEntryID = first.id
                 } else if let first = archivedEntries.first {

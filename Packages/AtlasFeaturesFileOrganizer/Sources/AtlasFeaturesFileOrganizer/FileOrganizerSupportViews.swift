@@ -50,12 +50,21 @@ struct FileThumbnailView: View {
                 image = cached
                 return
             }
-            guard let nsImage = NSImage(contentsOf: URL(fileURLWithPath: expandedPath)) else { return }
-            let size = NSSize(width: 64, height: 64)
-            let resized = NSImage(size: size)
-            resized.lockFocus()
-            nsImage.draw(in: NSRect(origin: .zero, size: size))
-            resized.unlockFocus()
+            // Blocking disk read + bitmap resize — run off the MainActor so a
+            // long image-category list doesn't jank scroll (round-9). NSImage is
+            // not Sendable, so the detached task returns the resized bitmap as
+            // Data (tiffRepresentation); the NSImage is reconstructed on the
+            // MainActor. NSCache is thread-safe.
+            let data = await Task.detached(priority: .userInitiated) { () -> Data? in
+                guard let nsImage = NSImage(contentsOf: URL(fileURLWithPath: expandedPath)) else { return nil }
+                let size = NSSize(width: 64, height: 64)
+                let resized = NSImage(size: size)
+                resized.lockFocus()
+                nsImage.draw(in: NSRect(origin: .zero, size: size))
+                resized.unlockFocus()
+                return resized.tiffRepresentation
+            }.value
+            guard let data, let resized = NSImage(data: data) else { return }
             FileOrganizerThumbnailCache.shared.setImage(resized, for: expandedPath)
             image = resized
         }
