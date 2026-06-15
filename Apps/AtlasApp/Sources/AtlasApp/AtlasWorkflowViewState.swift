@@ -46,6 +46,9 @@ struct AtlasWorkflowViewState: Equatable {
     var ledgerEntrySelectionID: String?
     /// Older-archive section expanded.
     var ledgerArchiveExpanded: Bool = false
+    /// Apps screen selected app (round-14: hosted so it survives the .id(route)
+    /// rebuild on tab round-trips — §7 red line, mirrors the Ledger fields).
+    var appsSelectedAppID: UUID?
 }
 
 // MARK: - Stage derivation (pure, unit-tested)

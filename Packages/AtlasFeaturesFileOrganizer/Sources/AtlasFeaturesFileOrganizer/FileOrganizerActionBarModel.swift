@@ -116,7 +116,10 @@ public struct FileOrganizerActionBarModel: Equatable {
             return FileOrganizerActionBarModel(
                 title: AtlasL10n.string("fileorganizer.status.executing"),
                 isEnabled: false, promise: nil, metricText: nil,
-                progress: inputs.scanProgress, intent: .none
+                // Indeterminate during execution (round-14): scanProgress is the
+                // stale value from the prior scan — the worker reports progress
+                // only on completion.
+                progress: nil, intent: .none
             )
         }
         // Look-back is read-only: the only action is returning to the live stage.

@@ -93,7 +93,11 @@ public struct SmartCleanActionBarModel: Equatable {
             return SmartCleanActionBarModel(
                 title: AtlasL10n.string("smartclean.loading.execute"),
                 isEnabled: false, promise: nil, metricText: nil,
-                progress: inputs.scanProgress, intent: .none
+                // Indeterminate during execution (round-14): scanProgress is the
+                // STALE 1.0 from the prior scan — the worker reports progress
+                // only on completion — so a determinate value misrepresents a
+                // just-started execution as 100% done.
+                progress: nil, intent: .none
             )
         }
         // Look-back is read-only: the only action is returning to the live stage.

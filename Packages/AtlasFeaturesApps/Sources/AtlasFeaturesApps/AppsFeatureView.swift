@@ -29,6 +29,7 @@ public struct AppsFeatureView: View {
     private let onPreviewAppUninstall: (UUID) -> Void
     private let onExecuteAppUninstall: (UUID) -> Void
     private let onRescanLeftovers: (UUID) -> Void
+    private let onSelectionChange: (UUID?) -> Void
 
     @State private var selectedAppID: UUID?
     @State private var browserWidth: CGFloat?
@@ -49,7 +50,9 @@ public struct AppsFeatureView: View {
         onRefreshApps: @escaping () -> Void = {},
         onPreviewAppUninstall: @escaping (UUID) -> Void = { _ in },
         onExecuteAppUninstall: @escaping (UUID) -> Void = { _ in },
-        onRescanLeftovers: @escaping (UUID) -> Void = { _ in }
+        onRescanLeftovers: @escaping (UUID) -> Void = { _ in },
+        initialSelectedAppID: UUID? = nil,
+        onSelectionChange: @escaping (UUID?) -> Void = { _ in }
     ) {
         self.apps = apps
         self.previewPlan = previewPlan
@@ -63,10 +66,14 @@ public struct AppsFeatureView: View {
         self.onPreviewAppUninstall = onPreviewAppUninstall
         self.onExecuteAppUninstall = onExecuteAppUninstall
         self.onRescanLeftovers = onRescanLeftovers
+        self.onSelectionChange = onSelectionChange
         // Retention window is a fixed Atlas default (14d) — Apps does not yet
         // carry its own retention field; mirroring the legacy detail copy.
         self.retentionDays = 14
-        _selectedAppID = State(initialValue: Self.sortedApps(apps).first?.id)
+        // Seed from the model-persisted selection so it survives route switches
+        // (round-14 §7 red line — mirrors the Ledger pattern); fall back to the
+        // first app when nil.
+        _selectedAppID = State(initialValue: initialSelectedAppID ?? Self.sortedApps(apps).first?.id)
     }
 
     public var body: some View {
@@ -90,8 +97,12 @@ public struct AppsFeatureView: View {
 
             browserCard
         }
-        .onAppear(perform: syncSelection)
+        .onAppear {
+            syncSelection()
+            onSelectionChange(selectedAppID) // persist resolved selection (round-14 §7)
+        }
         .onChange(of: sortedAppIDs) { _, _ in syncSelection() }
+        .onChange(of: selectedAppID) { _, _ in onSelectionChange(selectedAppID) }
         .confirmationDialog(
             AtlasL10n.string("apps.confirm.uninstall.title"),
             isPresented: $showUninstallConfirmation,

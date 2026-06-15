@@ -349,6 +349,10 @@ struct AppShellView: View {
                 },
                 onRescanLeftovers: { appID in
                     Task { await model.rescanLeftovers(appID: appID) }
+                },
+                initialSelectedAppID: model.workflowState(for: .apps).appsSelectedAppID,
+                onSelectionChange: { id in
+                    model.updateWorkflowState(for: .apps) { $0.appsSelectedAppID = id }
                 }
             )
         case .ledger:

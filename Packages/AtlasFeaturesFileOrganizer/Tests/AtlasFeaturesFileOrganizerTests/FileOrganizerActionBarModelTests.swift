@@ -50,7 +50,10 @@ final class FileOrganizerActionBarModelTests: XCTestCase {
     func testExecutingShowsProgressNoneIntent() {
         let m = FileOrganizerActionBarModel.resolve(inputs(isExecuting: true, scanProgress: 0.7))
         XCTAssertEqual(m.intent, .none)
-        XCTAssertEqual(m.progress, 0.7)
+        // Round-14: the execute stage is indeterminate — scanProgress is the
+        // stale value from the prior scan (the worker reports progress only on
+        // completion), so resolve must NOT echo it as a determinate value.
+        XCTAssertNil(m.progress)
     }
 
     // MARK: - Read-only look-back
