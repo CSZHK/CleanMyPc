@@ -1225,17 +1225,18 @@ final class AtlasAppModel: ObservableObject {
             fileOrganizerScanSummary = error.localizedDescription
             fileOrganizerExecutionIssue = error.localizedDescription
             // Partial-completion receipt (spec §2.3 ④ error → 「查看回执」):
-            // the run may have moved some files before failing. movedCount here
-            // is the pre-run snapshot (the success path overwrote it inside the
-            // do-block); we surface a partial receipt so the user can review
-            // what landed where and restore via the ledger. Fail-closed §1.6:
-            // every field is real — the failureReason is the worker's error.
+            // fail-closed §1.6 — on failure we cannot confirm how many files
+            // moved before the error, so movedItemCount is 0 (never the stale
+            // count left over from a prior successful run, which previously made
+            // the receipt falsely claim moves that did not happen — round-3).
+            // The receipt view suppresses the moved-items row when
+            // failureReason != nil (mirrors SmartCleanReceiptView).
             let foStored = workflowState(for: .fileOrganizer)
             fileOrganizerExecutionReceipt = FileOrganizerExecutionReceipt(
                 planNumber: foStored.planNumber,
                 receiptCode: foStored.receiptCode,
                 completedAt: Date(),
-                movedItemCount: fileOrganizerMovedCount,
+                movedItemCount: 0,
                 summary: fileOrganizerScanSummary,
                 failureReason: error.localizedDescription
             )

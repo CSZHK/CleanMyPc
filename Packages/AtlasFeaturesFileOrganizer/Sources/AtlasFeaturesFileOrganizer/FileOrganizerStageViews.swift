@@ -575,10 +575,16 @@ struct FileOrganizerReceiptView: View {
 
     private var factRows: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
-            factRow(
-                label: AtlasL10n.string("fileorganizer.receipt.items.label"),
-                value: AtlasL10n.string("fileorganizer.receipt.items.value", receipt.movedItemCount)
-            )
+            // Fail-closed (round-3, mirrors SmartCleanReceiptView): suppress the
+            // moved-items row on the failure path — we cannot confirm how many
+            // files moved before the error, so claiming a count would mislead.
+            // The AtlasErrorState already conveys the failure.
+            if receipt.failureReason == nil {
+                factRow(
+                    label: AtlasL10n.string("fileorganizer.receipt.items.label"),
+                    value: AtlasL10n.string("fileorganizer.receipt.items.value", receipt.movedItemCount)
+                )
+            }
             factRow(
                 label: AtlasL10n.string("fileorganizer.receipt.completed.label"),
                 value: AtlasFormatters.shortDate(receipt.completedAt)

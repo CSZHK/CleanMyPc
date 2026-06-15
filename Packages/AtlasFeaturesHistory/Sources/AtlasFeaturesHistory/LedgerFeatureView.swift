@@ -49,10 +49,10 @@ public struct LedgerFeatureView: View {
     public var body: some View {
         AtlasScreen(
             title: AtlasL10n.string("ledger.screen.title"),
-            subtitle: AtlasL16nScreenSubtitle,
+            subtitle: AtlasL10n.string("ledger.screen.subtitle"),
             maxContentWidth: AtlasLayout.maxWorkspaceWidth
         ) {
-            AtlasLedgerSurface(title: AtlasL16nSurfaceTitle) {
+            AtlasLedgerSurface(title: AtlasL10n.string("ledger.surface.title")) {
                 VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
                     headerBar
                     metricRow
@@ -76,7 +76,7 @@ public struct LedgerFeatureView: View {
         HStack {
             Spacer(minLength: 0)
             Button { isExporting = true } label: {
-                Label(AtlasL16nExportLabel, systemImage: "square.and.arrow.up")
+                Label(AtlasL10n.string("ledger.export.button"), systemImage: "square.and.arrow.up")
             }
             .buttonStyle(.atlasSecondary)
             .accessibilityIdentifier("ledger.export.button")
@@ -143,13 +143,15 @@ public struct LedgerFeatureView: View {
     @ViewBuilder
     private var timelineColumn: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-            Text(AtlasL16nTimelineTitle).font(AtlasTypography.label).foregroundStyle(.secondary)
-            if primaryEntries.isEmpty {
+            Text(AtlasL10n.string("ledger.timeline.title")).font(AtlasTypography.label).foregroundStyle(.secondary)
+            if primaryEntries.isEmpty && archivedEntries.isEmpty {
                 AtlasEmptyState(title: AtlasL10n.string("ledger.timeline.empty.title"), detail: AtlasL10n.string("ledger.timeline.empty.detail"), systemImage: "list.bullet.rectangle", tone: .neutral)
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: AtlasSpacing.md) {
-                        LedgerTimelineView(entries: primaryEntries, selection: entrySelectionBinding)
+                        if !primaryEntries.isEmpty {
+                            LedgerTimelineView(entries: primaryEntries, selection: entrySelectionBinding)
+                        }
                         if !archivedEntries.isEmpty {
                             LedgerArchiveView(entries: archivedEntries, title: AtlasL10n.string("ledger.archive.section.older"), isExpanded: $isOlderArchiveExpanded, selection: entrySelectionBinding)
                         }
@@ -165,7 +167,7 @@ public struct LedgerFeatureView: View {
     @ViewBuilder
     private var detailColumn: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
-            Text(AtlasL16nDetailTitle).font(AtlasTypography.label).foregroundStyle(.secondary)
+            Text(AtlasL10n.string("ledger.detail.title")).font(AtlasTypography.label).foregroundStyle(.secondary)
             LedgerDetailView(selection: selection, restoringItemID: restoringItemID, retentionDays: retentionDays, onRestoreItem: onRestoreItem)
         }
         .padding(AtlasSpacing.lg)
@@ -275,8 +277,15 @@ public struct LedgerFeatureView: View {
             let currentValid = selectedEntryID.flatMap { id in
                 allEntryIDs.contains(id) ? id : nil
             }
-            if currentValid == nil, let first = primaryEntries.first {
-                selectedEntryID = first.id
+            if currentValid == nil {
+                // Fall back to the first visible entry — primary first, then the
+                // archive, so a Ledger with only old runs still populates the
+                // detail panel instead of showing an empty state (round-3).
+                if let first = primaryEntries.first {
+                    selectedEntryID = first.id
+                } else if let first = archivedEntries.first {
+                    selectedEntryID = first.id
+                }
             }
         }
     }
@@ -325,10 +334,3 @@ private struct LedgerBrowserWidthKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
-
-// Locale-resolved constants (file scope keeps the body compact).
-private let AtlasL16nScreenSubtitle = AtlasL10n.string("ledger.screen.subtitle")
-private let AtlasL16nSurfaceTitle = AtlasL10n.string("ledger.surface.title")
-private let AtlasL16nExportLabel = AtlasL10n.string("ledger.export.button")
-private let AtlasL16nTimelineTitle = AtlasL10n.string("ledger.timeline.title")
-private let AtlasL16nDetailTitle = AtlasL10n.string("ledger.detail.title")

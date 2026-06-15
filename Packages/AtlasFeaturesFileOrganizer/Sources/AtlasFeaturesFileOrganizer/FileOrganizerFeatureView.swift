@@ -12,7 +12,7 @@ public struct FileOrganizerFeatureView: View {
     @State private var showExecuteConfirmation = false
     @State private var actionBarInset: CGFloat = 0
     @State private var isRuleEditorPresented = false
-    @State private var selectedFolders: [String] = ["~/Desktop", "~/Downloads"]
+    @State private var selectedFolders: [String]
 
     private let entries: [FileOrganizerEntry]
     private let plan: ActionPlan
@@ -84,6 +84,12 @@ public struct FileOrganizerFeatureView: View {
         self.planIssue = planIssue; self.executionIssue = executionIssue
         self.executionReceipt = executionReceipt; self.movedCount = movedCount
         self.scannedFolders = scannedFolders; self.rules = rules
+        // Seed from the model's last-scanned folders so a custom selection
+        // survives route switches (feature-local @State is destroyed when
+        // AppShellView rebuilds this view on navigation — §7 red line). The
+        // model persists scannedFolders; empty ⇒ first run ⇒ sensible defaults
+        // (round-3).
+        _selectedFolders = State(initialValue: scannedFolders.isEmpty ? ["~/Desktop", "~/Downloads"] : scannedFolders)
         self.destinationBasePath = destinationBasePath; self.isRecursiveScan = isRecursiveScan
         self.searchText = searchText; self.state = state; self.onStateChange = onStateChange
         self.onStartScan = onStartScan; self.onClassify = onClassify

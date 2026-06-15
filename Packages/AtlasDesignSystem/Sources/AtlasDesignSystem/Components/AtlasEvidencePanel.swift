@@ -184,6 +184,11 @@ public struct AtlasEvidencePanel<Actions: View>: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .help(row.title)
+                    // The status is otherwise icon+color only (hidden above).
+                    // Prefix it onto the title's announcement so VoiceOver
+                    // conveys success/warning/danger — the row's most safety-
+                    // relevant fact (round-3 a11y; reuses AtlasTone's label).
+                    .accessibilityLabel(Text("\(row.status.accessibilityLabel), \(row.title)"))
 
                 Spacer(minLength: AtlasSpacing.sm)
 
