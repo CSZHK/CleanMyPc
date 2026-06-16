@@ -60,24 +60,27 @@ final class FileOrganizerEvidenceBuilderTests: XCTestCase {
         XCTAssertEqual(match?.id, screenshotRule.id)
     }
 
-    func testMatchingRuleCatchAllByCategory() {
-        // Empty patterns but matching category + no size constraints ⇒ catch-all.
+    func testMatchingRuleCatchAllByCategoryNeverMatches() {
+        // Round-20: an empty-pattern "catch-all" rule NEVER matches — the real
+        // classifier only matches on extension/name, so attributing it here
+        // would invent a rule the run never selected (fail-closed §1.6).
         let catchAll = FileOrganizerRule(
             name: "All Images", extensionPatterns: [], namePatterns: [], category: .images)
         let e = entry("weird.qxz", category: .images)
         let match = FileOrganizerEvidenceBuilder.matchingRule(for: e, rules: [catchAll])
-        XCTAssertEqual(match?.id, catchAll.id)
+        XCTAssertNil(match)
     }
 
-    func testMatchingRuleSizeBandExcludesWhenOutOfRange() {
-        // Size-band gating applies to catch-all rules (no extension/name
-        // patterns): an out-of-range file is not matched by this rule.
-        let bigImagesCatchAll = FileOrganizerRule(
-            name: "Big Images", extensionPatterns: [], namePatterns: [],
-            category: .images, minSizeBytes: 1_000_000)
-        let small = entry("tiny.qxz", bytes: 500, category: .images)
-        let match = FileOrganizerEvidenceBuilder.matchingRule(for: small, rules: [bigImagesCatchAll])
-        XCTAssertNil(match) // size band excludes; no later rule matches
+    func testMatchingRuleSizeBandExcludesWhenOverMax() {
+        // Round-20: a pattern-matching rule whose size band (maxSize) excludes
+        // the file is skipped — mirrors the classifier. (Empty-pattern rules
+        // never match, so this uses a real pattern; complements the minSize test.)
+        let smallDocsOnly = FileOrganizerRule(
+            name: "Small PDFs", extensionPatterns: ["pdf"], namePatterns: [],
+            category: .documents, maxSizeBytes: 1_000)
+        let huge = entry("big.pdf", bytes: 5_000, category: .documents)
+        let match = FileOrganizerEvidenceBuilder.matchingRule(for: huge, rules: [smallDocsOnly])
+        XCTAssertNil(match, "pattern match but over maxSize ⇒ skip")
     }
 
     func testMatchingRuleExtensionHitRespectsSizeBand() {

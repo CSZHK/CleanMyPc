@@ -128,26 +128,26 @@ public enum FileOrganizerEvidenceBuilder {
 
     /// The rule that classified `entry`, determined by matching the entry's
     /// extension/name/size against the ordered rule list (first match wins,
-    /// mirroring the classifier's precedence). Returns nil when no rule
+    /// mirroring the classifier's precedence EXACTLY). Returns nil when no rule
     /// matches — fail-closed: the evidence panel shows the fallback sentence
     /// instead of inventing a rule attribution.
     public static func matchingRule(for entry: FileOrganizerEntry, rules: [FileOrganizerRule]) -> FileOrganizerRule? {
         let ext = (entry.fileName as NSString).pathExtension.lowercased()
         let nameLower = entry.fileName.lowercased()
         for rule in rules {
-            // Match the classifier's ordering (AtlasFileOrganizerClassifier.
-            // classifyEntry): a rule applies only when (extension OR name
-            // matches, OR it's an empty-pattern catch-all of this category) AND
-            // the entry is within the size band. Returning on a pattern match
-            // BEFORE the size check (round-17) diverged from the classifier and
-            // attributed a "why" to a rule the real run skipped on size.
+            // Mirror AtlasFileOrganizerClassifier.classifyEntry exactly: a rule
+            // applies only when extension OR name matches AND the entry is in
+            // the size band. There is NO catch-all — an empty-pattern rule never
+            // matches in the classifier (the file falls through to UTType/
+            // category fallback), so attributing it here would invent a rule the
+            // run never selected (round-17 size-ordering fix + round-20 catch-all
+            // removal). Returning on a pattern match before the size check also
+            // diverged (round-17), so the size gates run before `return rule`.
             let matchesExtension = !rule.extensionPatterns.isEmpty
                 && rule.extensionPatterns.contains(where: { $0.lowercased() == ext })
             let matchesName = !rule.namePatterns.isEmpty
                 && rule.namePatterns.contains(where: { nameLower.contains($0.lowercased()) })
-            let isCatchAll = rule.extensionPatterns.isEmpty && rule.namePatterns.isEmpty
-                && rule.category == entry.category
-            guard matchesExtension || matchesName || isCatchAll else { continue }
+            guard matchesExtension || matchesName else { continue }
             if let minSize = rule.minSizeBytes, entry.bytes < minSize { continue }
             if let maxSize = rule.maxSizeBytes, entry.bytes > maxSize { continue }
             return rule

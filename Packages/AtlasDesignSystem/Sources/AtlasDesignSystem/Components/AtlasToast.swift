@@ -207,6 +207,12 @@ private struct AtlasToastRow: View {
 
     private func scheduleAutoDismiss() {
         guard let interval = autoDismissInterval, interval > 0 else { return }
+        // Honor the documented "inline action does NOT auto-dismiss" contract
+        // (round-20): a toast carrying an undo onAction or a ledger back-link
+        // onTap must persist until the user dismisses it, so the one-tap undo /
+        // back-link quick path isn't dropped after the interval.
+        let hasInlineAction = AtlasToastItem.showsAction(title: item.actionTitle, action: item.onAction)
+        if hasInlineAction || item.onTap != nil { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
             onDismiss()
         }

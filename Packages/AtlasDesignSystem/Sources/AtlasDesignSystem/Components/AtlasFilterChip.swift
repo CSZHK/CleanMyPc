@@ -46,6 +46,7 @@ public struct AtlasFilterChip: View {
             .foregroundStyle(isSelected ? AtlasColor.onBrand : .secondary)
             .padding(.horizontal, AtlasSpacing.md)
             .padding(.vertical, AtlasSpacing.xs)
+            .frame(minHeight: 44, alignment: .center) // round-20: ≥44pt tap target
             .background(
                 // G6 token pass: resting chips sit on the surfaceSubdued row tone
                 // (was a 4% brand wash composed via opacity).

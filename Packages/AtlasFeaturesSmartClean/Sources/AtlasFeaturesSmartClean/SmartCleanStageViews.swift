@@ -327,12 +327,13 @@ struct SmartCleanExecuteStageView: View {
                             .truncationMode(.middle)
                         Spacer(minLength: AtlasSpacing.sm)
                     }
-                    // Expose per-item pending/failed status to VoiceOver (round-19):
-                    // the glyph is icon-only and hidden, so without this a swipe
-                    // hears only the title. Mirrors AtlasEvidencePanel.executingRow.
+                    // Collapse to one element so VoiceOver speaks the item title
+                    // (round-19/20). No per-item status exists in the model, so do
+                    // NOT couple a value to the plan-level executionIssue (that
+                    // mis-announced every item as failed on a plan error). The
+                    // run/failure state is conveyed by the AtlasErrorState block.
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Text(item.title))
-                    .accessibilityValue(Text(AtlasL10n.string(executionIssue == nil ? "taskstatus.running" : "taskstatus.failed")))
                 }
             }
         }

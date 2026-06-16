@@ -159,7 +159,7 @@
 "infrastructure.plan.uninstall.moveBundle.detail" = "Trash the bundle at %@ while keeping the uninstall visible in Ledger.";
 "infrastructure.plan.uninstall.archive.one" = "Archive 1 leftover item";
 "infrastructure.plan.uninstall.archive.other" = "Archive %d leftover items";
-"infrastructure.plan.uninstall.archive.detail" = "Support files, caches, and launch items remain reviewable through recovery history.";
+"infrastructure.plan.uninstall.archive.detail" = "Support files, caches, and launch items remain reviewable through the Ledger.";
 "infrastructure.plan.uninstall.review.title" = "Review %@ (%d)";
 "infrastructure.plan.uninstall.review.detail" = "Found %@ across %d item(s). Atlas keeps this review-only for now.";
 "infrastructure.plan.uninstall.review.supportFiles" = "support files";
@@ -171,7 +171,7 @@
 "infrastructure.action.inspectPrivileged" = "Inspect privileged cleanup for %@";
 "infrastructure.action.archiveRecovery" = "Archive %@ into recovery";
 "infrastructure.action.moveToTrash" = "Move %@ to Trash";
-"app.search.prompt" = "Search findings, apps, history";
+"app.search.prompt" = "Search findings, apps, Ledger";
 "app.search.hint" = "Searches the visible content in the current route.";
 "app.search.prompt.route" = "Search %@";
 "app.search.hint.route" = "Searches the visible content in %@.";
