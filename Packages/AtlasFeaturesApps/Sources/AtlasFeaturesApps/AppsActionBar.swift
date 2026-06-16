@@ -23,7 +23,13 @@ struct AppsActionBar: View {
             onPrimary: onPrimary,
             promise: AppsEvidencePanelBuilder.actionBarPromise(plan: previewPlan, retentionDays: retentionDays),
             metricText: AppsEvidencePanelBuilder.actionBarMetric(selectedApp: selectedApp),
-            progress: activeUninstallAppID == selectedApp?.id ? 0.0 : nil,
+            // No determinate progress during uninstall (round-16): the model
+            // holds activeUninstallAppID for the whole run with no progress
+            // updates, so a pinned 0.0 reads as a frozen/stalled "0%" bar +
+            // a11y value. The in-flight state is already conveyed by the
+            // disabled primary + 「Uninstalling…」title (mirrors the SmartClean
+            // round-14 execute-progress fix).
+            progress: nil,
             primaryIdentifier: primaryIdentifier
         )
         .padding(.horizontal, AtlasSpacing.lg)
