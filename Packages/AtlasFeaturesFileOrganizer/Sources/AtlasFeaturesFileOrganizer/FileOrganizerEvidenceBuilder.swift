@@ -135,28 +135,22 @@ public enum FileOrganizerEvidenceBuilder {
         let ext = (entry.fileName as NSString).pathExtension.lowercased()
         let nameLower = entry.fileName.lowercased()
         for rule in rules {
-            if !rule.extensionPatterns.isEmpty {
-                if rule.extensionPatterns.contains(where: { $0.lowercased() == ext }) {
-                    return rule
-                }
-            }
-            if !rule.namePatterns.isEmpty {
-                if rule.namePatterns.contains(where: { nameLower.contains($0.lowercased()) }) {
-                    return rule
-                }
-            }
-            if let minSize = rule.minSizeBytes, entry.bytes < minSize {
-                continue
-            }
-            if let maxSize = rule.maxSizeBytes, entry.bytes > maxSize {
-                continue
-            }
-            // A rule with empty patterns but matching category + size range
-            // still classifies (catch-all by category).
-            if rule.extensionPatterns.isEmpty && rule.namePatterns.isEmpty
-                && rule.category == entry.category {
-                return rule
-            }
+            // Match the classifier's ordering (AtlasFileOrganizerClassifier.
+            // classifyEntry): a rule applies only when (extension OR name
+            // matches, OR it's an empty-pattern catch-all of this category) AND
+            // the entry is within the size band. Returning on a pattern match
+            // BEFORE the size check (round-17) diverged from the classifier and
+            // attributed a "why" to a rule the real run skipped on size.
+            let matchesExtension = !rule.extensionPatterns.isEmpty
+                && rule.extensionPatterns.contains(where: { $0.lowercased() == ext })
+            let matchesName = !rule.namePatterns.isEmpty
+                && rule.namePatterns.contains(where: { nameLower.contains($0.lowercased()) })
+            let isCatchAll = rule.extensionPatterns.isEmpty && rule.namePatterns.isEmpty
+                && rule.category == entry.category
+            guard matchesExtension || matchesName || isCatchAll else { continue }
+            if let minSize = rule.minSizeBytes, entry.bytes < minSize { continue }
+            if let maxSize = rule.maxSizeBytes, entry.bytes > maxSize { continue }
+            return rule
         }
         return nil
     }

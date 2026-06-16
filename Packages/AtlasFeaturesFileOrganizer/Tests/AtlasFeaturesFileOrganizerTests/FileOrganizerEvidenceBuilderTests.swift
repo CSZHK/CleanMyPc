@@ -71,14 +71,26 @@ final class FileOrganizerEvidenceBuilderTests: XCTestCase {
 
     func testMatchingRuleSizeBandExcludesWhenOutOfRange() {
         // Size-band gating applies to catch-all rules (no extension/name
-        // patterns): an out-of-range file is not matched by this rule. The
-        // extension/name paths return before the size check (precedence).
+        // patterns): an out-of-range file is not matched by this rule.
         let bigImagesCatchAll = FileOrganizerRule(
             name: "Big Images", extensionPatterns: [], namePatterns: [],
             category: .images, minSizeBytes: 1_000_000)
         let small = entry("tiny.qxz", bytes: 500, category: .images)
         let match = FileOrganizerEvidenceBuilder.matchingRule(for: small, rules: [bigImagesCatchAll])
         XCTAssertNil(match) // size band excludes; no later rule matches
+    }
+
+    func testMatchingRuleExtensionHitRespectsSizeBand() {
+        // Round-17: a rule whose pattern matches but whose size band excludes
+        // the file must be SKIPPED (mirrors the real classifier). Previously
+        // matchingRule returned on the extension match before the size check,
+        // mis-attributing the "why" to a rule the run never selected.
+        let largePngRule = FileOrganizerRule(
+            name: "Large PNGs", extensionPatterns: ["png"], category: .images,
+            minSizeBytes: 1_000_000)
+        let small = entry("photo.png", bytes: 500, category: .images)
+        let match = FileOrganizerEvidenceBuilder.matchingRule(for: small, rules: [largePngRule])
+        XCTAssertNil(match, "pattern match but out of size band ⇒ skip (no later rule matches)")
     }
 
     // MARK: - classificationWhy (human-readable chain, fail-closed)
