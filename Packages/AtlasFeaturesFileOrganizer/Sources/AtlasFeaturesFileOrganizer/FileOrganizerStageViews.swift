@@ -513,6 +513,11 @@ struct FileOrganizerExecuteStageView: View {
                             .truncationMode(.middle)
                         Spacer(minLength: AtlasSpacing.sm)
                     }
+                    // Expose per-item pending/failed status to VoiceOver (round-19):
+                    // mirrors SmartCleanStageViews + AtlasEvidencePanel.executingRow.
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Text(item.title))
+                    .accessibilityValue(Text(AtlasL10n.string(executionIssue == nil ? "taskstatus.running" : "taskstatus.failed")))
                 }
             }
         }

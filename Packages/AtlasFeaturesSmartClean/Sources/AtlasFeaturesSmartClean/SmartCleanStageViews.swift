@@ -327,6 +327,12 @@ struct SmartCleanExecuteStageView: View {
                             .truncationMode(.middle)
                         Spacer(minLength: AtlasSpacing.sm)
                     }
+                    // Expose per-item pending/failed status to VoiceOver (round-19):
+                    // the glyph is icon-only and hidden, so without this a swipe
+                    // hears only the title. Mirrors AtlasEvidencePanel.executingRow.
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Text(item.title))
+                    .accessibilityValue(Text(AtlasL10n.string(executionIssue == nil ? "taskstatus.running" : "taskstatus.failed")))
                 }
             }
         }
