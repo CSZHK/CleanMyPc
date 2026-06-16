@@ -125,13 +125,13 @@ struct SmartCleanReceiptView: View {
                 }
 
                 HStack(spacing: AtlasSpacing.lg) {
-                    Button(action: onNavigateToLedger) {
-                        Text(AtlasL10n.string("smartclean.receipt.viewInLedger"))
-                            .font(AtlasTypography.label)
-                            .foregroundStyle(AtlasColor.brand)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("smartclean.receipt.viewInLedger")
+                    // atlasGhost (round-18): matches the sibling undo button + the
+                    // FileOrganizer receipt back-link (round-15) — a plain text
+                    // link fell below the branch's own a11y tap-target floor on
+                    // this 回链 red-line control.
+                    Button(AtlasL10n.string("smartclean.receipt.viewInLedger"), action: onNavigateToLedger)
+                        .buttonStyle(.atlasGhost)
+                        .accessibilityIdentifier("smartclean.receipt.viewInLedger")
 
                     if receipt.hasRestorePoint, let onUndo {
                         Button(AtlasL10n.string("smartclean.undo.banner.action"), action: onUndo)
