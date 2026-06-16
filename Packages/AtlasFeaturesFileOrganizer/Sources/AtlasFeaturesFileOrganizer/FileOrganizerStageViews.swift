@@ -562,13 +562,12 @@ struct FileOrganizerReceiptView: View {
                 }
 
                 HStack(spacing: AtlasSpacing.lg) {
-                    Button(action: onNavigateToLedger) {
-                        Text(AtlasL10n.string("fileorganizer.receipt.viewInLedger"))
-                            .font(AtlasTypography.label)
-                            .foregroundStyle(AtlasColor.brand)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("fileorganizer.receipt.viewInLedger")
+                    // atlasGhost (round-15): matches the sibling undo button's
+                    // padded tap target (≥44pt) — a plain text link fell below
+                    // the branch's own a11y floor on this 回链 red-line control.
+                    Button(AtlasL10n.string("fileorganizer.receipt.viewInLedger"), action: onNavigateToLedger)
+                        .buttonStyle(.atlasGhost)
+                        .accessibilityIdentifier("fileorganizer.receipt.viewInLedger")
 
                     if let onUndo {
                         Button(AtlasL10n.string("fileorganizer.undo.action"), action: onUndo)

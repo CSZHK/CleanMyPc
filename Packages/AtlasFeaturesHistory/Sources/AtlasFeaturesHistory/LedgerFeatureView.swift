@@ -257,15 +257,7 @@ public struct LedgerFeatureView: View {
     }
 
     private var selection: LedgerSelection {
-        guard let id = selectedEntryID else { return .none }
-        if id.hasPrefix("run.") {
-            let uuid = String(id.dropFirst(4))
-            if let run = taskRuns.first(where: { $0.id.uuidString == uuid }) { return .taskRun(run) }
-        } else if id.hasPrefix("recovery.") {
-            let uuid = String(id.dropFirst(9))
-            if let item = recoveryItems.first(where: { $0.id.uuidString == uuid }) { return .recoveryItem(item) }
-        }
-        return .none
+        LedgerEntryMapping.resolveSelection(id: selectedEntryID, taskRuns: taskRuns, recoveryItems: recoveryItems)
     }
 
     private var entrySelectionBinding: Binding<String?> {

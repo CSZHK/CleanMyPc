@@ -23,6 +23,27 @@ public enum LedgerEntryMapping {
     public static func entryID(for run: TaskRun) -> String { "run.\(run.id.uuidString)" }
     public static func entryID(for item: RecoveryItem) -> String { "recovery.\(item.id.uuidString)" }
 
+    /// Resolve a selection id against the FULL unfiltered task-run + recovery
+    /// sets — the round-9/15 non-clobbering invariant. A recovery item that a
+    /// filter chip narrows out of the visible timeline STILL resolves here, so
+    /// `syncSelection` keeps the selection instead of silently replacing it.
+    /// Extracted from the view so the invariant is unit-testable.
+    public static func resolveSelection(
+        id: String?,
+        taskRuns: [TaskRun],
+        recoveryItems: [RecoveryItem]
+    ) -> LedgerSelection {
+        guard let id else { return .none }
+        if id.hasPrefix("run.") {
+            let uuid = String(id.dropFirst(4))
+            if let run = taskRuns.first(where: { $0.id.uuidString == uuid }) { return .taskRun(run) }
+        } else if id.hasPrefix("recovery.") {
+            let uuid = String(id.dropFirst(9))
+            if let item = recoveryItems.first(where: { $0.id.uuidString == uuid }) { return .recoveryItem(item) }
+        }
+        return .none
+    }
+
     /// Build the timeline entries. `planNumber(for:)` returns the stored №
     /// when the run is an active scan/execute run (shell counter), else nil —
     /// in which case the chronological fallback fills in a display number.

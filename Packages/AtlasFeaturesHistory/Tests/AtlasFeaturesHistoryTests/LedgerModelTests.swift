@@ -95,6 +95,40 @@ final class LedgerModelTests: XCTestCase {
         XCTAssertEqual(entry.status, .verified, "no expiry ⇒ permanently recoverable record")
     }
 
+    // MARK: - Selection resolution (non-clobbering invariant — round-9/15)
+
+    /// A recovery item stays resolvable against the FULL set even when a filter
+    /// chip (e.g. .archive) narrows it out of the rendered timeline. syncSelection
+    /// keys off resolveSelection == .none, so this is what keeps an active
+    /// selection from being silently clobbered on a filter change.
+    func testResolveSelectionRecoveryItemSurvivesFilterNarrowing() {
+        let item = RecoveryItem(
+            title: "Chrome Cache", detail: "Deleted cache",
+            originalPath: "~/Library/Caches/Google/Chrome",
+            bytes: 1_200_000, deletedAt: Date(),
+            expiresAt: Date().addingTimeInterval(6 * 86400) // non-expired ⇒ filtered out by .archive
+        )
+        let id = LedgerEntryMapping.entryID(for: item)
+        let resolved = LedgerEntryMapping.resolveSelection(id: id, taskRuns: [], recoveryItems: [item])
+        guard case .recoveryItem(let found) = resolved else {
+            return XCTFail("expected .recoveryItem — a valid recovery id must resolve against the full set")
+        }
+        XCTAssertEqual(found.id, item.id)
+    }
+
+    func testResolveSelectionTaskRun() {
+        let run = TaskRun(id: UUID(), kind: .scan, status: .completed, summary: "s", startedAt: Date(), finishedAt: Date())
+        let resolved = LedgerEntryMapping.resolveSelection(id: LedgerEntryMapping.entryID(for: run), taskRuns: [run], recoveryItems: [])
+        guard case .taskRun(let found) = resolved else { return XCTFail("expected .taskRun") }
+        XCTAssertEqual(found.id, run.id)
+    }
+
+    func testResolveSelectionNilAndStaleIDsAreNone() {
+        XCTAssertEqual(LedgerEntryMapping.resolveSelection(id: nil, taskRuns: [], recoveryItems: []), .none)
+        XCTAssertEqual(LedgerEntryMapping.resolveSelection(id: "run.deadbeef", taskRuns: [], recoveryItems: []), .none)
+        XCTAssertEqual(LedgerEntryMapping.resolveSelection(id: "recovery.unknown", taskRuns: [], recoveryItems: []), .none)
+    }
+
     // MARK: - Numbering rule (PER Decision Log 2026-06-10 / spec §1.6)
 
     func testChronologicalNumbersUseStoredWhenPresent() {

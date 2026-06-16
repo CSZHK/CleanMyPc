@@ -473,7 +473,13 @@ final class AtlasAppModel: ObservableObject {
                 planNumber: workflowSnapshot.planNumber,
                 receiptCode: workflowSnapshot.receiptCode,
                 completedAt: Date(),
-                executedItemCount: executedPlan.items.count,
+                // Count only items that actually execute (round-15): the worker
+                // skips .inspectPermission / .reviewEvidence (review-only) items,
+                // so the full items.count would overstate 「Items Run」 for plans
+                // that include review-only entries.
+                executedItemCount: executedPlan.items.filter {
+                    $0.kind != .inspectPermission && $0.kind != .reviewEvidence
+                }.count,
                 estimatedFreedBytes: executedPlan.estimatedBytes,
                 summary: output.summary,
                 recoveryItemIDs: newRecoveryItems.map(\.id),
