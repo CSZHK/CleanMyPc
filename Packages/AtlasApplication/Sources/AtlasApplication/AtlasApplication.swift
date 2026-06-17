@@ -200,6 +200,7 @@ public struct AtlasWorkerCommandResult: Codable, Hashable, Sendable {
     public var snapshot: AtlasWorkspaceSnapshot
     public var previewPlan: ActionPlan?
     public var movedCount: Int?
+    public var failedCount: Int?
 
     public init(
         request: AtlasRequestEnvelope,
@@ -207,7 +208,8 @@ public struct AtlasWorkerCommandResult: Codable, Hashable, Sendable {
         events: [AtlasEventEnvelope],
         snapshot: AtlasWorkspaceSnapshot,
         previewPlan: ActionPlan? = nil,
-        movedCount: Int? = nil
+        movedCount: Int? = nil,
+        failedCount: Int? = nil
     ) {
         self.request = request
         self.response = response
@@ -215,6 +217,7 @@ public struct AtlasWorkerCommandResult: Codable, Hashable, Sendable {
         self.snapshot = snapshot
         self.previewPlan = previewPlan
         self.movedCount = movedCount
+        self.failedCount = failedCount
     }
 }
 
@@ -576,12 +579,14 @@ public struct AtlasWorkspaceController: Sendable {
         switch result.response.response {
         case .accepted:
             let movedCount = result.movedCount ?? 0
+            let failedCount = result.failedCount ?? 0
             return AtlasFileOrganizerExecuteOutput(
                 snapshot: result.snapshot,
                 events: result.events,
                 progressFraction: progressFraction(from: result.events),
                 summary: summary(from: result.events, fallback: AtlasL10n.string("fileorganizer.status.complete")),
-                movedCount: movedCount
+                movedCount: movedCount,
+                failedCount: failedCount
             )
         case let .rejected(code, reason):
             throw AtlasWorkspaceControllerError.rejected(code: code, reason: reason)
@@ -814,19 +819,22 @@ public struct AtlasFileOrganizerExecuteOutput: Sendable {
     public var progressFraction: Double
     public var summary: String
     public var movedCount: Int
+    public var failedCount: Int
 
     public init(
         snapshot: AtlasWorkspaceSnapshot,
         events: [AtlasEventEnvelope],
         progressFraction: Double,
         summary: String,
-        movedCount: Int = 0
+        movedCount: Int = 0,
+        failedCount: Int = 0
     ) {
         self.snapshot = snapshot
         self.events = events
         self.progressFraction = progressFraction
         self.summary = summary
         self.movedCount = movedCount
+        self.failedCount = failedCount
     }
 }
 

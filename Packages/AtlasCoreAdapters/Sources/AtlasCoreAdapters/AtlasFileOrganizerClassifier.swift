@@ -12,13 +12,32 @@ public struct AtlasFileOrganizerClassifier: AtlasFileOrganizerClassifying, Senda
             let result = classifyEntry(entry, rules: rules)
             classified.category = result.category
             let safeFileName = (entry.fileName as NSString).lastPathComponent
-            if let subfolder = result.subfolder, !subfolder.isEmpty {
-                classified.proposedDestination = "\(basePath)/\(result.category.folderName)/\(subfolder)/\(safeFileName)"
+            // Sanitize the rule's subfolder before it touches the path (audit
+            // security #22): a subfolder like "../../Library/LaunchDaemons"
+            // must never let a file escape its category folder.
+            let sanitizedSub = Self.sanitizedSubfolder(result.subfolder)
+            if !sanitizedSub.isEmpty {
+                classified.proposedDestination = "\(basePath)/\(result.category.folderName)/\(sanitizedSub)/\(safeFileName)"
             } else {
                 classified.proposedDestination = "\(basePath)/\(result.category.folderName)/\(safeFileName)"
             }
             return classified
         }
+    }
+
+    /// Reduces a rule `destinationSubfolder` to a safe relative path: drops
+    /// traversal (`..`), absolute (`/`-leading), empty, null, and backslash
+    /// components so it can only name a folder beneath the category directory.
+    /// Returns "" when nothing safe remains (audit security #22).
+    static func sanitizedSubfolder(_ raw: String?) -> String {
+        guard let raw, !raw.isEmpty else { return "" }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !trimmed.contains("\0"), !trimmed.contains("\\") else { return "" }
+        let safe = trimmed
+            .split(separator: "/")
+            .map { String($0).trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && $0 != "." && $0 != ".." }
+        return safe.joined(separator: "/")
     }
 
     private struct ClassificationResult {
@@ -42,15 +61,20 @@ public struct AtlasFileOrganizerClassifier: AtlasFileOrganizerClassifying, Senda
             return ClassificationResult(category: rule.category, subfolder: rule.destinationSubfolder)
         }
 
-        // Priority 2: UTType fallback
-        if let utt = UTType(filenameExtension: ext) {
+        // Priority 2: UTType fallback — ONLY for extensions the scanner could
+        // not place (audit #20). Otherwise the scanner's extension-based
+        // classification is authoritative: UTType conformances mis-classify
+        // `.ts` (TypeScript code, but conforms to .movie) as videos and
+        // `.dmg`/`.pkg` (conform to .archive) as archives instead of code and
+        // installers. UTType is reserved for genuinely unknown extensions.
+        if entry.category == .other, let utt = UTType(filenameExtension: ext) {
             if utt.conforms(to: .image) { return ClassificationResult(category: .images, subfolder: nil) }
             if utt.conforms(to: .movie) { return ClassificationResult(category: .videos, subfolder: nil) }
             if utt.conforms(to: .audio) { return ClassificationResult(category: .audio, subfolder: nil) }
             if utt.conforms(to: .pdf) || utt.conforms(to: .spreadsheet) || utt.conforms(to: .presentation) { return ClassificationResult(category: .documents, subfolder: nil) }
             if utt.conforms(to: .sourceCode) { return ClassificationResult(category: .code, subfolder: nil) }
-            if utt.conforms(to: .archive) { return ClassificationResult(category: .archives, subfolder: nil) }
             if utt.conforms(to: .diskImage) { return ClassificationResult(category: .installers, subfolder: nil) }
+            if utt.conforms(to: .archive) { return ClassificationResult(category: .archives, subfolder: nil) }
         }
 
         // Priority 3: Fallback to existing category

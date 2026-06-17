@@ -601,7 +601,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
 
     private func settingsSet(using request: AtlasRequestEnvelope, settings: AtlasSettings) async -> AtlasWorkerCommandResult {
         state.settings = sanitized(settings: settings)
-        await persistState(context: "restore recovery items")
+        await persistState(context: "update settings")
         let response = AtlasResponseEnvelope(requestID: request.id, response: .settings(state.settings))
         await auditStore.append("Updated settings for request \(request.id.uuidString)")
         return AtlasWorkerCommandResult(request: request, response: response, events: [], snapshot: state.snapshot)
@@ -796,12 +796,22 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             }
 
             let destDir = (destPath as NSString).deletingLastPathComponent
+            // Security boundary (audit #22): FileOrganizer destinations are
+            // confined to the user's home. A traversing subfolder or a base
+            // path configured outside home must never move a file into
+            // /Applications, /Library, or anywhere else. Reject (don't write).
+            guard destPath == homeDir || destPath.hasPrefix(homeDir + "/") else {
+                await auditStore.append("Rejected FileOrganizer destination outside home for \(entry.fileName): \(destPath)")
+                failedMoves.append((entry.fileName, "Destination is outside the home directory"))
+                continue
+            }
             do {
                 try fm.createDirectory(atPath: destDir, withIntermediateDirectories: true)
                 try fm.moveItem(atPath: sourcePath, toPath: destPath)
-                // Map display path back from resolved destPath
+                // Map display path back from resolved destPath. Separator
+                // boundary (audit #2): match scanner's homeDir + "/" convention.
                 let resolvedDisplay: String
-                if destPath.hasPrefix(homeDir) {
+                if destPath == homeDir || destPath.hasPrefix(homeDir + "/") {
                     resolvedDisplay = "~" + String(destPath.dropFirst(homeDir.count))
                 } else {
                     resolvedDisplay = destPath
@@ -820,7 +830,9 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         }
 
         if !moveMappings.isEmpty {
-            let sourceFolder = entries.first?.path ?? "~/Desktop"
+            // Source folder (audit #10): the directory being organized, not a
+            // single file path.
+            let sourceFolder = (entries.first?.path).map { ($0 as NSString).deletingLastPathComponent } ?? "~/Desktop"
             let newRestoreMappings = zip(moveMappings, absoluteDestPaths).map { mapping, absoluteDest in
                 RecoveryPathMapping(originalPath: (mapping.originalPath as NSString).expandingTildeInPath, trashedPath: absoluteDest)
             }
@@ -840,23 +852,24 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             state.snapshot.recoveryItems.insert(recoveryItem, at: 0)
         }
 
-        // Keep failed entries for retry; clear only on full success or full failure
+        // Keep unmoved entries for retry; clear only on full success (audit
+        // #8). Previously full failure also cleared entries, leaving nothing to
+        // retry while the UI reported success.
         let movedIDs = Set(moveMappings.compactMap { mapping -> UUID? in
             entries.first(where: { $0.path == mapping.originalPath })?.id
         })
-        if failedMoves.isEmpty || failedMoves.count == entries.count {
+        if failedMoves.isEmpty {
             state.snapshot.fileOrganizerEntries = []
         } else {
             state.snapshot.fileOrganizerEntries = entries.filter { !movedIDs.contains($0.id) }
         }
         await persistState(context: "file organizer execute plan")
 
-        let allFailed = failedMoves.count == entries.count
-        let hasPartialSuccess = !moveMappings.isEmpty && !failedMoves.isEmpty
+        let allFailed = !failedMoves.isEmpty && moveMappings.isEmpty
         let completedRun = TaskRun(
             id: taskID,
             kind: .organizeFiles,
-            status: allFailed ? .failed : (hasPartialSuccess ? .completed : .completed),
+            status: allFailed ? .failed : .completed,
             summary: AtlasL10n.string(
                 moveMappings.count == 1 ? "infrastructure.scan.completed.one" : "infrastructure.scan.completed.other",
                 moveMappings.count
@@ -874,7 +887,7 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
         )
         let events = progressEvents(taskID: taskID, total: 3) + [AtlasEventEnvelope(event: .taskFinished(completedRun))]
         await auditStore.append("Executed file organizer plan: \(moveMappings.count) moved, \(failedMoves.count) failed")
-        return AtlasWorkerCommandResult(request: request, response: response, events: events, snapshot: state.snapshot, movedCount: moveMappings.count)
+        return AtlasWorkerCommandResult(request: request, response: response, events: events, snapshot: state.snapshot, movedCount: moveMappings.count, failedCount: failedMoves.count)
     }
 
     private func fileOrganizerDryRun(using request: AtlasRequestEnvelope, planID: UUID) async -> AtlasWorkerCommandResult {
@@ -1101,7 +1114,15 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     private func validateRestoreTarget(_ mapping: RecoveryPathMapping) throws {
         let sourceURL = URL(fileURLWithPath: mapping.trashedPath).resolvingSymlinksInPath()
         let destinationURL = URL(fileURLWithPath: mapping.originalPath).resolvingSymlinksInPath()
-        guard FileManager.default.fileExists(atPath: sourceURL.path) else {
+        let fm = FileManager.default
+        // Idempotent restore (audit #12): a prior partial attempt may have
+        // already moved this file back (destination exists, source gone). Treat
+        // it as valid here so validateRestoreItems doesn't reject the whole
+        // batch before the no-op move in restoreRecoveryTarget runs.
+        if fm.fileExists(atPath: destinationURL.path), !fm.fileExists(atPath: sourceURL.path) {
+            return
+        }
+        guard fm.fileExists(atPath: sourceURL.path) else {
             throw RecoveryRestoreFailure.executionUnavailable("Recovery source is no longer available on disk: \(sourceURL.path)")
         }
         if shouldUseHelperForSmartCleanTarget(destinationURL) {
@@ -1121,9 +1142,23 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     }
 
     private func restoreRecoveryTarget(_ mapping: RecoveryPathMapping) async throws {
-        try validateRestoreTarget(mapping)
         let sourceURL = URL(fileURLWithPath: mapping.trashedPath).resolvingSymlinksInPath()
         let destinationURL = URL(fileURLWithPath: mapping.originalPath).resolvingSymlinksInPath()
+
+        // Idempotent restore (audit #12): a prior partial attempt may have
+        // already moved this file back. If the destination exists and the
+        // source is gone, skip it — otherwise the already-restored file would
+        // raise a restoreConflict and block the entire batch on retry.
+        let fm = FileManager.default
+        if fm.fileExists(atPath: destinationURL.path), !fm.fileExists(atPath: sourceURL.path) {
+            // Traceability (final-audit): the skip is inferred from filesystem
+            // state, so log it for post-hoc investigation if the destination
+            // turns out to be an unrelated file.
+            await auditStore.append("Idempotent restore skip: source gone, assuming already restored → \(destinationURL.path)")
+            return
+        }
+
+        try validateRestoreTarget(mapping)
         if shouldUseHelperForSmartCleanTarget(destinationURL) {
             guard let helperExecutor else {
                 throw RecoveryRestoreFailure.helperUnavailable("Bundled helper unavailable for recovery target: \(destinationURL.path)")

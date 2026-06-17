@@ -13,7 +13,22 @@ public struct AtlasFileOrganizerScanner: AtlasFileOrganizerScanning, Sendable {
             ? [.skipsHiddenFiles]
             : [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
 
-        for folderPath in paths {
+        // Dedup input roots (preserve order) so the same folder selected twice
+        // is only enumerated once. A per-file seen-set below additionally
+        // neutralizes overlapping/nested roots in recursive mode (audit #1):
+        // without it a file under both ~/Desktop and ~/Desktop/Projects was
+        // emitted twice, doubling counts and causing a false "source no longer
+        // exists" failure when execute moved the first copy.
+        var seenRoots: Set<String> = []
+        let orderedPaths = paths.filter { p in
+            let key = (p as NSString).expandingTildeInPath
+            guard !seenRoots.contains(key) else { return false }
+            seenRoots.insert(key)
+            return true
+        }
+        var seenFiles: Set<String> = []
+
+        for folderPath in orderedPaths {
             let expandedPath = (folderPath as NSString).expandingTildeInPath
             let baseURL = URL(fileURLWithPath: expandedPath)
             guard let enumerator = fm.enumerator(
@@ -35,6 +50,11 @@ public struct AtlasFileOrganizerScanner: AtlasFileOrganizerScanning, Sendable {
                     continue
                 }
 
+                // Skip a file already emitted from an overlapping root.
+                if !seenFiles.insert(resolvedPath).inserted {
+                    continue
+                }
+
                 let fileName = url.lastPathComponent
 
                 let bytes: Int64 = Int64(resourceValues?.fileSize ?? 0)
@@ -45,7 +65,10 @@ public struct AtlasFileOrganizerScanner: AtlasFileOrganizerScanning, Sendable {
                 let fullPath = url.path
                 let homeDir = fm.homeDirectoryForCurrentUser.path
                 let displayPath: String
-                if fullPath.hasPrefix(homeDir) {
+                // Separator boundary (audit #2): require a "/" after home so a
+                // sibling like /Users/<user>_backup is not mis-tilde'd into an
+                // invalid ~_backup/... path.
+                if fullPath.hasPrefix(homeDir + "/") {
                     displayPath = "~" + String(fullPath.dropFirst(homeDir.count))
                 } else {
                     displayPath = fullPath

@@ -1044,6 +1044,9 @@
 "fileorganizer.ruleeditor.field.minsize.unit" = "MB";
 "fileorganizer.ruleeditor.field.maxsize.unit" = "MB";
 "fileorganizer.ruleeditor.field.subfolder.preview" = "%@/%@";
+"fileorganizer.ruleeditor.accessibility.moveUp" = "上移规则";
+"fileorganizer.ruleeditor.accessibility.moveDown" = "下移规则";
+"fileorganizer.ruleeditor.import.empty" = "导入的规则文件无效或没有可匹配的规则，已忽略。";
 
 // File Organizer — empty & accessibility
 "fileorganizer.empty.title" = "选择文件夹开始扫描";
@@ -1077,6 +1080,8 @@
 "fileorganizer.receipt.title" = "整理回执";
 "fileorganizer.receipt.items.label" = "移动项目";
 "fileorganizer.receipt.items.value" = "%d 项";
+"fileorganizer.receipt.failed.label" = "未移动项目";
+"fileorganizer.receipt.failed.value" = "%d 项失败（可重试）";
 "fileorganizer.receipt.completed.label" = "完成时间";
 "fileorganizer.receipt.code.label" = "回执编号";
 "fileorganizer.receipt.moved.metric" = "已移动 %d 项";

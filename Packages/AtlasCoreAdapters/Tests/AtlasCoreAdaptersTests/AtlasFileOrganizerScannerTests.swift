@@ -198,6 +198,30 @@ final class AtlasFileOrganizerScannerTests: XCTestCase {
         XCTAssertEqual(result.categoryCounts[.images], 2)
         XCTAssertEqual(result.categoryCounts[.documents], 1)
     }
+
+    // MARK: - Dedup (audit #1)
+
+    func testScanDeduplicatesOverlappingNestedFolders() async throws {
+        // Scanning nested/overlapping roots in recursive mode must emit a
+        // shared file once, not once per root.
+        let parent = URL(fileURLWithPath: testDir).appendingPathComponent("parent", isDirectory: true)
+        let child = parent.appendingPathComponent("child", isDirectory: true)
+        try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)
+        try Data("dup".utf8).write(to: child.appendingPathComponent("note.txt"))
+
+        let scanner = AtlasFileOrganizerScanner()
+        let result = try await scanner.scanFolders([parent.path, child.path], recursive: true)
+
+        XCTAssertEqual(result.entries.count, 1, "shared file must be emitted once across overlapping roots")
+        XCTAssertEqual(result.totalFiles, 1)
+    }
+
+    func testScanDeduplicatesIdenticalFolderInputs() async throws {
+        try Data("x".utf8).write(to: URL(fileURLWithPath: testDir).appendingPathComponent("a.png"))
+        let scanner = AtlasFileOrganizerScanner()
+        let result = try await scanner.scanFolders([testDir, testDir], recursive: false)
+        XCTAssertEqual(result.entries.count, 1)
+    }
 }
 
 final class AtlasFileOrganizerClassifierTests: XCTestCase {
@@ -546,7 +570,10 @@ extension AtlasFileOrganizerClassifierTests {
     // MARK: Rule with Empty Patterns Matches Nothing
 
     func testRuleWithEmptyPatternsMatchesNothing() async {
-        let entries = [makeEntry(fileName: "test.png", category: .documents)]
+        // Unknown extension (scanner left it .other) → no rule match → UTType
+        // fallback refines it. (audit #20: UTType now only refines unknown
+        // extensions; the scanner's category is authoritative for known ones.)
+        let entries = [makeEntry(fileName: "test.png", category: .other)]
         let rules = [
             FileOrganizerRule(name: "Empty", extensionPatterns: [], namePatterns: [], category: .audio),
         ]
@@ -607,5 +634,33 @@ extension AtlasFileOrganizerClassifierTests {
         let entries = (0..<500).map { makeEntry(fileName: "file\($0).txt", bytes: Int64($0)) }
         let result = await classifier.classify(entries, rules: [])
         XCTAssertEqual(result.count, 500)
+    }
+
+    // MARK: - Subfolder sanitization (audit security #22)
+
+    func testClassifySanitizesTraversalSubfolder() async {
+        let entry = makeEntry(fileName: "f.dmg", category: .installers)
+        let rule = FileOrganizerRule(
+            name: "r", extensionPatterns: ["dmg"], namePatterns: [],
+            category: .installers, destinationSubfolder: "../../../Library/LaunchDaemons"
+        )
+        let result = await classifier.classify([entry], rules: [rule], destinationBasePath: "~/Organized")
+        let dest = result[0].proposedDestination
+        XCTAssertFalse(dest.contains(".."), "traversal components must be stripped: \(dest)")
+        XCTAssertTrue(dest.hasPrefix("~/Organized/Installers/"), "must stay beneath the category folder: \(dest)")
+    }
+
+    // MARK: - Classifier honors scanner category for known extensions (audit #20)
+
+    func testClassifyKeepsScannerCategoryForKnownExtensions() async {
+        let entries = [
+            makeEntry(fileName: "a.ts", category: .code),
+            makeEntry(fileName: "b.dmg", category: .installers),
+            makeEntry(fileName: "c.pkg", category: .installers),
+        ]
+        let result = await classifier.classify(entries, rules: [], destinationBasePath: "~/Organized")
+        XCTAssertEqual(result[0].category, .code, ".ts stays code (UTType conforms to movie)")
+        XCTAssertEqual(result[1].category, .installers, ".dmg stays installers (UTType conforms to archive)")
+        XCTAssertEqual(result[2].category, .installers, ".pkg stays installers")
     }
 }

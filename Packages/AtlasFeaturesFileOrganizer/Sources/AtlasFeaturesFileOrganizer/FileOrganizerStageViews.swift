@@ -597,6 +597,15 @@ struct FileOrganizerReceiptView: View {
                     label: AtlasL10n.string("fileorganizer.receipt.items.label"),
                     value: AtlasL10n.string("fileorganizer.receipt.items.value", receipt.movedItemCount)
                 )
+                // Partial success (audit #8 display gap): surface how many
+                // files failed so a partial run is never shown as a clean
+                // success. Failures stay in the list for retry.
+                if receipt.failedItemCount > 0 {
+                    factRow(
+                        label: AtlasL10n.string("fileorganizer.receipt.failed.label"),
+                        value: AtlasL10n.string("fileorganizer.receipt.failed.value", receipt.failedItemCount)
+                    )
+                }
             }
             factRow(
                 label: AtlasL10n.string("fileorganizer.receipt.completed.label"),

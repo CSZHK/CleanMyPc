@@ -3,6 +3,20 @@ import AtlasDomain
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// Pure MB→bytes parsing for rule size bands (audit #6 + final-audit test gap).
+/// Internal so it can be unit-tested via `@testable`. Clamps to Int64 so huge
+/// or pathological inputs neither trap nor silently exceed the type range;
+/// non-numeric / non-positive input → nil (no limit).
+enum FileOrganizerSizeParsing {
+    static func bytes(fromMB text: String) -> Int64? {
+        let mb = Double(text.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+        guard mb.isFinite, mb > 0 else { return nil }
+        let parsed = mb * 1_048_576.0
+        guard parsed.isFinite else { return Int64.max }
+        return parsed >= Double(Int64.max) ? Int64.max : Int64(parsed)
+    }
+}
+
 struct FileOrganizerRuleEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var rules: [FileOrganizerRule]
@@ -101,7 +115,18 @@ struct FileOrganizerRuleEditorView: View {
             do {
                 let data = try Data(contentsOf: url)
                 let imported = try JSONDecoder().decode([FileOrganizerRule].self, from: data)
-                rules = imported
+                // Validate + dedup (audit #4): drop rules that can never match
+                // (no patterns), dedup by id, and refuse to wipe existing rules
+                // with an empty/invalid import.
+                var seen = Set<UUID>()
+                let deduped = imported
+                    .filter { !$0.extensionPatterns.isEmpty || !$0.namePatterns.isEmpty }
+                    .filter { seen.insert($0.id).inserted }
+                guard !deduped.isEmpty else {
+                    importError = AtlasL10n.string("fileorganizer.ruleeditor.import.empty")
+                    return
+                }
+                rules = deduped
             } catch {
                 importError = error.localizedDescription
             }
@@ -190,6 +215,7 @@ struct FileOrganizerRuleEditorView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(index == 0)
+                .accessibilityLabel(AtlasL10n.string("fileorganizer.ruleeditor.accessibility.moveUp"))
 
                 Button {
                     withAnimation(AtlasMotion.fast) {
@@ -202,6 +228,7 @@ struct FileOrganizerRuleEditorView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(index >= rules.count - 1)
+                .accessibilityLabel(AtlasL10n.string("fileorganizer.ruleeditor.accessibility.moveDown"))
 
                 Button {
                     ruleToDelete = rule
@@ -211,6 +238,7 @@ struct FileOrganizerRuleEditorView: View {
                         .foregroundStyle(AtlasColor.danger.opacity(0.7))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(AtlasL10n.string("fileorganizer.ruleeditor.delete"))
             }
 
             Image(systemName: "chevron.right")
@@ -411,6 +439,29 @@ private struct RuleEditForm: View {
 
     // MARK: - Save Buttons
 
+    /// A rule is only useful if it can match something (audit #5): a name-only
+    /// rule with no extension/name patterns never matches and silently does
+    /// nothing. Parsed through the same splitter as `saveRule` so a pure-
+    /// separator input (e.g. ", ") does not enable save with empty patterns.
+    private var hasAnyPattern: Bool {
+        !parsedExtensions.isEmpty || !parsedNamePatterns.isEmpty
+    }
+
+    private var parsedExtensions: [String] {
+        extensionText
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            .map { $0.hasPrefix(".") ? String($0.dropFirst()) : $0 }  // tolerate ".png" (audit #3)
+            .filter { !$0.isEmpty }
+    }
+
+    private var parsedNamePatterns: [String] {
+        namePatternText
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
     private var saveButtons: some View {
         HStack(spacing: AtlasSpacing.sm) {
             Button {
@@ -419,11 +470,7 @@ private struct RuleEditForm: View {
                 Label(AtlasL10n.string("fileorganizer.ruleeditor.save"), systemImage: "checkmark")
             }
             .buttonStyle(.atlasPrimary)
-            .disabled(
-                name.trimmingCharacters(in: .whitespaces).isEmpty
-                    && extensionText.trimmingCharacters(in: .whitespaces).isEmpty
-                    && namePatternText.trimmingCharacters(in: .whitespaces).isEmpty
-            )
+            .disabled(!hasAnyPattern)
 
             Button {
                 onCancel()
@@ -443,18 +490,11 @@ private struct RuleEditForm: View {
     }
 
     private func saveRule() {
-        let exts = extensionText
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-            .filter { !$0.isEmpty }
+        let exts = parsedExtensions
+        let namePatterns = parsedNamePatterns
 
-        let namePatterns = namePatternText
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        let minSizeBytes: Int64? = hasMinSize ? Double(minSizeMBText).flatMap { $0 > 0 ? Int64($0 * 1_048_576.0) : nil } : nil
-        let maxSizeBytes: Int64? = hasMaxSize ? Double(maxSizeMBText).flatMap { $0 > 0 ? Int64($0 * 1_048_576.0) : nil } : nil
+        let minSizeBytes: Int64? = hasMinSize ? FileOrganizerSizeParsing.bytes(fromMB: minSizeMBText) : nil
+        let maxSizeBytes: Int64? = hasMaxSize ? FileOrganizerSizeParsing.bytes(fromMB: maxSizeMBText) : nil
         let folder = subfolder.trimmingCharacters(in: .whitespaces)
         let ruleName = name.trimmingCharacters(in: .whitespaces)
 

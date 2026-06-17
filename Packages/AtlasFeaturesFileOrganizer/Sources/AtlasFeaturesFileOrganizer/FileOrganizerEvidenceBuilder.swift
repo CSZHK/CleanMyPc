@@ -70,6 +70,11 @@ public struct FileOrganizerExecutionReceipt: Equatable, Sendable {
     public var summary: String
     /// Set when the run stopped mid-way (④ error → 「查看回执」 partial receipt).
     public var failureReason: String?
+    /// Files that failed to move during a partially-successful run (audit #8
+    /// display gap). 0 for full success / full failure (full failure uses
+    /// failureReason instead). Surfaced in the receipt so a partial run is
+    /// never displayed as a clean success.
+    public var failedItemCount: Int
 
     public init(
         planNumber: Int?,
@@ -77,7 +82,8 @@ public struct FileOrganizerExecutionReceipt: Equatable, Sendable {
         completedAt: Date,
         movedItemCount: Int,
         summary: String,
-        failureReason: String? = nil
+        failureReason: String? = nil,
+        failedItemCount: Int = 0
     ) {
         self.planNumber = planNumber
         self.receiptCode = receiptCode
@@ -85,6 +91,7 @@ public struct FileOrganizerExecutionReceipt: Equatable, Sendable {
         self.movedItemCount = movedItemCount
         self.summary = summary
         self.failureReason = failureReason
+        self.failedItemCount = failedItemCount
     }
 }
 

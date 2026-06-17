@@ -2172,6 +2172,47 @@ extension AtlasInfrastructureTests {
         XCTAssertTrue(FileManager.default.fileExists(atPath: "/etc/hosts"))
     }
 
+    func testFileOrganizerExecuteRejectsSystemDirDestinationViaHomeGuard() async throws {
+        // audit security #22: a destination that PASSES AtlasPathValidator's
+        // safeRoots (e.g. /Applications) but lies OUTSIDE the user's home must
+        // be rejected by the worker's home guard — never written. The sibling
+        // test above uses /etc, which safeRoots rejects upstream and so never
+        // reaches the guard; this one targets the guard directly.
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        _ = try repository.saveState(emptyWorkspaceState())
+
+        let fm = FileManager.default
+        let homeDir = fm.homeDirectoryForCurrentUser.path
+        let source = (homeDir as NSString).appendingPathComponent("Library/Caches/AtlasFOHomeGuard-\(UUID().uuidString).png")
+        try Data("x".utf8).write(to: URL(fileURLWithPath: source))
+        addTeardownBlock { try? fm.removeItem(atPath: source) }
+
+        let entry = FileOrganizerEntry(
+            path: source, fileName: "x.png", bytes: 1, category: .images,
+            proposedDestination: "/Applications/AtlasFOHomeGuard-\(UUID().uuidString)/x.png"
+        )
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: StubFileOrganizerScanner(entries: [entry])
+        )
+        _ = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerScan(taskID: UUID(), folderPaths: ["~/Desktop"]))
+        )
+        let planResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerPreviewPlan(taskID: UUID(), entryIDs: []))
+        )
+        guard case let .fileOrganizerPlan(plan) = planResult.response.response else {
+            XCTFail("Expected plan"); return
+        }
+        let executeResult = try await worker.submit(
+            AtlasRequestEnvelope(command: .fileOrganizerExecutePlan(planID: plan.id))
+        )
+
+        XCTAssertEqual(executeResult.snapshot.recoveryItems.count, 0, "must not create a recovery payload for a blocked move")
+        XCTAssertEqual(executeResult.failedCount, 1, "the home-guard rejection must surface as a failed move")
+        XCTAssertTrue(fm.fileExists(atPath: source), "source must be untouched (move blocked)")
+    }
+
     // MARK: - File Organizer Undo/Restore Tests
 
     func testFileOrganizerUndoRestoresFilesToOriginalLocation() async throws {

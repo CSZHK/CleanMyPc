@@ -1026,6 +1026,9 @@
 "fileorganizer.ruleeditor.field.minsize.unit" = "MB";
 "fileorganizer.ruleeditor.field.maxsize.unit" = "MB";
 "fileorganizer.ruleeditor.field.subfolder.preview" = "%@/%@";
+"fileorganizer.ruleeditor.accessibility.moveUp" = "Move rule up";
+"fileorganizer.ruleeditor.accessibility.moveDown" = "Move rule down";
+"fileorganizer.ruleeditor.import.empty" = "Imported rules file is invalid or has no matchable rules; ignored.";
 
 // File Organizer — empty & accessibility
 "fileorganizer.empty.title" = "Select Folders to Scan";
@@ -1059,6 +1062,8 @@
 "fileorganizer.receipt.title" = "Organization receipt";
 "fileorganizer.receipt.items.label" = "Moved items";
 "fileorganizer.receipt.items.value" = "%d items";
+"fileorganizer.receipt.failed.label" = "Unmoved items";
+"fileorganizer.receipt.failed.value" = "%d failed (retryable)";
 "fileorganizer.receipt.completed.label" = "Completed";
 "fileorganizer.receipt.code.label" = "Receipt number";
 "fileorganizer.receipt.moved.metric" = "%d items moved";

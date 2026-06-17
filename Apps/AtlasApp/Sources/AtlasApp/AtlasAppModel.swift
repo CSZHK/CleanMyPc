@@ -1059,50 +1059,68 @@ final class AtlasAppModel: ObservableObject {
         fileOrganizerExecutionCompleted = false
         fileOrganizerMovedCount = 0
         fileOrganizerExecutionReceipt = nil
+        // Clear residual entries so a failed scan can't leave a stale plan
+        // marked fresh (audit verify gap): regenerateFileOrganizerPlan is a
+        // no-op on empty entries, preserving the scan-failure issue below.
+        fileOrganizerEntries = []
 
-        if folderPaths.count <= 1 {
-            // Single folder — scan directly, no per-folder progress
-            do {
-                let output = try await workspaceController.fileOrganizerScan(folderPaths: folderPaths)
-                withAnimation(.snappy(duration: 0.24)) {
-                    snapshot = output.snapshot
-                    fileOrganizerEntries = output.entries
-                    fileOrganizerScanSummary = output.summary
-                    fileOrganizerProgress = output.progressFraction
-                    isFileOrganizerPlanFresh = false
-                    fileOrganizerHasPreviewResults = false
-                    fileOrganizerPlanIssue = nil
-                }
-            } catch {
-                fileOrganizerScanSummary = error.localizedDescription
-                fileOrganizerProgress = 0
-                fileOrganizerPlanIssue = error.localizedDescription
-            }
-        } else {
-            // Multiple folders — single call with all paths
+        if folderPaths.count > 1 {
+            // Multiple folders — surface the combined set early; the worker
+            // still takes all paths in a single call.
             let folderNames = folderPaths.map { ($0 as NSString).lastPathComponent }.joined(separator: ", ")
             fileOrganizerScanSummary = AtlasL10n.string("fileorganizer.progress.scanningFolder", folderNames, 1, 1)
             fileOrganizerProgress = 0.1
-
-            do {
-                let output = try await workspaceController.fileOrganizerScan(folderPaths: folderPaths)
-                withAnimation(.snappy(duration: 0.24)) {
-                    snapshot = output.snapshot
-                    fileOrganizerEntries = output.entries
-                    fileOrganizerScanSummary = output.summary
-                    fileOrganizerProgress = output.progressFraction
-                    isFileOrganizerPlanFresh = false
-                    fileOrganizerHasPreviewResults = false
-                    fileOrganizerPlanIssue = nil
-                }
-            } catch {
-                fileOrganizerScanSummary = error.localizedDescription
-                fileOrganizerProgress = 0
-                fileOrganizerPlanIssue = error.localizedDescription
-            }
         }
 
+        do {
+            let output = try await workspaceController.fileOrganizerScan(folderPaths: folderPaths)
+            withAnimation(.snappy(duration: 0.24)) {
+                snapshot = output.snapshot
+                fileOrganizerEntries = output.entries
+                fileOrganizerScanSummary = output.summary
+                fileOrganizerProgress = output.progressFraction
+                isFileOrganizerPlanFresh = false
+                fileOrganizerHasPreviewResults = false
+                fileOrganizerPlanIssue = nil
+            }
+        } catch {
+            fileOrganizerScanSummary = error.localizedDescription
+            fileOrganizerProgress = 0
+            fileOrganizerPlanIssue = error.localizedDescription
+        }
+
+        // Pipeline trigger restored (audit P0 #7 + P1 #19): the Calm Ledger
+        // refactor (commit 62f30d7) dropped the only call sites of
+        // `onRefreshPreview`/`onClassify`, so after a scan the plan was never
+        // generated (`isFileOrganizerPlanFresh` stayed false) and custom rules
+        // never ran — the workflow was stranded on ①scan. Classify the fresh
+        // entries against the current rules, then generate the plan so the
+        // stage advances ①scan → ②rules.
+        //
+        // Run classify→preview BEFORE clearing the scan flag so the flag covers
+        // the whole scan→classify→preview chain (final-audit state race):
+        // otherwise a second scan or a rule/destination edit could interleave
+        // during the two worker round-trips and clobber the in-flight pipeline.
+        await regenerateFileOrganizerPlan()
+
         isFileOrganizerScanning = false
+    }
+
+    /// Reclassify all current entries against the latest rules + destination,
+    /// then regenerate the preview plan and mark it fresh. The single pipeline
+    /// trigger for scan completion, rule edits, and destination/recursive
+    /// changes (audit P0 #7 + P1 #19 + P2 #15) — keeps the plan and every
+    /// `proposedDestination` in sync with live settings. No-op when nothing has
+    /// been scanned yet.
+    private func regenerateFileOrganizerPlan() async {
+        guard !fileOrganizerEntries.isEmpty else { return }
+        // Don't reclassify while an execute is mid-flight (final-audit state
+        // race): an edit during execute would clobber the entries/plan the
+        // worker is moving against. The new rules take effect on the next
+        // scan/preview.
+        guard !isFileOrganizerExecuting else { return }
+        await classifyFileOrganizerEntries(entryIDs: [])
+        await refreshFileOrganizerPreview(entryIDs: [])
     }
 
     func classifyFileOrganizerEntries(entryIDs: [UUID]) async {
@@ -1160,8 +1178,26 @@ final class AtlasAppModel: ObservableObject {
     }
 
     func updateFileOrganizerDestination(_ path: String) async {
+        // FileOrganizer destinations are confined to the user's home (audit
+        // security #22): reject bases that resolve outside home so files can
+        // never be moved into /Applications, /Library, etc. The worker also
+        // enforces this as a hard backstop at execute time.
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        // Resolve symlinks (final-audit security parity) so a base like
+        // ~/Organized that symlinks to /Applications is rejected here too, not
+        // only by the worker backstop.
+        let resolved = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+            .resolvingSymlinksInPath().path
+        let accepted = resolved == home || resolved.hasPrefix(home + "/")
         await updateSettings { settings in
-            settings.fileOrganizerDestinationBasePath = path
+            if accepted {
+                settings.fileOrganizerDestinationBasePath = path
+            }
+        }
+        if accepted {
+            // Re-derive destinations for already-scanned entries so files land
+            // in the new base, not the stale one (audit P2 #15).
+            await regenerateFileOrganizerPlan()
         }
     }
 
@@ -1176,6 +1212,9 @@ final class AtlasAppModel: ObservableObject {
             settings.fileOrganizerCustomRules = rules
         }
         fileOrganizerRules = rules
+        // Rule edits must take effect immediately for already-scanned entries
+        // (audit P1 #19 + P2 #15) — reclassify so preview/execute honor them.
+        await regenerateFileOrganizerPlan()
     }
 
     func undoFileOrganizerExecution() async {
@@ -1234,30 +1273,50 @@ final class AtlasAppModel: ObservableObject {
         do {
             let output = try await workspaceController.fileOrganizerExecutePlan(planID: currentFileOrganizerPlan.id)
             let movedCount = output.movedCount
+            let failedCount = output.failedCount
+            // Total failure (audit #8): the worker accepted but moved nothing.
+            // Surface it as a failure with entries retained for retry — never
+            // a silent "0 files organized" success.
+            let allFailed = movedCount == 0 && failedCount > 0
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = output.snapshot
                 fileOrganizerEntries = output.snapshot.fileOrganizerEntries
                 fileOrganizerMovedCount = movedCount
-                fileOrganizerScanSummary = AtlasL10n.string("fileorganizer.callout.executionComplete.detail", movedCount)
                 fileOrganizerProgress = output.progressFraction
                 isFileOrganizerPlanFresh = false
                 fileOrganizerHasPreviewResults = false
                 fileOrganizerPlanIssue = nil
-                fileOrganizerExecutionIssue = nil
-                fileOrganizerExecutionCompleted = true
-                // Receipt (§1.6 fail-closed): every field from real execution
-                // output. planNumber/receiptCode come from the workflow state
-                // (assigned at scan completion). Summary uses the localized
-                // callout already computed from movedCount above.
                 let foStored = workflowState(for: .fileOrganizer)
-                fileOrganizerExecutionReceipt = FileOrganizerExecutionReceipt(
-                    planNumber: foStored.planNumber,
-                    receiptCode: foStored.receiptCode,
-                    completedAt: Date(),
-                    movedItemCount: movedCount,
-                    summary: fileOrganizerScanSummary,
-                    failureReason: nil
-                )
+                if allFailed {
+                    fileOrganizerExecutionCompleted = false
+                    let reason = AtlasL10n.string("fileorganizer.status.executionFailed")
+                    fileOrganizerExecutionIssue = reason
+                    fileOrganizerScanSummary = reason
+                    fileOrganizerExecutionReceipt = FileOrganizerExecutionReceipt(
+                        planNumber: foStored.planNumber,
+                        receiptCode: foStored.receiptCode,
+                        completedAt: Date(),
+                        movedItemCount: 0,
+                        summary: reason,
+                        failureReason: reason
+                    )
+                } else {
+                    fileOrganizerExecutionIssue = nil
+                    fileOrganizerExecutionCompleted = true
+                    fileOrganizerScanSummary = AtlasL10n.string("fileorganizer.callout.executionComplete.detail", movedCount)
+                    // Receipt (§1.6 fail-closed): every field from real
+                    // execution output. planNumber/receiptCode come from the
+                    // workflow state (assigned at scan completion).
+                    fileOrganizerExecutionReceipt = FileOrganizerExecutionReceipt(
+                        planNumber: foStored.planNumber,
+                        receiptCode: foStored.receiptCode,
+                        completedAt: Date(),
+                        movedItemCount: movedCount,
+                        summary: fileOrganizerScanSummary,
+                        failureReason: nil,
+                        failedItemCount: failedCount
+                    )
+                }
             }
         } catch {
             fileOrganizerScanSummary = error.localizedDescription

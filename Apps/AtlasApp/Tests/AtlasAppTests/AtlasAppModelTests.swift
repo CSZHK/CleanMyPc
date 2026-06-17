@@ -859,14 +859,17 @@ extension AtlasAppModelTests {
         )
         let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
 
-        // Step 1: Scan
+        // Step 1: Scan — now auto-runs classify → preview so the workflow
+        // advances off ①scan (audit P0 #7 + P1 #19; previously the plan was
+        // never generated here and the stage was stranded on scan).
         await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
 
         XCTAssertEqual(model.fileOrganizerEntries.count, 2)
         XCTAssertFalse(model.isFileOrganizerScanning)
-        XCTAssertFalse(model.isFileOrganizerPlanFresh)
+        XCTAssertTrue(model.isFileOrganizerPlanFresh)
+        XCTAssertEqual(model.currentFileOrganizerPlan.items.count, 2)
 
-        // Step 2: Preview
+        // Step 2: Re-preview is idempotent and keeps the plan fresh.
         await model.refreshFileOrganizerPreview(entryIDs: [])
 
         XCTAssertTrue(model.isFileOrganizerPlanFresh)
@@ -899,6 +902,111 @@ extension AtlasAppModelTests {
         XCTAssertFalse(fm.fileExists(atPath: file2.path))
         XCTAssertTrue(fm.fileExists(atPath: destDir.appendingPathComponent("Images/photo.png").path))
         XCTAssertTrue(fm.fileExists(atPath: destDir.appendingPathComponent("Documents/report.pdf").path))
+    }
+
+    /// Regression (audit P0 #7 + P1 #19): `runFileOrganizerScan` must itself
+    /// classify the fresh entries and generate the plan. The Calm Ledger
+    /// refactor (commit 62f30d7) dropped the only call sites of
+    /// `onRefreshPreview`/`onClassify`, so the plan was never built
+    /// (`isFileOrganizerPlanFresh` stayed false), the stage was stranded on
+    /// ①scan, and execute/dry-run were permanently disabled. This pins that
+    /// scan alone leaves a fresh, executable plan.
+    func testFileOrganizerScanGeneratesFreshPlanWithoutManualPreview() async throws {
+        let repository = makeRepository()
+        let fm = FileManager.default
+        let sourceDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Caches/AtlasFO-Stage-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: sourceDir, withIntermediateDirectories: true)
+        let file = sourceDir.appendingPathComponent("photo.png")
+        try Data(repeating: 0x1, count: 100).write(to: file)
+        addTeardownBlock { try? fm.removeItem(at: sourceDir) }
+
+        let entries = [
+            FileOrganizerEntry(
+                id: UUID(), path: file.path, fileName: "photo.png",
+                bytes: 100, category: .images,
+                proposedDestination: "~/Organized/Images/photo.png"
+            )
+        ]
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: entries)
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
+
+        await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
+
+        XCTAssertTrue(model.isFileOrganizerPlanFresh, "scan must generate a fresh plan (was stranded on ①scan)")
+        XCTAssertTrue(model.canExecuteFileOrganizerPlan, "execute must be reachable after scan")
+        XCTAssertEqual(model.currentFileOrganizerPlan.items.count, 1)
+    }
+
+    /// Regression (audit #8): when every move fails (e.g. sources gone),
+    /// execute must surface a failure and retain entries for retry — never a
+    /// silent "0 files organized" success.
+    func testFileOrganizerExecuteAllFailedSurfacesFailureNotSilentSuccess() async throws {
+        let repository = makeRepository()
+        let ghostPath = "~/Library/Caches/AtlasFO-Ghost-\(UUID().uuidString)/missing.png"
+        let entries = [
+            FileOrganizerEntry(
+                id: UUID(), path: ghostPath, fileName: "missing.png",
+                bytes: 10, category: .images,
+                proposedDestination: "~/Organized/Images/missing.png"
+            )
+        ]
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: entries)
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
+
+        await model.runFileOrganizerScan(folderPaths: ["~/Desktop"])
+        await model.executeFileOrganizerPlan()
+
+        XCTAssertFalse(model.fileOrganizerExecutionCompleted, "all-failed execute must not report success")
+        XCTAssertNotNil(model.fileOrganizerExecutionIssue)
+        XCTAssertNotNil(model.fileOrganizerExecutionReceipt?.failureReason)
+        // Core #8 contract (final-audit): failed entries are retained for retry.
+        XCTAssertGreaterThan(model.fileOrganizerEntries.count, 0, "failed entries must be retained for retry")
+    }
+
+    /// Regression (audit #8 display): a partial run (some moved, some failed)
+    /// must surface failedItemCount on the receipt, not display as a clean
+    /// success.
+    func testFileOrganizerExecutePartialFailureSurfacesFailedItemCount() async throws {
+        let repository = makeRepository()
+        let fm = FileManager.default
+        let sourceDir = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Caches/AtlasFO-Partial-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: sourceDir, withIntermediateDirectories: true)
+        let goodFile = sourceDir.appendingPathComponent("real.png")
+        try Data("ok".utf8).write(to: goodFile)
+        addTeardownBlock { try? fm.removeItem(at: sourceDir) }
+
+        let entries = [
+            FileOrganizerEntry(
+                id: UUID(), path: goodFile.path, fileName: "real.png",
+                bytes: 2, category: .images, proposedDestination: "~/Organized/Images/real.png"
+            ),
+            FileOrganizerEntry(
+                id: UUID(), path: "~/Library/Caches/AtlasFO-Ghost-\(UUID().uuidString)/missing.png",
+                fileName: "missing.png", bytes: 1, category: .images,
+                proposedDestination: "~/Organized/Images/missing.png"
+            ),
+        ]
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerScanProvider: E2EFileOrganizerScanner(entries: entries)
+        )
+        let model = AtlasAppModel(repository: repository, workerService: worker, ledgerNumberStore: InMemoryLedgerNumberStore())
+
+        await model.runFileOrganizerScan(folderPaths: [sourceDir.path])
+        await model.executeFileOrganizerPlan()
+
+        XCTAssertTrue(model.fileOrganizerExecutionCompleted, "partial success is still completed")
+        XCTAssertEqual(model.fileOrganizerExecutionReceipt?.movedItemCount, 1)
+        XCTAssertEqual(model.fileOrganizerExecutionReceipt?.failedItemCount, 1, "partial failure must surface failedItemCount")
+        XCTAssertNil(model.fileOrganizerExecutionReceipt?.failureReason)
     }
 
     /// round-3 fail-closed guard: when executeFileOrganizerPlan() fails AFTER a
