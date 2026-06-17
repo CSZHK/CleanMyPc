@@ -15,7 +15,9 @@
 		10289D654617F349037539C6 /* AtlasCoreAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = 95BB6838D0184A8A534E383B /* AtlasCoreAdapters */; };
 		18248DDA2E6242D30B2FF84B /* AtlasFeaturesPermissions in Frameworks */ = {isa = PBXBuildFile; productRef = CBA0DE5338A0B120BF572CCA /* AtlasFeaturesPermissions */; };
 		18361B20FDB815F8F80A8D89 /* AtlasCoreAdapters in Frameworks */ = {isa = PBXBuildFile; productRef = A110B5FE410BD691B10F4338 /* AtlasCoreAdapters */; };
+		1B7F68D4778B19B2C30B487F /* SmartCleanWorkflowFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 195944910A571FCE170AD6EA /* SmartCleanWorkflowFlowTests.swift */; };
 		1FD68E8A5DFA42F86C474290 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10ECA6F0B2C093A4FDBA60A5 /* main.swift */; };
+		39854AD65E1090F2B0DAE959 /* InMemoryLedgerNumberStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B03A1549FD8DDC33A44A285 /* InMemoryLedgerNumberStore.swift */; };
 		3F61098A3E68EB5B385D676C /* AtlasAppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E3F033599CA5CB41CC01A2D /* AtlasAppModelTests.swift */; };
 		48AA144507360F4E5FC4C13A /* AtlasInfrastructure in Frameworks */ = {isa = PBXBuildFile; productRef = 45024873B6BFA049536C71E1 /* AtlasInfrastructure */; };
 		568260A734C660E1C1E29EEF /* AtlasApplication in Frameworks */ = {isa = PBXBuildFile; productRef = 07F92560DDAA3271466226A0 /* AtlasApplication */; };
@@ -81,6 +83,7 @@
 /* Begin PBXFileReference section */
 		10ECA6F0B2C093A4FDBA60A5 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		13B5E85855AB6534C486F6AB /* AtlasAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasAppUITests.swift; sourceTree = "<group>"; };
+		195944910A571FCE170AD6EA /* SmartCleanWorkflowFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCleanWorkflowFlowTests.swift; sourceTree = "<group>"; };
 		1E3F033599CA5CB41CC01A2D /* AtlasAppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasAppModelTests.swift; sourceTree = "<group>"; };
 		2374ED3D378E9E0EDC52EED2 /* AtlasWorkflowViewStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasWorkflowViewStateTests.swift; sourceTree = "<group>"; };
 		31527C6248CC4F0D354F6593 /* TaskCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCenterView.swift; sourceTree = "<group>"; };
@@ -93,6 +96,7 @@
 		835191AB8EB767B5D823A264 /* AtlasWorkflowViewState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasWorkflowViewState.swift; sourceTree = "<group>"; };
 		97A2723BA50C375AFC3C9321 /* AtlasWorkerXPC.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = AtlasWorkerXPC.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		9AB1D202267B7A0E93C4D7A4 /* AtlasApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AtlasApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9B03A1549FD8DDC33A44A285 /* InMemoryLedgerNumberStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryLedgerNumberStore.swift; sourceTree = "<group>"; };
 		A1EE6C93EE8A3740AC6F87F3 /* AtlasSnapshotFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasSnapshotFilter.swift; sourceTree = "<group>"; };
 		A57454A431BBD25C9D9F7ACA /* AtlasAppCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasAppCommands.swift; sourceTree = "<group>"; };
 		D47D886B3961FF355B7634A4 /* AtlasApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtlasApp.swift; sourceTree = "<group>"; };
@@ -141,6 +145,8 @@
 				DE1D9469144FC5C6B1209448 /* AppShellTests.swift */,
 				1E3F033599CA5CB41CC01A2D /* AtlasAppModelTests.swift */,
 				2374ED3D378E9E0EDC52EED2 /* AtlasWorkflowViewStateTests.swift */,
+				9B03A1549FD8DDC33A44A285 /* InMemoryLedgerNumberStore.swift */,
+				195944910A571FCE170AD6EA /* SmartCleanWorkflowFlowTests.swift */,
 			);
 			path = AtlasAppTests;
 			sourceTree = "<group>";
@@ -448,6 +454,8 @@
 				EF7AF69D2625E28A5CC6D83A /* AppShellTests.swift in Sources */,
 				3F61098A3E68EB5B385D676C /* AtlasAppModelTests.swift in Sources */,
 				742B7D145065B95BE493851C /* AtlasWorkflowViewStateTests.swift in Sources */,
+				39854AD65E1090F2B0DAE959 /* InMemoryLedgerNumberStore.swift in Sources */,
+				1B7F68D4778B19B2C30B487F /* SmartCleanWorkflowFlowTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -477,7 +485,7 @@
 			buildSettings = {
 				AD_HOC_CODE_SIGNING_ALLOWED = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleShortVersionString = "$(MARKETING_VERSION)";
 				INFOPLIST_KEY_CFBundleVersion = "$(CURRENT_PROJECT_VERSION)";
@@ -486,7 +494,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app.worker;
 				PRODUCT_NAME = AtlasWorkerXPC;
 				SDKROOT = macosx;
@@ -554,7 +562,7 @@
 			buildSettings = {
 				AD_HOC_CODE_SIGNING_ALLOWED = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleShortVersionString = "$(MARKETING_VERSION)";
 				INFOPLIST_KEY_CFBundleVersion = "$(CURRENT_PROJECT_VERSION)";
@@ -563,7 +571,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app.worker;
 				PRODUCT_NAME = AtlasWorkerXPC;
 				SDKROOT = macosx;
@@ -577,7 +585,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Atlas for Mac";
 				INFOPLIST_KEY_CFBundleShortVersionString = "$(MARKETING_VERSION)";
@@ -589,7 +597,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app;
 				PRODUCT_MODULE_NAME = AtlasApp;
 				PRODUCT_NAME = "Atlas for Mac";
@@ -686,7 +694,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Atlas for Mac";
 				INFOPLIST_KEY_CFBundleShortVersionString = "$(MARKETING_VERSION)";
@@ -698,7 +706,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.atlasformac.app;
 				PRODUCT_MODULE_NAME = AtlasApp;
 				PRODUCT_NAME = "Atlas for Mac";

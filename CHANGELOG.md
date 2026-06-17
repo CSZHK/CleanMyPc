@@ -6,6 +6,64 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-06-17
+
+The「Calm Ledger · 平静台账」full frontend redesign — trust becomes structural
+(evidence panels, recovery-point stamps, ledger timeline always visible), across
+all 8 screens + shell + design system v3. History is renamed to Ledger
+(D-012 contract unfreeze). Pure-frontend: Worker / XPC / protocol behavior
+unchanged.
+
+### Added
+- **Calm Ledger design system v3** — 9 new components (`AtlasStageBar`,
+  `AtlasActionBar`, `AtlasEvidencePanel`, `AtlasLedgerTimeline`,
+  `AtlasStampBadge`, `AtlasLedgerSurface`, `AtlasNextActionBanner`,
+  `AtlasErrorState`, `AtlasDataText`); tokens recast (colorset palette,
+  three-voice typography with Songti cascade, motion/layout tokens, softened
+  elevation).
+- **SmartClean 4-stage workflow** (scan → review → execute → receipt):
+  resolve-on-render stage truth, evidence panel, execution receipt, real undo
+  chained to the ledger restore point.
+- **FileOrganizer 5-stage pipeline** (scan → rules → preview → execute →
+  receipt): custom rule editor, size-band evidence, security boundary
+  (destination constrained to home + subfolder sanitization), partial-failure
+  honesty (`failedItemCount`).
+- **Apps single-select browser**: 10-category footprint evidence panel +
+  uninstall-plan preview + residual estimate (fail-closed recovery).
+- **Ledger (was History)**: warm-paper four-piece set (archive / detail / export
+  / timeline) + № numbering + scan receipt `#XXXX` (SHA256) + Markdown export.
+- **Permissions three-section evidence** (why needed / impact scope / how to
+  authorize).
+- **Overview command column**: health ring + module entries + ledger feed +
+  「next step」 recommendation (5-row priority table + snooze cooldown).
+- Per-route workflow-state persistence (survives route switches); WCAG AA
+  contrast gate script (36 pairs, CI merge gate).
+
+### Changed
+- **History → Ledger rename** (route / IA / copy / docs fully synced; D-012
+  contract unfreeze of `testPrimaryRoutesMatchFrozenMVP`).
+- Window default 1180×740 / min 980×640; sidebar regrouped into 工作 / 记录 with
+  `ATLAS.` wordmark.
+- Three-voice typography discipline (title / data / body); continuous-corner
+  radius tokens.
+
+### Fixed
+- **Round-21 full-branch acceptance (12 P2)**: metric honesty (Apps inventory
+  reads the unfiltered set, Settings recovery footprint reads the unfiltered
+  total, Ledger recoverable metric excludes expired items); accessibility
+  (44pt tap targets on rule-editor + segmented control, localized VoiceOver
+  chip counts); FileOrganizer execute progress no longer echoes stale scan
+  value, conflict detection moved off the render thread, re-scan re-derives
+  №/receipt; export now lists recovery items; permission status row relabeled.
+- Cumulative round-1…20 review fixes (numbering collisions, selection clobber,
+  fail-closed receipts, AA contrast, tap targets, scroll/truncation,
+  main-thread blocking).
+
+## [1.0.8] - 2026-05-22
+
+### Fixed
+- **FileOrganizer** — multi-folder scan, undo isolation, dry-run feedback.
+
 ## [1.0.7] - 2026-05-21
 
 ### Added
