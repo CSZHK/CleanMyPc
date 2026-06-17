@@ -291,11 +291,18 @@ struct SmartCleanExecuteStageView: View {
             } else {
                 VStack(spacing: AtlasSpacing.lg) {
                     AtlasCircularProgress(
-                        progress: isExecuting ? max(progress, 0.05) : progress,
+                        // Round-21: `progress` (latestScanProgress) is stale (~1.0,
+                        // clamped by refreshPlanPreview) during execute — the
+                        // worker execute call is a single await with no progress
+                        // stream, so the old `max(progress, 0.05)` froze the arc at
+                        // ~100% and VoiceOver announced "100%" while still running.
+                        // Execute has no determinate signal: empty arc + play icon,
+                        // hidden from VoiceOver (status text + action bar carry it).
+                        progress: isExecuting ? 0 : progress,
                         tone: .warning,
                         lineWidth: 8,
                         icon: "play.circle.fill",
-                        accessibilityLabel: AtlasL10n.string("smartclean.loading.execute")
+                        accessibilityLabel: isExecuting ? nil : AtlasL10n.string("smartclean.loading.execute")
                     )
                     .frame(width: 80, height: 80)
 

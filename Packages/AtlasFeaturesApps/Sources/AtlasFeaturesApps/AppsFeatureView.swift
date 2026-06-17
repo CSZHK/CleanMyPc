@@ -133,23 +133,29 @@ public struct AppsFeatureView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 LazyVGrid(columns: inventoryMetricColumns, spacing: AtlasSpacing.lg) {
+                    // Round-21: inventory totals are SCREEN-LEVEL aggregates, so they
+                    // read the unfiltered `allSortedApps` — not the filter-narrowed
+                    // `sortedApps`. Toggling "leftovers only" must not shrink
+                    // Listed/Footprint/Leftovers (it previously did, and diverged
+                    // from the chip count in `listPanel` which already uses the
+                    // unfiltered set).
                     AtlasMetricCard(
                         title: AtlasL10n.string("apps.metric.listed.title"),
-                        value: "\(sortedApps.count)",
+                        value: "\(allSortedApps.count)",
                         detail: AtlasL10n.string("apps.metric.listed.detail"),
                         tone: .neutral,
                         systemImage: "square.stack.3d.up"
                     )
                     AtlasMetricCard(
                         title: AtlasL10n.string("apps.metric.footprint.title"),
-                        value: AtlasFormatters.byteCount(sortedApps.map(\.bytes).reduce(0, +)),
+                        value: AtlasFormatters.byteCount(allSortedApps.map(\.bytes).reduce(0, +)),
                         detail: AtlasL10n.string("apps.metric.footprint.detail"),
                         tone: .warning,
                         systemImage: "shippingbox"
                     )
                     AtlasMetricCard(
                         title: AtlasL10n.string("apps.metric.leftovers.title"),
-                        value: "\(sortedApps.map(\.leftoverItems).reduce(0, +))",
+                        value: "\(allSortedApps.map(\.leftoverItems).reduce(0, +))",
                         detail: AtlasL10n.string("apps.metric.leftovers.detail"),
                         tone: .warning,
                         systemImage: "tray.full"
@@ -271,6 +277,11 @@ public struct AppsFeatureView: View {
         let all = Self.sortedApps(apps)
         return showLeftoversOnly ? all.filter { $0.leftoverItems > 0 } : all
     }
+
+    /// All apps, sorted, ignoring the leftovers-only filter. Screen-level
+    /// aggregates (the inventory card) read this so a transient filter never
+    /// changes the totals (round-21 — mirrors the chip count in `listPanel`).
+    private var allSortedApps: [AppFootprint] { Self.sortedApps(apps) }
 
     private var sortedAppIDs: [UUID] { sortedApps.map(\.id) }
 

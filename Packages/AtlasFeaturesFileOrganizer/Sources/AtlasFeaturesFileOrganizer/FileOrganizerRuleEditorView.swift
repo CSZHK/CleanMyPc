@@ -212,6 +212,8 @@ struct FileOrganizerRuleEditorView: View {
                     Image(systemName: "chevron.up")
                         .font(AtlasTypography.captionSmall.weight(.semibold))
                         .foregroundStyle(index > 0 ? AtlasColor.brand : AtlasColor.textTertiary)
+                        .frame(width: 44, height: 44) // round-21: ≥44pt tap target (branch floor)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(index == 0)
@@ -225,6 +227,8 @@ struct FileOrganizerRuleEditorView: View {
                     Image(systemName: "chevron.down")
                         .font(AtlasTypography.captionSmall.weight(.semibold))
                         .foregroundStyle(index < rules.count - 1 ? AtlasColor.brand : AtlasColor.textTertiary)
+                        .frame(width: 44, height: 44) // round-21: ≥44pt tap target (branch floor)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(index >= rules.count - 1)
@@ -236,6 +240,8 @@ struct FileOrganizerRuleEditorView: View {
                     Image(systemName: "trash")
                         .font(AtlasTypography.captionSmall.weight(.semibold))
                         .foregroundStyle(AtlasColor.danger.opacity(0.7))
+                        .frame(width: 44, height: 44) // round-21: ≥44pt tap target (branch floor)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(AtlasL10n.string("fileorganizer.ruleeditor.delete"))

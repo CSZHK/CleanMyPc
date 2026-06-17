@@ -295,7 +295,13 @@ public enum FileOrganizerEvidenceBuilder {
         entries: [FileOrganizerEntry],
         selectedID: UUID?,
         selectedIDs: Set<UUID>,
-        rules: [FileOrganizerRule]
+        rules: [FileOrganizerRule],
+        // Round-21: conflict detection does per-entry FileManager.fileExists IO.
+        // The host view now computes this set off-MainActor (`.task`) and passes
+        // it in — panelContent no longer stats the disk in the render body.
+        // Default [] keeps the legacy/test callers that don't exercise conflict
+        // marks working (fail-closed: no fabricated conflict row).
+        conflictingIDs: Set<UUID> = []
     ) -> AtlasEvidenceContent {
         let entry = entries.first { $0.id == selectedID }
             ?? entries.first { selectedIDs.contains($0.id) }
@@ -307,8 +313,7 @@ public enum FileOrganizerEvidenceBuilder {
                 recoveryText: nil
             )
         }
-        let conflicting = conflictingEntryIDs(entries)
-        let hasConflict = conflicting.contains(entry.id)
+        let hasConflict = conflictingIDs.contains(entry.id)
         return AtlasEvidenceContent(
             title: entry.fileName,
             whyText: classificationWhy(for: entry, rules: rules),
@@ -328,7 +333,8 @@ public enum FileOrganizerEvidenceBuilder {
         entries: [FileOrganizerEntry],
         selectedID: UUID?,
         selectedIDs: Set<UUID>,
-        rules: [FileOrganizerRule]
+        rules: [FileOrganizerRule],
+        conflictingIDs: Set<UUID> = []
     ) -> AtlasEvidenceState {
         let entry = entries.first { $0.id == selectedID }
             ?? entries.first { selectedIDs.contains($0.id) }
@@ -337,7 +343,7 @@ public enum FileOrganizerEvidenceBuilder {
         }
         return .single(panelContent(
             entries: entries, selectedID: selectedID,
-            selectedIDs: selectedIDs, rules: rules
+            selectedIDs: selectedIDs, rules: rules, conflictingIDs: conflictingIDs
         ))
     }
 }

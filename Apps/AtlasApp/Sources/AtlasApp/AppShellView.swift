@@ -394,7 +394,12 @@ struct AppShellView: View {
         case .settings:
             SettingsFeatureView(
                 settings: model.settings,
-                recoveryTotalBytes: model.filteredRecoveryItems.reduce(Int64(0)) { $0 + $1.bytes },
+                // Round-21: the recovery-footprint metric is labeled "总大小 /
+                // total recorded", so it reads the UNFILTERED snapshot — not
+                // `filteredRecoveryItems` (which applies the Ledger route's live
+                // search and previously shrank the total whenever the user had a
+                // Ledger search active).
+                recoveryTotalBytes: model.snapshot.recoveryItems.reduce(Int64(0)) { $0 + $1.bytes },
                 onSetLanguage: { language in
                     Task { await model.setLanguage(language) }
                 },

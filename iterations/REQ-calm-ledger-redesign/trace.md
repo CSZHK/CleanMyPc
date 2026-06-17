@@ -71,3 +71,10 @@ DECISIONS(D-012) / Backlog(EPIC-E + A/B/C 完成标记，后者随 M4) / IA / CO
 ## Close Gate
 M0–M4 全部 Planned Verification = PASS（M0/M1/M2/M3/M4 均 PASS）。客观门禁全绿（578+58 测试 / contrast 36 / build 0 新 warning / swift run 烟测 / 截图基线 / 文档同步）。手动矩阵 + 人工 UI 审查 + subagent 终审留合并后人审（529 阻塞期间不可行）。**Calm Ledger 重设计交付完成，待合并。**
 M0–M4 全部 Planned Verification = PASS + 手动矩阵 + 人工 UI 审查通过
+
+## Round-21 全量验收（2026-06-17，commit b7442e3，本地未 push）
+**触发**：用户「全量功能 case 验收（含 UI 交互 case）→ 审查未 push 提交 → 修复 → 确保零 P2+」。范围 = origin/main..HEAD 全部 98 commits（181 文件 / +19,466）。
+**方法**：Workflow 扇出（10 surface × D1–D14 共 14 维 bug 分类，43 agents / 1.79M tok）+ 每 finding ≥2 skeptic 对抗验证（共享态机 D1/D2/D4/D9 加重 3 票）+ 主循环缺口复核（Overview 429 全失 → 直读 clean；SmartClean 补 1 execute-progress P2）。计划/证据：`.agent/calm-ledger-round21-{execplan,findings}.md`。
+**结果**：**0 P0 / 0 P1 / 12 P2 全修**（指标诚实 3 + a11y/触达 3 + FileOrganizer 进度/IO/编号 3 + 回执/证据 2 + SmartClean 进度 1）+ 2 P3 carry-forward（导出忽略 filter；6 改名残留孤儿键）。新增 1 回归测试（导出纳入 recovery items）。
+**门禁**：Packages **596/0** · Apps **62/0** · Helpers **3/0** · contrast **36/36** · build 0 新 warning · `swift run` 冒烟 **BOOT_OK**。`git log origin/main..HEAD` = 99（98 + round-21），**未 push**。
+**结论**：全量 review 零确认 P2+；分支验收通过，待合并（push 留给用户确认）。

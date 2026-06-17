@@ -29,7 +29,7 @@ public struct AtlasSegmentedControl<Option: Hashable>: View {
                         .foregroundStyle(isSelected ? AtlasColor.onBrand : AtlasColor.textSecondary)
                         .padding(.horizontal, AtlasSpacing.lg)
                         .padding(.vertical, AtlasSpacing.xs)
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, minHeight: 44) // round-21: ≥44pt tap target (branch floor; was ~25pt)
                         .background(
                             Capsule(style: .continuous)
                                 .fill(isSelected ? AtlasColor.brand : Color.clear)

@@ -112,7 +112,7 @@ public struct LedgerFeatureView: View {
         LazyVGrid(columns: AtlasLayout.adaptiveMetricColumns(for: contentWidth), spacing: AtlasSpacing.lg) {
             AtlasMetricCard(title: AtlasL10n.string("ledger.metric.activity.title"), value: "\(taskRuns.count + recoveryItems.count)", detail: activityDetail, tone: .neutral, systemImage: "clock.arrow.circlepath")
             AtlasMetricCard(title: AtlasL10n.string("ledger.metric.running.title"), value: "\(activeTaskCount)", detail: runningDetail, tone: activeTaskCount == 0 ? .success : .warning, systemImage: activeTaskCount == 0 ? "checkmark.circle" : "play.circle")
-            AtlasMetricCard(title: AtlasL10n.string("ledger.metric.recovery.title"), value: "\(sortedRecoveryItems.count)", detail: recoveryDetail, tone: sortedRecoveryItems.isEmpty ? .neutral : recoveryTone, systemImage: sortedRecoveryItems.isEmpty ? "lifepreserver" : "arrow.uturn.backward.circle")
+            AtlasMetricCard(title: AtlasL10n.string("ledger.metric.recovery.title"), value: "\(restorableRecoveryItems.count)", detail: recoveryDetail, tone: restorableRecoveryItems.isEmpty ? .neutral : recoveryTone, systemImage: restorableRecoveryItems.isEmpty ? "lifepreserver" : "arrow.uturn.backward.circle")
         }
     }
 
@@ -120,9 +120,9 @@ public struct LedgerFeatureView: View {
         activeTaskCount == 0 ? AtlasL10n.string("ledger.metric.running.detail.none") : AtlasL10n.string("ledger.metric.running.detail.active")
     }
     private var recoveryDetail: String {
-        sortedRecoveryItems.isEmpty
+        restorableRecoveryItems.isEmpty
             ? AtlasL10n.string("ledger.metric.recovery.detail.none")
-            : AtlasL10n.string("ledger.metric.recovery.detail.available", AtlasFormatters.byteCount(totalRecoveryBytes))
+            : AtlasL10n.string("ledger.metric.recovery.detail.available", AtlasFormatters.byteCount(restorableRecoveryBytes))
     }
     private var activityDetail: String {
         let dates = taskRuns.map(\.activityDate) + recoveryItems.map(\.deletedAt)
@@ -236,8 +236,16 @@ public struct LedgerFeatureView: View {
     private var sortedTaskRunIDs: [UUID] { sortedTaskRuns.map(\.id) }
     private var sortedRecoveryItemIDs: [UUID] { sortedRecoveryItems.map(\.id) }
     private var activeTaskCount: Int { taskRuns.filter(\.isActive).count }
-    private var totalRecoveryBytes: Int64 { recoveryItems.map(\.bytes).reduce(0, +) }
-    private var recoveryTone: AtlasTone { recoveryItems.contains(where: \.isExpiringSoon) ? .warning : .success }
+    /// Recovery items that are still RESTORABLE (not expired). The recovery
+    /// metric advertises "可恢复项 / Recoverable now", so it must exclude expired
+    /// records (round-21: previously counted/summed ALL recoveryItems —
+    /// advertising a restore capacity that partly does not exist. The detail
+    /// panel already disables restore for expired items via `!item.isExpired`.)
+    private var restorableRecoveryItems: [RecoveryItem] {
+        recoveryItems.filter { !$0.isExpired }.sorted { $0.deletedAt > $1.deletedAt }
+    }
+    private var restorableRecoveryBytes: Int64 { restorableRecoveryItems.reduce(Int64(0)) { $0 + $1.bytes } }
+    private var recoveryTone: AtlasTone { restorableRecoveryItems.contains(where: \.isExpiringSoon) ? .warning : .success }
 
     private var runNumbers: [UUID: Int] {
         LedgerEntryMapping.chronologicalDisplayNumbers(for: taskRuns, planNumber: planNumber)

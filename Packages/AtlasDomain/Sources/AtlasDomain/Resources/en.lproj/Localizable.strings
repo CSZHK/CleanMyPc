@@ -605,6 +605,9 @@
 "ledger.export.entry.started" = "Started: %@";
 "ledger.export.entry.finished" = "Finished: %@";
 "ledger.export.entry.recovery" = "Recoverable: %@";
+"ledger.export.entry.kind.recovery" = "Recoverable item";
+"ledger.export.entry.status.recoverable" = "Recoverable";
+"ledger.export.entry.status.expired" = "Expired";
 "ledger.export.footer" = "Generated locally by Atlas on this Mac. For personal reference only.";
 
 "permissions.screen.title" = "Permissions";
@@ -1202,6 +1205,7 @@
 "ds.evidence.section.evidence" = "Evidence";
 "ds.evidence.section.recovery" = "Recovery plan";
 "ds.evidence.aggregate.selected" = "%d selected";
+"ds.chip.count" = "%1$@, %2$d items";
 "ds.evidence.executing.title" = "Execution progress";
 "ds.evidence.executing.detail.show" = "Show reason";
 "ds.evidence.executing.detail.hide" = "Hide reason";
@@ -1222,6 +1226,7 @@
 /* Calm Ledger Batch M — permission evidence + recovery footprint */
 "permissions.evidence.toggle" = "View permission details";
 "permissions.evidence.section.why" = "Why it's needed";
+"permissions.evidence.section.status" = "Status";
 "permissions.evidence.section.scope" = "Impact scope";
 "permissions.evidence.section.authorize" = "How to authorize";
 "permissions.evidence.scope.fullDiskAccess" = "Scans protected Library areas (Mail, Safari, Messages, and other system data) and deeper app remnants.";

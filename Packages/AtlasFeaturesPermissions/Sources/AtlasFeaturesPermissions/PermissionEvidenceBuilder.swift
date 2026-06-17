@@ -45,7 +45,11 @@ public enum PermissionEvidenceBuilder {
         var items: [AtlasEvidenceItem] = []
         items.append(AtlasEvidenceItem(
             id: "status",
-            label: AtlasL10n.string("permissions.evidence.section.why"),
+            // Round-21: this row's value is the permission STATUS (ready /
+            // required / optional), not the rationale — label it as status, not
+            // "为什么需要" (which collided with the whyText section heading above
+            // and made two same-captioned fields disagree in meaning).
+            label: AtlasL10n.string("permissions.evidence.section.status"),
             value: state.isGranted
                 ? AtlasL10n.string("permissions.row.ready")
                 : (state.kind.isRequiredForCurrentWorkflows

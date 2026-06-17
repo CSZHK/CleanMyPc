@@ -13,6 +13,10 @@ public struct FileOrganizerFeatureView: View {
     @State private var actionBarInset: CGFloat = 0
     @State private var isRuleEditorPresented = false
     @State private var selectedFolders: [String]
+    // Round-21: conflict set is async-cached here (computed off-MainActor in the
+    // `.task` below) instead of recomputed via per-entry FileManager.fileExists
+    // on every render across three call sites (rules/preview stages + evidence).
+    @State private var conflictingIDs: Set<UUID> = []
 
     private let entries: [FileOrganizerEntry]
     private let plan: ActionPlan
@@ -151,6 +155,18 @@ public struct FileOrganizerFeatureView: View {
             // on navigation even before a scan runs (round-6 §7 red line).
             onUpdateSelectedFolders(selectedFolders)
         }
+        .task(id: entries) {
+            // Round-21: conflict detection does a per-entry FileManager.fileExists
+            // stat. It previously ran synchronously in three render paths (rules
+            // stage, preview stage, evidence panel), re-statting every destination
+            // on every SwiftUI evaluation. Compute once, off-MainActor, whenever
+            // the entry set changes — mirrors the r9 thumbnail off-main fix.
+            let snapshot = entries
+            let computed = await Task.detached(priority: .userInitiated) { () -> Set<UUID> in
+                FileOrganizerEvidenceBuilder.conflictingEntryIDs(snapshot)
+            }.value
+            conflictingIDs = computed
+        }
         .confirmationDialog(
             AtlasL10n.string("fileorganizer.confirm.execute.title"),
             isPresented: $showExecuteConfirmation,
@@ -251,7 +267,7 @@ public struct FileOrganizerFeatureView: View {
             isReadOnly: isReadOnly,
             showsEvidenceButton: isDrawerLayout,
             isRulesEmpty: state.isRulesEmpty && entries.isEmpty,
-            conflictingIDs: FileOrganizerEvidenceBuilder.conflictingEntryIDs(entries),
+            conflictingIDs: conflictingIDs,
             largeFileIDs: FileOrganizerEvidenceBuilder.largeFileIDs(entries),
             duplicateFileIDs: FileOrganizerEvidenceBuilder.duplicateFileIDs(entries),
             onToggle: { id in mutate { if state.selectedIDs.contains(id) { $0.selectedIDs.remove(id) } else { $0.selectedIDs.insert(id) } } },
@@ -270,7 +286,7 @@ public struct FileOrganizerFeatureView: View {
             plan: plan,
             searchQuery: searchText,
             selectedIDs: state.selectedIDs,
-            conflictingIDs: FileOrganizerEvidenceBuilder.conflictingEntryIDs(entries),
+            conflictingIDs: conflictingIDs,
             planIssue: planIssue,
             isReadOnly: isReadOnly
         )
@@ -301,7 +317,8 @@ public struct FileOrganizerFeatureView: View {
             entries: entries,
             selectedID: state.evidenceSelectionID,
             selectedIDs: state.selectedIDs,
-            rules: rules
+            rules: rules,
+            conflictingIDs: conflictingIDs
         ))
     }
 

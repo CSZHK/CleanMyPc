@@ -42,7 +42,11 @@ public enum LedgerExportBuilder {
 
     public struct ExportEntry: Equatable, Sendable, Identifiable {
         public let id: String
-        public let displayNumber: Int
+        /// Ledger № for task-run entries. nil for recovery-item entries, which
+        /// are not numbered (round-21: previously recovery items were dropped
+        /// entirely — the header claimed "N recoverable items" while the entries
+        /// section listed none).
+        public let displayNumber: Int?
         public let kind: String
         public let status: String
         public let summary: String
@@ -52,7 +56,7 @@ public enum LedgerExportBuilder {
 
         public init(
             id: String,
-            displayNumber: Int,
+            displayNumber: Int?,
             kind: String,
             status: String,
             summary: String,
@@ -108,7 +112,10 @@ public enum LedgerExportBuilder {
             lines.append("")
         } else {
             for entry in input.entries {
-                lines.append("### №\(entry.displayNumber) · \(entry.kind)")
+                // Round-21: recovery-item entries have no ledger № (displayNumber
+                // nil) — render their heading without a "№N · " prefix.
+                let numberPrefix = entry.displayNumber.map { "№\($0) · " } ?? ""
+                lines.append("### \(numberPrefix)\(entry.kind)")
                 lines.append("")
                 lines.append("- \(AtlasL10n.string("ledger.export.entry.status", entry.status))")
                 lines.append("- \(AtlasL10n.string("ledger.export.entry.started", AtlasFormatters.shortDate(entry.startedAt)))")
@@ -148,10 +155,10 @@ public enum LedgerExportController {
         planNumber: (TaskRun) -> Int?
     ) -> String {
         let numbers = LedgerEntryMapping.chronologicalDisplayNumbers(for: taskRuns, planNumber: planNumber)
-        let entries = taskRuns.map { run in
+        let runEntries = taskRuns.map { run in
             LedgerExportBuilder.ExportEntry(
-                id: run.id.uuidString,
-                displayNumber: numbers[run.id] ?? 0,
+                id: "run.\(run.id.uuidString)",
+                displayNumber: numbers[run.id],
                 kind: run.kind.title,
                 status: run.status.title,
                 summary: run.summary,
@@ -160,6 +167,26 @@ public enum LedgerExportController {
                 recoveryBytes: nil
             )
         }
+        // Round-21: include recovery items as entries (fail-closed honesty — the
+        // header summary already counts them and their total bytes, so the
+        // entries section must list them too, each with its recoverable size).
+        let recoveryEntries = recoveryItems.map { item in
+            LedgerExportBuilder.ExportEntry(
+                id: "recovery.\(item.id.uuidString)",
+                displayNumber: nil,
+                kind: AtlasL10n.string("ledger.export.entry.kind.recovery"),
+                status: item.isExpired
+                    ? AtlasL10n.string("ledger.export.entry.status.expired")
+                    : AtlasL10n.string("ledger.export.entry.status.recoverable"),
+                summary: item.originalPath,
+                startedAt: item.deletedAt,
+                finishedAt: nil,
+                recoveryBytes: item.bytes
+            )
+        }
+        // Chronological (newest first) so runs and recovery items interleave by
+        // activity date, mirroring the on-screen timeline.
+        let entries = (runEntries + recoveryEntries).sorted { $0.startedAt > $1.startedAt }
         let totalBytes = recoveryItems.map(\.bytes).reduce(Int64(0), +)
         let activeCount = taskRuns.filter { $0.status == .queued || $0.status == .running }.count
         let input = LedgerExportBuilder.Input(

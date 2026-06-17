@@ -605,6 +605,9 @@
 "ledger.export.entry.started" = "开始时间：%@";
 "ledger.export.entry.finished" = "结束时间：%@";
 "ledger.export.entry.recovery" = "可恢复：%@";
+"ledger.export.entry.kind.recovery" = "可恢复项";
+"ledger.export.entry.status.recoverable" = "可恢复";
+"ledger.export.entry.status.expired" = "已过期";
 "ledger.export.footer" = "本报告由 Atlas 在本机生成，仅供个人参考。";
 
 "permissions.screen.title" = "权限";
@@ -657,6 +660,7 @@
    Maps existing rationale + support fields; behavior unchanged. */
 "permissions.evidence.toggle" = "查看权限说明";
 "permissions.evidence.section.why" = "为什么需要";
+"permissions.evidence.section.status" = "状态";
 "permissions.evidence.section.scope" = "影响范围";
 "permissions.evidence.section.authorize" = "如何授权";
 "permissions.evidence.scope.fullDiskAccess" = "扫描受保护的 Library 区域（Mail、Safari、Messages 等系统数据）与更深层的应用残留。";
@@ -1220,6 +1224,7 @@
 "ds.evidence.section.evidence" = "证据";
 "ds.evidence.section.recovery" = "恢复方案";
 "ds.evidence.aggregate.selected" = "已选 %d 项";
+"ds.chip.count" = "%1$@，%2$d 项";
 "ds.evidence.executing.title" = "执行进度";
 "ds.evidence.executing.detail.show" = "展开原因";
 "ds.evidence.executing.detail.hide" = "收起原因";

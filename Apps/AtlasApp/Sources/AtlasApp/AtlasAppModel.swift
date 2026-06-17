@@ -1063,6 +1063,19 @@ final class AtlasAppModel: ObservableObject {
         // marked fresh (audit verify gap): regenerateFileOrganizerPlan is a
         // no-op on empty entries, preserving the scan-failure issue below.
         fileOrganizerEntries = []
+        // Round-21: a new scan supersedes the previous plan's №/receipt — clear
+        // them so `refreshFileOrganizerPreview` assigns a FRESH №/#XXXX over the
+        // new plan (parity with SmartClean, which re-numbers on every plan-
+        // producing scan via assignPlanNumber). Previously the
+        // `planNumber == nil` guard left the FIRST scan's stale №/#XXXX on the
+        // toolbar chip and later execute receipt even after scanning different
+        // folders. Only the two stale identity fields are cleared — FileOrganizer
+        // deliberately decouples numbering from selection-clearing (unlike the
+        // shared assignPlanNumber), so entry selection is left untouched.
+        updateWorkflowState(for: .fileOrganizer) { state in
+            state.planNumber = nil
+            state.receiptCode = nil
+        }
 
         if folderPaths.count > 1 {
             // Multiple folders — surface the combined set early; the worker

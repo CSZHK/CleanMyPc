@@ -1,3 +1,4 @@
+import AtlasDomain
 import SwiftUI
 
 /// A rounded capsule filter chip used in horizontal filter bars.
@@ -69,7 +70,9 @@ public struct AtlasFilterChip: View {
 
     private var accessibilityLabel: String {
         if let count {
-            return "\(title), \(count) items"
+            // Round-21: localize the count suffix (was a hardcoded English
+            // ", N items" that leaked English under the zh-Hans default locale).
+            return AtlasL10n.string("ds.chip.count", title, count)
         }
         return title
     }

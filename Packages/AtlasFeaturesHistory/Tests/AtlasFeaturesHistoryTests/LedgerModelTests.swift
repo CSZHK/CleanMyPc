@@ -294,6 +294,32 @@ final class LedgerModelTests: XCTestCase {
         XCTAssertTrue(markdown.contains("本报告由 Atlas"), "footer still present on empty report")
     }
 
+    // Round-21: recovery items must appear in the ENTRIES section, not only in
+    // the header summary — otherwise the report claims "可恢复项 N 个 / 可恢复总量 X"
+    // while listing none of them.
+    func testExportBuilderListsRecoveryItemsWithBytesAndStatus() {
+        let live = RecoveryItem(
+            title: "Old download", detail: "d", originalPath: "/Users/x/old.zip",
+            bytes: 1_500_000, deletedAt: Date(), expiresAt: Date().addingTimeInterval(6 * 86400))
+        let expired = RecoveryItem(
+            title: "Stale cache", detail: "d", originalPath: "/Users/x/stale.tar",
+            bytes: 500_000, deletedAt: Date(), expiresAt: Date().addingTimeInterval(-86400))
+        let markdown = LedgerExportController.renderReport(
+            taskRuns: [], recoveryItems: [live, expired], retentionDays: 7,
+            planNumber: { _ in nil })
+
+        // Header summary still counts both.
+        XCTAssertTrue(markdown.contains("可恢复项 2 个"), "header counts both recovery items")
+        // Each recovery item is now listed in the entries section with its path
+        // (summary) and a recoverable-bytes line — previously neither appeared.
+        XCTAssertTrue(markdown.contains("/Users/x/old.zip"), "live recovery item path listed")
+        XCTAssertTrue(markdown.contains("/Users/x/stale.tar"), "expired recovery item path listed")
+        XCTAssertTrue(markdown.contains("可恢复："), "recoverable byte line present for a recovery entry")
+        // Status reflects expiry state (guards the expired-awareness theme shared
+        // with the on-screen recovery metric).
+        XCTAssertTrue(markdown.contains("已过期"), "expired item marked expired")
+    }
+
     // MARK: - Filter chip mapping (legacy fields preserved)
 
     func testFilterAllMatchesEverything() {

@@ -477,11 +477,18 @@ struct FileOrganizerExecuteStageView: View {
             } else {
                 VStack(spacing: AtlasSpacing.lg) {
                     AtlasCircularProgress(
-                        progress: isExecuting ? max(progress, 0.05) : progress,
+                        // Round-21: `progress` is the STALE scan value (~1.0 after
+                        // a completed scan) — the worker execute call is a single
+                        // await with no progress stream, so echoing it (the old
+                        // `max(progress, 0.05)`) froze the arc at ~100% and
+                        // VoiceOver announced "100%" while still running. Execute
+                        // has no determinate signal: empty arc + play icon, hidden
+                        // from VoiceOver (the status text + action bar carry it).
+                        progress: isExecuting ? 0 : progress,
                         tone: .warning,
                         lineWidth: 8,
                         icon: "play.circle.fill",
-                        accessibilityLabel: AtlasL10n.string("fileorganizer.status.executing")
+                        accessibilityLabel: isExecuting ? nil : AtlasL10n.string("fileorganizer.status.executing")
                     )
                     .frame(width: 80, height: 80)
 
