@@ -1,18 +1,14 @@
 <div align="center">
-  <img src="Docs/Media/README/atlas-icon.png" alt="Atlas for Mac 图标" width="128" />
-  <h1>Atlas for Mac</h1>
-  <p><em>可解释、以恢复为先的 Mac 维护工作台。</em></p>
+  <img src="Docs/Media/README/fig01-cover.png" alt="Atlas for Mac — 可解释、以恢复为先的 Mac 维护工作台" />
 </div>
 
-<p align="center">
-  <a href="README.md">English</a> | <strong>简体中文</strong>
-</p>
+<div align="center">
+  <h1>Atlas for Mac</h1>
+  <p><em>可解释、以恢复为先的 Mac 维护工作台。</em></p>
+  <p><a href="README.md">English</a> | <strong>简体中文</strong></p>
+</div>
 
-<p align="center">
-  <img src="Docs/Media/README/atlas-smart-clean.png" alt="Atlas for Mac 智能清理界面" width="1000" />
-</p>
-
-Atlas for Mac 是一款原生 macOS 应用，面向需要弄清楚 Mac 为什么变慢、磁盘为什么变满、系统为什么变得杂乱的用户，并在此基础上提供安全、可恢复的处理操作。当前 MVP 将系统概览、Smart Clean、应用卸载流程、权限指引、历史记录和恢复能力整合到一个桌面工作台中。
+Atlas for Mac 是一款原生 macOS 应用，面向需要弄清楚 Mac 为什么变慢、磁盘为什么变满、系统为什么变得杂乱的用户，并在此基础上提供安全、可恢复的处理操作。当前 MVP 将系统概览、Smart Clean、文件整理、应用卸载流程、可追溯的恢复台账、权限指引和安全的恢复能力整合到一个桌面工作台中。
 
 这个仓库是 Atlas for Mac 新产品的工作源码。Atlas for Mac 本身以 MIT License 开源发布。它是一个独立项目，可以在 MIT License 下复用部分上游 Mole 能力，但用户可见命名、发布材料和产品方向均以 Atlas 为主。
 
@@ -65,11 +61,13 @@ open Atlas.xcodeproj
 
 - `Overview`
 - `Smart Clean`
+- `File Organizer`
 - `Apps`
-- `History`
-- `Recovery`
+- `Ledger`
 - `Permissions`
 - `Settings`
+
+恢复能力贯穿 Smart Clean、Apps 与文件整理：经审核的操作会记录到「台账」中，并在存在受支持恢复路径期间保持可还原。
 
 ## 产品原则
 
@@ -86,9 +84,9 @@ open Atlas.xcodeproj
 | --- | --- |
 | ![Overview](Docs/Media/README/atlas-overview.png) | ![Smart Clean](Docs/Media/README/atlas-smart-clean.png) |
 
-| Apps | History |
+| Apps | Ledger |
 | --- | --- |
-| ![Apps](Docs/Media/README/atlas-apps.png) | ![History](Docs/Media/README/atlas-history.png) |
+| ![Apps](Docs/Media/README/atlas-apps.png) | ![Ledger](Docs/Media/README/atlas-ledger.png) |
 
 ## 仓库结构
 

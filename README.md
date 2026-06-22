@@ -1,18 +1,14 @@
 <div align="center">
-  <img src="Docs/Media/README/atlas-icon.png" alt="Atlas for Mac icon" width="128" />
-  <h1>Atlas for Mac</h1>
-  <p><em>Explainable, recovery-first Mac maintenance workspace.</em></p>
+  <img src="Docs/Media/README/fig01-cover.png" alt="Atlas for Mac — explainable, recovery-first Mac maintenance workspace" />
 </div>
 
-<p align="center">
-  <strong>English</strong> | <a href="README.zh-CN.md">简体中文</a>
-</p>
+<div align="center">
+  <h1>Atlas for Mac</h1>
+  <p><em>Explainable, recovery-first Mac maintenance workspace.</em></p>
+  <p><strong>English</strong> | <a href="README.zh-CN.md">简体中文</a></p>
+</div>
 
-<p align="center">
-  <img src="Docs/Media/README/atlas-smart-clean.png" alt="Atlas for Mac Smart Clean screen" width="1000" />
-</p>
-
-Atlas for Mac is a native macOS application for people who need to understand why their Mac is slow, full, or disorganized, then take safe and reversible action. The current MVP unifies system overview, Smart Clean, app uninstall workflows, permissions guidance, history, and recovery into a single desktop workspace.
+Atlas for Mac is a native macOS application for people who need to understand why their Mac is slow, full, or disorganized, then take safe and reversible action. The current MVP unifies system overview, Smart Clean, file organization, app uninstall workflows, a recovery-backed ledger, permissions guidance, and safe recovery into a single desktop workspace.
 
 This repository is the working source for the new Atlas for Mac product. Atlas for Mac itself is open source under the MIT License. It remains an independent project and may reuse selected upstream Mole capabilities under the MIT License, but user-facing naming, release materials, and product direction are Atlas-first.
 
@@ -65,11 +61,13 @@ open Atlas.xcodeproj
 
 - `Overview`
 - `Smart Clean`
+- `File Organizer`
 - `Apps`
-- `History`
-- `Recovery`
+- `Ledger`
 - `Permissions`
 - `Settings`
+
+Recovery is woven across Smart Clean, Apps, and File Organizer: reviewed actions are recorded in the Ledger and remain restorable while a supported recovery path exists.
 
 ## Product Principles
 
@@ -86,9 +84,9 @@ open Atlas.xcodeproj
 | --- | --- |
 | ![Overview](Docs/Media/README/atlas-overview.png) | ![Smart Clean](Docs/Media/README/atlas-smart-clean.png) |
 
-| Apps | History |
+| Apps | Ledger |
 | --- | --- |
-| ![Apps](Docs/Media/README/atlas-apps.png) | ![History](Docs/Media/README/atlas-history.png) |
+| ![Apps](Docs/Media/README/atlas-apps.png) | ![Ledger](Docs/Media/README/atlas-ledger.png) |
 
 ## Repository Layout
 

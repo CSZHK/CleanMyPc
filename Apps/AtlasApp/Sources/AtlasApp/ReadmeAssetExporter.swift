@@ -63,6 +63,10 @@ private struct AtlasScreenshotShell<Content: View>: View {
     }
 
     var body: some View {
+        // "Screenshot-tool" framed presentation: the app capture sits centered on a Calm
+        // Ledger canvas-gradient backdrop with a margin, rounded corners, hairline border,
+        // and soft shadow — like a Shottr/CleanShot framed export. No fake title bar; the
+        // capture is the real app shell + feature view, edge to edge within the frame.
         HStack(spacing: 0) {
             sidebarColumn
                 .frame(width: 220)
@@ -75,6 +79,24 @@ private struct AtlasScreenshotShell<Content: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Color(nsColor: .windowBackgroundColor))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: Color.black.opacity(0.16), radius: 36, x: 0, y: 20)
+        .padding(48)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(red: 0.56, green: 0.80, blue: 0.76), // #8FCCC2 — Calm Ledger teal backdrop top
+                    Color(red: 0.77, green: 0.89, blue: 0.86), // #C5E3DB — teal backdrop bottom
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
     }
 
     // MARK: - Sidebar
@@ -174,7 +196,13 @@ private struct AtlasScreenshotShell<Content: View>: View {
 @MainActor
 private struct AtlasReadmeAssetExporter {
     private let outputDirectory: URL
-    private let screenshotSize = CGSize(width: 2880, height: 1800)
+    // Canvas in POINTS (captured at the screen's backing scale, e.g. 2× on Retina →
+    // 2880×1800 px). Sized to a realistic Mac window so Calm Ledger workspace content
+    // (maxWorkspaceWidth ≈ 1200) fills the detail area instead of floating centered with
+    // huge margins: 1440pt − 220pt sidebar − 1pt divider ≈ 1219pt detail, just over the
+    // 1200pt workspace ceiling. A giant 2880pt canvas left ~830pt of empty window-background
+    // on each side.
+    private let screenshotSize = CGSize(width: 1440, height: 900)
     private let screenshotLanguage: AtlasLanguage = .en
 
     init(outputDirectory: URL) {
@@ -273,11 +301,36 @@ private struct AtlasReadmeAssetExporter {
         hostingView.frame = NSRect(origin: .zero, size: screenshotSize)
         hostingView.layoutSubtreeIfNeeded()
 
-        guard let bitmapRepresentation = hostingView.bitmapImageRepForCachingDisplay(in: hostingView.bounds) else {
+        // Build the backing bitmap EXPLICITLY: 2× pixels with its `.size` pinned to the
+        // logical canvas size. This makes `cacheDisplay` map the view's logical bounds onto
+        // the FULL pixel grid. Two prior attempts failed:
+        //  - `bitmapImageRepForCachingDisplay` (no window → bad backing scale) mapped the
+        //    view into only the top-left quadrant, leaving the rest blank.
+        //  - `ImageRenderer` rendered the sidebar shell but could not render the
+        //    AtlasScreen/ScrollView-backed feature views at all (blank content area).
+        // `cacheDisplay` snapshots the complete view hierarchy reliably.
+        let scale: CGFloat = 2.0
+        guard let bitmapRepresentation = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(screenshotSize.width * scale),
+            pixelsHigh: Int(screenshotSize.height * scale),
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bitmapFormat: [],
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ) else {
             throw AtlasReadmeAssetExporterError.renderFailed(fileName)
         }
+        bitmapRepresentation.size = screenshotSize
 
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRepresentation)
         hostingView.cacheDisplay(in: hostingView.bounds, to: bitmapRepresentation)
+        NSGraphicsContext.restoreGraphicsState()
 
         guard let pngData = bitmapRepresentation.representation(using: .png, properties: [:]) else {
             throw AtlasReadmeAssetExporterError.pngEncodingFailed(fileName)
