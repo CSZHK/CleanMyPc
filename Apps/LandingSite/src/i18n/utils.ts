@@ -61,6 +61,15 @@ export interface LandingCopy {
     sectionTitle: string;
     steps: Array<{ label: string; description: string }>;
   };
+  ledger: {
+    eyebrow: string;
+    sectionTitle: string;
+    subtitle: string;
+    entries: Array<{ id: string; title: string; data: string; status: string }>;
+    restoreBadge: string;
+    evidence: { why: string; proof: string; recovery: string };
+    footnote: string;
+  };
   developer: {
     sectionTitle: string;
     subtitle: string;

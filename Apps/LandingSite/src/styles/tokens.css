@@ -1,48 +1,67 @@
 /* ══════════════════════════════════════════════════════
    Atlas Landing Page — Design Tokens
-   Source of truth: AtlasBrand.swift + AtlasColors.xcassets
-   Theme: "Precision Utility" (dark + light)
+   Source of truth: Calm Ledger spec (Docs/design/2026-06-10-
+   frontend-redesign-calm-ledger.md §1.2) + AtlasColors.xcassets
+   Theme: "Calm Ledger · 平静台账" — calm shell × mono data ×
+   ledger trust. Dual theme (dark 墨绿石墨 default + light canonical).
+   No glassmorphism: card surfaces are OPAQUE (the legacy
+   `--atlas-glass-*` tokens now resolve to solid surfaces, so the
+   backdrop-filter calls in components become visually inert).
    ══════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Colors: Background ──────────────────────────── */
-  --atlas-color-bg-base:          #0D0F11;
-  --atlas-color-bg-surface:       #1A1D21;
-  --atlas-color-bg-surface-hover: #22262B;
-  --atlas-color-bg-raised:        rgba(255, 255, 255, 0.06);
-  --atlas-color-bg-code:          #151820;
+  /* ── Colors: Background (Calm Ledger dark — 墨绿石墨) ─── */
+  --atlas-color-bg-base:          #0F1413;   /* canvas top (gradient → #141A18) */
+  --atlas-color-bg-surface:       #1A211F;   /* working-surface card */
+  --atlas-color-bg-surface-hover: #202926;   /* surfaceSubdued — row/hover */
+  --atlas-color-bg-raised:        #1A211F;   /* opaque (was glassmorphic tint) */
+  --atlas-color-bg-code:          #161D1B;   /* surfaceInput — code/data bed */
 
-  /* ── Colors: Brand ───────────────────────────────── */
-  --atlas-color-brand:            #149085;
-  --atlas-color-brand-light:      #0F766E;
-  --atlas-color-brand-glow:       rgba(20, 144, 133, 0.25);
+  /* ── Colors: Brand (teal — fills/borders/hover only, never text) ── */
+  --atlas-color-brand:            #1FB5A3;   /* AtlasBrand dark */
+  --atlas-color-brand-light:      #2BC4B1;   /* hover variant */
+  --atlas-color-brand-glow:       rgba(31, 181, 163, 0.25);
 
-  /* ── Colors: Accent ──────────────────────────────── */
-  --atlas-color-accent:           #34D399;
+  /* ── Colors: Accent (mint — non-text only: progress, badges, decor) ── */
+  --atlas-color-accent:           #52E2B5;   /* AtlasAccent dark */
   --atlas-color-accent-bright:    #52E2B5;
 
   /* ── Colors: Semantic ────────────────────────────── */
-  --atlas-color-success:          #22C55E;
-  --atlas-color-warning:          #F59E0B;
-  --atlas-color-danger:           #EF4444;
-  --atlas-color-info:             #3B82F6;
+  --atlas-color-success:          #4ADE9E;
+  --atlas-color-warning:          #E8A33D;
+  --atlas-color-danger:           #F07B72;
+  --atlas-color-info:             #6FA8E8;
 
   /* ── Colors: Text ────────────────────────────────── */
-  --atlas-color-text-primary:     #F1F5F9;
-  --atlas-color-text-secondary:   #94A3B8;
-  --atlas-color-text-tertiary:    rgba(148, 163, 184, 0.6);
+  --atlas-color-text-primary:     #E9F1ED;   /* ink */
+  --atlas-color-text-secondary:   #9FB3AC;   /* textSecondary 7.43:1 */
+  --atlas-color-text-tertiary:    rgba(126, 147, 140, 0.6); /* textTertiary */
+
+  /* ── Colors: Ink / data (large numerals, ledger) ─── */
+  --atlas-color-ink:              #E9F1ED;
+  --atlas-color-ink-data:         #E9F1ED;
 
   /* ── Colors: Border ──────────────────────────────── */
-  --atlas-color-border:           rgba(241, 245, 249, 0.08);
-  --atlas-color-border-emphasis:  rgba(241, 245, 249, 0.14);
+  --atlas-color-border:           #2B3633;
+  --atlas-color-border-emphasis:  rgba(233, 241, 237, 0.14);
+
+  /* ── Colors: Ledger surface (warm trust layer) ───── */
+  --atlas-color-ledger-paper:     #221F19;
+  --atlas-color-ledger-border:    #3C3830;
+  --atlas-color-ledger-rule:      #4A4338;   /* dotted entry separators */
+  --atlas-color-ledger-ink:       #CFC8B8;
+  --atlas-color-ledger-secondary: #9C9482;
+
+  /* ── Glass → OPAQUE surfaces (de-glassmorphism) ──── */
+  --atlas-glass-bg:               #1A211F;   /* solid surface, backdrop-filter inert */
+  --atlas-glass-border:           #2B3633;
 
   /* ── Gradients & Effects ─────────────────────────── */
-  --atlas-gradient-brand:         linear-gradient(135deg, #149085, #34D399);
-  --atlas-gradient-hero:          radial-gradient(ellipse 80% 50% at 50% -20%, rgba(20, 144, 133, 0.15) 0%, transparent 70%);
-  --atlas-glow-brand:             0 0 60px rgba(20, 144, 133, 0.15);
-  --atlas-glow-card-hover:        0 8px 30px rgba(20, 144, 133, 0.12), 0 0 0 1px rgba(52, 211, 153, 0.1);
-  --atlas-glass-bg:               rgba(255, 255, 255, 0.04);
-  --atlas-glass-border:           rgba(255, 255, 255, 0.08);
+  --atlas-gradient-brand:         linear-gradient(135deg, #1FB5A3, #52E2B5);
+  --atlas-gradient-canvas:        linear-gradient(160deg, #0F1413 0%, #141A18 100%);
+  --atlas-gradient-hero:          radial-gradient(ellipse 80% 50% at 50% -20%, rgba(31, 181, 163, 0.15) 0%, transparent 70%);
+  --atlas-glow-brand:             0 0 60px rgba(31, 181, 163, 0.15);
+  --atlas-glow-card-hover:        0 8px 30px rgba(31, 181, 163, 0.12), 0 0 0 1px rgba(82, 226, 181, 0.10);
   --atlas-noise-opacity:          0.03;
 
   /* ── Typography ──────────────────────────────────── */
@@ -85,7 +104,7 @@
   --atlas-space-section-gap:      80px;
   --atlas-space-section-gap-lg:   120px;
 
-  /* ── Radius ──────────────────────────────────────── */
+  /* ── Radius (continuous corners) ─────────────────── */
   --atlas-radius-sm:              8px;
   --atlas-radius-md:              12px;
   --atlas-radius-lg:              16px;
@@ -93,14 +112,14 @@
   --atlas-radius-xxl:             24px;
   --atlas-radius-full:            9999px;
 
-  /* ── Elevation ───────────────────────────────────── */
+  /* ── Elevation (softened ~30% per Calm Ledger §1.4) ── */
   --atlas-shadow-flat:            none;
-  --atlas-shadow-raised:          0 10px 18px rgba(0, 0, 0, 0.05);
-  --atlas-shadow-prominent:       0 16px 28px rgba(0, 0, 0, 0.09);
-  --atlas-shadow-cta:             0 6px 12px rgba(20, 144, 133, 0.25);
-  --atlas-shadow-cta-hover:       0 8px 20px rgba(20, 144, 133, 0.35);
+  --atlas-shadow-raised:          0 10px 18px rgba(0, 0, 0, 0.16);
+  --atlas-shadow-prominent:       0 16px 28px rgba(0, 0, 0, 0.20);
+  --atlas-shadow-cta:             0 6px 12px rgba(31, 181, 163, 0.25);
+  --atlas-shadow-cta-hover:       0 8px 20px rgba(31, 181, 163, 0.35);
 
-  /* ── Motion ──────────────────────────────────────── */
+  /* ── Motion (snappy, never bouncy) ───────────────── */
   --atlas-motion-fast:            150ms cubic-bezier(0.2, 0, 0, 1);
   --atlas-motion-standard:        220ms cubic-bezier(0.2, 0, 0, 1);
   --atlas-motion-slow:            350ms cubic-bezier(0.2, 0, 0, 1);
@@ -113,38 +132,72 @@
   --atlas-width-workspace:        1200px;
 
   /* ── Navbar ──────────────────────────────────────── */
-  --atlas-navbar-bg:              rgba(13, 15, 17, 0.85);
-  --atlas-mobile-menu-bg:         rgba(13, 15, 17, 0.95);
+  --atlas-navbar-bg:              rgba(15, 20, 19, 0.85);
+  --atlas-mobile-menu-bg:         rgba(15, 20, 19, 0.95);
 }
 
-/* ── Light Theme Overrides ─────────────────────────── */
+/* ── Light Theme (Calm Ledger canonical — calm shell) ── */
 
 [data-theme="light"] {
-  --atlas-color-bg-base:          #FAFBFC;
-  --atlas-color-bg-surface:       #F1F5F9;
-  --atlas-color-bg-surface-hover: #E2E8F0;
-  --atlas-color-bg-raised:        rgba(0, 0, 0, 0.02);
-  --atlas-color-bg-code:          #F8FAFC;
+  /* ── Colors: Background (cool work surface) ──────── */
+  --atlas-color-bg-base:          #EEF7F4;   /* canvas top (gradient → #F8FBFA) */
+  --atlas-color-bg-surface:       #FFFFFF;   /* working-surface card */
+  --atlas-color-bg-surface-hover: #F8FBFA;   /* surfaceSubdued — row/hover */
+  --atlas-color-bg-raised:        #FFFFFF;   /* opaque */
+  --atlas-color-bg-code:          #F4F8F6;   /* surfaceInput — code/data bed */
 
-  --atlas-color-text-primary:     #0F172A;
-  --atlas-color-text-secondary:   #475569;
-  --atlas-color-text-tertiary:    rgba(71, 85, 105, 0.6);
+  /* ── Colors: Brand ───────────────────────────────── */
+  --atlas-color-brand:            #0F766E;   /* AtlasBrand light */
+  --atlas-color-brand-light:      #149F8C;   /* hover variant */
+  --atlas-color-brand-glow:       rgba(15, 118, 110, 0.18);
 
-  --atlas-color-border:           rgba(15, 23, 42, 0.08);
-  --atlas-color-border-emphasis:  rgba(15, 23, 42, 0.14);
+  /* ── Colors: Accent (non-text) ───────────────────── */
+  --atlas-color-accent:           #34D399;   /* AtlasAccent light */
+  --atlas-color-accent-bright:    #34D399;
 
-  --atlas-gradient-hero:          radial-gradient(ellipse 80% 50% at 50% -20%, rgba(20, 144, 133, 0.08) 0%, transparent 70%);
-  --atlas-glow-brand:             0 0 60px rgba(20, 144, 133, 0.1);
-  --atlas-glow-card-hover:        0 8px 30px rgba(20, 144, 133, 0.08), 0 0 0 1px rgba(52, 211, 153, 0.08);
-  --atlas-glass-bg:               rgba(255, 255, 255, 0.7);
-  --atlas-glass-border:           rgba(0, 0, 0, 0.08);
+  /* ── Colors: Semantic ────────────────────────────── */
+  --atlas-color-success:          #0F766E;
+  --atlas-color-warning:          #8F5E0B;
+  --atlas-color-danger:           #B93330;
+  --atlas-color-info:             #2B66AE;
+
+  /* ── Colors: Text ────────────────────────────────── */
+  --atlas-color-text-primary:     #10302C;   /* ink */
+  --atlas-color-text-secondary:   #5D736D;   /* textSecondary 5.07:1 */
+  --atlas-color-text-tertiary:    rgba(99, 118, 114, 0.6); /* textTertiary 4.81:1 */
+
+  /* ── Colors: Ink / data ──────────────────────────── */
+  --atlas-color-ink:              #10302C;
+  --atlas-color-ink-data:         #0F3C36;
+
+  /* ── Colors: Border ──────────────────────────────── */
+  --atlas-color-border:           #E4EEEA;
+  --atlas-color-border-emphasis:  rgba(16, 48, 44, 0.14);
+
+  /* ── Colors: Ledger surface (warm paper) ─────────── */
+  --atlas-color-ledger-paper:     #FDFCF8;
+  --atlas-color-ledger-border:    #E8E0CF;
+  --atlas-color-ledger-rule:      #D8CFBA;
+  --atlas-color-ledger-ink:       #2A2620;
+  --atlas-color-ledger-secondary: #7A7160;
+
+  /* ── Glass → OPAQUE surfaces ─────────────────────── */
+  --atlas-glass-bg:               #FFFFFF;
+  --atlas-glass-border:           #E4EEEA;
+
+  /* ── Gradients & Effects ─────────────────────────── */
+  --atlas-gradient-brand:         linear-gradient(135deg, #0F766E, #34D399);
+  --atlas-gradient-canvas:        linear-gradient(160deg, #EEF7F4 0%, #F8FBFA 100%);
+  --atlas-gradient-hero:          radial-gradient(ellipse 80% 50% at 50% -20%, rgba(15, 118, 110, 0.08) 0%, transparent 70%);
+  --atlas-glow-brand:             0 0 60px rgba(15, 118, 110, 0.10);
+  --atlas-glow-card-hover:        0 8px 30px rgba(15, 118, 110, 0.08), 0 0 0 1px rgba(52, 211, 153, 0.08);
   --atlas-noise-opacity:          0.02;
 
-  --atlas-shadow-raised:          0 10px 18px rgba(0, 0, 0, 0.04);
-  --atlas-shadow-prominent:       0 16px 28px rgba(0, 0, 0, 0.06);
-  --atlas-shadow-cta:             0 6px 12px rgba(20, 144, 133, 0.2);
-  --atlas-shadow-cta-hover:       0 8px 20px rgba(20, 144, 133, 0.3);
+  --atlas-shadow-raised:          0 10px 18px rgba(16, 48, 44, 0.06);
+  --atlas-shadow-prominent:       0 16px 28px rgba(16, 48, 44, 0.09);
+  --atlas-shadow-cta:             0 6px 12px rgba(15, 118, 110, 0.20);
+  --atlas-shadow-cta-hover:       0 8px 20px rgba(15, 118, 110, 0.30);
 
-  --atlas-navbar-bg:              rgba(250, 251, 252, 0.85);
-  --atlas-mobile-menu-bg:         rgba(250, 251, 252, 0.95);
+  --atlas-navbar-bg:              rgba(238, 247, 244, 0.85);
+  --atlas-mobile-menu-bg:         rgba(238, 247, 244, 0.95);
 }

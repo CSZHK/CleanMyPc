@@ -1,0 +1,268 @@
+---
+import { t, type Locale } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale).ledger;
+---
+
+<section class="ledger" id="ledger" aria-labelledby="ledger-title">
+  <div class="ledger__container">
+    <header class="ledger__header">
+      <span class="ledger__eyebrow">{copy.eyebrow}</span>
+      <h2 id="ledger-title" class="ledger__title">{copy.sectionTitle}</h2>
+      <p class="ledger__subtitle">{copy.subtitle}</p>
+    </header>
+
+    <div class="ledger__paper" role="group" aria-label={copy.sectionTitle}>
+      <div class="ledger__rule ledger__rule--head"></div>
+
+      {copy.entries.map((entry) => (
+        <article class="ledger__entry">
+          <span class="ledger__no" aria-label={entry.id}>{entry.id}</span>
+          <div class="ledger__body">
+            <span class="ledger__entry-title">{entry.title}</span>
+            <span class="ledger__data">{entry.data}</span>
+          </div>
+          <span class="ledger__status" data-restore={entry.status.includes('⛨') ? 'true' : 'false'}>
+            {entry.status}
+          </span>
+          <div class="ledger__rule ledger__rule--dotted" aria-hidden="true"></div>
+        </article>
+      ))}
+
+      <div class="ledger__badge" role="status">
+        <span class="ledger__badge-mark" aria-hidden="true">⛨</span>
+        <span class="ledger__badge-text">{copy.restoreBadge}</span>
+      </div>
+    </div>
+
+    <ol class="ledger__evidence" aria-label={copy.eyebrow}>
+      <li>
+        <span class="ledger__evidence-label">{copy.evidence.why}</span>
+      </li>
+      <li>
+        <span class="ledger__evidence-label">{copy.evidence.proof}</span>
+      </li>
+      <li>
+        <span class="ledger__evidence-label ledger__evidence-label--recovery">{copy.evidence.recovery}</span>
+      </li>
+    </ol>
+
+    <p class="ledger__footnote">{copy.footnote}</p>
+  </div>
+</section>
+
+<style>
+  .ledger {
+    padding: var(--atlas-space-section-gap) var(--atlas-space-screen-h);
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 0%, var(--atlas-color-brand-glow) 0%, transparent 70%),
+      var(--atlas-color-bg-base);
+  }
+
+  .ledger__container {
+    max-width: var(--atlas-width-content);
+    margin: 0 auto;
+  }
+
+  .ledger__header {
+    max-width: var(--atlas-width-reading);
+    margin: 0 auto var(--atlas-space-section);
+    text-align: center;
+  }
+
+  .ledger__eyebrow {
+    display: inline-block;
+    font-family: var(--atlas-font-mono);
+    font-size: var(--atlas-text-caption);
+    font-weight: var(--atlas-text-caption-weight);
+    letter-spacing: var(--atlas-tracking-wide);
+    text-transform: uppercase;
+    color: var(--atlas-color-brand);
+    margin-bottom: var(--atlas-space-md);
+  }
+
+  .ledger__title {
+    font-family: var(--atlas-font-display);
+    font-size: var(--atlas-text-section);
+    font-weight: var(--atlas-text-section-weight);
+    line-height: var(--atlas-leading-tight);
+    letter-spacing: var(--atlas-tracking-tight);
+    color: var(--atlas-color-text-primary);
+    margin: 0 0 var(--atlas-space-md);
+  }
+
+  .ledger__subtitle {
+    font-size: var(--atlas-text-body);
+    line-height: var(--atlas-leading-relaxed);
+    color: var(--atlas-color-text-secondary);
+    margin: 0;
+  }
+
+  /* ── Ledger paper (warm trust surface, flat — no shadow per Calm Ledger §1.4) ── */
+  .ledger__paper {
+    max-width: var(--atlas-width-content);
+    margin: 0 auto;
+    padding: var(--atlas-space-section) var(--atlas-space-section);
+    background: var(--atlas-color-ledger-paper);
+    border: 1px solid var(--atlas-color-ledger-border);
+    border-radius: var(--atlas-radius-lg);
+  }
+
+  .ledger__rule--head {
+    height: 1.5px;
+    background: var(--atlas-color-ledger-ink);
+    opacity: 0.25;
+    margin-bottom: var(--atlas-space-md);
+  }
+
+  .ledger__entry {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: var(--atlas-space-lg);
+    padding: var(--atlas-space-lg) 0;
+  }
+
+  .ledger__no {
+    font-family: var(--atlas-font-mono);
+    font-size: var(--atlas-text-body);
+    font-weight: 600;
+    color: var(--atlas-color-ledger-ink);
+    letter-spacing: var(--atlas-tracking-tight);
+    white-space: nowrap;
+  }
+
+  .ledger__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--atlas-space-xxs);
+    min-width: 0;
+  }
+
+  .ledger__entry-title {
+    font-size: var(--atlas-text-body);
+    font-weight: var(--atlas-text-label-weight);
+    color: var(--atlas-color-ledger-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ledger__data {
+    font-family: var(--atlas-font-mono);
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-ledger-secondary);
+  }
+
+  .ledger__status {
+    font-family: var(--atlas-font-mono);
+    font-size: var(--atlas-text-caption);
+    font-weight: var(--atlas-text-caption-weight);
+    color: var(--atlas-color-brand);
+    white-space: nowrap;
+    padding: var(--atlas-space-xxs) var(--atlas-space-sm);
+    border: 1px solid var(--atlas-color-brand);
+    border-radius: var(--atlas-radius-full);
+    opacity: 0.92;
+  }
+
+  .ledger__status[data-restore='false'] {
+    color: var(--atlas-color-ledger-secondary);
+    border-color: var(--atlas-color-ledger-rule);
+  }
+
+  .ledger__rule--dotted {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, var(--atlas-color-ledger-rule) 50%, transparent 50%);
+    background-size: 6px 1px;
+    background-repeat: repeat-x;
+  }
+
+  .ledger__entry:last-of-type .ledger__rule--dotted {
+    display: none;
+  }
+
+  .ledger__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--atlas-space-sm);
+    margin-top: var(--atlas-space-lg);
+    padding: var(--atlas-space-sm) var(--atlas-space-lg);
+    border: 1.5px solid var(--atlas-color-brand);
+    border-radius: var(--atlas-radius-full);
+    background: color-mix(in srgb, var(--atlas-color-brand) 8%, transparent);
+    transform: rotate(-1.5deg);
+  }
+
+  .ledger__badge-mark {
+    font-size: var(--atlas-text-body);
+    color: var(--atlas-color-brand);
+  }
+
+  .ledger__badge-text {
+    font-family: var(--atlas-font-mono);
+    font-size: var(--atlas-text-body-small);
+    font-weight: var(--atlas-text-label-weight);
+    color: var(--atlas-color-brand);
+  }
+
+  /* ── Evidence three-part (why / proof / recovery) ── */
+  .ledger__evidence {
+    list-style: none;
+    margin: var(--atlas-space-section) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--atlas-space-lg);
+  }
+
+  .ledger__evidence li {
+    padding: var(--atlas-space-lg);
+    background: var(--atlas-color-bg-surface);
+    border: 1px solid var(--atlas-color-border);
+    border-radius: var(--atlas-radius-md);
+    text-align: center;
+  }
+
+  .ledger__evidence-label {
+    font-size: var(--atlas-text-label);
+    font-weight: var(--atlas-text-label-weight);
+    color: var(--atlas-color-text-primary);
+  }
+
+  .ledger__evidence-label--recovery {
+    color: var(--atlas-color-brand);
+  }
+
+  .ledger__footnote {
+    max-width: var(--atlas-width-reading);
+    margin: var(--atlas-space-lg) auto 0;
+    font-size: var(--atlas-text-body-small);
+    line-height: var(--atlas-leading-normal);
+    color: var(--atlas-color-text-tertiary);
+    text-align: center;
+  }
+
+  @media (max-width: 760px) {
+    .ledger__entry {
+      grid-template-columns: 1fr;
+      gap: var(--atlas-space-sm);
+    }
+    .ledger__status {
+      justify-self: start;
+    }
+    .ledger__evidence {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
