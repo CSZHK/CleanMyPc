@@ -105,6 +105,187 @@ final class AtlasInfrastructureTests: XCTestCase {
         XCTAssertEqual(repository.loadState().snapshot.recoveryItems.map(\.id), [activeItem.id])
     }
 
+    func testSettingsSetPreservesThemeAcrossWorkerRoundTrip() async throws {
+        // Regression (bug: theme-snapback). `AtlasScaffoldWorkerService.sanitized(settings:)`
+        // rebuilt AtlasSettings memberwise and dropped `theme`, defaulting it to `.system`.
+        // The worker then echoed AND persisted `.system`, so the UI reverted right after the
+        // async updateSettings round-trip (in-session snapback) and the choice never survived
+        // restart. This exercises the REAL worker — the controller-level test uses a FakeWorker
+        // that bypasses `sanitized`, which is why the drift slipped through.
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let worker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: false)
+
+        var updated = AtlasScaffoldWorkspace.state().settings
+        updated.theme = .dark
+
+        let result = try await worker.submit(AtlasRequestEnvelope(command: .settingsSet(updated)))
+
+        guard case let .settings(echoed) = result.response.response else {
+            XCTFail("Expected .settings response, got \(result.response.response)")
+            return
+        }
+        XCTAssertEqual(echoed.theme, .dark, "worker must echo back the selected theme (guards in-session snapback)")
+
+        // Must also survive a fresh load from disk (guards cross-restart persistence).
+        XCTAssertEqual(repository.loadState().settings.theme, .dark, "worker must persist the selected theme")
+    }
+
+    // MARK: - Real-worker command coverage (closes the FakeWorker bypass gaps)
+
+    func testSettingsGetReturnsCurrentlyPersistedSettings() async throws {
+        // .settingsGet had ZERO real-worker coverage. Guards the read path: after a
+        // settingsSet with non-default values, settingsGet must echo the persisted values
+        // (a dropped/skewed read field would silently revert in-session).
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let worker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: false)
+
+        var updated = AtlasScaffoldWorkspace.state().settings
+        updated.theme = .light
+        updated.recoveryRetentionDays = 21
+        _ = try await worker.submit(AtlasRequestEnvelope(command: .settingsSet(updated)))
+
+        let result = try await worker.submit(AtlasRequestEnvelope(command: .settingsGet))
+        guard case let .settings(readBack) = result.response.response else {
+            XCTFail("Expected .settings response, got \(result.response.response)")
+            return
+        }
+        XCTAssertEqual(readBack.theme, .light)
+        XCTAssertEqual(readBack.recoveryRetentionDays, 21)
+    }
+
+    func testPreviewPlanRespectsFindingIDSubset() async throws {
+        // The `.previewPlan(taskID, findingIDs:)` handler rebuilds a plan scoped to the
+        // requested finding IDs. It had no direct real-worker test (startScan exercises only
+        // the auto-all-findings path). Guards: a subset selection must yield exactly those
+        // findings — not all findings.
+        let f0 = Finding(id: UUID(), title: "F0", detail: "d0", bytes: 10, risk: .safe, category: "Cat", targetPaths: ["/tmp/f0"])
+        let f1 = Finding(id: UUID(), title: "F1", detail: "d1", bytes: 20, risk: .safe, category: "Cat", targetPaths: ["/tmp/f1"])
+        let f2 = Finding(id: UUID(), title: "F2", detail: "d2", bytes: 30, risk: .safe, category: "Cat", targetPaths: ["/tmp/f2"])
+
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        var state = AtlasScaffoldWorkspace.state()
+        state.snapshot.findings = [f0, f1, f2]
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: false)
+        let selected: [UUID] = [f0.id, f1.id]
+        let result = try await worker.submit(AtlasRequestEnvelope(command: .previewPlan(taskID: UUID(), findingIDs: selected)))
+
+        guard case let .preview(plan) = result.response.response else {
+            XCTFail("Expected .preview response, got \(result.response.response)")
+            return
+        }
+        XCTAssertEqual(Set(plan.items.map(\.id)), Set(selected), "previewPlan must scope items to the requested findingIDs")
+        XCTAssertEqual(plan.items.count, selected.count, "previewPlan must not include unselected findings")
+    }
+
+    func testPreviewPlanWidensToAllFindingsWhenAllSelectedIDsAreStale() async throws {
+        // Characterizes makePreviewPlan's fallback branch (previously untested, flagged by
+        // review): a non-empty findingIDs list whose entries ALL fail to match current
+        // findings is treated as stale and widened back to ALL findings rather than returning
+        // an empty plan. Locks this contract so the fallback can't drift silently.
+        let f0 = Finding(id: UUID(), title: "F0", detail: "d0", bytes: 10, risk: .safe, category: "Cat", targetPaths: ["/tmp/f0"])
+        let f1 = Finding(id: UUID(), title: "F1", detail: "d1", bytes: 20, risk: .safe, category: "Cat", targetPaths: ["/tmp/f1"])
+
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        var state = AtlasScaffoldWorkspace.state()
+        state.snapshot.findings = [f0, f1]
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(repository: repository, allowStateOnlyCleanExecution: false)
+        let result = try await worker.submit(AtlasRequestEnvelope(command: .previewPlan(taskID: UUID(), findingIDs: [UUID()])))
+
+        guard case let .preview(plan) = result.response.response else {
+            XCTFail("Expected .preview response, got \(result.response.response)")
+            return
+        }
+        XCTAssertEqual(Set(plan.items.map(\.id)), Set([f0.id, f1.id]), "all-stale findingIDs must widen to all current findings, not return an empty plan")
+    }
+
+    func testAppsListSortsByBytesDescThenNameAscAndPersistsProviderInventory() async throws {
+        // .appsList was covered only via FakeWorker. Guards the real listApps handler:
+        // sort bytes desc with name-asc tiebreak, AND the provider inventory must persist
+        // into the snapshot (a dropped provider write would silently empty apps).
+        let provider = InventoryProviderStub(apps: [
+            AppFootprint(name: "Zeta", bundleIdentifier: "com.z", bundlePath: "/Zeta.app", bytes: 100, leftoverItems: 0),
+            AppFootprint(name: "Alpha", bundleIdentifier: "com.a", bundlePath: "/Alpha.app", bytes: 100, leftoverItems: 0),
+            AppFootprint(name: "Mega", bundleIdentifier: "com.m", bundlePath: "/Mega.app", bytes: 500, leftoverItems: 0),
+        ])
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let worker = AtlasScaffoldWorkerService(repository: repository, appsInventoryProvider: provider, allowStateOnlyCleanExecution: false)
+
+        let result = try await worker.submit(AtlasRequestEnvelope(command: .appsList))
+        guard case let .apps(apps) = result.response.response else {
+            XCTFail("Expected .apps response, got \(result.response.response)")
+            return
+        }
+        XCTAssertEqual(apps.map(\.name), ["Mega", "Alpha", "Zeta"], "appsList must sort bytes desc, then name asc")
+        // The handler persists the provider's raw inventory (source order) and sorts only the
+        // response copy — so assert the provider write landed in the snapshot, order-agnostic.
+        XCTAssertEqual(Set(repository.loadState().snapshot.apps.map(\.name)), Set(["Mega", "Alpha", "Zeta"]), "provider inventory must persist to snapshot")
+    }
+
+    func testInspectPermissionsPropagatesAndPersistsInspectorSnapshot() async throws {
+        // .inspectPermissions was covered only via FakeWorker. The inspector is a concrete
+        // value type but accepts injected closures, so we make it fully deterministic and
+        // assert the handler propagates its snapshot to BOTH the response and persisted state.
+        let inspector = AtlasPermissionInspector(
+            fullDiskAccessProbeURLs: [],
+            protectedLocationReader: { _ in true },
+            accessibilityStatusProvider: { true },
+            notificationsAuthorizationProvider: { true }
+        )
+        let expected = await inspector.snapshot()
+
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            permissionInspector: inspector,
+            allowStateOnlyCleanExecution: false
+        )
+
+        let result = try await worker.submit(AtlasRequestEnvelope(command: .inspectPermissions))
+        guard case let .permissions(returned) = result.response.response else {
+            XCTFail("Expected .permissions response, got \(result.response.response)")
+            return
+        }
+        XCTAssertEqual(returned, expected, "handler must return the inspector's snapshot verbatim")
+        XCTAssertEqual(repository.loadState().snapshot.permissions, expected, "handler must persist the inspector's snapshot")
+    }
+
+    func testFileOrganizerClassifyRespectsEntryIDSubsetAndAppliesClassifier() async throws {
+        // .fileOrganizerClassify had ZERO coverage anywhere. Guards the real handler:
+        // (1) classify scopes to the requested entryIDs, (2) the classifier output is
+        // applied (not bypassed), (3) the classified entries persist into the snapshot.
+        let e0 = FileOrganizerEntry(path: "/tmp/a.txt", fileName: "a.txt", bytes: 1, category: .documents, proposedDestination: "")
+        let e1 = FileOrganizerEntry(path: "/tmp/b.txt", fileName: "b.txt", bytes: 2, category: .documents, proposedDestination: "")
+        let e2 = FileOrganizerEntry(path: "/tmp/c.txt", fileName: "c.txt", bytes: 3, category: .documents, proposedDestination: "")
+
+        let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
+        var state = AtlasScaffoldWorkspace.state()
+        state.snapshot.fileOrganizerEntries = [e0, e1, e2]
+        _ = try repository.saveState(state)
+
+        let worker = AtlasScaffoldWorkerService(
+            repository: repository,
+            fileOrganizerClassifier: TaggingFileOrganizerClassifier(destinationTag: "/Organized"),
+            allowStateOnlyCleanExecution: false
+        )
+
+        let selected = [e0.id, e1.id]
+        let result = try await worker.submit(AtlasRequestEnvelope(command: .fileOrganizerClassify(taskID: UUID(), entryIDs: selected)))
+        guard case let .fileOrganizerEntries(classified) = result.response.response else {
+            XCTFail("Expected .fileOrganizerEntries response, got \(result.response.response)")
+            return
+        }
+        XCTAssertEqual(Set(classified.map(\.id)), Set(selected), "classify must scope to the requested entryIDs")
+        XCTAssertTrue(classified.allSatisfy { $0.proposedDestination == "/Organized" }, "classify must apply the classifier output")
+
+        let reloaded = repository.loadState()
+        let taggedSelected = reloaded.snapshot.fileOrganizerEntries.filter { selected.contains($0.id) }
+        XCTAssertTrue(taggedSelected.allSatisfy { $0.proposedDestination == "/Organized" }, "classifier output must persist into the snapshot")
+    }
+
     func testExecutePlanMovesSupportedFindingsIntoRecoveryWhileKeepingInspectionOnlyItems() async throws {
         let repository = AtlasWorkspaceRepository(stateFileURL: temporaryStateFileURL())
         let home = FileManager.default.homeDirectoryForCurrentUser
@@ -2481,5 +2662,21 @@ private final class TestClock: @unchecked Sendable {
 
     init(now: Date) {
         self.now = now
+    }
+}
+
+private struct InventoryProviderStub: AtlasAppInventoryProviding {
+    let apps: [AppFootprint]
+    func collectInstalledApps() async throws -> [AppFootprint] { apps }
+}
+
+private struct TaggingFileOrganizerClassifier: AtlasFileOrganizerClassifying {
+    let destinationTag: String
+    func classify(_ entries: [FileOrganizerEntry], rules: [FileOrganizerRule], destinationBasePath: String) async -> [FileOrganizerEntry] {
+        entries.map { entry in
+            var copy = entry
+            copy.proposedDestination = destinationTag
+            return copy
+        }
     }
 }

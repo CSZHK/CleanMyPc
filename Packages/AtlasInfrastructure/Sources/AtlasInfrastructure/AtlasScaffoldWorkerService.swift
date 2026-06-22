@@ -1435,21 +1435,6 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             bundleBytes: app.bytes
         )
 
-        // Capture evidence snapshot for preview-execute integrity
-        let plan = ActionPlan(
-            title: AtlasL10n.string("infrastructure.plan.uninstall.title", language: state.settings.language, app.name),
-            items: [],
-            estimatedBytes: uninstallEvidence.bundleBytes
-        )
-
-        let snapshot = appUninstallEvidenceAnalyzer.analyzeSnapshot(
-            planID: plan.id,
-            appName: app.name,
-            bundleIdentifier: app.bundleIdentifier,
-            bundlePath: app.bundlePath,
-            bundleBytes: app.bytes
-        )
-
         var items: [ActionItem] = [
             ActionItem(
                 id: app.id,
@@ -1476,21 +1461,36 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
             )
         })
 
-        let finalPlan = ActionPlan(
-            id: plan.id,
-            title: plan.title,
+        // Copy-on-modify for the evidence-enrichment step: build the plan ONCE with the real
+        // items, then fill the three evidence fields in place. This eliminates the prior second
+        // memberwise `finalPlan` rebuild, which re-derived fields from the first plan and would
+        // silently drop any ActionPlan field added later (same drift class as the `sanitized`
+        // theme bug). Guarantee: every field present on the base plan survives to the returned
+        // plan; only evidencePlanID / estimatedReviewOnlyBytes / evidenceGroups are set after.
+        var plan = ActionPlan(
+            title: AtlasL10n.string("infrastructure.plan.uninstall.title", language: state.settings.language, app.name),
             items: items,
-            estimatedBytes: uninstallEvidence.bundleBytes,
-            evidencePlanID: plan.id,
-            estimatedReviewOnlyBytes: snapshot.reviewOnlyBytes,
-            evidenceGroups: snapshot.groups
+            estimatedBytes: uninstallEvidence.bundleBytes
         )
+
+        // Capture evidence snapshot for preview-execute integrity (needs plan.id).
+        let snapshot = appUninstallEvidenceAnalyzer.analyzeSnapshot(
+            planID: plan.id,
+            appName: app.name,
+            bundleIdentifier: app.bundleIdentifier,
+            bundlePath: app.bundlePath,
+            bundleBytes: app.bytes
+        )
+
+        plan.evidencePlanID = plan.id
+        plan.estimatedReviewOnlyBytes = snapshot.reviewOnlyBytes
+        plan.evidenceGroups = snapshot.groups
 
         // Store snapshot for verification at execution time.
         // Each snapshot is keyed by unique planID; execution removes its own entry via removeValue(forKey:).
         pendingAppUninstallSnapshots[plan.id] = snapshot
 
-        return finalPlan
+        return plan
     }
 
     private func appReviewOnlyEvidenceTitle(for group: AtlasAppFootprintEvidenceGroup) -> String {
@@ -1559,15 +1559,19 @@ public actor AtlasScaffoldWorkerService: AtlasWorkerServing {
     }
 
     private func sanitized(settings: AtlasSettings) -> AtlasSettings {
-        AtlasSettings(
-            recoveryRetentionDays: min(max(settings.recoveryRetentionDays, 1), 30),
-            notificationsEnabled: settings.notificationsEnabled,
-            excludedPaths: Array(Set(settings.excludedPaths.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })).sorted(),
-            language: settings.language,
-            fileOrganizerDestinationBasePath: settings.fileOrganizerDestinationBasePath,
-            fileOrganizerRecursiveScan: settings.fileOrganizerRecursiveScan,
-            fileOrganizerCustomRules: settings.fileOrganizerCustomRules
-        )
+        // Copy-on-modify: start from the WHOLE struct and touch ONLY the fields that
+        // need normalization. Do NOT rebuild AtlasSettings memberwise — a memberwise
+        // init call silently drops any field omitted from the argument list (defaulted
+        // init params still compile), which is exactly how `theme` was lost and the
+        // user's appearance choice snapped back to .system (regression theme-snapback).
+        // This form makes dropping a field structurally impossible: any future field
+        // added to AtlasSettings survives sanitization with zero edits here.
+        var result = settings
+        result.recoveryRetentionDays = min(max(result.recoveryRetentionDays, 1), 30)
+        result.excludedPaths = Array(
+            Set(result.excludedPaths.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
+        ).sorted()
+        return result
     }
 }
 

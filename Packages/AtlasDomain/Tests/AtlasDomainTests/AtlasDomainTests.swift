@@ -72,6 +72,50 @@ final class AtlasDomainTests: XCTestCase {
         XCTAssertEqual(settings.theme, .system)
     }
 
+    func testSettingsCodableRoundTripsEveryNonDefaultField() throws {
+        // Tier-3 guard: every `decodeIfPresent ?? default` field in AtlasSettings is a
+        // silent-default surface — exactly the class of invisibility that hid the
+        // theme-snapback bug. Distinctive non-default values make a dropped/reset field
+        // unambiguous. If encode/decode ever asymmetries any field, this fails.
+        let original = AtlasSettings(
+            recoveryRetentionDays: 30,
+            notificationsEnabled: false,
+            excludedPaths: ["/Custom/Exclude", "~/Keep"],
+            language: .en,
+            theme: .dark,
+            fileOrganizerDestinationBasePath: "/Custom/Dest",
+            fileOrganizerRecursiveScan: true,
+            fileOrganizerCustomRules: [
+                FileOrganizerRule(id: UUID(), name: "Logs", extensionPatterns: ["*.log"], category: .code, destinationSubfolder: "logs", minSizeBytes: 1)
+            ]
+        )
+
+        let decoded = try JSONDecoder().decode(AtlasSettings.self, from: JSONEncoder().encode(original))
+
+        XCTAssertEqual(decoded, original, "every AtlasSettings field must survive encode→decode (no silent default reset)")
+        // Explicit guards on the two enum fields most prone to silent default-reset:
+        XCTAssertEqual(decoded.theme, .dark)
+        XCTAssertEqual(decoded.language, .en)
+    }
+
+    func testAppRecoveryPayloadCodableRoundTripsEvidenceDivergenceFlag() throws {
+        // evidenceDivergenceAtExecution uses `decodeIfPresent ?? false` — a silent-default
+        // bool flagging execution-time evidence divergence (safety-relevant). Guard that a
+        // `true` value survives encode→decode rather than silently resetting to false.
+        let app = AppFootprint(name: "X", bundleIdentifier: "com.x", bundlePath: "/X.app", bytes: 100, leftoverItems: 0)
+        let evidence = AtlasAppUninstallEvidence(bundlePath: "/X.app", bundleBytes: 100, reviewOnlyGroups: [])
+        let original = AtlasAppRecoveryPayload(
+            app: app,
+            uninstallEvidence: evidence,
+            evidenceDivergenceAtExecution: true
+        )
+
+        let decoded = try JSONDecoder().decode(AtlasAppRecoveryPayload.self, from: JSONEncoder().encode(original))
+
+        XCTAssertTrue(decoded.evidenceDivergenceAtExecution, "evidenceDivergenceAtExecution must survive round-trip (not silently reset to false)")
+        XCTAssertEqual(decoded.app, app)
+    }
+
     func testOnlyFullDiskAccessIsRequiredForCurrentWorkflows() {
         XCTAssertTrue(PermissionKind.fullDiskAccess.isRequiredForCurrentWorkflows)
         XCTAssertFalse(PermissionKind.accessibility.isRequiredForCurrentWorkflows)
