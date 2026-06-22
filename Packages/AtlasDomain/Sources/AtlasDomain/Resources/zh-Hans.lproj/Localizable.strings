@@ -210,7 +210,10 @@
 "common.visible" = "可见";
 
 "model.scan.ready" = "准备开始扫描并生成清理计划。";
-"model.scan.submitting" = "正在开始智能清理扫描并生成清理计划…";
+"model.scan.submitting" = "正在扫描可回收项目并生成清理计划（通常需要 1–2 分钟）…";
+"model.scan.progress" = "正在扫描…已运行 %d 秒（受限模式下可能较慢）";
+"model.scan.limited.permissions" = "尚未授予完全磁盘访问，扫描可能较慢且范围受限。可在「权限」中授权。";
+"scan.timeout" = "扫描超时（已等待 %d 秒）。请尝试授予完全磁盘访问，或减少扫描范围后重试。";
 "model.apps.ready" = "准备检查应用占用并生成卸载计划。";
 "model.apps.refreshing" = "正在刷新应用占用并更新卸载计划…";
 "model.permissions.ready" = "需要时可随时检查权限状态。";

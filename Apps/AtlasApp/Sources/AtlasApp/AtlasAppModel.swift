@@ -363,6 +363,13 @@ final class AtlasAppModel: ObservableObject {
         isPermissionsRefreshing = false
     }
 
+    /// 必需权限（完全磁盘访问等）是否就绪。未就绪时扫描会缓慢且范围受限
+    /// （bug `limited-mode-scan-hang` 的环境诱因）。
+    private var smartCleanRequiredPermissionsReady: Bool {
+        let required = snapshot.permissions.filter { $0.kind.isRequiredForCurrentWorkflows }
+        return required.isEmpty || required.allSatisfy(\.isGranted)
+    }
+
     func runSmartCleanScan() async {
         guard !isScanRunning else {
             return
@@ -377,8 +384,27 @@ final class AtlasAppModel: ObservableObject {
         smartCleanExecutionCompleted = false
         smartCleanExecutionReceipt = nil
 
+        // 受限模式软提示（非阻断）：未授权完全磁盘访问时扫描可能缓慢且范围受限。
+        // 此前用户在受限模式下只看到静态「正在开始…」文案并误判为卡死。
+        if !smartCleanRequiredPermissionsReady {
+            smartCleanPlanIssue = AtlasL10n.string("model.scan.limited.permissions")
+        }
+
+        // 计时进度反馈（bug limited-mode-scan-hang）：clean.sh 是黑盒子子进程，
+        // 无真实进度流；至少显示已运行时长，让用户知道扫描在进行而非卡死。
+        let scanStartedAt = Date()
+        let progressTicker = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard let self, self.isScanRunning else { break }
+                let elapsed = Int(Date().timeIntervalSince(scanStartedAt))
+                self.latestScanSummary = AtlasL10n.string("model.scan.progress", elapsed)
+            }
+        }
+
         do {
             let output = try await workspaceController.startScan()
+            progressTicker.cancel()
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = output.snapshot
                 currentPlan = output.actionPlan ?? currentPlan

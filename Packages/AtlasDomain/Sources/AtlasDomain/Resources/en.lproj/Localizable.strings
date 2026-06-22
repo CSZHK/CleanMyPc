@@ -210,7 +210,10 @@
 "common.visible" = "Visible";
 
 "model.scan.ready" = "Ready to build a cleanup plan.";
-"model.scan.submitting" = "Starting a Smart Clean scan and building a cleanup plan…";
+"model.scan.submitting" = "Scanning for reclaimable items and building a cleanup plan (usually takes 1–2 minutes)…";
+"model.scan.progress" = "Scanning… %d s elapsed (may be slower in limited mode)";
+"model.scan.limited.permissions" = "Full Disk Access is not granted — the scan may be slower and limited in scope. Grant it in Permissions.";
+"scan.timeout" = "Scan timed out after %d s. Try granting Full Disk Access or reducing the scan scope, then retry.";
 "model.apps.ready" = "Ready to inspect app footprints and build uninstall plans.";
 "model.apps.refreshing" = "Refreshing app footprints and uninstall plans…";
 "model.permissions.ready" = "Check permission status whenever you want an updated access snapshot.";

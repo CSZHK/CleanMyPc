@@ -1,12 +1,20 @@
 import AtlasApplication
 import AtlasDomain
+import Dispatch
 import Foundation
 
 public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
     private let cleanScriptURL: URL
 
-    public init(cleanScriptURL: URL? = nil) {
+    /// clean.sh dry-run 超时（秒）。受限模式/大库下扫描可能缓慢甚至卡住
+    /// （bug `limited-mode-scan-hang`）；超时终止子进程，避免 `waitUntilExit` 无限等待。
+    public static let defaultScanTimeoutSeconds: TimeInterval = 120
+
+    private let scanTimeoutSeconds: TimeInterval
+
+    public init(cleanScriptURL: URL? = nil, scanTimeoutSeconds: TimeInterval = MoleSmartCleanAdapter.defaultScanTimeoutSeconds) {
         self.cleanScriptURL = cleanScriptURL ?? Self.defaultCleanScriptURL
+        self.scanTimeoutSeconds = scanTimeoutSeconds
     }
 
     public func collectSmartCleanScan() async throws -> AtlasSmartCleanScanResult {
@@ -47,7 +55,26 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
         process.standardError = stderr
 
         try process.run()
+
+        // 超时保护（bug limited-mode-scan-hang）：受限模式/大库下 clean.sh dry-run
+        // 可能很慢甚至卡住。超时终止子进程并抛错，避免 waitUntilExit 无限等待。
+        let timeoutSource = DispatchSource.makeTimerSource()
+        var didTimeout = false
+        timeoutSource.schedule(deadline: .now() + scanTimeoutSeconds)
+        timeoutSource.setEventHandler {
+            if process.isRunning {
+                didTimeout = true
+                process.terminate()
+            }
+        }
+        timeoutSource.resume()
+
         process.waitUntilExit()
+        timeoutSource.cancel()
+
+        if didTimeout {
+            throw MoleSmartCleanAdapterError.scanTimeout(seconds: Int(scanTimeoutSeconds))
+        }
 
         let outputData = stdout.fileHandleForReading.readDataToEndOfFile()
         let errorData = stderr.fileHandleForReading.readDataToEndOfFile()
@@ -546,11 +573,14 @@ public struct MoleSmartCleanAdapter: AtlasSmartCleanScanProviding {
 
 private enum MoleSmartCleanAdapterError: LocalizedError {
     case commandFailed(String)
+    case scanTimeout(seconds: Int)
 
     var errorDescription: String? {
         switch self {
         case let .commandFailed(message):
             return "Mole Smart Clean adapter failed: \(message)"
+        case let .scanTimeout(seconds):
+            return AtlasL10n.string("scan.timeout", seconds)
         }
     }
 }

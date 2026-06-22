@@ -454,4 +454,27 @@ Unknown	/Users/test/Library/Logs/system.log	256
             XCTAssertFalse(finding.explanation?.isEmpty ?? true, "Finding '\(finding.title)' explanation should not be empty")
         }
     }
+
+    // MARK: - Scan timeout (bug `limited-mode-scan-hang`)
+
+    /// 回归测试：clean.sh dry-run 在受限/大库下可能长时间不退出。
+    /// `runDryRun` 必须在 `scanTimeoutSeconds` 后终止子进程并抛超时，而非 `waitUntilExit` 无限等待。
+    func testCollectSmartCleanScanTimesOutWhenProcessExceedsTimeout() async throws {
+        let scriptURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("mole-timeout-\(UUID().uuidString).sh")
+        try "#!/bin/bash\nsleep 10\n".write(to: scriptURL, atomically: true, encoding: .utf8)
+
+        let adapter = MoleSmartCleanAdapter(cleanScriptURL: scriptURL, scanTimeoutSeconds: 1)
+
+        do {
+            _ = try await adapter.collectSmartCleanScan()
+            XCTFail("collectSmartCleanScan 应在超时后抛错，但成功返回了")
+        } catch {
+            let message = error.localizedDescription
+            XCTAssertTrue(
+                message.contains("超时") || message.lowercased().contains("timed out") || message.lowercased().contains("timeout"),
+                "超时错误信息应说明超时，实际: \(message)"
+            )
+        }
+    }
 }
