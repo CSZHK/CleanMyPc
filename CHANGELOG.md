@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [2.0.0] - 2026-06-17
+## [2.0.0] - 2026-06-26
 
 The「Calm Ledger · 平静台账」full frontend redesign — trust becomes structural
 (evidence panels, recovery-point stamps, ledger timeline always visible), across
@@ -38,6 +38,8 @@ unchanged.
   「next step」 recommendation (5-row priority table + snooze cooldown).
 - Per-route workflow-state persistence (survives route switches); WCAG AA
   contrast gate script (36 pairs, CI merge gate).
+- **Landing site Calm Ledger redesign**: new `RecoveryLedger` section + recast
+  design tokens / i18n + refreshed screenshots (aligned with the app redesign).
 
 ### Changed
 - **History → Ledger rename** (route / IA / copy / docs fully synced; D-012
@@ -58,6 +60,12 @@ unchanged.
 - Cumulative round-1…20 review fixes (numbering collisions, selection clobber,
   fail-closed receipts, AA contrast, tap targets, scroll/truncation,
   main-thread blocking).
+- Worker settings sanitizer no longer drops `AtlasSettings.theme`; FakeWorker
+  coverage gaps closed (scaffold-worker service + domain/infra tests).
+- SmartClean `clean.sh` dry-run bounded with a timeout; run-limited mode now
+  surfaces progress + a notice instead of hanging silently.
+- README assets regenerated as framed Calm Ledger screenshots (icon, overview,
+  apps, smart-clean, ledger).
 
 ## [1.0.8] - 2026-05-22
 

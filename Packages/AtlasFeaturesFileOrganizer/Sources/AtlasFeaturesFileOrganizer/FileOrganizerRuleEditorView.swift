@@ -26,6 +26,7 @@ struct FileOrganizerRuleEditorView: View {
     @State private var isExportPresented = false
     @State private var isImportPresented = false
     @State private var importError: String?
+    @State private var exportError: String?
     @State private var ruleToDelete: FileOrganizerRule?
 
     let onSave: ([FileOrganizerRule]) -> Void
@@ -101,7 +102,7 @@ struct FileOrganizerRuleEditorView: View {
             contentType: .json
         ) { result in
             if case .failure(let error) = result {
-                print("Rule export failed: \(error)")
+                exportError = error.localizedDescription
             }
         }
         .fileImporter(
@@ -140,6 +141,18 @@ struct FileOrganizerRuleEditorView: View {
             presenting: importError
         ) { _ in
             Button(AtlasL10n.string("confirm.cancel"), role: .cancel) { importError = nil }
+        } message: { error in
+            Text(error)
+        }
+        .alert(
+            AtlasL10n.string("fileorganizer.ruleeditor.export.title"),
+            isPresented: Binding(
+                get: { exportError != nil },
+                set: { if !$0 { exportError = nil } }
+            ),
+            presenting: exportError
+        ) { _ in
+            Button(AtlasL10n.string("confirm.cancel"), role: .cancel) { exportError = nil }
         } message: { error in
             Text(error)
         }
