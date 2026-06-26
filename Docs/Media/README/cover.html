@@ -1,0 +1,121 @@
+<!--
+  Atlas for Mac — README hero cover (Calm Ledger style).
+  Reproducible source for fig01-cover.png (the old PNG was a 98.5%-solid render
+  failure; this HTML is the regenerable source).
+
+  Render (from this directory):
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      --headless=new --disable-gpu --hide-scrollbars --no-sandbox \
+      --force-device-scale-factor=1 --window-size=3000,1720 \
+      --screenshot=fig01-cover.png "file://$(pwd)/cover.html"
+  Verify filled (NOT vision): python3 pixel-stats — expect dom<60%, unique>60.
+  Tokens mirror Apps/LandingSite/src/styles/tokens.css (Calm Ledger dark).
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:3000px; height:1720px; overflow:hidden; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+    background:
+      radial-gradient(1300px 820px at 76% 34%, rgba(31,181,163,0.20), transparent 60%),
+      radial-gradient(950px 720px at 14% 82%, rgba(82,226,181,0.11), transparent 55%),
+      linear-gradient(135deg, #0F1413 0%, #141A18 100%);
+    color: #E9F1ED;
+    display: flex; align-items: center;
+    padding: 0 130px;
+  }
+
+  /* ---- left: brand ---- */
+  .brand { width: 42%; padding-right: 70px; }
+  .icon-row { display:flex; align-items:center; gap:26px; margin-bottom: 46px; }
+  .icon {
+    width:128px; height:128px; border-radius:30px;
+    box-shadow: 0 18px 56px rgba(31,181,163,0.38), 0 4px 14px rgba(0,0,0,0.5);
+  }
+  .wordmark { font-size: 48px; font-weight: 700; letter-spacing: 1px; color:#E9F1ED; }
+  .wordmark span { color:#1FB5A3; }
+  h1 {
+    font-size: 136px; font-weight: 800; line-height: 1.02; letter-spacing:-2.5px;
+    margin-bottom: 32px;
+  }
+  h1 .grad {
+    background: linear-gradient(135deg,#1FB5A3,#52E2B5);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .tag {
+    font-size: 40px; color:#9FB3AC; line-height:1.35; font-weight:400;
+    max-width: 780px; margin-bottom: 54px;
+  }
+  .pills { display:flex; gap:18px; flex-wrap:wrap; }
+  .pill {
+    font-size: 27px; font-weight:500; color:#CFC8B8;
+    padding: 13px 26px; border-radius: 999px;
+    border:1.5px solid #2B3633; background: rgba(26,33,31,0.6);
+  }
+  .pill.accent { color:#52E2B5; border-color: rgba(31,181,163,0.55); }
+
+  /* ---- right: product window + ledger chip ---- */
+  .shot { width: 58%; position: relative; }
+  .window {
+    background:#1A211F; border:1.5px solid #2B3633; border-radius:22px;
+    padding: 20px;
+    box-shadow:
+      0 48px 120px rgba(0,0,0,0.62),
+      0 0 0 1px rgba(233,241,237,0.04),
+      0 0 90px rgba(31,181,163,0.18);
+  }
+  .titlebar { display:flex; gap:12px; margin-bottom:16px; padding-left:6px; }
+  .dot { width:16px; height:16px; border-radius:50%; }
+  .dot.r { background:#F07B72; } .dot.y { background:#E8A33D; } .dot.g { background:#4ADE9E; }
+  .screenshot { width:100%; border-radius:12px; display:block; }
+
+  .ledger-strip {
+    position:absolute; right:-32px; bottom:-46px; width:330px;
+    background:#221F19; border:1.5px solid #3C3830; border-radius:16px;
+    padding:24px 28px; transform: rotate(2.5deg);
+    box-shadow: 0 28px 66px rgba(0,0,0,0.55);
+  }
+  .ledger-strip .label {
+    font-size:17px; color:#9C9482; letter-spacing:2.5px; text-transform:uppercase; margin-bottom:10px;
+  }
+  .ledger-strip .no {
+    font-size:42px; font-weight:700; color:#CFC8B8;
+    font-family:"SF Mono", ui-monospace, Menlo, monospace;
+  }
+  .ledger-strip .rule { border-top:1.5px dotted #4A4338; margin:14px 0; }
+  .ledger-strip .meta { font-size:18px; color:#9C9482; }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <div class="icon-row">
+      <img class="icon" src="atlas-icon.png" alt="">
+      <div class="wordmark">ATLAS<span>.</span></div>
+    </div>
+    <h1>Atlas <span class="grad">for Mac</span></h1>
+    <p class="tag">Explainable, recovery-first Mac maintenance workspace.</p>
+    <div class="pills">
+      <span class="pill accent">Smart Clean</span>
+      <span class="pill">Ledger</span>
+      <span class="pill">File Organizer</span>
+      <span class="pill">Apps</span>
+    </div>
+  </div>
+  <div class="shot">
+    <div class="window">
+      <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+      <img class="screenshot" src="atlas-overview.png" alt="Atlas Overview">
+    </div>
+    <div class="ledger-strip">
+      <div class="label">Ledger №</div>
+      <div class="no">#A3F2</div>
+      <div class="rule"></div>
+      <div class="meta">Restore point · SHA256</div>
+    </div>
+  </div>
+</body>
+</html>

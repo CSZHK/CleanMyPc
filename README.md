@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="Docs/Media/README/fig01-cover.png" alt="Atlas for Mac — explainable, recovery-first Mac maintenance workspace" />
+  <img src="Docs/Media/README/fig01-cover.png" alt="Atlas for Mac — explainable, recovery-first Mac maintenance workspace" width="1024" />
 </div>
 
 <div align="center">
