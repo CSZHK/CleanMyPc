@@ -10,9 +10,10 @@
       --screenshot=fig01-cover.png "file://$(pwd)/cover.html"
   Verify filled (NOT vision): python3 pixel-stats — expect dom<60%, unique>60.
   Tokens mirror Apps/LandingSite/src/styles/tokens.css (Calm Ledger dark).
-  Logo: atlas-logo.png = pure brand logo (copied from
-  AppIcon.appiconset/icon_1024x1024.png). Do NOT use atlas-icon.png — that is
-  NSWorkspace's system render of the app bundle (OS rounded-rect mask + gloss).
+  Logo: atlas-logo.png = the correct brand logo (author-provided). Do NOT use
+  atlas-icon.png — that was NSWorkspace's system render of the app bundle
+  (OS rounded-rect mask + gloss); it has been removed from this directory (the
+  exporter still emits it, and LandingSite keeps its own copy).
 -->
 <!DOCTYPE html>
 <html lang="en">
