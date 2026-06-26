@@ -10,6 +10,9 @@
       --screenshot=fig01-cover.png "file://$(pwd)/cover.html"
   Verify filled (NOT vision): python3 pixel-stats — expect dom<60%, unique>60.
   Tokens mirror Apps/LandingSite/src/styles/tokens.css (Calm Ledger dark).
+  Logo: atlas-logo.png = pure brand logo (copied from
+  AppIcon.appiconset/icon_1024x1024.png). Do NOT use atlas-icon.png — that is
+  NSWorkspace's system render of the app bundle (OS rounded-rect mask + gloss).
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -93,7 +96,7 @@
 <body>
   <div class="brand">
     <div class="icon-row">
-      <img class="icon" src="atlas-icon.png" alt="">
+      <img class="icon" src="atlas-logo.png" alt="">
       <div class="wordmark">ATLAS<span>.</span></div>
     </div>
     <h1>Atlas <span class="grad">for Mac</span></h1>
