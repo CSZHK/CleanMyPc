@@ -7,7 +7,7 @@ Calm Ledger 前端全面重设计（一次到位）
 MAJOR — 全部 8 屏 + 壳层 + 设计系统 v3 + IA 改名，长分支整体交付
 
 ## Status
-OPEN
+CLOSED — V2.0.0 released 2026-06-26 (commit e0044c2, tag V2.0.0 pushed to origin)
 
 ## Priority
 P0（EPIC-E；非 mainline，受 EPIC-D 中断协议约束）

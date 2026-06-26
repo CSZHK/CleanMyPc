@@ -69,8 +69,11 @@ DECISIONS(D-012) / Backlog(EPIC-E + A/B/C 完成标记，后者随 M4) / IA / CO
 **Note**: L2 subagent 终审三次撞 529 服务端过载，由 controller Bash 红线 + 客观门禁（578/0）+ 测试覆盖（66 FileOrganizer）替代；subagent 终审留合并后人审。孤儿键（overview.actions/risk/snapshot.optimizations/callout/activity 5 前缀 swift refs=0）保留无害未删，记 polish。
 
 ## Close Gate
-M0–M4 全部 Planned Verification = PASS（M0/M1/M2/M3/M4 均 PASS）。客观门禁全绿（578+58 测试 / contrast 36 / build 0 新 warning / swift run 烟测 / 截图基线 / 文档同步）。手动矩阵 + 人工 UI 审查 + subagent 终审留合并后人审（529 阻塞期间不可行）。**Calm Ledger 重设计交付完成，待合并。**
+M0–M4 全部 Planned Verification = PASS（M0/M1/M2/M3/M4 均 PASS）。客观门禁全绿（578+58 测试 / contrast 36 / build 0 新 warning / swift run 烟测 / 截图基线 / 文档同步）。手动矩阵 + 人工 UI 审查 + subagent 终审留合并后人审（529 阻塞期间不可行）。**Calm Ledger 重设计交付完成，已合并并发布（V2.0.0）。**
 M0–M4 全部 Planned Verification = PASS + 手动矩阵 + 人工 UI 审查通过
+
+## Release (2026-06-26)
+**V2.0.0** → commit `e0044c2`，tag `V2.0.0` 已 push origin/main。含 Round-21 全量验收（0 P0/P1，12 P2 全修）+ 5 个 post-tag 收尾 commit（landing redesign / worker sanitizer / smart-clean dry-run timeout / README assets / changelog sync + rule-export error surfacing）。门禁：Packages 606/0 · Apps 62/0 · Go build 0 · FileOrganizer 回归 144/0。
 
 ## Round-21 全量验收（2026-06-17，commit b7442e3，本地未 push）
 **触发**：用户「全量功能 case 验收（含 UI 交互 case）→ 审查未 push 提交 → 修复 → 确保零 P2+」。范围 = origin/main..HEAD 全部 98 commits（181 文件 / +19,466）。
