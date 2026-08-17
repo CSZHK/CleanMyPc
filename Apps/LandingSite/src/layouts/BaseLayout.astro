@@ -27,13 +27,15 @@ const altUrl = new URL(altPath, Astro.site);
     <title>{title}</title>
     <meta name="description" content={description} />
 
-    <!-- Canonical & hreflang (x-default → /en/: the site's default entry for
-         unmatched locales, mirroring atomstorm.ai; without it Google picks one
-         itself and the cluster is incomplete) -->
+    <!-- Canonical & hreflang. x-default must describe what this site ACTUALLY
+         does for an unmatched locale, and the bare root forwards to /zh/
+         (i18n.defaultLocale = 'zh'). Pointing x-default at /en/ would contradict
+         the site's own redirect. If the intent ever becomes English-first, the
+         root redirect and this value have to move together. -->
     <link rel="canonical" href={canonicalUrl.href} />
     <link rel="alternate" hreflang={htmlLang} href={canonicalUrl.href} />
     <link rel="alternate" hreflang={altLocale === 'zh' ? 'zh-Hans' : 'en'} href={altUrl.href} />
-    <link rel="alternate" hreflang="x-default" href={new URL('/en/', Astro.site).href} />
+    <link rel="alternate" hreflang="x-default" href={new URL('/zh/', Astro.site).href} />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />

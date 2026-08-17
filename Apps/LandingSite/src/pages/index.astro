@@ -1,13 +1,17 @@
 ---
-// Root redirects to the default locale instantly.
-// SEO notes:
-//  - canonical must be ABSOLUTE and must point at a real content page. It used
-//    to be a relative "/zh/", which made this 188-byte stub its own indexable
-//    surface in Google's eyes.
-//  - noindex,follow: this page has no content of its own; it exists only to
-//    forward. "follow" still passes link equity on to the locale pages.
-//  - the stub is excluded from the sitemap (see astro.config.mjs sitemap filter)
-//    so we never ask Google to index an empty page.
+// Root redirects to the default locale instantly. This page has no content of
+// its own; it exists only to forward.
+//
+// Signalling rules (both learned the hard way — do not "harden" this again):
+//  - canonical points at the redirect target, and is absolute. A relative
+//    "/zh/" also resolves correctly per spec; absolute is chosen only to remove
+//    any ambiguity about the base, not because relative was broken.
+//  - NO robots noindex here. Google treats noindex + rel=canonical as
+//    contradictory: the canonical asks to consolidate into /zh/ while noindex
+//    asks to drop a page, and the documented failure mode is that the canonical
+//    is ignored or the whole cluster (including /zh/) is dropped. Exclusion of
+//    this stub is handled where it is unambiguous — the sitemap filter in
+//    astro.config.mjs — not by stacking a second, conflicting directive.
 const target = new URL('/zh/', Astro.site).href;
 ---
 
@@ -16,7 +20,6 @@ const target = new URL('/zh/', Astro.site).href;
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="refresh" content={`0;url=${target}`} />
-    <meta name="robots" content="noindex,follow" />
     <link rel="canonical" href={target} />
     <title>Atlas for Mac</title>
   </head>
