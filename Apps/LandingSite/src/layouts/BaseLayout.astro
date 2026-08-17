@@ -27,10 +27,13 @@ const altUrl = new URL(altPath, Astro.site);
     <title>{title}</title>
     <meta name="description" content={description} />
 
-    <!-- Canonical & hreflang -->
+    <!-- Canonical & hreflang (x-default → /en/: the site's default entry for
+         unmatched locales, mirroring atomstorm.ai; without it Google picks one
+         itself and the cluster is incomplete) -->
     <link rel="canonical" href={canonicalUrl.href} />
     <link rel="alternate" hreflang={htmlLang} href={canonicalUrl.href} />
     <link rel="alternate" hreflang={altLocale === 'zh' ? 'zh-Hans' : 'en'} href={altUrl.href} />
+    <link rel="alternate" hreflang="x-default" href={new URL('/en/', Astro.site).href} />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />

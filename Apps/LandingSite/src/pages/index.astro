@@ -1,13 +1,23 @@
 ---
-// Root redirects to default locale /zh/ instantly
+// Root redirects to the default locale instantly.
+// SEO notes:
+//  - canonical must be ABSOLUTE and must point at a real content page. It used
+//    to be a relative "/zh/", which made this 188-byte stub its own indexable
+//    surface in Google's eyes.
+//  - noindex,follow: this page has no content of its own; it exists only to
+//    forward. "follow" still passes link equity on to the locale pages.
+//  - the stub is excluded from the sitemap (see astro.config.mjs sitemap filter)
+//    so we never ask Google to index an empty page.
+const target = new URL('/zh/', Astro.site).href;
 ---
 
 <!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="refresh" content="0;url=/zh/" />
-    <link rel="canonical" href="/zh/" />
+    <meta http-equiv="refresh" content={`0;url=${target}`} />
+    <meta name="robots" content="noindex,follow" />
+    <link rel="canonical" href={target} />
     <title>Atlas for Mac</title>
   </head>
   <body></body>
