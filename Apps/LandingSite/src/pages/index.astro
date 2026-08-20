@@ -12,7 +12,13 @@
 //    is ignored or the whole cluster (including /zh/) is dropped. Exclusion of
 //    this stub is handled where it is unambiguous — the sitemap filter in
 //    astro.config.mjs — not by stacking a second, conflicting directive.
+//  - OG/Twitter card tags mirror /zh/ (the redirect target) so link-preview
+//    crawlers that do not follow meta-refresh still render a card. og:url and
+//    canonical stay on the target per the consolidation rule above.
+import zh from '../i18n/zh.json';
+
 const target = new URL('/zh/', Astro.site).href;
+const ogImage = new URL('/images/og-atlas-zh.png', Astro.site).href;
 ---
 
 <!doctype html>
@@ -21,7 +27,18 @@ const target = new URL('/zh/', Astro.site).href;
     <meta charset="utf-8" />
     <meta http-equiv="refresh" content={`0;url=${target}`} />
     <link rel="canonical" href={target} />
-    <title>Atlas for Mac</title>
+    <title>{zh.meta.title}</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={zh.meta.title} />
+    <meta property="og:description" content={zh.meta.description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:url" content={target} />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:site_name" content="Atlas for Mac" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={zh.meta.title} />
+    <meta name="twitter:description" content={zh.meta.description} />
+    <meta name="twitter:image" content={ogImage} />
   </head>
   <body></body>
 </html>
