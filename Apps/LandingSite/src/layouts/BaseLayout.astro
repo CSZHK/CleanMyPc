@@ -15,6 +15,11 @@ const altLocale = locale === 'zh' ? 'en' : 'zh';
 const altPath = locale === 'zh' ? '/en/' : '/zh/';
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 const altUrl = new URL(altPath, Astro.site);
+
+// GA4 cookieless measurement (REQ-20260821-01). Injected at build time from
+// PUBLIC_GA_ID; unset => no script (preview/local stay quiet). client_storage
+// 'none' = cookieless: no first-party cookie written (GDPR posture, no banner).
+const GA_ID = import.meta.env.PUBLIC_GA_ID?.trim() || '';
 ---
 
 <!doctype html>
@@ -84,6 +89,19 @@ const altUrl = new URL(altPath, Astro.site);
         document.documentElement.setAttribute('data-theme', theme);
       })();
     </script>
+
+    <!-- GA4 cookieless measurement (REQ-20260821-01) -->
+    {GA_ID && (
+      <>
+        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>
+        <script is:inline>
+          {`window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${GA_ID}', { 'client_storage': 'none' });`}
+        </script>
+      </>
+    )}
   </head>
   <body>
     <slot />
