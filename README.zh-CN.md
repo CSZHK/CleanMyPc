@@ -20,7 +20,7 @@ Atlas for Mac 是一个独立的开源项目，与 Apple、Mole 上游作者或�
 
 ### 下载
 
-请从 [Releases](https://github.com/CSZHK/CleanMyPc/releases) 页面下载最新版本：
+欢迎访问 Atlas 产品主页 [atlas.atomstorm.ai](https://atlas.atomstorm.ai/) 了解更多，或从 [Releases](https://github.com/CSZHK/CleanMyPc/releases) 页面下载最新版本：
 
 - **`.dmg`** - 推荐。打开磁盘镜像后，将 Atlas 拖入 Applications 文件夹。
 - **`.zip`** - 解压后将 Atlas.app 移动到 Applications 文件夹。
