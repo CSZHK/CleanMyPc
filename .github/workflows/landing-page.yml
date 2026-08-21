@@ -51,6 +51,8 @@ jobs:
 
       - name: Build static site
         working-directory: Apps/LandingSite
+        env:
+          PUBLIC_GA_ID: G-VC3HB3P212
         run: pnpm run build
 
       - name: Upload Pages artifact
