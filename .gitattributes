@@ -1,0 +1,8 @@
+# GitHub primary language → Swift (the product is a native Swift macOS app).
+# Shell/Go/Makefile + the extensionless shell entries are build/install/upstream (Mole)
+# tooling, not the product surface — exclude them from language stats.
+*.sh        linguist-vendored
+*.go        linguist-vendored
+Makefile    linguist-vendored
+mole        linguist-vendored
+mo          linguist-vendored
