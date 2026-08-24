@@ -15,7 +15,7 @@
 </div>
 
 <p align="center">
-  <video src="Docs/Media/README/final_with_cover.mp4" poster="Docs/Media/README/atlas-promo-thumb.png" width="960" controls></video>
+  <a href="https://github.com/CSZHK/CleanMyPc/blob/main/Docs/Media/README/final_with_cover.mp4"><img src="Docs/Media/README/atlas-promo-thumb.png" alt="▶ Watch the Atlas for Mac promo video (46s)" width="960" /></a>
 </p>
 
 > **Why Atlas?** Your Mac already knows why it's slow, full, or untidy — Atlas tells you *and* fixes it, safely. A **6.2 MB** install package, ~20× smaller than comparable Mac cleaners. It explains before it acts, and keeps every action reversible.
