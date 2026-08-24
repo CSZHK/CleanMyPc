@@ -9,7 +9,7 @@
   <p>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
     <a href="https://github.com/CSZHK/CleanMyPc/releases"><img src="https://img.shields.io/github/v/release/CSZHK/CleanMyPc?include_prereleases&sort=semver" alt="最新版本" /></a>
-    <a href="#requirements"><img src="https://img.shields.io/badge/macOS-14%2B-black" alt="macOS 14+" /></a>
+    <a href="#install"><img src="https://img.shields.io/badge/macOS-14%2B-black" alt="macOS 14+" /></a>
     <a href="https://github.com/CSZHK/CleanMyPc"><img src="https://img.shields.io/github/stars/CSZHK/CleanMyPc?color=yellow" alt="GitHub stars" /></a>
   </p>
 </div>
