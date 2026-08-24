@@ -1,0 +1,64 @@
+---
+import { t, type Locale } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const copy = t(locale);
+---
+
+<section class="video-section section band--dark fade-in" id="video">
+  <div class="video-section__inner container">
+    <h2 class="video-section__title">{copy.video.sectionTitle}</h2>
+    <p class="video-section__sub">{copy.video.sectionSub}</p>
+
+    <div class="video-section__frame">
+      <video
+        src="/videos/atlas-promo-cover.mp4"
+        poster="/images/promo-cover.jpg"
+        controls
+        preload="none"
+        playsinline
+        class="video-section__video"
+      ></video>
+    </div>
+  </div>
+</section>
+
+<style>
+  .video-section__title {
+    font-size: var(--atlas-text-section);
+    font-weight: var(--atlas-text-section-weight);
+    text-align: center;
+    margin-bottom: var(--atlas-space-sm);
+  }
+
+  .video-section__sub {
+    font-size: var(--atlas-text-body-small);
+    color: var(--atlas-color-text-secondary);
+    text-align: center;
+    max-width: 560px;
+    margin: 0 auto var(--atlas-space-section-gap);
+    line-height: var(--atlas-leading-normal);
+  }
+
+  .video-section__frame {
+    max-width: 900px;
+    margin: 0 auto;
+    border-radius: var(--atlas-radius-xxl);
+    overflow: hidden;
+    background: var(--atlas-glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--atlas-glass-border);
+    box-shadow: var(--atlas-shadow-prominent), var(--atlas-glow-brand);
+  }
+
+  .video-section__video {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>
