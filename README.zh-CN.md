@@ -14,9 +14,11 @@
   </p>
 </div>
 
-<p align="center">
-  <a href="https://github.com/CSZHK/CleanMyPc/blob/main/Docs/Media/README/final_with_cover.mp4"><img src="Docs/Media/README/atlas-promo-thumb.png" alt="▶ Watch the Atlas for Mac promo video (46s)" width="960" /></a>
-</p>
+
+
+https://github.com/user-attachments/assets/6d0bb3ab-0dce-4041-9bce-6c039ad99cfc
+
+
 
 > **为什么选 Atlas？** 你的 Mac 早就知道它为什么变慢、变满、变乱——Atlas 告诉你原因，再安全地把它修好。**6.2 MB** 安装包，比同类 Mac 清理工具小约 20 倍。先解释再执行，每个操作都可回退。
 
