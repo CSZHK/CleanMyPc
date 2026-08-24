@@ -6,70 +6,67 @@
   <h1>Atlas for Mac</h1>
   <p><em>Explainable, recovery-first Mac maintenance workspace.</em></p>
   <p><strong>English</strong> | <a href="README.zh-CN.md">简体中文</a></p>
+  <p>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
+    <a href="https://github.com/CSZHK/CleanMyPc/releases"><img src="https://img.shields.io/github/v/release/CSZHK/CleanMyPc?include_prereleases&sort=semver" alt="Latest release" /></a>
+    <a href="#requirements"><img src="https://img.shields.io/badge/macOS-14%2B-black" alt="macOS 14+" /></a>
+    <a href="https://github.com/CSZHK/CleanMyPc"><img src="https://img.shields.io/github/stars/CSZHK/CleanMyPc?color=yellow" alt="GitHub stars" /></a>
+  </p>
 </div>
 
-Atlas for Mac is a native macOS application for people who need to understand why their Mac is slow, full, or disorganized, then take safe and reversible action. The current MVP unifies system overview, Smart Clean, file organization, app uninstall workflows, a recovery-backed ledger, permissions guidance, and safe recovery into a single desktop workspace.
+> **Why Atlas?** Your Mac already knows why it's slow, full, or untidy — Atlas tells you *and* fixes it, safely. A **6.2 MB** install package, ~20× smaller than comparable Mac cleaners. It explains before it acts, and keeps every action reversible.
 
-This repository is the working source for the new Atlas for Mac product. Atlas for Mac itself is open source under the MIT License. It remains an independent project and may reuse selected upstream Mole capabilities under the MIT License, but user-facing naming, release materials, and product direction are Atlas-first.
+## What Atlas does
 
-## Disclaimer
+Atlas for Mac is a native macOS app that answers the three questions your Mac is already asking — then acts on them, safely:
 
-Atlas for Mac is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by Apple, the upstream Mole authors, or any other commercial Mac utility vendor. Some components in this repository may reuse or adapt upstream Mole code under the MIT License; when such code ships, the related attribution and third-party notices must remain available. Cleanup, uninstall, and recovery actions can affect local files, caches, and app data, so review findings and recovery options before execution. Recoverable actions remain reviewable in Atlas, but physical on-disk restore is only available when a supported recovery path exists.
+- **Why is it slow?** — a plain-language system overview and per-app insight.
+- **Why is it full?** — Smart Clean and File Organizer find exactly what you can remove.
+- **What did I just touch?** — every reviewed action lands in a recovery-backed **Ledger**, so you can undo it while a supported recovery path exists.
 
-## Installation
+It recommends before it executes, prefers recovery over permanent deletion, and keeps its recovery claims honest — not every "recoverable" item is physically restorable on disk.
 
-### Download
+## Screens
 
-Learn more about Atlas at [atlas.atomstorm.ai](https://atlas.atomstorm.ai/), or download the latest release from the [Releases](https://github.com/CSZHK/CleanMyPc/releases) page:
+| Overview | Smart Clean |
+| --- | --- |
+| ![Overview — read what's going on at a glance](Docs/Media/README/atlas-overview.png) | ![Smart Clean — explained, safe cleanup](Docs/Media/README/atlas-smart-clean.png) |
 
-- **`.dmg`** — Recommended. Open the disk image and drag Atlas to your Applications folder.
-- **`.zip`** — Extract and move Atlas.app to your Applications folder.
-- **`.pkg`** — Run the installer package for guided installation.
+| Apps | Ledger |
+| --- | --- |
+| ![Apps — full uninstall, no leftovers](Docs/Media/README/atlas-apps.png) | ![Ledger — every action recoverable](Docs/Media/README/atlas-ledger.png) |
 
-Prefer the latest non-prerelease release if you want the normal public install path. GitHub prereleases may contain development-signed builds intended for testing; those builds can require `Open Anyway` or a right-click `Open` flow before launch.
+## Install
 
-If you install a prerelease and macOS blocks the app, you will see a warning similar to this in `System Settings -> Privacy & Security`:
+Download the latest build from the [Releases](https://github.com/CSZHK/CleanMyPc/releases) page, or learn more at [atlas.atomstorm.ai](https://atlas.atomstorm.ai/).
+
+- **`.dmg`** — open the disk image and drag Atlas into your Applications folder.
+- **`.zip`** — extract and move `Atlas.app` to your Applications folder.
+- **`.pkg`** — run the installer for guided setup.
+
+**Requirements:** macOS 14.0 (Sonoma) or later · Apple Silicon or Intel Mac.
+
+> **Working with a prerelease build?** GitHub prereleases may be development-signed, so macOS can gate them behind `System Settings → Privacy & Security` with an `Open Anyway` (or right-click `Open`) step. If that happens, you'll see something like:
 
 <p align="center">
   <img src="Docs/Media/README/atlas-prerelease-warning.png" alt="macOS Security warning for Atlas for Mac prerelease build with Open Anyway action" width="900" />
 </p>
 
-### Requirements
+## MVP modules
 
-- macOS 14.0 (Sonoma) or later
-- Apple Silicon or Intel Mac
+| Module | What it does |
+| --- | --- |
+| `Overview` | A read on system health and what's eating your space, in plain language. |
+| `Smart Clean` | Explains, then cleans — based on your usage, always reviewed first. |
+| `File Organizer` | Folds the clutter into an order you can reason about. |
+| `Apps` | Complete uninstall, not drag-to-trash leftovers. |
+| `Ledger` | The recovery ledger — anything you reviewed is tracked and can be undone. |
+| `Permissions` | Least-privilege, contextual permission guidance. |
+| `Settings` | Configuration, languages (English / 简体中文), and app defaults. |
 
-### Build from Source
+Recovery runs across Smart Clean, Apps, and File Organizer: reviewed actions are recorded in the Ledger and stay restorable while a supported recovery path exists.
 
-```bash
-git clone https://github.com/CSZHK/CleanMyPc.git
-cd CleanMyPc
-swift run --package-path Apps AtlasApp
-```
-
-Or open in Xcode:
-
-```bash
-brew install xcodegen
-xcodegen generate
-open Atlas.xcodeproj
-```
-
-> **Note**: Atlas release assets can be either `Developer ID signed + notarized` or `development prerelease` builds, depending on the release. If you install a prerelease or a local build, macOS may require `Open Anyway` or a right-click `Open` flow before launch.
-
-## MVP Modules
-
-- `Overview`
-- `Smart Clean`
-- `File Organizer`
-- `Apps`
-- `Ledger`
-- `Permissions`
-- `Settings`
-
-Recovery is woven across Smart Clean, Apps, and File Organizer: reviewed actions are recorded in the Ledger and remain restorable while a supported recovery path exists.
-
-## Product Principles
+## Product principles
 
 - Explain recommendations before execution.
 - Prefer recovery-backed actions over permanent deletion.
@@ -78,17 +75,41 @@ Recovery is woven across Smart Clean, Apps, and File Organizer: reviewed actions
 - Preserve a native macOS app shell with worker and helper boundaries.
 - Support `简体中文` and `English`, with `简体中文` as the default app language.
 
-## Screens
+## Build & develop
 
-| Overview | Smart Clean |
-| --- | --- |
-| ![Overview](Docs/Media/README/atlas-overview.png) | ![Smart Clean](Docs/Media/README/atlas-smart-clean.png) |
+```bash
+git clone https://github.com/CSZHK/CleanMyPc.git
+cd CleanMyPc
+swift run --package-path Apps AtlasApp        # run the app
+```
 
-| Apps | Ledger |
-| --- | --- |
-| ![Apps](Docs/Media/README/atlas-apps.png) | ![Ledger](Docs/Media/README/atlas-ledger.png) |
+**Xcode project**
 
-## Repository Layout
+```bash
+brew install xcodegen
+xcodegen generate
+open Atlas.xcodeproj
+```
+
+**Build the native bundle / package artifacts**
+
+```bash
+./scripts/atlas/build-native.sh
+./scripts/atlas/ensure-local-signing-identity.sh   # recommended without Apple release certs
+./scripts/atlas/package-native.sh
+```
+
+The local signing step gives local and prerelease builds a stable development signature instead of falling back to ad hoc packaging.
+
+**Tests & README media**
+
+```bash
+swift test --package-path Packages
+swift test --package-path Apps
+./scripts/atlas/export-readme-assets.sh   # exports icon + screenshots to Docs/Media/README/
+```
+
+## Repository layout
 
 - `Apps/` — macOS app target and app-facing entry points
 - `Packages/` — shared domain, application, design system, protocol, and feature packages
@@ -97,68 +118,28 @@ Recovery is woven across Smart Clean, Apps, and File Organizer: reviewed actions
 - `Testing/` — shared testing support and UI automation repro targets
 - `Docs/` — product, architecture, planning, attribution, and execution documentation
 
-## Local Development
+## Contributing & support
 
-### Run the app
+- **[Releases](https://github.com/CSZHK/CleanMyPc/releases)** — get the app
+- **[Issues](https://github.com/CSZHK/CleanMyPc/issues)** — report a bug or ask a question
+- **⭐ Star the repo** — help more people find an explainable, recovery-first Mac clean-up.
 
-```bash
-swift run --package-path Apps AtlasApp
-```
+## License, attribution & safety
 
-### Open the native Xcode project
+Atlas for Mac is an independent, **MIT-licensed** open-source project. This repository builds in part on the open-source project [Mole](https://github.com/tw93/mole) by tw93 and contributors, and still contains upstream Mole code and adapters used as implementation input. If upstream-derived code ships, keep [Docs/ATTRIBUTION.md](Docs/ATTRIBUTION.md) and [Docs/THIRD_PARTY_NOTICES.md](Docs/THIRD_PARTY_NOTICES.md) in sync with the shipped artifacts.
 
-```bash
-xcodegen generate
-open Atlas.xcodeproj
-```
+Atlas for Mac is **not** affiliated with, endorsed by, or sponsored by Apple, the upstream Mole authors, or any other commercial Mac utility vendor. Cleanup, uninstall, and recovery actions can affect local files, caches, and app data — review findings and recovery options before execution. Recoverable actions remain reviewable in Atlas, but physical on-disk restore is only available where a supported recovery path exists.
 
-### Build the native app bundle
+For private security reports, see [SECURITY.md](SECURITY.md) (contact: `cszhk0310@gmail.com`).
 
-```bash
-./scripts/atlas/build-native.sh
-```
+## Author & contact
 
-### Package `.zip`, `.dmg`, and `.pkg` artifacts
-
-```bash
-./scripts/atlas/ensure-local-signing-identity.sh
-./scripts/atlas/package-native.sh
-```
-
-The local signing step is recommended on machines that do not have Apple release certificates. It gives local and prerelease builds a stable development signature instead of falling back to ad hoc packaging.
-
-### Run focused tests
-
-```bash
-swift test --package-path Packages
-swift test --package-path Apps
-```
-
-## Refresh README Media
-
-```bash
-./scripts/atlas/export-readme-assets.sh
-```
-
-This exports the configured app icon and current app-shell screenshots into `Docs/Media/README/`.
-
-## Author & Contact
-
-- Developer: `Lizi KK`
-- Role: `Ex-Baidu & Alibaba Tech Lead · atomstorm.ai Founder`
+- Developer: **Lizi KK** — Ex-Baidu & Alibaba tech lead · atomstorm.ai founder
 - Website: [AtomStorm Studio](https://studio.atomstorm.ai)
 - X (Twitter): [x.com/lizikk_zhu](https://x.com/lizikk_zhu)
 - Discord: [discord.gg/aR2kF8Xman](https://discord.gg/aR2kF8Xman)
-- GitHub Repository: [CSZHK/CleanMyPc](https://github.com/CSZHK/CleanMyPc)
-- Issues: [github.com/CSZHK/CleanMyPc/issues](https://github.com/CSZHK/CleanMyPc/issues)
-- Security Contact: `cszhk0310@gmail.com` for private vulnerability reports. See [SECURITY.md](SECURITY.md).
-
-### More Socials
+- GitHub: [CSZHK/CleanMyPc](https://github.com/CSZHK/CleanMyPc) · [Issues](https://github.com/CSZHK/CleanMyPc/issues)
 
 | WeChat Official Account | Xiaohongshu |
 | --- | --- |
 | ![WeChat Official Account QR code](Packages/AtlasFeaturesAbout/Sources/AtlasFeaturesAbout/Resources/Media.xcassets/qrcode-wechat.imageset/qrcode-wechat.jpg) | ![Xiaohongshu QR code](Packages/AtlasFeaturesAbout/Sources/AtlasFeaturesAbout/Resources/Media.xcassets/qrcode-xiaohongshu.imageset/qrcode-xiaohongshu.jpg) |
-
-## Attribution
-
-Atlas for Mac is an independent MIT-licensed open-source project. This repository builds in part on the open-source project [Mole](https://github.com/tw93/mole) by tw93 and contributors, and still contains upstream Mole code and adapters used as implementation input. If upstream-derived code ships, keep [Docs/ATTRIBUTION.md](Docs/ATTRIBUTION.md) and [Docs/THIRD_PARTY_NOTICES.md](Docs/THIRD_PARTY_NOTICES.md) in sync with shipped artifacts.
