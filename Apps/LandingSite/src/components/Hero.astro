@@ -87,26 +87,14 @@ const publishedDate = formatDate(manifest.publishedAt, locale);
         </p>
       )}
     </div>
-
     <div class="hero__visual">
-      <div class="hero__frame">
-        <video
-          src="/videos/atlas-promo-cover.mp4"
-          poster="/images/promo-cover.jpg"
-          controls
-          preload="none"
-          playsinline
-          class="hero__screenshot"
-          aria-label="Atlas for Mac promo video"
-        ></video>
-      </div>
       <div class="hero__frame">
         <img
           src="/images/screenshots/atlas-overview.png"
           alt={locale === 'zh' ? 'Atlas for Mac 概览界面' : 'Atlas for Mac overview interface'}
           width="800"
           height="560"
-          loading="lazy"
+          loading="eager"
           class="hero__screenshot"
         />
       </div>
@@ -232,8 +220,6 @@ const publishedDate = formatDate(manifest.publishedAt, locale);
 
   .hero__visual {
     display: flex;
-    flex-direction: column;
-    gap: var(--atlas-space-md);
     justify-content: center;
     min-width: 0;
     position: relative;
