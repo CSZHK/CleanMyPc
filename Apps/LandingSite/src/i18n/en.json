@@ -191,6 +191,10 @@
       ]
     }
   },
+  "video": {
+    "sectionTitle": "Watch Atlas in motion",
+    "sectionSub": "46 seconds. See how Atlas explains first, then cleans."
+  },
   "screenshots": {
     "sectionTitle": "Interface preview",
     "items": [
