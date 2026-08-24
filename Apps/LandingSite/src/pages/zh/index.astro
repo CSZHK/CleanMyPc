@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import NavBar from '../../components/NavBar.astro';
 import Hero from '../../components/Hero.astro';
+import VideoSection from '../../components/VideoSection.astro';
 import TrustStrip from '../../components/TrustStrip.astro';
 import ProblemOutcome from '../../components/ProblemOutcome.astro';
 import FeatureGrid from '../../components/FeatureGrid.astro';
@@ -29,6 +30,7 @@ const copy = t(locale);
 
   <main>
     <Hero locale={locale} />
+    <VideoSection locale={locale} />
     <TrustStrip locale={locale} />
     <ProblemOutcome locale={locale} />
     <FeatureGrid locale={locale} />
