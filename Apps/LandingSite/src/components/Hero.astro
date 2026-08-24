@@ -90,14 +90,15 @@ const publishedDate = formatDate(manifest.publishedAt, locale);
 
     <div class="hero__visual">
       <div class="hero__frame">
-        <img
-          src="/images/screenshots/atlas-overview.png"
-          alt={locale === 'zh' ? 'Atlas for Mac 概览界面' : 'Atlas for Mac overview interface'}
-          width="800"
-          height="560"
-          loading="eager"
+        <video
+          src="/videos/atlas-promo-cover.mp4"
+          poster="/images/promo-cover.jpg"
+          controls
+          preload="none"
+          playsinline
           class="hero__screenshot"
-        />
+          aria-label="Atlas for Mac promo video"
+        ></video>
       </div>
     </div>
   </div>
