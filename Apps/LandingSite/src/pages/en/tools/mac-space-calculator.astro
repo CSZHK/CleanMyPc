@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import NavBar from '../../../components/NavBar.astro';
+import FooterSection from '../../../components/FooterSection.astro';
+import MacSpaceCalculator from '../../../components/MacSpaceCalculator.astro';
+
+const locale = 'en' as const;
+---
+
+<BaseLayout
+  title="Mac Space Reclaim Estimator · Atlas for Mac"
+  description="Answer 4 quick questions to estimate how much space your Mac can reclaim; download open-source Atlas for a real scan, where every action is recoverable."
+  locale={locale}
+  ogImage="/images/og-image-en.png"
+>
+  <NavBar locale={locale} />
+  <main><MacSpaceCalculator locale={locale} /></main>
+  <FooterSection locale={locale} />
+</BaseLayout>
