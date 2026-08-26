@@ -67,6 +67,12 @@ const publishedDate = formatDate(manifest.publishedAt, locale);
             variant="secondary"
           />
         )}
+        <CtaButton
+          label={locale === 'zh' ? '试试免费空间计算器' : 'Try the free space calculator'}
+          href={`/${locale}/tools/mac-space-calculator/`}
+          variant="ghost"
+          external={false}
+        />
       </div>
 
       {manifest.channel === 'prerelease' && (

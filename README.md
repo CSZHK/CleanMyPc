@@ -46,6 +46,8 @@ It recommends before it executes, prefers recovery over permanent deletion, and 
 
 Download the latest build from the [Releases](https://github.com/CSZHK/CleanMyPc/releases) page, or learn more at [atlas.atomstorm.ai](https://atlas.atomstorm.ai/).
 
+Need a quick estimate before installing? Try the free [Mac space calculator](https://atlas.atomstorm.ai/tools/mac-space-calculator/).
+
 - **`.dmg`** — open the disk image and drag Atlas into your Applications folder.
 - **`.zip`** — extract and move `Atlas.app` to your Applications folder.
 - **`.pkg`** — run the installer for guided setup.
