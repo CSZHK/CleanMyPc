@@ -1,0 +1,235 @@
+---
+import { getRelease, getDownloadUrl } from '../data/release';
+
+interface Props {
+  locale: 'zh' | 'en';
+}
+const { locale } = Astro.props;
+const copy = {
+  zh: {
+    eyebrow: '免费工具',
+    title: '我的 Mac 大概能清多少空间？',
+    sub: '答 4 个问题，得到一个「可回收空间」的估算（非实测）。真实数字请下载 Atlas 现场扫描——它才是那个会读你磁盘的工具。',
+    disk: '硬盘总容量',
+    free: '当前剩余',
+    years: '用了几年',
+    dev: '是否装了这些「吃磁盘大户」',
+    xcode: 'Xcode / 模拟器',
+    node: 'Node / node_modules',
+    brew: 'Homebrew 缓存',
+    logs: '下载 / 日志 / 废纸篓',
+    estLabel: '估算可回收',
+    estNote: '保守上限：不超过已用空间的 50%。',
+    cta: '下载 Atlas，做一次真扫描',
+    ctaSub: '→ 现场扫出精确数字，还能逐项恢复',
+    copyLink: '复制结果链接',
+    copied: '已复制',
+    methodTitle: '方法框',
+    method: '估算 = 使用年限 × 2GB（累积缓存/日志/临时）+ 磁盘压力项（已用空间约 4%）+ 勾选工具各自的典型回收量（Xcode ≈ 8GB、Node ≈ 2GB、Homebrew ≈ 1.5GB、日志/废纸篓 ≈ 0.5GB）。以上为静态启发式，非你本机实测；精确值以 Atlas 实扫为准。'
+  },
+  en: {
+    eyebrow: 'Free tool',
+    title: 'How much space can my Mac reclaim?',
+    sub: 'Answer 4 quick questions for an estimate (not a real scan). For the real number, download Atlas — it\'s the tool that actually reads your disk.',
+    disk: 'Disk capacity',
+    free: 'Free now',
+    years: 'Years of use',
+    dev: 'Do you run any of these disk-hungry tools?',
+    xcode: 'Xcode / Simulators',
+    node: 'Node / node_modules',
+    brew: 'Homebrew cache',
+    logs: 'Downloads / logs / Trash',
+    estLabel: 'Estimated reclaimable',
+    estNote: 'Conservative cap: no more than 50% of used space.',
+    cta: 'Download Atlas for a real scan',
+    ctaSub: '→ scans your exact numbers and keeps every action recoverable',
+    copyLink: 'Copy result link',
+    copied: 'Copied',
+    methodTitle: 'Method',
+    method: 'Estimate = years × 2GB (accumulated caches/logs/temp) + disk-pressure term (~4% of used) + per-tool typicals (Xcode ≈ 8GB, Node ≈ 2GB, Homebrew ≈ 1.5GB, downloads/logs ≈ 0.5GB). This is a static heuristic, not your machine\'s measured value; Atlas\'s real scan is authoritative.'
+  }
+}[locale];
+
+const manifest = getRelease();
+const downloadUrl = getDownloadUrl(manifest);
+---
+
+<section class="tool" id="calculator">
+  <header class="tool__head">
+    <span class="tool__eyebrow">{copy.eyebrow}</span>
+    <h2 class="tool__title">{copy.title}</h2>
+    <p class="tool__sub">{copy.sub}</p>
+  </header>
+
+  <div class="tool__body">
+    <div class="field">
+      <label for="disk">{copy.disk} <output id="diskVal">512</output>&nbsp;GB</label>
+      <input id="disk" type="range" min="128" max="4096" step="64" value="512" />
+    </div>
+    <div class="field">
+      <label for="free">{copy.free} <output id="freeVal">128</output>&nbsp;GB</label>
+      <input id="free" type="range" min="0" max="2048" step="16" value="128" />
+    </div>
+    <div class="field">
+      <label for="years">{copy.years} <output id="yearsVal">3</output>&nbsp;年</label>
+      <input id="years" type="range" min="1" max="10" step="1" value="3" />
+    </div>
+
+    <div class="field--group">
+      <span class="field__label">{copy.dev}</span>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="xcode" /> {copy.xcode}</label>
+        <label class="toggle"><input type="checkbox" id="node" /> {copy.node}</label>
+        <label class="toggle"><input type="checkbox" id="brew" /> {copy.brew}</label>
+        <label class="toggle"><input type="checkbox" id="logs" /> {copy.logs}</label>
+      </div>
+    </div>
+
+    <div class="result" aria-live="polite">
+      <span class="result__label">{copy.estLabel}</span>
+      <strong class="result__value" id="estimate">–&nbsp;GB</strong>
+      <span class="result__note">{copy.estNote}</span>
+      <div class="result__actions">
+        <a class="cta cta--primary" href={downloadUrl} target="_blank" rel="noopener noreferrer">{copy.cta}</a>
+        <button class="cta cta--ghost" id="copyLink" type="button">{copy.copyLink}</button>
+      </div>
+    </div>
+
+    <details class="method">
+      <summary>{copy.methodTitle}</summary>
+      <p>{copy.method}</p>
+    </details>
+  </div>
+</section>
+
+<script>
+  const $ = (id: string) => document.getElementById(id) as HTMLInputElement | null;
+  const disk = $('disk')!, free = $('free')!, yearsObj = $('years')!;
+  const toggles: Record<string, boolean> = {};
+
+  function readParam(name: string, fallback: number): number {
+    const v = new URLSearchParams(location.search).get(name);
+    const n = v ? Number(v) : NaN;
+    return Number.isFinite(n) ? n : fallback;
+  }
+  function setParam(params: URLSearchParams, name: string, value: number | boolean) {
+    if (value === 0 || value === false || value === 1) params.set(name, String(Number(value)));
+    else params.set(name, String(value));
+  }
+
+  function syncFromUrl() {
+    const q = new URLSearchParams(location.search);
+    disk.value = String(readParam('disk', 512));
+    free.value = String(readParam('free', 128));
+    yearsObj.value = String(readParam('years', 3));
+    (['xcode', 'node', 'brew', 'logs'] as const).forEach((id) => {
+      toggles[id] = q.get(id) === '1';
+      ($(id) as HTMLInputElement).checked = toggles[id];
+    });
+    render();
+  }
+
+  function compute(): number {
+    const d = Number(disk.value), f = Number(free.value), yr = Number(yearsObj.value);
+    const used = Math.max(0, d - f);
+    let gb = yr * 2 + used * 0.04;
+    if (toggles.xcode) gb += 8;
+    if (toggles.node) gb += 2;
+    if (toggles.brew) gb += 1.5;
+    if (toggles.logs) gb += 0.5;
+    // 保守：可清空间不超过已用的一半
+    return Math.min(Math.round(gb), Math.round(used * 0.5));
+  }
+
+  function render() {
+    const est = compute();
+    const el = $('estimate'); if (el) el.textContent = `${est} GB`;
+    const setOut = (id: string, v: string) => { const o = $('output' + id); if (o) o.textContent = v; };
+    setOut('Val', disk.value); setOut('freeVal', free.value); setOut('yearsVal', yearsObj.value);
+    // 同步 URL（可分享）
+    const p = new URLSearchParams();
+    p.set('disk', disk.value); p.set('free', free.value); p.set('years', yearsObj.value);
+    (['xcode', 'node', 'brew', 'logs'] as const).forEach((id) => { if (toggles[id]) p.set(id, '1'); });
+    history.replaceState(null, '', `${location.pathname}?${p}`);
+  }
+
+  [disk, free, yearsObj].forEach((i) => i.addEventListener('input', render));
+  (['xcode', 'node', 'brew', 'logs'] as const).forEach((id) => {
+    ($(id) as HTMLInputElement).addEventListener('change', (e) => {
+      toggles[id] = (e.target as HTMLInputElement).checked;
+      render();
+    });
+  });
+  const copyBtn = $('copyLink');
+  copyBtn?.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(location.href); copyBtn.textContent = copyBtn.dataset.copied || 'Copied'; }
+    catch { /* clipboard unavailable */ }
+  });
+
+  syncFromUrl();
+</script>
+
+<style>
+  .tool {
+    margin: 0 auto;
+    max-width: 720px;
+    padding: var(--atlas-space-section) var(--atlas-space-xl);
+  }
+  .tool__head { margin-bottom: var(--atlas-space-xl); }
+  .tool__eyebrow {
+    display: inline-block;
+    font-size: var(--atlas-text-caption);
+    color: var(--atlas-color-brand);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: var(--atlas-space-xs);
+  }
+  .tool__title {
+    font-family: var(--atlas-font-display);
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1.1;
+    margin: 0 0 var(--atlas-space-sm);
+  }
+  .tool__sub { color: var(--atlas-color-ink); opacity: .72; max-width: 60ch; }
+  .tool__body {
+    background: var(--atlas-color-bg-raised);
+    border: 1px solid var(--atlas-color-border);
+    border-radius: var(--atlas-radius-xl);
+    padding: var(--atlas-space-xl);
+    display: grid;
+    gap: var(--atlas-space-lg);
+  }
+  .field { display: grid; gap: var(--atlas-space-xs); }
+  .field label { display: flex; justify-content: space-between; font-weight: 600; }
+  .field output { color: var(--atlas-color-brand); font-variant-numeric: tabular-nums; }
+  input[type='range'] { width: 100%; accent-color: var(--atlas-color-brand); }
+  .field__label { font-weight: 600; }
+  .toggles { display: flex; flex-wrap: wrap; gap: var(--atlas-space-sm); }
+  .toggle {
+    display: inline-flex; align-items: center; gap: var(--atlas-space-xs);
+    border: 1px solid var(--atlas-border-subtle);
+    border-radius: var(--atlas-radius-full);
+    padding: var(--atlas-space-xs) var(--atlas-space-md);
+    font-size: var(--atlas-text-label);
+    cursor: pointer;
+  }
+  .toggle input { accent-color: var(--atlas-color-brand); }
+  .result {
+    display: grid; gap: var(--atlas-space-xs);
+    border-top: 1px dashed var(--atlas-border-subtle);
+    padding-top: var(--atlas-space-lg);
+  }
+  .result__label { font-weight: 600; }
+  .result__value {
+    font-family: var(--atlas-font-display);
+    font-size: 2.4rem;
+    background: var(--atlas-gradient-brand);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+  .result__note { color: var(--atlas-color-ink); opacity: .72; font-size: var(--atlas-text-caption); }
+  .result__actions { display: flex; flex-wrap: wrap; gap: var(--atlas-space-md); align-items: center; }
+  .method { margin-top: var(--atlas-space-sm); }
+  .method summary { cursor: pointer; color: var(--atlas-color-brand); font-weight: 600; }
+  .method p { color: var(--atlas-color-ink); opacity: .72; font-size: var(--atlas-text-caption); margin-top: var(--atlas-space-xs); }
+</style>
