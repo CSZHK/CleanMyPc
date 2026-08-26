@@ -12,8 +12,16 @@ interface Props {
 const { title, description, locale, ogImage = '/images/og-image-zh.png' } = Astro.props;
 const htmlLang = locale === 'zh' ? 'zh-Hans' : 'en';
 const altLocale = locale === 'zh' ? 'en' : 'zh';
-const altPath = locale === 'zh' ? '/en/' : '/zh/';
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+const pathname = Astro.url.pathname;
+// 子页 hreflang 必须指向「同路径的另一语言」，不能硬编码到根 —— 否则 /zh/tools/... 会错链到 /en/ 首页
+// （首页只有根页时无此问题，暴露在新增子页上）。根('/') 特殊处理；子页交换首段 locale 前缀。
+const swapLocale = (to: string): string =>
+  pathname === '/' || pathname.endsWith('/index.html')
+    ? `/${to}/`
+    : pathname.replace(/^\/(?:zh|en)(?=\/|$)/, `/${to}`);
+const altPath = swapLocale(altLocale);
+const xDefaultPath = swapLocale('zh'); // 默认语言（i18n.defaultLocale = 'zh'）的同路径版本
+const canonicalUrl = new URL(pathname, Astro.site);
 const altUrl = new URL(altPath, Astro.site);
 
 // GA4 cookieless measurement (REQ-20260821-01). Injected at build time from
@@ -40,7 +48,7 @@ const GA_ID = import.meta.env.PUBLIC_GA_ID?.trim() || '';
     <link rel="canonical" href={canonicalUrl.href} />
     <link rel="alternate" hreflang={htmlLang} href={canonicalUrl.href} />
     <link rel="alternate" hreflang={altLocale === 'zh' ? 'zh-Hans' : 'en'} href={altUrl.href} />
-    <link rel="alternate" hreflang="x-default" href={new URL('/zh/', Astro.site).href} />
+    <link rel="alternate" hreflang="x-default" href={new URL(xDefaultPath, Astro.site).href} />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />

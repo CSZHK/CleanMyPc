@@ -92,6 +92,7 @@ const downloadUrl = getDownloadUrl(manifest);
       <div class="result__actions">
         <a class="cta cta--primary" href={downloadUrl} target="_blank" rel="noopener noreferrer">{copy.cta}</a>
         <button class="cta cta--ghost" id="copyLink" type="button">{copy.copyLink}</button>
+        <a class="cta cta--ghost" href={locale === 'zh' ? '/zh/' : '/en/'}>Atlas for Mac</a>
       </div>
     </div>
 
