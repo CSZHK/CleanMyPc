@@ -28,7 +28,7 @@ Atlas for Mac is a native macOS app that answers the three questions your Mac is
 
 - **Why is it slow?** — a plain-language system overview and per-app insight.
 - **Why is it full?** — Smart Clean and File Organizer find exactly what you can remove.
-- **What did I just touch?** — every reviewed action lands in a recovery-backed **Ledger**, so you can undo it while a supported recovery path exists.
+- **What did I just touch?** — every reviewed action lands in a recovery-backed **History**, so you can undo it while a supported recovery path exists.
 
 It recommends before it executes, prefers recovery over permanent deletion, and keeps its recovery claims honest — not every "recoverable" item is physically restorable on disk.
 
@@ -38,9 +38,9 @@ It recommends before it executes, prefers recovery over permanent deletion, and 
 | --- | --- |
 | ![Overview — read what's going on at a glance](Docs/Media/README/atlas-overview.png) | ![Smart Clean — explained, safe cleanup](Docs/Media/README/atlas-smart-clean.png) |
 
-| Apps | Ledger |
+| Apps | History |
 | --- | --- |
-| ![Apps — full uninstall, no leftovers](Docs/Media/README/atlas-apps.png) | ![Ledger — every action recoverable](Docs/Media/README/atlas-ledger.png) |
+| ![Apps — full uninstall, no leftovers](Docs/Media/README/atlas-apps.png) | ![History — every action recoverable](Docs/Media/README/atlas-ledger.png) |
 
 ## Install
 
@@ -68,11 +68,11 @@ Need a quick estimate before installing? Try the free [Mac space calculator](htt
 | `Smart Clean` | Explains, then cleans — based on your usage, always reviewed first. |
 | `File Organizer` | Folds the clutter into an order you can reason about. |
 | `Apps` | Complete uninstall, not drag-to-trash leftovers. |
-| `Ledger` | The recovery ledger — anything you reviewed is tracked and can be undone. |
+| `History` | The record of what ran — anything you reviewed is tracked and can be undone. |
 | `Permissions` | Least-privilege, contextual permission guidance. |
 | `Settings` | Configuration, languages (English / 简体中文), and app defaults. |
 
-Recovery runs across Smart Clean, Apps, and File Organizer: reviewed actions are recorded in the Ledger and stay restorable while a supported recovery path exists.
+Recovery runs across Smart Clean, Apps, and File Organizer: reviewed actions are recorded in History and stay restorable while a supported recovery path exists.
 
 ## Product principles
 
