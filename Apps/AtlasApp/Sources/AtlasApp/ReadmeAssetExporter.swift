@@ -237,7 +237,7 @@ private struct AtlasReadmeAssetExporter {
                     isExecutingPlan: false,
                     isCurrentPlanFresh: true,
                     canExecutePlan: canExecuteSmartCleanPlan,
-                    planIssue: nil,
+                    planOutcome: nil,
                     state: SmartCleanWorkflowState(
                         currentStage: SmartCleanStage.review,
                         displayedStage: SmartCleanStage.review,

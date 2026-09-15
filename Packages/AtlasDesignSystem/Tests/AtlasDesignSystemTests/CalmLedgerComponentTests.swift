@@ -46,11 +46,16 @@ final class CalmLedgerComponentTests: XCTestCase {
         let disabledEn = AtlasStageBar.accessibilityValue(
             stageTitle: "Run", position: 3, total: 4, state: .future, language: .en
         )
-        XCTAssertTrue(disabledEn.contains("unavailable"), "got: \(disabledEn)")
+        // `REQ-copy-plain-language`：禁用理由原为 "unavailable, complete earlier stages first" ——
+        // 「前序阶段」是流程图术语。改为直说缺什么，断言随之更新（并钉住「不再含前序阶段」）。
+        XCTAssertTrue(disabledEn.contains("complete the earlier steps first"), "got: \(disabledEn)")
+        XCTAssertFalse(disabledEn.contains("earlier stages"), "不得再用「前序阶段」这类流程图术语")
         let disabledZh = AtlasStageBar.accessibilityValue(
             stageTitle: "执行", position: 3, total: 4, state: .future, language: .zhHans
         )
-        XCTAssertTrue(disabledZh.contains("不可用"), "got: \(disabledZh)")
+        XCTAssertTrue(disabledZh.contains("需要先完成前面的步骤"), "got: \(disabledZh)")
+        XCTAssertFalse(disabledZh.contains("不可用") && disabledZh.contains("前序阶段"),
+                       "不得再用「前序阶段」这类流程图术语")
     }
 
     // MARK: - F2 AtlasEvidencePanel
@@ -213,8 +218,13 @@ final class CalmLedgerComponentTests: XCTestCase {
         XCTAssertEqual(verified.symbol, "checkmark") // ✓
         XCTAssertEqual(verified.tone, .success)
 
-        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .archived, language: .zhHans).text, "已归档")
+        // `P1-15`：`.archived` 的 zh 由「已归档」改为「已结束」（任务失败/取消的终态）；
+        // 「已过期」拆到独立的 `.expired`，见下。
+        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .archived, language: .zhHans).text, "已结束")
         XCTAssertNil(AtlasLedgerTimeline.badge(for: .archived, language: .zhHans).tone, "archived renders muted")
+        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .expired, language: .zhHans).text, "已过期")
+        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .expired, language: .en).text, "Expired")
+        XCTAssertNil(AtlasLedgerTimeline.badge(for: .expired, language: .zhHans).tone, "expired renders muted")
         XCTAssertEqual(AtlasLedgerTimeline.badge(for: .superseded, language: .en).text, "Superseded")
         XCTAssertNil(AtlasLedgerTimeline.badge(for: .superseded, language: .en).tone)
         XCTAssertEqual(AtlasLedgerTimeline.badge(for: .inProgress, language: .zhHans).text, "进行中")
@@ -248,7 +258,7 @@ final class CalmLedgerComponentTests: XCTestCase {
     func testStampBadgeConstruction() {
         // Both variants construct with full and minimal content (default style = .badge).
         let badge = AtlasStampBadge(
-            title: "恢复点已建立", subtitle: "1.2 GB · 保留 7 天", numberText: "№42"
+            title: "恢复点已建立", subtitle: "1.2 GB · 保留 7 天", numberText: "#42"
         )
         XCTAssertNotNil(badge.body)
         let watermark = AtlasStampBadge(title: "已验证", subtitle: nil, numberText: nil, style: .watermark)

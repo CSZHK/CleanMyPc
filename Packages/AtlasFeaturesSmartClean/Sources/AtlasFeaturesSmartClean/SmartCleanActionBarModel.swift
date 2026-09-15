@@ -16,6 +16,9 @@ public struct SmartCleanActionBarModel: Equatable {
         case returnToCurrent
         /// Open the ④ receipt view (post-failure partial receipt included).
         case viewReceipt
+        /// `P1-9`：执行中跳台账（只读）。执行态此前是 `intent: .none` —— action bar
+        /// **完全无可点动作**，用户以为卡死时的自然反应（切页面）没有正规出口。
+        case viewLedger
         /// Rescan / new scan — confirmation path when a plan № is active.
         case rescan
         /// Progress mode — no primary action.
@@ -90,14 +93,14 @@ public struct SmartCleanActionBarModel: Equatable {
             )
         }
         if inputs.isExecuting {
+            // `P1-9`：执行中**不作无意义的不确定态**，且 action bar 不得完全无可点动作。
+            // worker 只在完成时上报进度，故进度条保持不确定（不伪造百分比），
+            // 但给出真实可得的确定性信息（已用时，见 ③ 阶段的 TimelineView）
+            // 与一个只读出口（查看台账）。
             return SmartCleanActionBarModel(
-                title: AtlasL10n.string("smartclean.loading.execute"),
-                isEnabled: false, promise: nil, metricText: nil,
-                // Indeterminate during execution (round-14): scanProgress is the
-                // STALE 1.0 from the prior scan — the worker reports progress
-                // only on completion — so a determinate value misrepresents a
-                // just-started execution as 100% done.
-                progress: nil, intent: .none
+                title: AtlasL10n.string("smartclean.stage.actionbar.viewLedger"),
+                isEnabled: true, promise: nil, metricText: nil,
+                progress: nil, intent: .viewLedger
             )
         }
         // Look-back is read-only: the only action is returning to the live stage.
@@ -126,11 +129,24 @@ public struct SmartCleanActionBarModel: Equatable {
                 progress: nil, intent: .execute
             )
         case SmartCleanStage.execute:
-            // ③ settled state here is the error state (running was handled above):
-            // primary = view the partial receipt (spec §2.3 row 7).
+            // ③ settled state here is the error state (running was handled above).
+            // 契约一 §1.2(3)（`P1-11`）：**禁止渲染一个点了不动的控件**。
+            // 此前 `hasReceipt == false` 时按钮置灰，而错误态内嵌的 action 又因
+            // `effectiveStage` 退回而无效 —— 失败后唯一的出路点了没反应。
+            guard inputs.hasReceipt else {
+                return SmartCleanActionBarModel(
+                    title: AtlasL10n.string("smartclean.stage.actionbar.rescan"),
+                    isEnabled: true,
+                    promise: AtlasL10n.string("action.receipt.missing.title"),
+                    // fail-closed（§1.6）：worker 未返回就失败时，本次到底动了几项
+                    // 无从确认，不得编造。只说得出「已选 N 项」。
+                    metricText: AtlasL10n.string("action.receipt.missing.counts", inputs.selectedCount),
+                    progress: nil, intent: .rescan
+                )
+            }
             return SmartCleanActionBarModel(
                 title: AtlasL10n.string("smartclean.stage.actionbar.viewReceipt"),
-                isEnabled: inputs.hasReceipt, promise: nil, metricText: nil,
+                isEnabled: true, promise: nil, metricText: nil,
                 progress: nil, intent: .viewReceipt
             )
         case SmartCleanStage.receipt:

@@ -5,6 +5,9 @@ import SwiftUI
 public struct AtlasSectionDisclosure<Content: View>: View {
     private let title: String
     private let count: Int?
+    /// 折叠态下必须透出的关键参数（`P1-12`）—— 折叠标题本身不足以让用户
+    /// 在执行前看到「文件会被整理到哪」。展开后隐藏，避免与面板内容重复。
+    private let summary: String?
     private let defaultExpanded: Bool
     private let content: Content
 
@@ -14,11 +17,13 @@ public struct AtlasSectionDisclosure<Content: View>: View {
     public init(
         title: String,
         count: Int? = nil,
+        summary: String? = nil,
         defaultExpanded: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.count = count
+        self.summary = summary
         self.defaultExpanded = defaultExpanded
         self.content = content()
         self._isExpanded = State(initialValue: defaultExpanded)
@@ -59,6 +64,16 @@ public struct AtlasSectionDisclosure<Content: View>: View {
                 Text(title)
                     .font(AtlasTypography.sectionTitle)
                     .foregroundStyle(.primary)
+
+                // `P1-12`：折叠态透出关键参数（去向）。展开后由面板内容承载，不再重复。
+                if !isExpanded, let summary {
+                    Text(summary)
+                        .font(AtlasTypography.bodySmall)
+                        .foregroundStyle(AtlasColor.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .accessibilityIdentifier("section.disclosure.summary")
+                }
 
                 if let count {
                     Text("\(count)")

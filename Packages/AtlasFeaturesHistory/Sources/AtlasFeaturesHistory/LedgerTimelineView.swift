@@ -81,7 +81,7 @@ public enum LedgerEntryMapping {
     }
 
     /// One recovery item → one ledger entry (pure). Days-left is computed from
-    /// the item's expiry; an expired/open window renders as `.archived`.
+    /// the item's expiry; an expired window renders as `.expired` (P1-15).
     public static func entry(for item: RecoveryItem, retentionDays: Int) -> AtlasLedgerEntryModel {
         AtlasLedgerEntryModel(
             id: entryID(for: item),
@@ -169,7 +169,8 @@ public enum LedgerEntryMapping {
             return .verified // no expiry ⇒ permanently recoverable record
         }
         if expiresAt <= now {
-            return .archived
+            // `P1-15`：过期是**不可恢复**的终态，不再与「任务失败/取消」共用「已归档」。
+            return .expired
         }
         let daysLeft = max(0, Calendar.current.dateComponents([.day], from: now, to: expiresAt).day ?? 0)
         return .recoverable(daysLeft: daysLeft)

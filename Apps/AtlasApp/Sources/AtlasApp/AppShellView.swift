@@ -55,11 +55,11 @@ struct AppShellView: View {
                 .toolbar {
                     // Scan-receipt chip (spec §2.1): current module's latest
                     // receipt; hidden when the route has none.
-                    if let receiptCode = model.workflowState(for: route).receiptCode {
-                        ToolbarItem {
-                            ReceiptChip(code: receiptCode)
-                        }
-                    }
+                    // `P2-16`：工具栏的扫描回执 chip（`#331B`）**已移除**。
+                    // 对普通用户它是纯认知噪音 —— 既不认识也不理解要拿它做什么，
+                    // 唯一解释是一个 hover tooltip（Mac 上非习惯动作，且解释本身仍是
+                    // 「回执编号」这个陌生概念），会怀疑是不是错误码。
+                    // 回执编号仍保留在**台账详情**与各模块**回执页**内（那里有上下文）。
                     ToolbarItem {
                         taskCenterToolbarButton
                     }
@@ -197,9 +197,10 @@ struct AppShellView: View {
                 scanProgress: model.latestScanProgress,
                 isScanning: model.isScanRunning,
                 isExecutingPlan: model.isPlanRunning,
+                executionStartedAt: model.planExecutionStartedAt,
                 isCurrentPlanFresh: model.isCurrentSmartCleanPlanFresh,
                 canExecutePlan: model.canExecuteCurrentSmartCleanPlan,
-                planIssue: model.smartCleanPlanIssue,
+                planOutcome: model.smartCleanPlanOutcome,
                 executionIssue: model.smartCleanExecutionIssue,
                 executionReceipt: model.smartCleanExecutionReceipt,
                 retentionDays: model.settings.recoveryRetentionDays,
@@ -269,8 +270,11 @@ struct AppShellView: View {
                 isExecutingPlan: model.isFileOrganizerExecuting,
                 isPlanFresh: model.isFileOrganizerPlanFresh,
                 canExecutePlan: model.canExecuteFileOrganizerPlan,
-                planIssue: model.fileOrganizerPlanIssue,
+                planOutcome: model.fileOrganizerPlanOutcome,
                 executionIssue: model.fileOrganizerExecutionIssue,
+                undoAvailability: model.fileOrganizerUndoAvailability,
+                retentionDays: model.settings.recoveryRetentionDays,
+                showsScanPreamble: !model.fileOrganizerScanPreambleShown,
                 executionReceipt: model.fileOrganizerExecutionReceipt,
                 movedCount: model.fileOrganizerMovedCount,
                 scannedFolders: model.scannedFolders,
@@ -335,6 +339,7 @@ struct AppShellView: View {
                 currentPreviewedAppID: model.currentPreviewedAppID,
                 restoreRefreshStatus: model.latestAppRestoreRefreshStatus,
                 summary: model.latestAppsSummary,
+                outcome: model.appsOutcome,
                 isRunning: model.isAppActionRunning,
                 activePreviewAppID: model.activePreviewAppID,
                 activeUninstallAppID: model.activeUninstallAppID,
@@ -361,6 +366,8 @@ struct AppShellView: View {
                 recoveryItems: model.filteredRecoveryItems,
                 restoringItemID: model.restoringRecoveryItemID,
                 retentionDays: model.settings.recoveryRetentionDays,
+                restoreOutcome: model.ledgerOutcome,
+                onAcknowledgePruneNotice: { model.acknowledgeLedgerPruneNotice() },
                 // pendingLedgerEntryID (Overview/receipt back-link) wins once;
                 // otherwise restore the model-persisted selection (round-5 §7).
                 initialSelectionID: model.pendingLedgerEntryID ?? model.workflowState(for: .ledger).ledgerEntrySelectionID,
@@ -383,6 +390,7 @@ struct AppShellView: View {
             PermissionsFeatureView(
                 permissionStates: model.filteredPermissionStates,
                 summary: model.latestPermissionsSummary,
+                outcome: model.permissionsOutcome,
                 isRefreshing: model.isPermissionsRefreshing,
                 onRefresh: {
                     Task { await model.inspectPermissions() }
@@ -411,10 +419,16 @@ struct AppShellView: View {
                 },
                 onToggleNotifications: { isEnabled in
                     Task { await model.setNotificationsEnabled(isEnabled) }
+                },
+                onAddExcludedPath: { path in
+                    Task { await model.addExcludedPath(path) }
+                },
+                onRemoveExcludedPath: { path in
+                    Task { await model.removeExcludedPath(path) }
                 }
             )
         case .about:
-            AboutFeatureView()
+            AboutFeatureView(versionText: "\(model.appVersion) (\(model.appBuild))")
         }
     }
 
@@ -566,26 +580,6 @@ private struct AtlasSidebarWordmark: View {
     }
 }
 
-/// Toolbar scan-receipt chip (spec §2.1/§5.4): mono `#XXXX`, hidden when the
-/// current route has no receipt (handled by the caller).
-private struct ReceiptChip: View {
-    let code: String
-
-    var body: some View {
-        Text("#\(code)")
-            .font(AtlasTypography.dataCaption)
-            .monospacedDigit()
-            .foregroundStyle(AtlasColor.textSecondary)
-            .padding(.horizontal, AtlasSpacing.sm)
-            .padding(.vertical, AtlasSpacing.xxs)
-            .background(
-                Capsule(style: .continuous)
-                    .strokeBorder(AtlasColor.border, lineWidth: 1)
-            )
-            .help(AtlasL10n.string("toolbar.receipt.help"))
-            .accessibilityLabel(AtlasL10n.string("toolbar.receipt.accessibilityLabel", "#\(code)"))
-    }
-}
 
 private struct SidebarRouteRow: View {
     let route: AtlasRoute

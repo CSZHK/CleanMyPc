@@ -21,9 +21,12 @@ public struct SmartCleanFeatureView: View {
     private let scanProgress: Double
     private let isScanning: Bool
     private let isExecutingPlan: Bool
+    /// `P1-9`：执行开始时刻（已用时显示用）。
+    private let executionStartedAt: Date?
     private let isCurrentPlanFresh: Bool
     private let canExecutePlan: Bool
-    private let planIssue: String?
+    /// 契约一：计划层结果（带 source）。视图按 `kind` 分流 —— `.advisory` 不走错误态（NEW-1）。
+    private let planOutcome: AtlasActionOutcome?
     private let executionIssue: String?
     private let executionReceipt: SmartCleanExecutionReceipt?
     private let retentionDays: Int
@@ -46,9 +49,10 @@ public struct SmartCleanFeatureView: View {
         scanProgress: Double = 0,
         isScanning: Bool = false,
         isExecutingPlan: Bool = false,
+        executionStartedAt: Date? = nil,
         isCurrentPlanFresh: Bool = false,
         canExecutePlan: Bool = false,
-        planIssue: String? = nil,
+        planOutcome: AtlasActionOutcome? = nil,
         executionIssue: String? = nil,
         executionReceipt: SmartCleanExecutionReceipt? = nil,
         retentionDays: Int = 7,
@@ -70,9 +74,10 @@ public struct SmartCleanFeatureView: View {
         self.scanProgress = scanProgress
         self.isScanning = isScanning
         self.isExecutingPlan = isExecutingPlan
+        self.executionStartedAt = executionStartedAt
         self.isCurrentPlanFresh = isCurrentPlanFresh
         self.canExecutePlan = canExecutePlan
-        self.planIssue = planIssue
+        self.planOutcome = planOutcome
         self.executionIssue = executionIssue
         self.executionReceipt = executionReceipt
         self.retentionDays = retentionDays
@@ -163,8 +168,32 @@ public struct SmartCleanFeatureView: View {
             }
             Button(AtlasL10n.string("confirm.cancel"), role: .cancel) {}
         } message: {
-            Text(AtlasL10n.string("smartclean.confirm.execute.message"))
+            AtlasDestructiveConfirmationMessage(executeConfirmation)
         }
+    }
+
+    /// 契约二 §2.2(1) 四问（`P0-5`）：真正能回答后果的 `N/M` 此前只在主按钮
+    /// 下方的 promise 行里，弹窗把它丢了。现取同一 `recoveryStats` 计算带入弹窗。
+    private var executeConfirmation: AtlasDestructiveConfirmation {
+        let stats = SmartCleanEvidenceBuilder.recoveryStats(
+            selectedFindingIDs: selectedFindingIDs,
+            plan: plan
+        )
+        let facts = AtlasDestructiveFacts(
+            object: AtlasL10n.string("confirm.destructive.object.items", stats.total),
+            destination: AtlasL10n.string("confirm.destructive.destination.recoveryArea", retentionDays),
+            recovery: stats.recoverable > 0
+                ? AtlasL10n.string("confirm.destructive.recovery", retentionDays)
+                : AtlasL10n.string("confirm.destructive.recovery.none")
+        )
+        return .recoverable(
+            facts,
+            recoverableCount: AtlasL10n.string(
+                "confirm.destructive.recoverableCount",
+                stats.recoverable,
+                stats.total
+            )
+        )
     }
 
     // MARK: Derived stage state
@@ -187,6 +216,16 @@ public struct SmartCleanFeatureView: View {
 
     private var selectedFindingIDs: Set<String> {
         state.selectedIDs.intersection(Set(findings.map(\.id.uuidString)))
+    }
+
+    /// `P1-7`：**当前可见**（风险筛选 + 搜索后）的条目 id —— 全选作用于它，
+    /// 与用户在 ② 页看到的列表一致，不会偷偷选中被筛掉的行。
+    private var visibleFindingIDs: Set<String> {
+        let searched = SmartCleanEvidenceBuilder.searchFiltered(findings, query: searchText)
+        guard let raw = state.riskFilter, let risk = RiskLevel(rawValue: raw) else {
+            return Set(searched.map(\.id.uuidString))
+        }
+        return Set(searched.filter { $0.risk == risk }.map(\.id.uuidString))
     }
 
     private var selectedFindings: [Finding] {
@@ -221,7 +260,7 @@ public struct SmartCleanFeatureView: View {
                 scanSummary: scanSummary,
                 scanProgress: scanProgress,
                 hasCachedFindings: !findings.isEmpty || !plan.items.isEmpty,
-                planIssue: planIssue,
+                planOutcome: planOutcome,
                 onStartScan: onStartScan,
                 onRefreshPreview: onRefreshPreview
             )
@@ -235,8 +274,10 @@ public struct SmartCleanFeatureView: View {
                 isReadOnly: isReadOnly,
                 showsEvidenceButton: isDrawerLayout,
                 isReviewEmpty: state.isReviewEmpty && findings.isEmpty,
+                hasPlanNumber: state.planNumber != nil,
                 evidenceFocus: $evidenceFocus,
                 onToggle: { id in mutate { $0.selectedIDs.formSymmetricDifference([id]) } },
+                onSelectAll: { select in mutate { $0.selectedIDs = select ? visibleFindingIDs : [] } },
                 onSetRiskFilter: { filter in mutate { $0.riskFilter = filter } },
                 onSelectEvidence: { id in mutate { $0.evidenceSelectionID = id } },
                 onOpenEvidence: { id in mutate { $0.evidenceSelectionID = id; $0.drawerPresented = true } },
@@ -246,6 +287,7 @@ public struct SmartCleanFeatureView: View {
             SmartCleanExecuteStageView(
                 plan: plan,
                 isExecuting: isExecutingPlan,
+                executionStartedAt: executionStartedAt,
                 progress: scanProgress,
                 summary: scanSummary,
                 executionIssue: state.isExecutionError ? executionIssue : nil,
@@ -315,11 +357,17 @@ public struct SmartCleanFeatureView: View {
         // stage primary carries `smartclean.runScan` + `.defaultAction`. The
         // receipt stage's 「新的扫描」 is a different surface (copy-derived id).
         let isScanPrimary = (model.intent == .rescan && effectiveStage == SmartCleanStage.scan)
+        // 守卫基座（规格 §9 纪律 4）：`I-4` 要能点到「执行已选 N 项」以打开破坏性弹窗。
+        let primaryIdentifier: String? = {
+            if isScanPrimary { return "smartclean.runScan" }
+            if model.intent == .execute { return "smartclean.executeSelection" }
+            return nil
+        }()
         return AtlasActionBar(
             primaryTitle: model.title, primaryEnabled: model.isEnabled,
             onPrimary: { perform(model.intent) },
             promise: model.promise, metricText: model.metricText, progress: model.progress,
-            primaryIdentifier: isScanPrimary ? "smartclean.runScan" : nil,
+            primaryIdentifier: primaryIdentifier,
             primaryKeyboardShortcut: isScanPrimary ? .defaultAction : nil
         )
     }
@@ -332,6 +380,9 @@ public struct SmartCleanFeatureView: View {
             mutate { $0.displayedStage = $0.currentStage }
         case .viewReceipt:
             mutate { $0.displayedStage = SmartCleanStage.receipt }
+        case .viewLedger:
+            // `P1-9`：执行中的只读出口。执行本身不受影响 —— worker 仍在跑。
+            onNavigateToLedger()
         case .rescan:
             rescanTapped()
         case .none:

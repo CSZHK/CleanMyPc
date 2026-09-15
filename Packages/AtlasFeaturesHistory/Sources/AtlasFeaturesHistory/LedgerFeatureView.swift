@@ -21,6 +21,11 @@ public struct LedgerFeatureView: View {
     private let recoveryItems: [RecoveryItem]
     private let restoringItemID: UUID?
     private let retentionDays: Int
+    /// 契约一：本条屏**自己的**恢复结果（`P0-1`）。此前台账恢复失败被写进
+    /// Smart Clean 的状态行，台账屏对此零呈现，用户得出「文件已回来」的结论。
+    private let restoreOutcome: AtlasActionOutcome?
+    /// `F-08`：过期清理 advisory 的**出清回调**（一次性提示，已读即清）。
+    private let onAcknowledgePruneNotice: () -> Void
     private let planNumber: (TaskRun) -> Int?
     private let onRestoreItem: (UUID) -> Void
     private let onSelectionChange: (LedgerFilter, String?, Bool) -> Void
@@ -36,6 +41,8 @@ public struct LedgerFeatureView: View {
         recoveryItems: [RecoveryItem] = AtlasScaffoldFixtures.recoveryItems,
         restoringItemID: UUID? = nil,
         retentionDays: Int = 7,
+        restoreOutcome: AtlasActionOutcome? = nil,
+        onAcknowledgePruneNotice: @escaping () -> Void = {},
         initialSelectionID: String? = nil,
         initialFilter: LedgerFilter = .all,
         initialArchiveExpanded: Bool = false,
@@ -47,6 +54,8 @@ public struct LedgerFeatureView: View {
         self.recoveryItems = recoveryItems
         self.restoringItemID = restoringItemID
         self.retentionDays = retentionDays
+        self.restoreOutcome = restoreOutcome
+        self.onAcknowledgePruneNotice = onAcknowledgePruneNotice
         self.planNumber = planNumber
         self.onRestoreItem = onRestoreItem
         self.onSelectionChange = onSelectionChange
@@ -59,6 +68,71 @@ public struct LedgerFeatureView: View {
         _isOlderArchiveExpanded = State(initialValue: initialArchiveExpanded)
     }
 
+    /// 契约一 §1.2(3)(4)：恢复结果就地在**发起它的屏**呈现，并按 `recovery.scope`
+    /// 区分「文件回到了磁盘」与「只是标记了状态」（`P1-17`）。
+    @ViewBuilder
+    private var restoreOutcomeBanner: some View {
+        if let restoreOutcome {
+            if restoreOutcome.isError {
+                AtlasErrorState(
+                    title: AtlasL10n.string("ledger.restore.failed.title"),
+                    message: restoreOutcome.message,
+                    layout: .inlineRow
+                )
+                .accessibilityIdentifier("ledger.restoreOutcome.failed")
+            } else if restoreOutcome.isAdvisory {
+                // `P1-16`：过期恢复项被清理后的提示走 `.advisory`（非错误态）。
+                //
+                // `F-08`：出清**必须由用户显式触发**。
+                //
+                // 原实现把出清挂在视图的 `onAppear` 上 —— 那是「**显示**即清」而不是
+                // 「**已读**才清」：用户快速划过台账屏（或将来把台账设为默认落地页）
+                // 时，它会在**从未被读到**的情况下消失，恰好回到 `P1-16` 要修的
+                // 「静默消失」。故改为与 `AtlasNextActionBanner` / `AtlasUndoBanner`
+                // 一致的显式关闭控件：出清只由这一次点击发起。
+                VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
+                    AtlasCallout(
+                        title: AtlasL10n.string("ledger.prune.notice.title"),
+                        detail: restoreOutcome.message,
+                        tone: .warning,
+                        systemImage: "clock.badge.xmark"
+                    )
+                    .accessibilityIdentifier("ledger.prune.notice")
+
+                    Button(AtlasL10n.string("ledger.prune.notice.dismiss")) {
+                        onAcknowledgePruneNotice()
+                    }
+                    .buttonStyle(.link)
+                    .accessibilityIdentifier("ledger.prune.notice.dismiss")
+                }
+            } else if let recovery = restoreOutcome.recovery {
+                // `CT-05`：`recovery.itemCount` 此前**零消费**（构造时硬编码 1）。
+                // 它是「这次恢复实际搬回了几个项」的唯一结构化来源 —— 规格
+                // §1.2(1) 把 `recovery` 立为「可撤销性 / 可重试 / **去向**」的
+                // 载荷，计数就在其中。这里把计数接回正文，用户不必从「文件」
+                // 这种单数措辞去猜。
+                switch recovery.scope {
+                case .onDisk:
+                    AtlasCallout(
+                        title: AtlasL10n.string("ledger.restore.onDisk.title"),
+                        detail: AtlasL10n.string("ledger.restore.onDisk.detail", recovery.itemCount),
+                        tone: .success,
+                        systemImage: "arrow.uturn.backward.circle"
+                    )
+                    .accessibilityIdentifier("ledger.restoreOutcome.onDisk")
+                case .atlasOnly:
+                    AtlasCallout(
+                        title: AtlasL10n.string("ledger.restore.atlasOnly.title"),
+                        detail: AtlasL10n.string("ledger.restore.atlasOnly.detail", recovery.itemCount),
+                        tone: .warning,
+                        systemImage: "checkmark.circle"
+                    )
+                    .accessibilityIdentifier("ledger.restoreOutcome.atlasOnly")
+                }
+            }
+        }
+    }
+
     public var body: some View {
         AtlasScreen(
             title: AtlasL10n.string("ledger.screen.title"),
@@ -68,6 +142,7 @@ public struct LedgerFeatureView: View {
             AtlasLedgerSurface(title: AtlasL10n.string("ledger.surface.title")) {
                 VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
                     headerBar
+                    restoreOutcomeBanner
                     metricRow
                     filterChips
                     browserLayout
@@ -77,6 +152,10 @@ public struct LedgerFeatureView: View {
             }
         }
         .onAppear {
+            // `F-08`：过期清理 advisory **不在此出清** —— 挂在 `onAppear` 上是
+            // 「显示即清」，未读也会消失（见 `restoreOutcomeBanner` 内注释）。
+            // 出清只经用户显式点击关闭控件，判据在模型侧
+            // （只清 `.advisory` 的 plan 槽，不动 `.failed`）。
             syncSelection()
             // Persist the resolved (possibly back-link-seeded) selection so a
             // tab round-trip right after a back-link still lands on №N (round-5).

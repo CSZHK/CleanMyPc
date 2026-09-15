@@ -114,11 +114,15 @@ final class FileOrganizerActionBarModelTests: XCTestCase {
         XCTAssertTrue(m.isEnabled)
     }
 
-    func testExecuteErrorStageViewReceiptDisabledWithoutReceipt() {
+    /// 契约一 §1.2(3)（`P1-14`，与 `P1-11` 同构）：无可达回执时**不得渲染一个
+    /// 点了不动的控件**。改为真实出口 + 「本次未生成回执」+ 最少可用信息。
+    func testExecuteErrorStageWithoutReceiptOffersRealExit() {
         let m = FileOrganizerActionBarModel.resolve(inputs(
             effectiveStage: FileOrganizerStage.execute, hasReceipt: false))
-        XCTAssertEqual(m.intent, .viewReceipt)
-        XCTAssertFalse(m.isEnabled)
+        XCTAssertEqual(m.intent, .rescan)
+        XCTAssertTrue(m.isEnabled, "failure path must not render a dead control (P1-14)")
+        XCTAssertEqual(m.promise, AtlasL10n.string("action.receipt.missing.title"))
+        XCTAssertNotNil(m.metricText, "minimum usable facts must be present")
     }
 
     func testReceiptStageRescanIntentWithMovedMetric() {
@@ -155,5 +159,37 @@ final class FileOrganizerActionBarModelTests: XCTestCase {
         let text = FileOrganizerActionBarModel.metricText(selectedBytes: 1_048_576, selectedCount: 3)
         XCTAssertNotNil(text)
         XCTAssertTrue(text?.contains("3") == true)
+    }
+}
+
+
+/// `I-12`：任何渲染出的徽章/标签必须有对应动作，**或明确说明其只是分类**。
+///
+/// 载体（规格 §7）：`AtlasAppUITests` + **strings 文案断言**。这里是后半 ——
+/// 断言这两个此前会**读成待办动作**的分类标签，用的是分类语。
+/// （前半的动作侧由 `testReviewScreenHasNoConflictingInteractiveLabels` 覆盖。）
+final class ClassificationLabelTests: XCTestCase {
+    func testDuplicateBadgeDescribesTheActualCriterion() {
+        // 判据只是「同名 + 同大小」，**不比对内容**。此前叫「重复文件」——
+        // 用户直觉是「这些该处理掉」，而界面上既无法把它们聚到一起，
+        // 也无法区分真重复与同名同大小的不同文件。
+        let zh = AtlasL10n.string("fileorganizer.insight.duplicate.badge", language: .zhHans)
+        XCTAssertEqual(zh, "同名同大小", "徽章必须如实描述判据，而不是断言「重复」")
+        XCTAssertFalse(zh.contains("重复"), "「重复」隐含内容相同 —— 本仓库不比对内容")
+    }
+
+    func testConditionalSafetyLabelIsACategoryNotAnAction() {
+        // en 是形容词风险等级（`Conditional`）；zh 曾译成动作「需确认」，
+        // 用户会去找「确认」按钮，而这个 chip 只是分类标签、没有对应动作。
+        XCTAssertEqual(AtlasL10n.string("evidence.safety.conditional", language: .zhHans), "有条件")
+        XCTAssertEqual(AtlasL10n.string("evidence.safety.conditional", language: .en), "Conditional")
+    }
+
+    func testRiskChipDoesNotCollideWithTheReviewStageName() {
+        // `P2-2`：阶段条（术语表的 `Review`）与风险 chip 同屏。两者不得同名 ——
+        // 用户点阶段条是切步骤、点 chip 是筛风险。
+        let stage = AtlasL10n.string("smartclean.stage.review", language: .zhHans)
+        let chip = AtlasL10n.string("risk.review", language: .zhHans)
+        XCTAssertNotEqual(stage, chip, "同屏两个不同动作的控件不得共用同一可见标签（I-7/I-12）")
     }
 }

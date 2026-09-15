@@ -19,5 +19,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # —— 为什么必须显式设 ATLAS_ALLOW_UI_SKIP ——
+      #
+      # 第 [9/11] 步（原生 UI 自动化）需要 Accessibility 授权，而 GitHub 托管的
+      # runner 没有授权会话 ⇒ `ui-automation-preflight.sh` 必失败 ⇒ 脚本走跳过路径。
+      # `full-acceptance.sh` 对零 UI 覆盖的**默认**判定是失败，故不设此变量 CI 必红。
+      #
+      # 本变量**只**豁免两条「环境限制」路径（AX 未授权 / atlas 与 repro 双 timeout）。
+      # 它**不**豁免「xcodebuild 收集到 0 个用例」——那是配置缺陷（用例被改名、
+      # `-only-testing` 目标写错），CI 里仍会红。即：CI 接受「这台机器没有 AX」，
+      # 但不接受「UI 用例根本没跑起来」。
+      #
+      # 本地/发版候选机上有 AX 授权时**不要**设它 —— 那里应当真实执行 UI 层断言。
+      # 详见 AGENTS.md「UI 门禁（易踩）」节。
       - name: Run Atlas acceptance pipeline
+        env:
+          ATLAS_ALLOW_UI_SKIP: "1"
         run: ./scripts/atlas/full-acceptance.sh

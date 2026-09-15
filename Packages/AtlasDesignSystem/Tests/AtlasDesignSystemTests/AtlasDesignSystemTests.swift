@@ -319,13 +319,8 @@ final class AtlasDesignSystemTests: XCTestCase {
         XCTAssertTrue(subFamily.contains("Bold"), "bold zh ledger voice resolved face '\(subFamily)', expected Songti SC Bold")
     }
 
-    func testNumeroGlyphAvailableInLedgerFont() {
-        // 规格 §1.3: № (U+2116) 需在台账声部可用；缺失则 en 回退 "No."（M2 组件层处理）。
-        let nsFont = AtlasTypography.ledgerNSFont(size: 13, weight: .bold)
-        let resolved = CTFontCreateForString(nsFont as CTFont, "№" as CFString, CFRange(location: 0, length: 1))
-        var chars: [UniChar] = [0x2116]
-        var glyphs: [CGGlyph] = [0]
-        let ok = CTFontGetGlyphsForCharacters(resolved, &chars, &glyphs, 1)
-        XCTAssertTrue(ok && glyphs[0] != 0, "№ glyph unavailable — record fallback decision in findings")
-    }
+    // RETIRED (REQ-copy-plain-language, 2026-09-15)：原 `testNumeroGlyphAvailableInLedgerFont`
+    // 守卫的 `№`(U+2116) 字形可用性已被**移除** —— 该字形随文书隐喻一起退役，
+    // 编号前缀统一改用 ASCII `#`（形状恒可用，无需字形探测）。
+    // 守卫连同它的对象一起退役：留下会是一条**永远为真**的假守卫。
 }

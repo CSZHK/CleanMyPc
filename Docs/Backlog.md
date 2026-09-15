@@ -410,6 +410,15 @@ Reason:
 - `ATL-269` Switch from the pre-signing release chain to `Developer ID + notarization` once credentials are available — `Release Agent`
 - `ATL-270` Release readiness gate review — `Product Agent`
 
+## Process & Governance Backlog
+
+Carry-forward items that are **product polish**, not process lessons — process lessons go to the
+`Agent 教训台账` in `.claude/skills/iteration-governance/SKILL.md`. Entries here exist so that
+"recorded" means "scheduled with an owner", not "written into a timeline and forgotten".
+
+- `ATL-271` Make Ledger export honor the active filter, or stop claiming it exports the current view — `Mac App Agent`
+- `ATL-272` Reclaim or explicitly retain the 6 orphaned `history.*` keys left by the ledger rename — `Docs Agent`
+
 ## Definition of Ready
 
 - Scope is clear and bounded
@@ -424,4 +433,4 @@ Reason:
 - Relevant docs are updated
 - Decision log is updated if scope or architecture changed
 - Risks and blockers are recorded
-- Handoff notes are attached
+- Handoff notes follow the six-field delegation protocol — see `Templates/AGENT_HANDOFF_TEMPLATE.md`

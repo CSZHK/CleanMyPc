@@ -28,7 +28,7 @@ Atlas for Mac 是一款原生 macOS 应用，回答你的 Mac 已经在问的三
 
 - **为什么变慢？**—— 系统概览与按 App 精细洞察，用大白话讲清楚。
 - **为什么变满？**—— Smart Clean 与文件整理精准定位哪些可以安全清理。
-- **我刚刚动了什么？**—— 每个经审核的操作都进入「恢复台账」，在存在受支持恢复路径期间都能撤销。
+- **我刚刚动了什么？**—— 每个经审核的操作都会记入「历史记录」，在存在受支持恢复路径期间都能撤销。
 
 先建议、后执行；优先恢复而非永久删除，并且对恢复能力保持诚实——并非每个"可恢复"项目都真的能回到磁盘。
 
@@ -38,9 +38,9 @@ Atlas for Mac 是一款原生 macOS 应用，回答你的 Mac 已经在问的三
 | --- | --- |
 | ![Overview — 一眼看清机器状态](Docs/Media/README/atlas-overview.png) | ![Smart Clean — 有解释、可安全的清理](Docs/Media/README/atlas-smart-clean.png) |
 
-| Apps | Ledger |
+| Apps | 历史记录 |
 | --- | --- |
-| ![Apps — 完整卸载，无残留](Docs/Media/README/atlas-apps.png) | ![Ledger — 每个操作都可恢复](Docs/Media/README/atlas-ledger.png) |
+| ![Apps — 完整卸载，无残留](Docs/Media/README/atlas-apps.png) | ![历史记录 — 每个操作都可恢复](Docs/Media/README/atlas-ledger.png) |
 
 ## 安装
 
@@ -66,11 +66,11 @@ Atlas for Mac 是一款原生 macOS 应用，回答你的 Mac 已经在问的三
 | `Smart Clean` | 先解释，再清理——基于你的使用习惯，始终先审核。 |
 | `File Organizer` | 把杂乱收拾成你能理清的秩序。 |
 | `Apps` | 完整卸载，不是拖进废纸篓的残留。 |
-| `Ledger` | 恢复台账——你审核过的任何操作都被追踪、可回退。 |
+| `History` | 历史记录——你审核过的任何操作都被追踪、可回退。 |
 | `Permissions` | 最小权限、结合上下文的权限指引。 |
 | `Settings` | 配置、语言（English / 简体中文）与应用默认项。 |
 
-恢复能力贯穿 Smart Clean、Apps 与文件整理：经审核的操作会记录到「台账」中，并在存在受支持恢复路径期间保持可还原。
+恢复能力贯穿 Smart Clean、Apps 与文件整理：经审核的操作会记录到「历史记录」中，并在存在受支持恢复路径期间保持可还原。
 
 ## 产品原则
 

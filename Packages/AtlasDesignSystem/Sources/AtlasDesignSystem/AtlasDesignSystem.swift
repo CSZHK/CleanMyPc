@@ -1,3 +1,4 @@
+import AtlasDomain
 import Foundation
 import SwiftUI
 
@@ -71,14 +72,26 @@ public enum AtlasFormatters {
         ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
+    /// 日期格式化一律跟随 **app 内选择的语言**，不跟随系统语言。
+    ///
+    /// 为什么必须显式传 locale：app 已用 `.environment(\.locale, …)`（`AtlasApp.swift:17`）
+    /// 把语言注入 SwiftUI 视图树，但那只覆盖**视图树内**的格式化。下面两个函数都是
+    /// **独立构造** formatter / 独立调用 `formatted(...)`，读的是 `Locale.current`（系统）。
+    ///
+    /// 实证（`REQ-copy-plain-language` 的真机视觉验收，2026-09-15）：UI 语言为 English、
+    /// 系统为 zh-CN 时，历史记录屏渲染出「2026年9月15日 17:07」与「4分钟前」——
+    /// 界面全英文、日期全中文。该缺陷**早于**本次文案整改存在，是视觉验收顺带查出的。
+    private static var appLocale: Locale { AtlasL10n.currentLanguage.locale }
+
     public static func relativeDate(_ date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
+        formatter.locale = appLocale
         return formatter.localizedString(for: date, relativeTo: Date())
     }
 
     public static func shortDate(_ date: Date) -> String {
-        date.formatted(date: .abbreviated, time: .shortened)
+        date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: appLocale))
     }
 }
 

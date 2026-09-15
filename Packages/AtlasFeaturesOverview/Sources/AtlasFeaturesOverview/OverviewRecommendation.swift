@@ -47,6 +47,11 @@ public enum OverviewRecommendation {
         public enum SecondaryTarget: Equatable, Sendable {
             case navigateToPermissions
             case navigateToSmartClean
+            /// 契约三 §3.2(1)（`P1-1`）：权限横幅的「稍后」出口。
+            /// 此前该横幅 `isSnoozeable: false` —— 用户不能忽略、不能绕过，
+            /// 与 `COPY_GUIDELINES.md:48` 对 Limited Mode 的定义（「只在特定工作流
+            /// 需要时才索取更多权限」）相反。
+            case snooze
             case none
         }
 
@@ -125,7 +130,9 @@ public enum OverviewRecommendation {
     /// Resolves the highest-priority non-snoozed recommendation, or nil when
     /// the workspace is "all clear" (row 5). Pure & deterministic for tests.
     public static func recommend(_ inputs: Inputs) -> BannerConfig? {
-        // Row 1 — required permission missing. NOT snoozable (hard prerequisite).
+        // Row 1 — required permission missing. Deferrable（契约三 §3.2(1)）：扫描
+        // 本来就非阻断（`AtlasAppModel` 的受限模式软提示注释明言非阻断），
+        // 此前是 UI 在阻断式索要权限。
         if inputs.requiredPermissionsTotal > 0
             && inputs.requiredPermissionsGranted < inputs.requiredPermissionsTotal {
             return BannerConfig(
@@ -134,9 +141,9 @@ public enum OverviewRecommendation {
                 rationale: AtlasL10n.string("overview.recommend.permission.rationale"),
                 primaryTitle: AtlasL10n.string("overview.recommend.permission.primary"),
                 primaryTarget: .authorizePermissions,
-                secondaryTitle: nil,
-                secondaryTarget: .none,
-                isSnoozeable: false
+                secondaryTitle: AtlasL10n.string("overview.recommend.permission.later"),
+                secondaryTarget: .snooze,
+                isSnoozeable: true
             )
         }
 

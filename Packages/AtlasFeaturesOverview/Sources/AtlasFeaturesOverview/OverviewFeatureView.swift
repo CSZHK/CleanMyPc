@@ -114,13 +114,18 @@ public struct OverviewFeatureView: View {
 
     @ViewBuilder
     private var loadedContent: some View {
-        // (1) Greeting + status capsule row
-        greetingHeader
-
-        // (2) 「下一步」banner (or all-clear card)
+        // (1) 「下一步」banner (or all-clear card) —— 契约三 §3.2(2)（`P1-2`）：
+        // 「下一步」的优先级高于问候语与状态胶囊。此前首屏最贵的位置被
+        // 「寒暄 + 三个读不懂的指标」占掉，用户要继续往下扫视才碰到可点按钮。
         nextStepSection
 
-        // (3) Two-column body — stacks below 880pt
+        // (2) 受限模式解释（仅受限时）
+        limitedModeCallout
+
+        // (3) Greeting + status capsule row
+        greetingHeader
+
+        // (4) Two-column body — stacks below 880pt
         if contentWidth >= OverviewFeatureView.twoColumnThreshold {
             HStack(alignment: .top, spacing: AtlasSpacing.lg) {
                 OverviewCommandColumn(
@@ -219,6 +224,21 @@ public struct OverviewFeatureView: View {
         OverviewCommandColumn.tone(forDiskPercent: snapshot.healthSnapshot?.diskUsedPercent ?? 0)
     }
 
+    /// 契约三 §3.2(2)（`P1-2`）：`overview.callout.limited.title/detail` 此前在
+    /// **全部 Swift 源码中零引用** —— 唯一一句解释受限模式的现成文案没有被渲染。
+    @ViewBuilder
+    private var limitedModeCallout: some View {
+        if !requiredPermissionsReady {
+            AtlasCallout(
+                title: AtlasL10n.string("overview.callout.limited.title"),
+                detail: AtlasL10n.string("overview.callout.limited.detail"),
+                tone: .warning,
+                systemImage: "exclamationmark.shield"
+            )
+            .accessibilityIdentifier("overview.callout.limited")
+        }
+    }
+
     // MARK: - Next step / banner
 
     @ViewBuilder
@@ -234,16 +254,7 @@ public struct OverviewFeatureView: View {
                 onSecondary: banner.secondaryTitle != nil
                     ? { handleSecondary(banner) }
                     : nil,
-                onDismiss: banner.isSnoozeable
-                    ? {
-                        snoozeStore.snooze(
-                            id: banner.id,
-                            durationDays: OverviewRecommendation.snoozeDurationDays,
-                            now: Date()
-                        )
-                        snoozeRevision &+= 1
-                    }
-                    : nil
+                onDismiss: banner.isSnoozeable ? { snooze(banner) } : nil
             )
         } else {
             // All clear card — no button, shows most recent ledger entry teaser.
@@ -294,8 +305,20 @@ public struct OverviewFeatureView: View {
         switch banner.secondaryTarget {
         case .navigateToPermissions: onNavigateToPermissions?()
         case .navigateToSmartClean: onNavigateToSmartClean?()
+        case .snooze: snooze(banner)
         case .none: break
         }
+    }
+
+    /// 推迟到 `OverviewRecommendation.snoozeDurationDays` 天后再提醒。
+    /// 与右上角 `onDismiss` 走同一条写入路径（一份真相）。
+    private func snooze(_ banner: OverviewRecommendation.BannerConfig) {
+        snoozeStore.snooze(
+            id: banner.id,
+            durationDays: OverviewRecommendation.snoozeDurationDays,
+            now: Date()
+        )
+        snoozeRevision &+= 1
     }
 
     // MARK: - Pure derived values

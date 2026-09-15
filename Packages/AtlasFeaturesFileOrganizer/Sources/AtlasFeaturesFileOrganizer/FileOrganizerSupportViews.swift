@@ -225,8 +225,13 @@ struct FileOrganizerConfigurationSection: View {
     private var presetFolders: [String] { ["~/Desktop", "~/Downloads"] }
 
     var body: some View {
+        // `P1-12`：① 折叠标题此前**借用 Smart Clean 的文案**（`smartclean.controls.title`
+        // ＝「扫描与计划」），出现在「文件整理」模块里会让人怀疑走错页；
+        // ② 折叠态不透出「文件将被整理到哪里」—— 而默认目标 `~/Organized`
+        // 是用户在按下执行前唯一必须知道的参数。
         AtlasSectionDisclosure(
-            title: AtlasL10n.string("smartclean.controls.title"),
+            title: AtlasL10n.string("fileorganizer.controls.title"),
+            summary: AtlasL10n.string("fileorganizer.controls.summary", destinationBasePath),
             defaultExpanded: false
         ) {
             VStack(spacing: AtlasSpacing.sm) {

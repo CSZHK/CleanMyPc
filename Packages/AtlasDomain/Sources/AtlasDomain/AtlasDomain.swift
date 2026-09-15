@@ -133,6 +133,17 @@ public enum AtlasRoute: String, CaseIterable, Codable, Hashable, Identifiable, S
         allCases.filter(\.isSidebarRoute)
     }
 
+    /// 由 **app 菜单**（而非导航菜单）承载的路由。
+    ///
+    /// 这组事实必须显式可枚举：`I-11` 的断言对象只能取 `sidebarRoutes` 这类
+    /// **静态属性**，不能取 `CommandMenu` —— 后者是 SwiftUI View body，不可枚举
+    /// （设计评审 F3）。若不给 app 菜单路径一个可枚举落点，`.about` 在判据里就会
+    /// 显得「既不在 sidebarRoutes、又没有快捷键」，而它其实由
+    /// `CommandGroup(replacing: .appInfo)` 的「关于 Atlas」承载（macOS 惯例）。
+    ///
+    /// 新增一条 app 菜单路由时**必须同步登记到这里**，否则 `I-11` 守卫看不见它。
+    public static let appMenuRoutes: Set<AtlasRoute> = [.about]
+
     public var sidebarSection: SidebarSection? {
         switch self {
         case .overview, .smartClean, .fileOrganizer, .apps:

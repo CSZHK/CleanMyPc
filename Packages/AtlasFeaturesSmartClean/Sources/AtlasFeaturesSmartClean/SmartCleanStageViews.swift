@@ -11,7 +11,7 @@ struct SmartCleanScanStageView: View {
     let scanSummary: String
     let scanProgress: Double
     let hasCachedFindings: Bool
-    let planIssue: String?
+    let planOutcome: AtlasActionOutcome?
     let onStartScan: () -> Void
     let onRefreshPreview: () -> Void
 
@@ -42,12 +42,26 @@ struct SmartCleanScanStageView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AtlasSpacing.section)
             } else {
-                if let planIssue {
-                    AtlasErrorState(
-                        title: AtlasL10n.string("smartclean.status.revalidationFailed"),
-                        message: planIssue,
-                        layout: .inlineRow
-                    )
+                if let planOutcome {
+                    // NEW-1（规格 §1.2(1)）：`.failed` 才走错误态；`.advisory` 是
+                    // 非阻断提示，必须走非错误渲染路径 —— 此前受限模式软提示被
+                    // 一律渲染成「未能更新当前计划」的失败标题。
+                    if planOutcome.isError {
+                        AtlasErrorState(
+                            title: AtlasL10n.string("smartclean.status.revalidationFailed"),
+                            message: planOutcome.message,
+                            layout: .inlineRow
+                        )
+                        .accessibilityIdentifier("smartclean.planOutcome.error")
+                    } else {
+                        AtlasCallout(
+                            title: AtlasL10n.string("smartclean.scan.advisory.title"),
+                            detail: planOutcome.message,
+                            tone: .warning,
+                            systemImage: "exclamationmark.shield"
+                        )
+                        .accessibilityIdentifier("smartclean.planOutcome.advisory")
+                    }
                 } else if hasCachedFindings {
                     AtlasCallout(
                         title: AtlasL10n.string("smartclean.cached.title"),
@@ -97,8 +111,15 @@ struct SmartCleanReviewStageView: View {
     let isReadOnly: Bool
     let showsEvidenceButton: Bool
     let isReviewEmpty: Bool
+    /// 契约二 §2.2(2) 标签—后果一致（`P1-10`）：有计划编号时，空态这个按钮
+    /// 触达的是 `role: .destructive` 的「作废并重新扫描」对话框，标签必须描述
+    /// **该对话框的后果**，而不是用户的上位意图（「再扫一遍」）。
+    let hasPlanNumber: Bool
     let evidenceFocus: FocusState<String?>.Binding
     let onToggle: (String) -> Void
+    /// `P1-7`：全选/取消全选。此前 ② 页只有逐条勾选 —— 用户的核心意图是
+    /// 「把空间腾出来」，最自然的动作是「全选然后执行」；扫描出几十项时只能逐条点。
+    let onSelectAll: (Bool) -> Void
     let onSetRiskFilter: (String?) -> Void
     let onSelectEvidence: (String) -> Void
     let onOpenEvidence: (String) -> Void
@@ -123,11 +144,17 @@ struct SmartCleanReviewStageView: View {
                     detail: AtlasL10n.string("smartclean.stage.review.zero.detail"),
                     systemImage: "checkmark.seal",
                     tone: .success,
-                    actionTitle: AtlasL10n.string("smartclean.stage.actionbar.rescan"),
+                    actionTitle: AtlasL10n.string(
+                        hasPlanNumber
+                            ? "smartclean.stage.actionbar.rescan.destructive"
+                            : "smartclean.stage.actionbar.rescan"
+                    ),
                     onAction: onRequestRescan
                 )
             } else {
                 filterChips
+                // `P1-7`：与 File Organizer 对齐的选择控件（FO 同阶段一直有）。
+                selectionControls
 
                 if visibleFindings.isEmpty {
                     AtlasEmptyState(
@@ -144,6 +171,32 @@ struct SmartCleanReviewStageView: View {
             }
         }
         .disabled(isReadOnly)
+    }
+
+    /// `P1-7`：全选作用于**当前可见（筛选 + 搜索后）**的条目 —— 与用户看到的列表一致。
+    private var selectionControls: some View {
+        HStack(spacing: AtlasSpacing.sm) {
+            Text(AtlasL10n.string("smartclean.selection.count", selectedIDs.count, visibleFindings.count))
+                .font(AtlasTypography.caption)
+                .foregroundStyle(AtlasColor.textSecondary)
+            Spacer()
+            Button {
+                onSelectAll(true)
+            } label: {
+                Text(AtlasL10n.string("smartclean.action.selectAll"))
+            }
+            .buttonStyle(.atlasGhost)
+            .disabled(selectedIDs.count == visibleFindings.count || isReadOnly)
+            .accessibilityIdentifier("smartclean.selectAll")
+            Button {
+                onSelectAll(false)
+            } label: {
+                Text(AtlasL10n.string("smartclean.action.deselectAll"))
+            }
+            .buttonStyle(.atlasGhost)
+            .disabled(selectedIDs.isEmpty || isReadOnly)
+            .accessibilityIdentifier("smartclean.deselectAll")
+        }
     }
 
     private var filterChips: some View {
@@ -270,8 +323,15 @@ private struct SmartCleanReviewRow: View {
 /// Live execution view: progress block while running; on failure an inline
 /// `AtlasErrorState` row with the real failure reason (spec §2.3 row 7).
 struct SmartCleanExecuteStageView: View {
+    /// 「Xm Ys」/「Ys」—— 只为执行中的已用时显示，不引入格式化依赖。
+    static func elapsedText(seconds: Int) -> String {
+        seconds < 60 ? "\(seconds)s" : "\(seconds / 60)m \(seconds % 60)s"
+    }
+
     let plan: ActionPlan
     let isExecuting: Bool
+    /// `P1-9`：执行开始时刻 —— 执行中唯一确定性且真实可得的信息。
+    let executionStartedAt: Date?
     let progress: Double
     let summary: String
     let executionIssue: String?
@@ -290,6 +350,24 @@ struct SmartCleanExecuteStageView: View {
                 )
             } else {
                 VStack(spacing: AtlasSpacing.lg) {
+                    if isExecuting, let executionStartedAt {
+                        // `P1-9`：**执行中不作无意义的不确定态** —— 用确定性信息
+                        // （已用时）替掉「空弧 + 一句话」。worker 的 execute 是单次
+                        // await、没有进度流（见下 Round-21 注），所以「已处理计数 /
+                        // 剩余时间估计」都没有真实数据；已用时是唯一真实可得的量。
+                        // 「空弧 + 一句话」会被读成「卡住了 / 死机了」。
+                        TimelineView(.periodic(from: executionStartedAt, by: 1)) { context in
+                            let elapsed = max(0, Int(context.date.timeIntervalSince(executionStartedAt)))
+                            Text(AtlasL10n.string(
+                                "smartclean.loading.execute.elapsed",
+                                Self.elapsedText(seconds: elapsed)
+                            ))
+                            .font(AtlasTypography.label)
+                            .monospacedDigit()
+                            .foregroundStyle(AtlasColor.textSecondary)
+                        }
+                        .accessibilityIdentifier("smartclean.execute.elapsed")
+                    } else {
                     AtlasCircularProgress(
                         // Round-21: `progress` (latestScanProgress) is stale (~1.0,
                         // clamped by refreshPlanPreview) during execute — the
@@ -308,6 +386,7 @@ struct SmartCleanExecuteStageView: View {
 
                     Text(AtlasL10n.string("smartclean.loading.execute"))
                         .font(AtlasTypography.label)
+                    }
 
                     Text(summary)
                         .font(AtlasTypography.dataBody)

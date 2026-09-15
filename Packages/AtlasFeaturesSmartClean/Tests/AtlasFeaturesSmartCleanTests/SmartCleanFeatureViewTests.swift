@@ -150,7 +150,7 @@ final class SmartCleanFeatureViewTests: XCTestCase {
             scanSummary: "",
             scanProgress: 0,
             hasCachedFindings: false,
-            planIssue: nil,
+            planOutcome: nil,
             onStartScan: {},
             onRefreshPreview: {}
         )

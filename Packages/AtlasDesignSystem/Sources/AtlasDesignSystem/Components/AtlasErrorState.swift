@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Code-less error state (spec §4.2, 评审裁定: 协议冻结、无错误码分类法):
 /// `danger`-tinted `exclamationmark.octagon.fill` on a `dangerFill` soft
-/// ground, with title + message mapped from `executionIssue`/`planIssue`
+/// ground, with title + message mapped from the source-keyed `AtlasActionOutcome`
 /// strings, an optional suggestion and an optional recovery action.
 ///
 /// Layouts:

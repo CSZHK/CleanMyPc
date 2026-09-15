@@ -148,11 +148,22 @@ public struct FileOrganizerActionBarModel: Equatable {
                 progress: nil, intent: .execute
             )
         case FileOrganizerStage.execute:
-            // ④ settled state here is the error state (running was handled above):
-            // primary = view the partial receipt (spec §2.3 row 7).
+            // ④ settled state here is the error state (running was handled above).
+            // 契约一 §1.2(3)（`P1-14`，与 `P1-11` 同构）：失败发生在**文件正在被
+            // 移动**的过程中，用户最需要知道「哪些已经移走」。此前「查看回执」
+            // 置灰且不可达，这些信息没有任何出口。
+            guard inputs.hasReceipt else {
+                return FileOrganizerActionBarModel(
+                    title: AtlasL10n.string("fileorganizer.stage.actionbar.rescan"),
+                    isEnabled: true,
+                    promise: AtlasL10n.string("action.receipt.missing.title"),
+                    metricText: AtlasL10n.string("action.receipt.missing.counts", inputs.selectedCount),
+                    progress: nil, intent: .rescan
+                )
+            }
             return FileOrganizerActionBarModel(
                 title: AtlasL10n.string("fileorganizer.stage.actionbar.viewReceipt"),
-                isEnabled: inputs.hasReceipt, promise: nil, metricText: nil,
+                isEnabled: true, promise: nil, metricText: nil,
                 progress: nil, intent: .viewReceipt
             )
         case FileOrganizerStage.receipt:
