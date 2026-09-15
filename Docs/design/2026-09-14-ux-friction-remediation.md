@@ -1,7 +1,7 @@
 # Atlas for Mac — 体验摩擦修复设计规格
 
 - **日期**：2026-09-14
-- **状态**：待产品负责人评审（评审通过后方可开 REQ / CHG）
+- **状态**：**已通过设计评审**（2026-09-14，`Decision = Pass`，产品负责人终审已过）——记录见 `Docs/Execution/UX-Friction-Remediation-Design-Gate-Review-2026-09-14.md`。可开 `REQ` / `CHG`
 - **范围**：`Docs/Execution/UX-Friction-Audit-2026-09-14.md` 全部 40 条 finding（39 条原始 + 1 条二次核验补报 `NEW-1`）
 - **上游**：`Docs/Execution/UX-Friction-Audit-2026-09-14.md`（诊断，无实现方案）、`Docs/COPY_GUIDELINES.md`、`Docs/IA.md`、`Docs/design/2026-06-10-frontend-redesign-calm-ledger.md`（设计语言 v3）、`Docs/Backlog.md`
 - **性质**：**实现方案**。本文只设计，不含代码改动；执行走 `changes/CHG-*`

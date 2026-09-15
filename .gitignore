@@ -41,7 +41,13 @@ temp/
 *.lock
 
 # AI Assistant Instructions
-.claude/
+# NOTE: `.claude/*` (not `.claude/`) so that `.claude/skills/` and `.claude/agents/`
+# can be re-included — git cannot re-include a path whose parent directory is excluded.
+# Version-controlled: `skills/` (governance flow), `agents/` (subagent definitions).
+# `settings.local.json`, `scheduled_tasks.lock` and `bugs/` stay local-only.
+.claude/*
+!.claude/skills/
+!.claude/agents/
 .agents/
 .gemini/
 .kiro/
@@ -50,7 +56,6 @@ CLAUDE.md
 GEMINI.md
 ANTIGRAVITY.md
 WARP.md
-AGENTS.md
 journal/
 .cursorrules
 

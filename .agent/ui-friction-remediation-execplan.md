@@ -1,14 +1,19 @@
 # ui-friction-remediation — ExecPlan
 
+> **本文件是设计阶段（已关闭）。** Wave 0–3 的实现阶段恢复入口在 `.agent/ux-friction-impl-execplan.md`。
+> 设计阶段产出：`Docs/design/2026-09-14-ux-friction-remediation.md`（已过评审）+ 审计回写 + Review 记录；`REQ-ux-friction-remediation` 已开。
+
 ## Objective
 
 针对 `Docs/Execution/UX-Friction-Audit-2026-09-14.md` 的 40 条 finding（39 条原始 + 1 条补报 `NEW-1`）提出实现方案，产出设计规格。
 
 ## Status
 
-规格已落盘并完成一轮**设计评审**。结论 `Pass with Conditions`：条件 F1–F4 已落地，后续又修 F6/F7/F9/F10（口径与落点）。规格 478 → 521 行。
+规格已完成**三轮修订**并**通过设计评审**（2026-09-14，`Decision = Pass`；产品负责人终审已过）。规格 478 → 539 行。
 
-**待产品负责人终审** §7（守卫列 + §7.1）与 §9（波次表 + 纪律第 3 条）——本轮回写最集中的两块。未提交（用户明确选择暂不提交）。
+四段过程：初稿 → 设计评审（F1–F10）→ 产品负责人裁示（L3 与 5 条设计层主张）→ 独立复核裁定（L1–L3）。
+
+**两项已入库**，均在分支 `iter/ux-friction-remediation`（**未 push**）：`c7a7a2c fix(gate)`、`94a0722 docs(ux-friction)`。
 
 ## 产出
 
