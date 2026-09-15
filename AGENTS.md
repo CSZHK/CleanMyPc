@@ -19,7 +19,12 @@ xcodegen generate && open Atlas.xcodeproj                     # 生成 Xcode 工
 
 **测试边界（易踩）**：`./scripts/test.sh` 只跑遗留 Mole 的 shell/Go 套件（shellcheck + bats + go test + 安装测试），**不含任何 Swift 覆盖**。Swift 改动只能靠 `swift test` 验证，不要拿 `test.sh` 当代替。
 
-**README 媒体门禁**：README 截图有六维机检（存在性 / 尺寸 / 像素健康 / 引用完整性 / 漂移指纹 / 零孤儿），接在**三处**：`full-acceptance.sh` 第 [5/13] 步 · `atlas-acceptance.yml`（`paths:` 含媒体目录）· **`release.yml` 的 `native` job**（紧随版本号推导，在打包前 fail fast —— 发版正是截图最容易脱节的一刻）。判据源是 `Docs/design/2026-09-15-readme-media-lifecycle.md`。**报红的解药永远是一条命令**：`./scripts/atlas/export-readme-assets.sh`（本机跑，同时重渲 8 张双语截图、图标与封面 `fig01-cover.png`，并重建 `manifest.json`）。
+**README 媒体门禁**：README 截图有六维机检（存在性 / 尺寸 / 像素健康 / 引用完整性 / 漂移指纹 / 零孤儿），接在**三处**：`full-acceptance.sh` 第 [5/13] 步 · `atlas-acceptance.yml`（`paths:` 含媒体目录）· **`release.yml` 的 `native` job**（紧随版本号推导，在打包前 fail fast —— 发版正是截图最容易脱节的一刻）。
+
+判据源是 `Docs/design/2026-09-15-readme-media-lifecycle.md`。**报红的解药永远是一条命令**：`./scripts/atlas/export-readme-assets.sh`（本机跑，同时重渲 8 张双语截图、图标与封面 `fig01-cover.png`，并重建 `manifest.json`）。
+
+> ⚠️ **别把「已接线」读成「已验证」**：`atlas-acceptance.yml` 曾自 2026-08-26 起**连续三周失败**，卡在第 [1/13] 步，本门禁（第 [5/13] 步）因此**从未在 CI 上执行过**，且无人察觉。已随 `e6227d5` / `b8b3e36` 修复。
+> **教训：接入任何新门禁前先核该 workflow 的历史状态 —— 一个红的 CI 与一个不存在的 CI，在「有没有在保护你」这件事上等价。**
 
 第 5 维「漂移指纹」覆盖（**以下非穷举，完整清单见 `scripts/atlas/readme-media-fingerprint-scope.txt`**）：4 个 feature view 源 + **`Apps/AtlasApp/Sources/AtlasApp/**/*.swift` 整个目录**（含真正被渲染的 `ReadmeAssetExporter.swift` —— 早先只点名 `AppShellView.swift`，结果改画布尺寸截图会变而门禁全绿，被对抗审查证伪）+ 设计系统 + **两份 `Localizable.strings`** —— 所以**改任何一条文案都会报红，直到重导截图**。这是设计要求（把 `REQ-copy-plain-language` 当时手工补做的动作变成强制项），不是缺陷。**退出码 2 = 清单/README 缺失，不是通过。**
 

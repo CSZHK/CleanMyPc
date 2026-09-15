@@ -270,6 +270,17 @@ readme-media-gate.sh  →  readme_media_gate.py  ← 六维机检（可移植，
 | CI 推送 | `atlas-acceptance.yml`（`paths:` 含 `Docs/Media/README/**` 与两份 README） | 「只改了截图/README」的推送也必须触发 —— 那正是门禁最该跑的场景 |
 | **发版** | `release.yml` 的 `native` job，紧随版本号推导之后 | 发版是「版本更新」真正落地的那一刻，也是截图最容易脱节的一刻。放这里**fail fast**：在昂贵的打包之前就拦住 |
 
+> ⚠️ **CI 那条接线的真实历史，别读成「已验证可用」**：`atlas-acceptance.yml` 自 **2026-08-26 起每一次运行都失败**，卡在 `full-acceptance.sh` 的**第 [1/13] 步** —— 也就是说本 REQ 的媒体门禁（第 **[5/13]** 步）**在 CI 上从未被执行过**。
+>
+> 收口时我只验了「门禁在本机能跑」+「workflow 接线正确」，**没查这条 workflow 的历史状态**，于是在文档里把它写成了已生效的样子。这是**验证缺口**，不是措辞问题：**一个红的 CI 与一个不存在的 CI，在「有没有在保护你」这件事上等价** —— 三周里没有人注意到。
+>
+> 两层阻塞已随本 REQ 一并修复（都不属本 REQ 范围，是被它揭出来的）：
+>
+> 1. `e6227d5` —— `FileOrganizerEvidenceBuilderTests` 断言本地化文案却**不自设语言**，结果取决于 SwiftPM 的测试执行顺序：本地过、CI 红（另见 `ATL-284`，同类文件还有 5 个）。
+> 2. `b8b3e36` —— `AtlasAppModel.swift:371` 在 CI 的 toolchain（构建目标 `macos14.0`）上触发类型检查超时，本地（Swift 6.2.4 / `macosx15.0`）不复现。此前从未暴露，因为管线一直卡在第 1 步。
+>
+> **发版链那条不受影响**：`release.yml` 不调用 `full-acceptance.sh`、不跑 `swift test`，最近 4 次 release 全 success —— 它会在下次打 tag 时真正执行本步。
+
 ## 引用
 
 - 工具：`scripts/atlas/{export-readme-assets.sh,readme-media-gate.sh,readme_media_gate.py,readme_media_fingerprint.py,readme-media-fingerprint-scope.txt,readme-media-gate-selftest.sh}`
