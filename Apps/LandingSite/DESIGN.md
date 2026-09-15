@@ -109,7 +109,7 @@ The page must treat release channel status as product truth. Three states drive 
 
 2. **Self-hosted fonts** — Font files are committed to `Apps/LandingSite/public/fonts/`. Subset to Latin + CJK ranges. Use `font-display: swap` for all faces.
 
-3. **Build-time release manifest** — A `scripts/fetch-release.ts` script runs at build time to query the GitHub Releases API and emit `src/data/release-manifest.json`. A static fallback (`src/data/release-fallback.json`) is used if the API call fails.
+3. **Build-time release manifest** — A `scripts/fetch-release.ts` script runs at build time to query the GitHub Releases API and emit `src/data/release-manifest.json`. A static fallback (`src/data/release-fallback.json`) is used if the API call fails. **The fallback must stay version-agnostic** (`version` / `tagName` / `publishedAt` all `null`) — see §3.1.
 
 ---
 
@@ -160,8 +160,26 @@ interface ReleaseManifest {
 
 **Priority chain** (per PRD):
 1. Build-time generated `release-manifest.json` via `scripts/fetch-release.ts`
-2. Static fallback `src/data/release-fallback.json` (committed, manually maintained)
+2. Static fallback `src/data/release-fallback.json` (committed, manually maintained — **must not pin a release**)
 3. No client-side GitHub API fetch for first paint
+
+### 3.1 Static fallback must not pin a release
+
+`release-fallback.json` is hand-maintained and rendered only when the GitHub API
+call fails at build time, so **any version it names goes stale silently**. It read
+`1.0.3` while the app shipped `2.1.0`.
+
+`fetch-release.ts` therefore asserts, on every build, that `version`, `tagName`
+and `publishedAt` are all `null`; a pinned value fails the build (`prebuild`).
+The UI already degrades cleanly without a version:
+
+- `ChannelBadge.astro` and `Hero.astro` guard on `{version && …}`
+- `getDownloadUrl()` falls back to `releaseUrl` (the releases page) when every
+  asset URL is null
+
+So the fallback renders as a "Prerelease" badge with no version chip and a link
+to the releases page — the honest degradation. Verified by building with
+`release-manifest.json` absent (both `/en/` and `/zh/` render 0 version elements).
 
 **Manifest generation logic** (`scripts/fetch-release.ts`):
 ```

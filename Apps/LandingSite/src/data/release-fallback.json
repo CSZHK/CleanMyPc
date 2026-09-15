@@ -1,6 +1,6 @@
 {
   "channel": "prerelease",
-  "version": "1.0.3",
+  "version": null,
   "publishedAt": null,
   "releaseUrl": "https://github.com/CSZHK/CleanMyPc/releases",
   "assets": {
@@ -10,7 +10,7 @@
     "sha256": null
   },
   "gatekeeperWarning": true,
-  "installNote": null,
+  "installNote": "This build is development-signed. macOS Gatekeeper may require \"Open Anyway\" or a right-click \"Open\" flow.",
   "tagName": null,
   "generatedAt": "static-fallback"
 }
