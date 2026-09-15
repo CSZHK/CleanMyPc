@@ -433,7 +433,12 @@ Carry-forward items that are **product polish**, not process lessons — process
 - `ATL-283` `fileorganizer.evidence.destination` ships as `Move target` in `en`, but `Docs/COPY_GUIDELINES.md:99` and the terminology baseline both rule **`Destination` 保留**. The value was changed by `a70bc1b` (that REQ's own plain-language rewrite). **Unresolved on purpose**: fixing it means either overruling a signed terminology decision or updating the glossary — a product call. It also sat behind a 3-week CI failure (see `ATL-284`) — `Docs Agent` + `Product Agent`
 - `ATL-284` **Six** test files assert localized label text but never pin `AtlasL10n.currentLanguage`, so their result depends on SwiftPM's test execution order. Confirmed as the cause of a CI failure that ran 2026-08-26 → 2026-09-15 at `FileOrganizerEvidenceBuilderTests.swift:242/244` (passed locally, failed on CI purely on ordering). That one is now pinned; the other five are the same latent trap — `QA Agent`
 
-Source for `ATL-283`..`ATL-284`: the post-push CI investigation on 2026-09-15 (the acceptance workflow had been red for weeks at step [1/13], which meant the new README media gate never actually executed in CI).
+- `ATL-285` The ruling that "GitHub-hosted runners have no Accessibility grant ⇒ the UI step *necessarily* takes the skip path" is **inference, not observation** — and it is now falsified. `atlas-acceptance.yml` had never succeeded (20+ runs red at step [1/13]), so step [11/13]'s real behaviour was never seen. Its first successful run (`#34984224153`, Xcode 26.6 / `macos-latest`) executed `AtlasAppUITests` and passed 11/11. Counter-evidence is recorded in `AGENTS.md`; the **decision** (keep the `ATLAS_ALLOW_UI_SKIP` escape hatch as defence) may still stand, but its stated rationale needs re-verifying and either updating or reaffirming — `QA Agent` + `Product Agent`
+- `ATL-286` **Nothing watches the acceptance workflow.** It was red for 3+ weeks with no alert, no scheduled run, and no visible signal — so a newly wired gate (step [5/13]) could be "connected but never executing" indefinitely and read as protection. Needs either a notification on failure or a periodic health check — `QA Agent`
+
+Source for `ATL-285`..`ATL-286`: the post-push CI investigation on 2026-09-15 (the acceptance workflow had been red for weeks at step [1/13], which meant the new README media gate never actually executed in CI).
+
+Source for `ATL-283`..`ATL-284`: same investigation.
 
 Source for `ATL-273`..`ATL-277`: the adversarial copy review run during `REQ-copy-plain-language` (2026-09-15). Each was traced back to source and confirmed, then deliberately left out of that REQ's scope. They are **pre-existing**, not regressions from it.
 
