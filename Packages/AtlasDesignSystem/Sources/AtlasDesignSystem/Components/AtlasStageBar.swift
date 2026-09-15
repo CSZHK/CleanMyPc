@@ -173,6 +173,8 @@ public struct AtlasStageBar: View {
             }
             .buttonStyle(.plain)
             .focusable(false) // the BAR is the single Tab stop — inner buttons stay out of the focus loop
+            // 稳定标识：`I-7` 的判据**明文排除阶段条**（规格 §7），守卫据此把它剔出枚举。
+            .accessibilityIdentifier("stageBar.segment.\(index)")
             .overlay(focusRing(for: index))
         case .current, .future:
             segmentLabel(label, state: state)

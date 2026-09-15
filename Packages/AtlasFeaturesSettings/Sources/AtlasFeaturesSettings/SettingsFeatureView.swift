@@ -3,6 +3,9 @@ import AtlasDomain
 import SwiftUI
 
 public struct SettingsFeatureView: View {
+    /// `P2-1`：体系词键（四个保留词 + 补解释）。
+    static let glossaryTermKeys = ["leftover", "footprint", "ledger", "evidence"]
+
     @State private var selectedPanel: SettingsPanel = .general
     @State private var presentedDocument: SettingsDocument?
 
@@ -12,6 +15,13 @@ public struct SettingsFeatureView: View {
     private let onSetTheme: (AtlasTheme) -> Void
     private let onSetRecoveryRetention: (Int) -> Void
     private let onToggleNotifications: (Bool) -> Void
+    /// `P2-12`：排除项的**写回调**。此前视图只有四个写回调（语言/主题/保留期/通知），
+    /// 排除项连一个都没有 —— 用户读到「这些路径不会出现在扫描结果和清理计划里」，
+    /// 想加自己的重要目录时**无处可点**（而这是普通用户最本能的保护动作）。
+    private let onAddExcludedPath: (String) -> Void
+    private let onRemoveExcludedPath: (String) -> Void
+
+    @State private var newExcludedPath = ""
 
     public init(
         settings: AtlasSettings = AtlasScaffoldFixtures.settings,
@@ -19,7 +29,9 @@ public struct SettingsFeatureView: View {
         onSetLanguage: @escaping (AtlasLanguage) -> Void = { _ in },
         onSetTheme: @escaping (AtlasTheme) -> Void = { _ in },
         onSetRecoveryRetention: @escaping (Int) -> Void = { _ in },
-        onToggleNotifications: @escaping (Bool) -> Void = { _ in }
+        onToggleNotifications: @escaping (Bool) -> Void = { _ in },
+        onAddExcludedPath: @escaping (String) -> Void = { _ in },
+        onRemoveExcludedPath: @escaping (String) -> Void = { _ in }
     ) {
         self.settings = settings
         self.recoveryTotalBytes = recoveryTotalBytes
@@ -27,6 +39,8 @@ public struct SettingsFeatureView: View {
         self.onSetTheme = onSetTheme
         self.onSetRecoveryRetention = onSetRecoveryRetention
         self.onToggleNotifications = onToggleNotifications
+        self.onAddExcludedPath = onAddExcludedPath
+        self.onRemoveExcludedPath = onRemoveExcludedPath
     }
 
     public var body: some View {
@@ -190,6 +204,50 @@ public struct SettingsFeatureView: View {
                     .font(AtlasTypography.body)
                     .foregroundStyle(.secondary)
 
+                // `P2-1`：**产品内术语表入口**（契约四 §4.2(2)）。
+                // 「残留 / 足迹 / 台账 / 证据」是全产品的核心词汇，此前**没有任何一处
+                // 解释**——目录里那张 en 术语表是给开发者看的。只回写文档不算达标，
+                // 产品内必须有可读入口。定义取自 `terminology-baseline.md` §S-10，不得自造。
+                AtlasSectionDisclosure(title: AtlasL10n.string("glossary.title")) {
+                    VStack(alignment: .leading, spacing: AtlasSpacing.md) {
+                        Text(AtlasL10n.string("glossary.subtitle"))
+                            .font(AtlasTypography.bodySmall)
+                            .foregroundStyle(AtlasColor.textSecondary)
+                        ForEach(Self.glossaryTermKeys, id: \.self) { key in
+                            VStack(alignment: .leading, spacing: AtlasSpacing.xxs) {
+                                Text(AtlasL10n.string("glossary.\(key).term"))
+                                    .font(AtlasTypography.body.weight(.medium))
+                                Text(AtlasL10n.string("glossary.\(key).definition"))
+                                    .font(AtlasTypography.bodySmall)
+                                    .foregroundStyle(AtlasColor.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .accessibilityIdentifier("settings.glossary")
+                }
+
+                // `P2-12`：添加入口。空态/有数据两种分支之上都渲染它。
+                HStack(spacing: AtlasSpacing.sm) {
+                    TextField(
+                        AtlasL10n.string("settings.exclusions.add.placeholder"),
+                        text: $newExcludedPath
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("settings.exclusions.addField")
+                    Button {
+                        let trimmed = newExcludedPath.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !trimmed.isEmpty else { return }
+                        onAddExcludedPath(trimmed)
+                        newExcludedPath = ""
+                    } label: {
+                        Text(AtlasL10n.string("settings.exclusions.add.action"))
+                    }
+                    .buttonStyle(.atlasSecondary)
+                    .disabled(newExcludedPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityIdentifier("settings.exclusions.add")
+                }
+
                 if settings.excludedPaths.isEmpty {
                     AtlasEmptyState(
                         title: AtlasL10n.string("settings.exclusions.empty.title"),
@@ -200,12 +258,21 @@ public struct SettingsFeatureView: View {
                 } else {
                     VStack(alignment: .leading, spacing: AtlasSpacing.md) {
                         ForEach(settings.excludedPaths, id: \.self) { path in
-                            AtlasDetailRow(
-                                title: path,
-                                subtitle: AtlasL10n.string("settings.exclusions.row.subtitle"),
-                                systemImage: "folder.badge.minus",
-                                tone: .warning
-                            )
+                            HStack(spacing: AtlasSpacing.sm) {
+                                AtlasDetailRow(
+                                    title: path,
+                                    subtitle: AtlasL10n.string("settings.exclusions.row.subtitle"),
+                                    systemImage: "folder.badge.minus",
+                                    tone: .warning
+                                )
+                                Button {
+                                    onRemoveExcludedPath(path)
+                                } label: {
+                                    Text(AtlasL10n.string("settings.exclusions.remove.action"))
+                                }
+                                .buttonStyle(.atlasGhost)
+                                .accessibilityIdentifier("settings.exclusions.remove")
+                            }
                         }
                     }
                 }

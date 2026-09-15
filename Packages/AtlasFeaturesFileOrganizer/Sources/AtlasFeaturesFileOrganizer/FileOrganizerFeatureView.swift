@@ -27,7 +27,14 @@ public struct FileOrganizerFeatureView: View {
     private let isExecutingPlan: Bool
     private let isPlanFresh: Bool
     private let canExecutePlan: Bool
-    private let planIssue: String?
+    /// 契约一：计划层结果（带 source）。Wave 1 只做类型迁移；`P2-8` 的权限分支在 Wave 2。
+    private let planOutcome: AtlasActionOutcome?
+    /// 契约一 §1.2(2)：回执「撤销」的三态，由模型按快照实时推导（`P0-2`）。
+    private let undoAvailability: AtlasUndoAvailability
+    /// 恢复保留窗口（天）—— 契约二 ③ 要用它说明「多久内可撤回」。
+    private let retentionDays: Int
+    /// 契约三 §3.2(3)（`P1-3`）：首扫前是否仍需渲染系统授权的作用域说明。
+    private let showsScanPreamble: Bool
     private let executionIssue: String?
     private let executionReceipt: FileOrganizerExecutionReceipt?
     private let movedCount: Int
@@ -60,8 +67,13 @@ public struct FileOrganizerFeatureView: View {
         isExecutingPlan: Bool = false,
         isPlanFresh: Bool = false,
         canExecutePlan: Bool = false,
-        planIssue: String? = nil,
+        planOutcome: AtlasActionOutcome? = nil,
         executionIssue: String? = nil,
+        undoAvailability: AtlasUndoAvailability = .notApplicable(
+            absenceNote: AtlasL10n.string("action.undo.notApplicable.note")
+        ),
+        retentionDays: Int = 7,
+        showsScanPreamble: Bool = false,
         executionReceipt: FileOrganizerExecutionReceipt? = nil,
         movedCount: Int = 0,
         scannedFolders: [String] = [],
@@ -88,7 +100,10 @@ public struct FileOrganizerFeatureView: View {
         self.scanProgress = scanProgress; self.isScanning = isScanning
         self.isClassifying = isClassifying; self.isExecutingPlan = isExecutingPlan
         self.isPlanFresh = isPlanFresh; self.canExecutePlan = canExecutePlan
-        self.planIssue = planIssue; self.executionIssue = executionIssue
+        self.planOutcome = planOutcome; self.executionIssue = executionIssue
+        self.undoAvailability = undoAvailability
+        self.retentionDays = retentionDays
+        self.showsScanPreamble = showsScanPreamble
         self.executionReceipt = executionReceipt; self.movedCount = movedCount
         self.scannedFolders = scannedFolders; self.rules = rules
         // Seed so a custom folder selection survives route switches (§7 red
@@ -177,7 +192,7 @@ public struct FileOrganizerFeatureView: View {
             }
             Button(AtlasL10n.string("confirm.cancel"), role: .cancel) {}
         } message: {
-            Text(AtlasL10n.string("fileorganizer.confirm.execute.message"))
+            AtlasDestructiveConfirmationMessage(executeConfirmation)
         }
         .sheet(isPresented: $isRuleEditorPresented) {
             FileOrganizerRuleEditorView(rules: rules) { updatedRules in
@@ -242,7 +257,8 @@ public struct FileOrganizerFeatureView: View {
                 scanSummary: scanSummary,
                 scanProgress: scanProgress,
                 hasCachedEntries: !entries.isEmpty || !plan.items.isEmpty,
-                planIssue: planIssue,
+                planOutcome: planOutcome,
+                showsScanPreamble: showsScanPreamble,
                 onStartScan: { onStartScan(selectedFolders) }
             )
             FileOrganizerConfigurationSection(
@@ -287,8 +303,24 @@ public struct FileOrganizerFeatureView: View {
             searchQuery: searchText,
             selectedIDs: state.selectedIDs,
             conflictingIDs: conflictingIDs,
-            planIssue: planIssue,
+            planOutcome: planOutcome,
             isReadOnly: isReadOnly
+        )
+    }
+
+    /// 契约二 §2.2(1) 四问（`P0-4`）：标题、正文、按钮三处此前**都不含目标位置**，
+    /// 而默认目标是 `~/Organized` —— 一个普通用户从没听过的路径。
+    private var executeConfirmation: AtlasDestructiveConfirmation {
+        let total = plan.items.count
+        let facts = AtlasDestructiveFacts(
+            object: AtlasL10n.string("confirm.destructive.object.files", total),
+            destination: AtlasL10n.string("confirm.destructive.destination", destinationBasePath),
+            recovery: AtlasL10n.string("confirm.destructive.recovery", retentionDays)
+        )
+        // 执行前自动建立恢复点（见 fileorganizer.promise.execute）⇒ 全部可恢复。
+        return .recoverable(
+            facts,
+            recoverableCount: AtlasL10n.string("confirm.destructive.recoverableCount", total, total)
         )
     }
 
@@ -298,6 +330,7 @@ public struct FileOrganizerFeatureView: View {
             FileOrganizerReceiptView(
                 receipt: executionReceipt,
                 onUndo: onUndoExecution,
+                undoAvailability: undoAvailability,
                 onNavigateToLedger: onNavigateToLedger
             )
         } else {

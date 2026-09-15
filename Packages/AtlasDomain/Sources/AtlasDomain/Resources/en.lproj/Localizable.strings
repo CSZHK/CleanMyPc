@@ -22,7 +22,7 @@
 "route.fileorganizer.subtitle" = "Automatically organize files on your Desktop and Downloads by type.";
 
 "risk.safe" = "Safe";
-"risk.review" = "Review";
+"risk.review" = "Needs Review";
 "risk.advanced" = "Advanced";
 
 "taskkind.scan" = "Smart Clean Scan";
@@ -77,7 +77,7 @@
 "fixture.recovery.simulatorSupport.detail" = "This item still needs review and will clear after one week.";
 "fixture.recovery.simulatorSupport.payload" = "Simulator support files waiting for review.";
 
-"fixture.permission.fullDiskAccess.rationale" = "Needed only when scanning system-wide caches, app leftovers, and protected Library paths.";
+"fixture.permission.fullDiskAccess.rationale" = "Needed only when scanning caches macOS creates on its own, app leftovers, and protected system locations.";
 "fixture.permission.accessibility.rationale" = "Needed later for app uninstall flows that need to close running apps safely.";
 "fixture.permission.notifications.rationale" = "Used for long-running task completion and recovery reminders.";
 
@@ -119,7 +119,7 @@
 "application.apps.uninstallCompleted" = "App uninstall completed.";
 
 "infrastructure.permission.fullDiskAccess.granted" = "Atlas can inspect protected user data locations required for broader cleanup coverage.";
-"infrastructure.permission.fullDiskAccess.needed" = "Needed only when scanning protected Library areas such as Mail, Safari, or Messages data. If you just enabled it in System Settings, fully quit and reopen Atlas before you check again.";
+"infrastructure.permission.fullDiskAccess.needed" = "Needed only when scanning protected system data such as Mail, Safari, or Messages, plus deeper locations. If you just enabled it in System Settings, fully quit and reopen Atlas before you check again.";
 "infrastructure.permission.accessibility.granted" = "Atlas can coordinate app shutdown for safer uninstall flows.";
 "infrastructure.permission.accessibility.needed" = "Needed later when uninstall flows must close running apps safely before cleanup.";
 "infrastructure.permission.notifications.granted" = "Atlas can send completion and recovery reminders for long-running tasks.";
@@ -227,18 +227,14 @@
 "model.taskcenter.active.other" = "%d active tasks";
 
 "taskcenter.title" = "Task Center";
-"taskcenter.callout.empty.title" = "No matching task activity";
-"taskcenter.callout.empty.detail" = "Run a scan, run a cleanup plan, uninstall an app, or restore an item to start the task timeline.";
 "taskcenter.callout.active.title" = "Recent task activity stays visible here";
 "taskcenter.callout.active.detail" = "Open Ledger for the full audit trail and available recovery items.";
 "taskcenter.empty.title" = "No tasks yet";
-"taskcenter.empty.detail" = "Try another search, or run a new Smart Clean scan to populate the task timeline.";
+"taskcenter.empty.detail" = "Run a Smart Clean scan to populate the task timeline.";
 "taskcenter.openHistory" = "Open Ledger";
 "taskcenter.openHistory.hint" = "Moves to the Ledger screen with the full audit trail and recovery items.";
 "taskcenter.openLedger" = "Open Ledger";
 "taskcenter.openLedger.hint" = "Moves to the Ledger screen with the full audit trail and recovery items.";
-"toolbar.receipt.help" = "Receipt code of this module's latest scan";
-"toolbar.receipt.accessibilityLabel" = "Scan receipt %@";
 "taskcenter.planNumber.a11y" = "Plan number %d";
 "taskcenter.timeline.finished" = "Started %@ • Finished %@";
 "taskcenter.timeline.running" = "Started %@ • Still in progress";
@@ -324,7 +320,7 @@
 "overview.feed.metric.running" = "In progress";
 
 "overview.recommend.permission.headline" = "Authorize to unlock full features";
-"overview.recommend.permission.rationale" = "At least one required permission is still missing, so Atlas stays in restricted mode.";
+"overview.recommend.permission.rationale" = "At least one required permission is still missing. You can keep going without it — in limited mode, scans and cleanups still run, just over a smaller scope.";
 "overview.recommend.permission.primary" = "Go to permissions";
 
 "overview.recommend.plan.headline" = "Run No. %d — your plan is ready";
@@ -435,6 +431,8 @@
 "apps.inventory.title" = "App Inventory";
 "apps.inventory.subtitle" = "Refresh the inventory, then choose one app at a time instead of making uninstall decisions in a long list.";
 "apps.loading.title" = "Refreshing app footprints";
+"apps.outcome.failed.title" = "The app action did not complete";
+"apps.outcome.advisory.title" = "The app action needs attention";
 "apps.metric.listed.title" = "Apps Listed";
 "apps.metric.listed.detail" = "Installed apps Atlas can inspect and turn into uninstall plans.";
 "apps.metric.footprint.title" = "Total App Footprint";
@@ -498,7 +496,7 @@
 "apps.restore.refresh.pending.title" = "Refreshing restored app evidence";
 "apps.restore.refresh.pending.detail" = "Atlas restored %@ and is refreshing the current app inventory before it reuses leftover counts.";
 "apps.restore.refresh.refreshed.title" = "Restored app evidence refreshed";
-"apps.restore.refresh.refreshed.detail" = "Atlas refreshed %@ after restore. The current inventory shows %2$d leftover item(s), and Atlas had recorded %3$d item(s) when the uninstall evidence was captured.";
+"apps.restore.refresh.refreshed.detail" = "Atlas refreshed %@ after restore: the current inventory shows %2$d leftover item(s), while the uninstall record holds %3$d. The two counts come from different sources (a fresh scan vs. the evidence captured at uninstall time), so a difference is expected.";
 "apps.restore.refresh.stale.title" = "Restored app evidence needs another refresh";
 "apps.restore.refresh.stale.detail" = "Atlas restored %@, but the current app inventory could not confirm fresh leftover evidence. Atlas keeps the recorded uninstall evidence in Ledger and treats the old count of %d item(s) as stale for now.";
 "apps.restore.refresh.recorded.title" = "Recorded at uninstall";
@@ -539,7 +537,7 @@
 "ledger.archive.hint" = "Expand or collapse older archived records.";
 "ledger.filter.all" = "All";
 "ledger.filter.recoverable" = "Can Restore";
-"ledger.filter.archive" = "Archive";
+"ledger.filter.archive" = "Expired";
 "ledger.metric.activity.title" = "Visible events";
 "ledger.metric.activity.detail.empty" = "Run a scan or cleanup action to build the audit trail.";
 "ledger.metric.activity.detail.latest" = "Latest update %@";
@@ -621,6 +619,7 @@
 "permissions.callout.limited.detail" = "At least one permission required for the current workflows is still unavailable. You can keep browsing and doing partial scans, but deeper actions stay limited until the status refreshes.";
 "permissions.next.title" = "Next Step";
 "permissions.next.subtitle" = "Show the one access decision that matters most right now, then keep the rest in context.";
+"permissions.outcome.failed.title" = "Could not read the current permission state";
 "permissions.next.missing.title" = "Next: %@";
 "permissions.next.ready.title" = "No urgent permission work";
 "permissions.next.ready.detail" = "%d of %d tracked permissions are already available.";
@@ -631,7 +630,7 @@
 "permissions.metric.granted.detail" = "Permissions Atlas can already rely on for the current workflow set.";
 "permissions.metric.required.title" = "Required Now";
 "permissions.metric.required.detail" = "The core permissions that decide whether Atlas can leave limited mode.";
-"permissions.metric.later.title" = "Not Needed Yet";
+"permissions.metric.later.title" = "Can be granted later";
 "permissions.metric.later.detail" = "These can stay off without putting Atlas into limited mode until a related workflow asks for them.";
 "permissions.metric.tracked.title" = "Tracked Permissions";
 "permissions.metric.tracked.detail" = "The minimum set Atlas surfaces for the current workflows.";
@@ -642,8 +641,8 @@
 "permissions.optionalSection.title" = "Can Wait";
 "permissions.optionalSection.subtitle" = "Keep these collapsed until a related workflow actually needs them.";
 "permissions.optionalSection.disclosure" = "Optional permissions";
-"permissions.optionalSection.count.one" = "%d pending";
-"permissions.optionalSection.count.other" = "%d pending";
+"permissions.optionalSection.count.one" = "%d permission can be granted later";
+"permissions.optionalSection.count.other" = "%d permissions can be granted later";
 "permissions.status.title" = "Permission Details";
 "permissions.status.subtitle" = "Each card explains what the permission unlocks, when it matters, and whether it can wait.";
 "permissions.empty.title" = "No matching permission states";
@@ -655,7 +654,7 @@
 "permissions.status.optional" = "Can Wait";
 "permissions.grant.action" = "Open System Settings";
 "permissions.grant.notifications" = "Request Notifications";
-"permissions.support.fullDiskAccess" = "Needed only when you want deeper coverage in protected Library locations. If you just enabled it, fully quit and reopen Atlas before checking again.";
+"permissions.support.fullDiskAccess" = "Needed only when you want Atlas to scan protected system locations. If you just enabled it, fully quit and reopen Atlas before checking again.";
 "permissions.support.accessibility" = "Needed later when Atlas must close running apps safely before uninstalling.";
 "permissions.support.notifications" = "Optional, but useful for long-running task and recovery reminders.";
 
@@ -722,9 +721,7 @@
 "confirm.title" = "Confirm";
 "confirm.cancel" = "Cancel";
 "smartclean.confirm.execute.title" = "Run this cleanup plan?";
-"smartclean.confirm.execute.message" = "This will process the reviewed plan. Recoverable items stay visible in Ledger, and on-disk restore is available only when Atlas has a supported recovery path.";
 "apps.confirm.uninstall.title" = "Uninstall this app?";
-"apps.confirm.uninstall.message" = "This will remove %@. Review-only leftover evidence stays visible in the plan, and Atlas records the uninstall in Ledger.";
 "emptystate.action.scan" = "Run Smart Clean";
 "emptystate.action.refresh" = "Refresh Apps";
 "emptystate.action.viewHistory" = "View Ledger";
@@ -943,7 +940,6 @@
 "fileorganizer.preview.empty.detail" = "Scan and classify files first, then preview the move plan.";
 
 "fileorganizer.confirm.execute.title" = "Execute file organization?";
-"fileorganizer.confirm.execute.message" = "Files will be moved according to the classification plan. You can restore original locations from Ledger.";
 
 "fileorganizer.folderpicker.title" = "Select folders to organize";
 "fileorganizer.folderpicker.default.desktop" = "Desktop";
@@ -967,6 +963,7 @@
 
 // File Organizer - execution states
 "fileorganizer.status.executionFailed" = "File organization could not be completed";
+"fileorganizer.undo.unavailable.title" = "This run has nothing left to undo";
 "fileorganizer.callout.empty.title" = "No files found to organize";
 "fileorganizer.callout.empty.detail" = "Try selecting different folders, or make sure the selected folders contain files.";
 "fileorganizer.status.executionComplete" = "File organization completed";
@@ -990,7 +987,7 @@
 
 "fileorganizer.recursive.title" = "Include Subfolders";
 
-"fileorganizer.conflict.exists" = "A file with this name already exists at: %@";
+"fileorganizer.conflict.exists" = "A file with the same name is already at the destination; it will be renamed automatically — nothing is overwritten: %@";
 "fileorganizer.conflict.callout.title" = "%d files have destination conflicts";
 "fileorganizer.conflict.callout.detail" = "Conflicting files will be renamed automatically (e.g. filename (1).png). Deselect entries to skip them.";
 
@@ -1020,7 +1017,7 @@
 "fileorganizer.insight.large.summary" = "%d large file(s) detected (%@)";
 "fileorganizer.insight.large.badge" = "Large file";
 "fileorganizer.insight.duplicate.summary" = "%d possible duplicate(s) detected (same name & size)";
-"fileorganizer.insight.duplicate.badge" = "Duplicate";
+"fileorganizer.insight.duplicate.badge" = "Same name & size";
 "fileorganizer.ruleeditor.priority.hint" = "Rules are applied top-to-bottom. Drag to reorder priority.";
 "fileorganizer.ruleeditor.import.title" = "Import";
 "fileorganizer.ruleeditor.export.title" = "Export";
@@ -1069,7 +1066,7 @@
 "fileorganizer.receipt.items.label" = "Moved items";
 "fileorganizer.receipt.items.value" = "%d items";
 "fileorganizer.receipt.failed.label" = "Unmoved items";
-"fileorganizer.receipt.failed.value" = "%d failed (retryable)";
+"fileorganizer.receipt.failed.value" = "%d still in their original location";
 "fileorganizer.receipt.completed.label" = "Completed";
 "fileorganizer.receipt.code.label" = "Receipt number";
 "fileorganizer.receipt.moved.metric" = "%d items moved";
@@ -1232,7 +1229,7 @@
 "permissions.evidence.section.status" = "Status";
 "permissions.evidence.section.scope" = "Impact scope";
 "permissions.evidence.section.authorize" = "How to authorize";
-"permissions.evidence.scope.fullDiskAccess" = "Scans protected Library areas (Mail, Safari, Messages, and other system data) and deeper app remnants.";
+"permissions.evidence.scope.fullDiskAccess" = "Scans protected system data such as Mail, Safari, or Messages, plus deeper app remnants.";
 "permissions.evidence.scope.accessibility" = "Triggered only when an uninstall flow needs to safely quit a running app first.";
 "permissions.evidence.scope.notifications" = "Completion and recovery reminders for long tasks; does not affect scanning or cleanup.";
 "permissions.evidence.authorize.fullDiskAccess" = "In System Settings › Privacy & Security › Full Disk Access, enable Atlas, then fully quit and reopen Atlas.";
@@ -1241,3 +1238,105 @@
 "settings.recovery.footprint.title" = "Recovery footprint";
 "settings.recovery.footprint.detail" = "Total size of recoverable results currently recorded (mono).";
 "settings.recovery.footprint.empty" = "No recoverable items";
+
+// MARK: - REQ-ux-friction-remediation Wave 1 (contracts 1/2/3; wording from terminology-baseline.md §3 N-1..N-6)
+
+// Contract 1 §1.2(2) undo availability — disabled reason and absence note
+"action.undo.unavailable.noRecoverableItem" = "Nothing from this run can be restored";
+"action.undo.notApplicable.note" = "This kind of action has nothing to restore";
+
+// Contract 1 §1.2(3) exit layer — minimum usable facts on failure
+"action.receipt.missing.title" = "No receipt was created for this run";
+"action.receipt.missing.counts" = "%d selected · outcome could not be confirmed";
+
+// Contract 1 §1.2(4) the two restore kinds must be distinguishable
+
+// Contract 2 §2.2(1) the four questions
+"confirm.destructive.object.app" = "This removes the %@ app bundle";
+"confirm.destructive.object.files" = "This moves %d files";
+"confirm.destructive.object.items" = "This cleans the %d selected items";
+"confirm.destructive.destination" = "Moves to: %@";
+"confirm.destructive.recovery" = "Restorable from the Ledger for %d days";
+"confirm.destructive.recovery.none" = "No restore point is created — this cannot be undone";
+"confirm.destructive.recoverableCount" = "%d of %d items recoverable";
+
+// Contract 2 §2.2(2) label–consequence match (P1-10)
+"smartclean.stage.actionbar.rescan.destructive" = "Supersede and Rescan";
+
+// Contract 3 (1) the banner can be deferred (N-1)
+"overview.recommend.permission.later" = "Not now";
+
+// Contract 3 (3) in-app preamble before a system authorization prompt (N-2)
+"fileorganizer.scan.preamble.title" = "macOS will ask for folder access next";
+"fileorganizer.scan.preamble.detail" = "The system is asking whether Atlas may read the folder you picked. That is macOS privacy protection, not Atlas requesting extra access. You can choose “Don’t Allow” now and grant it later.";
+
+// Contract 1 §1.2(1): non-error title for `.advisory` (NEW-1)
+"smartclean.scan.advisory.title" = "Limited mode: narrower scan";
+"fileorganizer.scan.advisory.title" = "Limited mode: narrower scan";
+
+// Contract 1 §1.2(3)(4): the Ledger presents its own restore result (P0-1 UI half + P1-17)
+"ledger.restore.onDisk.title" = "Restored to the original location";
+"ledger.restore.onDisk.detail" = "Moved %d item(s) out of recovery, back to where they came from.";
+"ledger.restore.atlasOnly.title" = "Restored in Atlas · no files were moved";
+"ledger.restore.atlasOnly.detail" = "This only updated the record for %d item(s) inside Atlas — no files were moved on disk.";
+"ledger.restore.failed.title" = "The restore did not complete";
+
+// Contract 2 §2.2(1): ② destination for actions on recoverable item sets
+"confirm.destructive.destination.recoveryArea" = "Moves to the recovery area (kept %d days)";
+
+// P1-15: expired recovery item = an unrecoverable end state (split from "Archived")
+"ds.ledger.status.expired" = "Expired";
+
+// P1-4: the count must share the title's framing (the old title was a category name)
+"permissions.metric.later.value" = "%d";
+
+// P1-12: File Organizer's own configuration-section copy (was borrowing Smart Clean's)
+"fileorganizer.controls.title" = "Folders & destination";
+"fileorganizer.controls.summary" = "Organizes into %@";
+
+// P1-7: Smart Clean step 2 gets select-all / deselect-all (parity with File Organizer)
+"smartclean.action.selectAll" = "Select All";
+"smartclean.action.deselectAll" = "Deselect All";
+"smartclean.selection.count" = "%d of %d selected";
+
+// P1-9: determinate information during execution (elapsed) + the bar must stay actionable
+"smartclean.loading.execute.elapsed" = "Running the reviewed cleanup plan · %@ elapsed";
+"smartclean.stage.actionbar.viewLedger" = "View Ledger";
+
+// P1-6: second-step guidance after returning from System Settings unchanged
+"permissions.afterReturn.title" = "You visited System Settings, but this permission is still not active";
+"permissions.afterReturn.detail" = "Two common causes: Atlas wasn't fully quit and reopened after you enabled it, or a different permission was toggled. This page refreshes automatically when you come back.";
+
+// P1-16: pruned expired recovery items must not vanish silently
+"ledger.prune.notice.title" = "Expired records were cleaned up";
+"ledger.prune.notice.message" = "%d expired records were cleaned up. They passed the retention window and can no longer be restored — Atlas does not keep those files for you, so restore anything you still need before the window closes.";
+// F-08: dismissal is an explicit user action (no longer automatic on appear)
+"ledger.prune.notice.dismiss" = "Got it";
+
+// Wave 3 / P2-7: make the selection model explicit
+"fileorganizer.selection.unchecked.hint" = "Files you leave unchecked stay in place.";
+// Wave 3 / P2-14: truncation must be stated
+"taskcenter.more" = "%d more";
+
+// Wave 3 / P2-13: the version must be visible on the About screen
+"about.version.label" = "Version %@";
+
+// Wave 3 / P2-6: the estimate must be split from measured facts (I-10 anchor)
+"smartclean.receipt.estimated.groupLabel" = "Estimate (not measured)";
+
+// Wave 3 / P2-12: the exclusions list was read-only with no way to add one
+"settings.exclusions.add.placeholder" = "~/Projects/some-folder";
+"settings.exclusions.add.action" = "Add";
+"settings.exclusions.remove.action" = "Remove";
+
+// Wave 3 / P2-1: system-word explanations + an in-product glossary entry
+"glossary.title" = "Glossary";
+"glossary.subtitle" = "Words Atlas uses often but never explains.";
+"glossary.leftover.term" = "Leftovers";
+"glossary.leftover.definition" = "Support files, caches, and launch items left behind after an uninstall or cleanup.";
+"glossary.footprint.term" = "Footprint";
+"glossary.footprint.definition" = "All the disk space an app currently takes up.";
+"glossary.ledger.term" = "Ledger";
+"glossary.ledger.definition" = "Atlas's own record of what ran, and the place you restore from.";
+"glossary.evidence.term" = "Evidence";
+"glossary.evidence.definition" = "What Atlas found. Listing it does not remove it.";

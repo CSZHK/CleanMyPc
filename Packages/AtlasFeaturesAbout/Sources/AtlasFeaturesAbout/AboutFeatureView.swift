@@ -4,13 +4,31 @@ import SwiftUI
 
 public struct AboutFeatureView: View {
 
-    public init() {}
+    /// `P2-13`：版本号。此前 About 首屏是开发者卡 + 两张占满整屏的二维码卡，
+    /// `grep version|appVersion AboutFeatureView.swift` **零命中** —— 用户点「关于」
+    /// 多半是想找版本号/更新，却要滚动才看到产品信息、版本号还在右上角工具栏里。
+    private let versionText: String
+
+    public init(versionText: String = "") {
+        self.versionText = versionText
+    }
 
     public var body: some View {
         AtlasScreen(
             title: AtlasL10n.string("about.screen.title"),
             subtitle: AtlasL10n.string("about.screen.subtitle")
         ) {
+            if !versionText.isEmpty {
+                // 首屏第一项：版本号（`P2-13`）。macOS 惯例把它放在关于页最显眼处。
+                AtlasInfoCard(title: AtlasL10n.string("about.screen.title")) {
+                    Text(AtlasL10n.string("about.version.label", versionText))
+                        .font(AtlasTypography.dataBody)
+                        .monospacedDigit()
+                        .foregroundStyle(AtlasColor.textPrimary)
+                        .accessibilityIdentifier("about.version")
+                }
+            }
+
             AtlasInfoCard(
                 title: AtlasL10n.string("about.author.title")
             ) {

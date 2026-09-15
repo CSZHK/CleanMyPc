@@ -23,6 +23,10 @@ final class AtlasAppModel: ObservableObject {
     @Published private(set) var isHealthSnapshotRefreshing = false
     @Published private(set) var isScanRunning = false
     @Published private(set) var isPlanRunning = false
+    /// `P1-9`：执行开始时刻。破坏性操作进行中，worker **只在完成时**上报进度
+    /// （round-14 的注释已写明），因此「已处理计数 / 剩余时间估计」都没有真实数据；
+    /// 唯一确定性且真实可得的是**已用时**。用它替掉「空弧 + 一句话」。
+    @Published private(set) var planExecutionStartedAt: Date?
     @Published private(set) var isPermissionsRefreshing = false
     @Published private(set) var isAppActionRunning = false
     @Published private(set) var activePreviewAppID: UUID?
@@ -33,13 +37,17 @@ final class AtlasAppModel: ObservableObject {
     /// Set by AppShellView.onSelectLedgerEntry; cleared once the Ledger consumes
     /// it on appear (a plain var — navigation's route change drives the redraw).
     var pendingLedgerEntryID: String?
+    /// 契约一（规格 §1.2(1)）：**按 source 索引**的操作结果槽。写入必须指定 source，
+    /// 跨屏泄漏在类型层面不可表达 —— `P0-1` 的根因正是台账恢复失败被写进了
+    /// Smart Clean 的槽位（`String` 没有来源标识，无法路由）。
+    @Published private(set) var sourceOutcomes: [AtlasActionSource: AtlasSourceOutcomes] = [:]
+    /// 各 source 的**瞬时状态行**（就绪 / 扫描中 / 进度）。这是状态、不是结果，
+    /// 故不参与 outcome 路由；名字即 source，且不再被其他模块写入。
     @Published private(set) var latestScanSummary: String
     @Published private(set) var latestAppsSummary: String
     @Published private(set) var latestPermissionsSummary: String
     @Published private(set) var latestScanProgress: Double = 0
     @Published private(set) var isCurrentSmartCleanPlanFresh: Bool
-    @Published private(set) var smartCleanPlanIssue: String?
-    @Published private(set) var smartCleanExecutionIssue: String?
     // Smart-clean execution outcome (Batch I): drives the ④ receipt stage via
     // AtlasWorkflowStageMap resolve-on-render. Reset whenever a new scan starts
     // or the plan is superseded. The receipt holds only real execution facts
@@ -77,8 +85,6 @@ final class AtlasAppModel: ObservableObject {
     /// explicitly previews, so hasPreviewResults gates ③ (round-4 — previously
     /// `isPlanFresh && !items.isEmpty` collapsed ② into ③, skipping rules).
     @Published private(set) var fileOrganizerHasPreviewResults = false
-    @Published private(set) var fileOrganizerPlanIssue: String?
-    @Published private(set) var fileOrganizerExecutionIssue: String?
     @Published private(set) var scannedFolders: [String] = []
     /// FileOrganizer folder selection, persisted across route switches so an
     /// edited-but-not-yet-scanned selection is not lost on navigation (round-6
@@ -99,6 +105,55 @@ final class AtlasAppModel: ObservableObject {
     private let workspaceController: AtlasWorkspaceController
     private let updateChecker = AtlasUpdateChecker()
     private let ledgerNumberStore: any AtlasLedgerNumberStoring
+    /// `P1-16` 差分基线的存储域。**必须可注入**：默认是 `UserDefaults.standard`
+    /// （SPM 测试进程里即 `com.apple.dt.xctest.tool`，是**仓库外的持久 OS 状态**）。
+    private let userDefaults: UserDefaults
+
+    /// `F-03` 的**默认域**：生产走 `.standard`，**测试进程走独立 suite**。
+    ///
+    /// 为什么需要这层：`init` 会调用 `surfaceExpiredRecoveryPruneIfNeeded()`，
+    /// **写入**「见过的恢复项 id 集合」。若默认域是 `.standard`，则测试进程里
+    /// 每一个构造 `AtlasAppModel` 的用例都会往 `com.apple.dt.xctest.tool`
+    /// 这个**仓库外持久域**里写真实 UUID —— 于是用例的结论取决于跑过哪些用例、
+    /// 顺序如何、乃至上一次跑留下了什么。这正是 `F-03` 的根因，且**不止影响
+    /// 一个用例**：任何后来者（包括本机的上一次运行）留下的 id 都会成为
+    /// 「上次会话」的基线。
+    ///
+    /// 只在测试进程内改变默认值，**生产行为完全不变**。
+    ///
+    /// 判据是 `Bundle.main.bundleIdentifier == "com.apple.dt.xctest.tool"` ——
+    /// 这正是问题本身：xctest 宿主进程没有自己的 bundle id，于是 `.standard`
+    /// 解析到那个**所有 SwiftPM 测试共享**的域。（实测本机 SPM 测试进程里
+    /// `XCTestConfigurationFilePath` 并不存在，故不能靠它判断。）
+    ///
+    /// 两道收紧（审查 §8-3）：
+    /// 1. **整段 `#if DEBUG`** —— 与本文件其它测试接缝（`applyUITestFixtureIfNeeded`、
+    ///    `taskCenterTaskRuns`）一致。release 构建里这段**根本不参与编译**，
+    ///    而不是「编进去再靠运行期判据返回 `.standard`」。
+    /// 2. **一次性求值** —— 原实现是计算属性，`removePersistentDomain` 会**每次
+    ///    访问都执行**，即每次 `AtlasAppModel` 构造都清空进程内共享的那个 suite。
+    ///    对现有用例无碍（都在构造前播种），但对将来任何「需要在两次模型构造之间
+    ///    保留基线」的用例是个静默陷阱。改为 `static let` 只构造一次。
+    static var defaultUserDefaults: UserDefaults {
+        #if DEBUG
+        return testProcessDefaults ?? .standard
+        #else
+        return .standard
+        #endif
+    }
+
+    #if DEBUG
+    /// 测试进程的独立 suite，**只构造一次**。
+    private static let testProcessDefaults: UserDefaults? = {
+        guard Bundle.main.bundleIdentifier == "com.apple.dt.xctest.tool" else { return nil }
+        // 每个测试进程一个 suite：进程内的一致基线由用例自行注入，未注入的用例
+        // 也不必读别人的残留。进程结束即整域移除，不跨跑次残留。
+        let suiteName = "atlas.app.model.tests.\(ProcessInfo.processInfo.processIdentifier)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else { return nil }
+        defaults.removePersistentDomain(forName: suiteName)
+        return defaults
+    }()
+    #endif
     private let notificationPermissionRequester: @Sendable () async -> Bool
     private var filterCancellationToken: AnyCancellable?
     private var didRequestInitialHealthSnapshot = false
@@ -113,11 +168,13 @@ final class AtlasAppModel: ObservableObject {
         xpcRequestConfiguration: AtlasXPCRequestConfiguration = AtlasXPCRequestConfiguration(),
         xpcRequestExecutor: AtlasXPCDataRequestExecutor? = nil,
         notificationPermissionRequester: (@Sendable () async -> Bool)? = nil,
-        ledgerNumberStore: (any AtlasLedgerNumberStoring)? = nil
+        ledgerNumberStore: (any AtlasLedgerNumberStoring)? = nil,
+        userDefaults: UserDefaults? = nil
     ) {
         let state = repository.loadState()
         self.repository = repository
         self.ledgerNumberStore = ledgerNumberStore ?? AtlasUserDefaultsLedgerNumberStore()
+        self.userDefaults = userDefaults ?? Self.defaultUserDefaults
         self.snapshot = state.snapshot
         self.currentPlan = state.currentPlan
         self.settings = state.settings
@@ -127,8 +184,6 @@ final class AtlasAppModel: ObservableObject {
         self.latestAppRestoreRefreshStatus = nil
         self.latestPermissionsSummary = AtlasL10n.string("model.permissions.ready")
         self.isCurrentSmartCleanPlanFresh = false
-        self.smartCleanPlanIssue = nil
-        self.smartCleanExecutionIssue = nil
         self.fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.ready")
         self.currentFileOrganizerPlan = ActionPlan(title: "", items: [], estimatedBytes: 0)
         self.fileOrganizerRules = state.settings.fileOrganizerCustomRules ?? AtlasScaffoldFixtures.fileOrganizerRules
@@ -172,7 +227,229 @@ final class AtlasAppModel: ObservableObject {
                 self?.objectWillChange.send()
             }
         syncAppearance()
+        surfaceExpiredRecoveryPruneIfNeeded()
+        #if DEBUG
+        applyUITestFixtureIfNeeded()
+        #endif
     }
+
+    #if DEBUG
+    // MARK: - 守卫基座：UI 测试的状态注入（规格 §9 波次纪律第 4 条）
+
+    /// `I-2` / `I-3` 要断言的态是「**执行回执存在 + 无恢复项**」。
+    ///
+    /// 执行回执（`smartCleanExecutionReceipt` / `fileOrganizerExecutionReceipt`）是
+    /// **内存态、不落盘** —— `ATLAS_STATE_FILE` 的冷启动快照造不出来；而自然走到该态
+    /// 需要执行一次真实清理（破坏性操作）。故开一条**按启动环境变量驱动**的接缝。
+    ///
+    /// 只在 `#if DEBUG` 下编译：release 构建里不存在这个入口。
+    static let uiTestFixtureEnvironmentKey = "ATLAS_UI_TEST_FIXTURE"
+
+    /// 当前生效的 UI 测试 fixture。**只在读取侧消费**（见 `taskCenterTaskRuns`）——
+    /// 不存在「重载后重新施加」的叠加层：写入侧施加不可行（`snapshot = output.snapshot`
+    /// 有约 20 处，追着补是打地鼠），故改为在**消费点**按本值返回 fixture 内容，
+    /// 对重载次数完全免疫。
+    private var activeUITestFixture: String?
+
+    private func applyUITestFixtureIfNeeded() {
+        guard let fixture = ProcessInfo.processInfo.environment[Self.uiTestFixtureEnvironmentKey],
+              !fixture.isEmpty else { return }
+        activeUITestFixture = fixture
+        applyUITestFixture(fixture)
+    }
+    #endif
+
+    // MARK: - `P1-16`：过期恢复项被清理后不得静默消失
+    //
+    // ⚠️ **本段不得落在 `#if DEBUG` 内**（2026-09-15 修）：`P1-16` 是**产品功能**，
+    // 由 `init`（`surfaceExpiredRecoveryPruneIfNeeded`）与 `restoreRecoveryItemCore`
+    // （`forgetSeenRecoveryItem`）在 **release 可达路径**上调用。它此前被夹在上方
+    // 的 fixture 接缝与下方的 `applyUITestFixture` 两块 `#if DEBUG` 之间一并吞掉，
+    // 导致 **Release 构建编不过**（`cannot find 'forgetSeenRecoveryItem' in scope`）。
+    // 之所以长期没被发现：`swift test` 与 `xcodebuild build-for-testing` **都是 Debug 配置**，
+    // 全部验证路径都没碰过 Release。改动本文件时请确认 `#if DEBUG` 的配对边界。
+
+    /// 上一会话「见过」的恢复项 id。worker 的 `pruneExpiredRecoveryItemsIfNeeded`
+    /// 会在启动时把过期项直接删掉并落盘 —— 用户上次看到「即将到期」的记录会凭空
+    /// 不见，没有任何解释，于是怀疑 Atlas 弄丢了数据。
+    ///
+    /// 语义层不给 worker 加墓碑（规格 §1.3 禁止改其恢复语义），改在 **app 层**做
+    /// 差分：会话间比对 id 集合，消失的即为被清理的，据此给出提示。
+    static let seenRecoveryItemIDsKey = "atlas.ledger.seenRecoveryItemIDs"
+
+    /// `P1-16` 的**反面**：用户**主动恢复**的项同样会从 `recoveryItems` 里消失
+    /// （worker 恢复成功后 `removeAll { requestedItemIDs.contains($0.id) }`）。
+    /// 若不从「见过」集合里剔除，下次启动就会把它误报成「已被清理」——
+    /// 即：**「不见了」≠「被清理了」**，这是差分法的固有盲点，必须在恢复侧补偿。
+    private func forgetSeenRecoveryItem(_ itemID: UUID) {
+        let defaults = userDefaults
+        var seen = Set(defaults.stringArray(forKey: Self.seenRecoveryItemIDsKey) ?? [])
+        guard seen.remove(itemID.uuidString) != nil else { return }
+        defaults.set(Array(seen), forKey: Self.seenRecoveryItemIDsKey)
+    }
+
+    func surfaceExpiredRecoveryPruneIfNeeded() {
+        let defaults = userDefaults
+        let currentIDs = Set(snapshot.recoveryItems.map(\.id.uuidString))
+        let seenIDs = Set(defaults.stringArray(forKey: Self.seenRecoveryItemIDsKey) ?? [])
+
+        // 首次运行（seenIDs 为空）不报：那时没有「上次看到过」的记录可比。
+        if !seenIDs.isEmpty {
+            let disappeared = seenIDs.subtracting(currentIDs)
+            if !disappeared.isEmpty {
+                recordPlan(
+                    .ledger,
+                    kind: .advisory,
+                    message: AtlasL10n.string("ledger.prune.notice.message", disappeared.count)
+                )
+            }
+        }
+        defaults.set(Array(currentIDs), forKey: Self.seenRecoveryItemIDsKey)
+    }
+
+    #if DEBUG
+    /// internal（非 private）：单元测试可直接调用，把「fixture 是否真的产出目标态」
+    /// 的排查从每次 ~60s 的 UI 运行降回秒级 —— 守卫基座自身的可调试性。
+    func applyUITestFixture(_ fixture: String) {
+        switch fixture {
+        case "receipt-no-recovery":
+            applyReceiptNoRecoveryFixture()
+        case "review-executable":
+            applyReviewExecutableFixture()
+        case "taskcenter-many-runs":
+            break   // 内容由 `taskCenterTaskRuns` 在读取侧施加
+        default:
+            assertionFailure("Unknown \(Self.uiTestFixtureEnvironmentKey): \(fixture)")
+        }
+    }
+
+    /// 让 Smart Clean ④ 与 File Organizer ⑤ 同时落在「回执存在、**无**恢复项」的终态。
+    private func applyReceiptNoRecoveryFixture() {
+        let now = Date()
+
+        smartCleanExecutionCompleted = true
+        smartCleanExecutionReceipt = SmartCleanExecutionReceipt(
+            planNumber: 1,
+            receiptCode: "#A1F3",
+            completedAt: now,
+            executedItemCount: 1,
+            estimatedFreedBytes: 4_096,
+            summary: "UI test fixture receipt (no restore point)",
+            recoveryItemIDs: [],   // ← 关键：无恢复项 ⇒ hasRestorePoint == false
+            recoveryBytes: 0,
+            retentionDays: settings.recoveryRetentionDays,
+            failureReason: nil
+        )
+
+        fileOrganizerExecutionCompleted = true
+        fileOrganizerExecutionReceipt = FileOrganizerExecutionReceipt(
+            planNumber: 2,
+            receiptCode: "#B2C4",
+            completedAt: now,
+            movedItemCount: 1,
+            summary: "UI test fixture receipt (no restore point)",
+            failureReason: nil,
+            failedItemCount: 0
+        )
+
+        // `displayedStage` 必须显式落到回执段：`effectiveStage` 在 displayedStage 落后于
+        // currentStage 时走的是 read-only 回看分支，不会渲染回执。
+        updateWorkflowState(for: .smartClean) { $0.displayedStage = SmartCleanStage.receipt }
+        updateWorkflowState(for: .fileOrganizer) { $0.displayedStage = FileOrganizerStage.receipt }
+    }
+    /// `taskcenter-many-runs` 的内容：7 条已完成任务，时间戳递减。
+    ///
+    /// **纯函数、不写 snapshot** —— 由 `taskCenterTaskRuns` 在读取时施加，
+    /// 因而对 worker 的任何次快照重载都免疫。
+    private static func uiTestFixtureTaskRuns() -> [TaskRun] {
+        let now = Date()
+        return (0..<7).map { index in
+            TaskRun(
+                id: UUID(),
+                kind: .scan,
+                status: .completed,
+                summary: "UI test fixture run \(index)",
+                startedAt: now.addingTimeInterval(TimeInterval(-600 * (index + 1))),
+                finishedAt: now.addingTimeInterval(TimeInterval(-600 * (index + 1) + 30))
+            )
+        }
+    }
+
+    /// Smart Clean ② 复核页：可执行的新鲜计划 —— 用于打开破坏性确认弹窗（`I-4`）。
+    ///
+    /// 冷启动时计划一律是 cached（`isCurrentSmartCleanPlanFresh == false`），
+    /// 主按钮因此置灰、弹窗不可达，故必须由接缝注入「新鲜 + 有可执行目标」。
+    private func applyReviewExecutableFixture() {
+        // **从当前快照里真实存在的 findings 派生**计划与选中集 —— 不要自造一条。
+        //
+        // 踩过的坑（保留了错误实现的教训）：首版自造了一条带 `targetPaths` 的 finding，
+        // 在实机里按钮显示「执行已选 **0** 项」并置灰。原因是全新状态文件下 app 落到
+        // **脚手架工作区**（`AtlasScaffoldWorkspace`），启动后的 reload 带回的是 4 条
+        // 脚手架 findings；自造 finding 的 id 不在其中 ⇒
+        // `selectedFindingIDs = state.selectedIDs ∩ findings.ids` 求交集后归零。
+        // 从真实 findings 派生后，选中集与计划在任何 reload 之后都自洽。
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        var findings = snapshot.findings
+        if findings.isEmpty {
+            let synthetic = Finding(
+                id: UUID(uuidString: "40000000-0000-0000-0000-0000000000AA") ?? UUID(),
+                title: "UI fixture cache",
+                detail: "UI fixture",
+                bytes: 2_048,
+                risk: .safe,
+                category: "Developer tools",
+                targetPaths: ["\(home)/Library/Caches/atlas-ui-fixture/0.bin"]
+            )
+            findings = [synthetic]
+        }
+
+        let items = findings.enumerated().map { index, finding in
+            // 目标路径显式给，且落在 home 内、不在 helperRoots 里 ⇒
+            // `ActionItem.executionBoundary` 推导为 `.direct`（可执行）。
+            let target = "\(home)/Library/Caches/atlas-ui-fixture/\(index).bin"
+            return ActionItem(
+                id: finding.id,
+                title: finding.title,
+                detail: finding.detail,
+                kind: .removeCache,
+                recoverable: true,
+                targetPaths: [target],
+                evidencePaths: [target]
+            )
+        }
+        let plan = ActionPlan(
+            title: "Review \(items.count) selected findings",
+            items: items,
+            estimatedBytes: findings.reduce(Int64(0)) { $0 + $1.bytes }
+        )
+
+        // 落到真相源：启动后的 snapshot/currentPlan reload 会整体换掉内存态。
+        let fixtureState = AtlasWorkspaceState(
+            snapshot: AtlasWorkspaceSnapshot(
+                reclaimableSpaceBytes: snapshot.reclaimableSpaceBytes,
+                findings: findings,
+                apps: snapshot.apps,
+                taskRuns: snapshot.taskRuns,
+                recoveryItems: snapshot.recoveryItems,
+                permissions: snapshot.permissions,
+                healthSnapshot: snapshot.healthSnapshot
+            ),
+            currentPlan: plan,
+            settings: settings
+        )
+        _ = try? repository.saveState(fixtureState)
+        snapshot = fixtureState.snapshot
+        currentPlan = plan
+        isCurrentSmartCleanPlanFresh = true
+
+        updateWorkflowState(for: .smartClean) { state in
+            state.displayedStage = SmartCleanStage.review
+            state.planNumber = 1
+            state.receiptCode = "#C3D5"
+            state.selectedIDs = Set(findings.map(\.id.uuidString))
+        }
+    }
+    #endif
 
     var appLanguage: AtlasLanguage {
         settings.language
@@ -255,7 +532,17 @@ final class AtlasAppModel: ObservableObject {
     }
 
     var taskCenterTaskRuns: [TaskRun] {
-        snapshot.taskRuns
+        #if DEBUG
+        // 守卫基座：在**读取侧**施加 fixture。
+        //
+        // 写入侧施加不可行 —— `snapshot = output.snapshot` 在 worker 的 health /
+        // permissions / scan / execute 等路径上共有约 20 处，追着补是打地鼠
+        // （实测追 2 处后仍被冲掉）。在消费点施加则对重载次数完全免疫。
+        if activeUITestFixture == "taskcenter-many-runs" {
+            return Self.uiTestFixtureTaskRuns()
+        }
+        #endif
+        return snapshot.taskRuns
     }
 
     var taskCenterSummary: String {
@@ -357,11 +644,23 @@ final class AtlasAppModel: ObservableObject {
                 output.snapshot.permissions.count
             )
         } catch {
+            // `CT-07`：`.permissions` 此前**零生产零读取** —— 权限巡检失败只写进
+            // `latestPermissionsSummary`（不带 source 标识的状态行），与 `P0-1`
+            // 的根因同类：**失败信息挂在一个谁都可以覆盖的摘要串上**。
+            // 权限屏**只订阅 `.permissions` 自己的结果**，跨屏泄漏在类型层面不可表达。
             latestPermissionsSummary = error.localizedDescription
+            recordExecution(.permissions, kind: .failed, message: error.localizedDescription)
         }
 
         isPermissionsRefreshing = false
     }
+
+    /// `CT-07`：权限屏自己的结果槽。
+    var permissionsOutcome: AtlasActionOutcome? { outcome(for: .permissions) }
+
+    /// File Organizer 的权限就绪判定 —— 与 `smartCleanRequiredPermissionsReady`
+    /// **同判据**（`P2-8`：两个破坏性模块此前对同一件事规则不同）。
+    private var fileOrganizerRequiredPermissionsReady: Bool { smartCleanRequiredPermissionsReady }
 
     /// 必需权限（完全磁盘访问等）是否就绪。未就绪时扫描会缓慢且范围受限
     /// （bug `limited-mode-scan-hang` 的环境诱因）。
@@ -379,7 +678,7 @@ final class AtlasAppModel: ObservableObject {
         isScanRunning = true
         latestScanSummary = AtlasL10n.string("model.scan.submitting")
         latestScanProgress = 0
-        smartCleanExecutionIssue = nil
+        clearExecution(.smartClean)
         // A new scan cycle supersedes the previous execution outcome (§2.3).
         smartCleanExecutionCompleted = false
         smartCleanExecutionReceipt = nil
@@ -387,7 +686,7 @@ final class AtlasAppModel: ObservableObject {
         // 受限模式软提示（非阻断）：未授权完全磁盘访问时扫描可能缓慢且范围受限。
         // 此前用户在受限模式下只看到静态「正在开始…」文案并误判为卡死。
         if !smartCleanRequiredPermissionsReady {
-            smartCleanPlanIssue = AtlasL10n.string("model.scan.limited.permissions")
+            recordPlan(.smartClean, kind: .advisory, message: AtlasL10n.string("model.scan.limited.permissions"))
         }
 
         // 计时进度反馈（bug limited-mode-scan-hang）：clean.sh 是黑盒子子进程，
@@ -411,8 +710,8 @@ final class AtlasAppModel: ObservableObject {
                 latestScanSummary = output.summary
                 latestScanProgress = output.progressFraction
                 isCurrentSmartCleanPlanFresh = output.actionPlan != nil
-                smartCleanPlanIssue = nil
-                smartCleanExecutionIssue = nil
+                clearPlan(.smartClean)
+                clearExecution(.smartClean)
             }
             if output.actionPlan != nil {
                 // Scan produced a plan → assign ledger № + scan receipt (§2.3),
@@ -426,7 +725,7 @@ final class AtlasAppModel: ObservableObject {
         } catch {
             latestScanSummary = error.localizedDescription
             latestScanProgress = 0
-            smartCleanPlanIssue = error.localizedDescription
+            recordPlan(.smartClean, kind: .failed, message: error.localizedDescription)
         }
 
         isScanRunning = false
@@ -438,7 +737,7 @@ final class AtlasAppModel: ObservableObject {
     /// controller API, FileOrganizer-style optional parameter).
     @discardableResult
     func refreshPlanPreview(findingIDs: [UUID]? = nil) async -> Bool {
-        smartCleanExecutionIssue = nil
+        clearExecution(.smartClean)
         do {
             let output = try await workspaceController.previewPlan(findingIDs: findingIDs ?? snapshot.findings.map(\.id))
             withAnimation(.snappy(duration: 0.24)) {
@@ -447,8 +746,8 @@ final class AtlasAppModel: ObservableObject {
                 latestScanSummary = output.summary
                 latestScanProgress = min(max(latestScanProgress, 1), 1)
                 isCurrentSmartCleanPlanFresh = true
-                smartCleanPlanIssue = nil
-                smartCleanExecutionIssue = nil
+                clearPlan(.smartClean)
+                clearExecution(.smartClean)
             }
             if workflowState(for: .smartClean).planNumber == nil, !output.actionPlan.items.isEmpty {
                 // First numbered appearance of this plan (cached findings
@@ -462,7 +761,7 @@ final class AtlasAppModel: ObservableObject {
             return true
         } catch {
             latestScanSummary = error.localizedDescription
-            smartCleanPlanIssue = error.localizedDescription
+            recordPlan(.smartClean, kind: .failed, message: error.localizedDescription)
             return false
         }
     }
@@ -474,7 +773,8 @@ final class AtlasAppModel: ObservableObject {
 
         selection = .smartClean
         isPlanRunning = true
-        smartCleanExecutionIssue = nil
+        planExecutionStartedAt = Date()
+        clearExecution(.smartClean)
         // Narrow-layout drawer residue (review fix #12): collapse the evidence
         // drawer when execution starts so the progress/receipt view isn't
         // obscured by a stale evidence panel left open from ②.
@@ -491,8 +791,8 @@ final class AtlasAppModel: ObservableObject {
                 snapshot = output.snapshot
                 latestScanSummary = output.summary
                 latestScanProgress = output.progressFraction
-                smartCleanPlanIssue = nil
-                smartCleanExecutionIssue = nil
+                clearPlan(.smartClean)
+                clearExecution(.smartClean)
             }
             let newRecoveryItems = output.snapshot.recoveryItems.filter { !recoveryIDsBefore.contains($0.id) }
             let receipt = SmartCleanExecutionReceipt(
@@ -521,7 +821,7 @@ final class AtlasAppModel: ObservableObject {
             }
         } catch {
             latestScanSummary = error.localizedDescription
-            smartCleanExecutionIssue = error.localizedDescription
+            recordExecution(.smartClean, kind: .failed, message: error.localizedDescription)
             // Partial-completion receipt (③ error → 「查看回执」, spec §2.3):
             // failure reason only — no invented recovery facts (fail-closed).
             smartCleanExecutionReceipt = SmartCleanExecutionReceipt(
@@ -539,6 +839,7 @@ final class AtlasAppModel: ObservableObject {
         }
 
         isPlanRunning = false
+        planExecutionStartedAt = nil
     }
 
     /// 「已入账 №N · 撤销」 global toast (spec §2.3 Undo): tap opens the ledger
@@ -737,12 +1038,116 @@ final class AtlasAppModel: ObservableObject {
         isAppActionRunning = false
     }
 
+    // MARK: - 契约一：按 source 索引的结果写入（规格 §1.2(1)）
+
+    /// 计划层结果写入。`source` 是必填参数 —— 没有“写到别的屏”这个形状。
+    private func recordPlan(
+        _ source: AtlasActionSource,
+        kind: AtlasActionOutcomeKind,
+        message: String,
+        recovery: AtlasActionRecovery? = nil
+    ) {
+        var entry = sourceOutcomes[source] ?? AtlasSourceOutcomes()
+        entry.plan = AtlasActionOutcome(source: source, kind: kind, message: message, recovery: recovery)
+        sourceOutcomes[source] = entry
+    }
+
+    /// 执行层结果写入。
+    private func recordExecution(
+        _ source: AtlasActionSource,
+        kind: AtlasActionOutcomeKind,
+        message: String,
+        recovery: AtlasActionRecovery? = nil
+    ) {
+        var entry = sourceOutcomes[source] ?? AtlasSourceOutcomes()
+        entry.execution = AtlasActionOutcome(source: source, kind: kind, message: message, recovery: recovery)
+        sourceOutcomes[source] = entry
+    }
+
+    private func clearPlan(_ source: AtlasActionSource) {
+        guard var entry = sourceOutcomes[source] else { return }
+        entry.plan = nil
+        if entry.isEmpty { sourceOutcomes[source] = nil } else { sourceOutcomes[source] = entry }
+    }
+
+    private func clearExecution(_ source: AtlasActionSource) {
+        guard var entry = sourceOutcomes[source] else { return }
+        entry.execution = nil
+        if entry.isEmpty { sourceOutcomes[source] = nil } else { sourceOutcomes[source] = entry }
+    }
+
+    /// 某 source 的最近一次结果（执行层优先）。
+    func outcome(for source: AtlasActionSource) -> AtlasActionOutcome? {
+        sourceOutcomes[source]?.latest
+    }
+
+    /// Smart Clean 计划层结果。**视图必须按 kind 分流**：
+    /// `.advisory` 走 `AtlasCallout(tone: .warning)`，只有 `.failed` 走 `AtlasErrorState`
+    /// （`NEW-1`：受限模式软提示曾被一律渲染成失败标题）。
+    var smartCleanPlanOutcome: AtlasActionOutcome? { sourceOutcomes[.smartClean]?.plan }
+    var fileOrganizerPlanOutcome: AtlasActionOutcome? { sourceOutcomes[.fileOrganizer]?.plan }
+    /// 台账自己的结果槽（`P0-1`：此前台账恢复失败没有任何槽位可写）。
+    var ledgerOutcome: AtlasActionOutcome? { outcome(for: .ledger) }
+    /// Apps 自己的结果槽（`F-07`：`recordExecution(.apps, …)` 此前只写不读）。
+    var appsOutcome: AtlasActionOutcome? { outcome(for: .apps) }
+
+    /// `F-08`：`P1-16` 的台账过期清理 advisory 此前**只写不出清** ——
+    /// `clearPlan(.ledger)` 全仓零命中，用户进过一次台账后，那条横幅会
+    /// 一直挂在台账屏上，跨导航、跨会话都不消失。
+    ///
+    /// **出清时机 = 用户在台账屏上真正看到过它。** 判据放在**视图的
+    /// `onAppear`**，而不是「写入后 N 秒」或「下一次启动」：
+    /// 契约五 §5.2 第 10 条要求的是「不静默消失」（保留可见性），
+    /// 不是「永远可见」。一次性提示在**已读**后出清，既满足可见性，
+    /// 又不制造粘性噪音 —— 与 `AtlasToast` 的「自动消失不适合持久信息，
+    /// 只适合 `.succeeded`」的分工一致（规格 §1.3）：本 advisory 之所以
+    /// 不能用 toast，正因为它**语义上必须持续到用户看见**。
+    ///
+    /// 只清 `.advisory` 的 **plan 槽**：同一槽位后来若被写成 `.failed`
+    /// （恢复失败），那是**新结果**，不得被这次「已读」一并抹掉。
+    func acknowledgeLedgerPruneNotice() {
+        guard sourceOutcomes[.ledger]?.plan?.isAdvisory == true else { return }
+        clearPlan(.ledger)
+    }
+
+    // 下两条是**只读投影**（不再是可写状态）：写入只经 `recordExecution(_:kind:message:)`，
+    // 因而不存在“把 A 屏的错误写进 B 屏”的形状。保留原名以收敛调用点。
+    var smartCleanExecutionIssue: String? { sourceOutcomes[.smartClean]?.execution?.message }
+    var fileOrganizerExecutionIssue: String? { sourceOutcomes[.fileOrganizer]?.execution?.message }
+
+    /// 回执「撤销」三态（规格 §1.2(2)）。
+    /// 判定规则：「条件不满足」≠「控件不适用」——凡动作可恢复但本次无可恢复项，
+    /// 一律 `.unavailable(reason)`（禁用 + 理由），**不得隐藏**。
+    func undoAvailability(hasRestorePoint: Bool) -> AtlasUndoAvailability {
+        hasRestorePoint
+            ? .available
+            : .unavailable(reason: AtlasL10n.string("action.undo.unavailable.noRecoverableItem"))
+    }
+
+    /// File Organizer 回执「撤销」的三态（`P0-2`）。
+    /// 判据与 `undoFileOrganizerExecution()` 的首步 guard **同源**：快照里是否
+    /// 还有一条 `.fileOrganizer` 的恢复项。此前该控件**无任何门控**（总是可点），
+    /// 点了找不到恢复项就静默 return —— 全产品唯一承诺「把文件搬回来」的控件在说谎。
+    var fileOrganizerUndoAvailability: AtlasUndoAvailability {
+        hasFileOrganizerRecoveryItem
+            ? .available
+            : .unavailable(reason: AtlasL10n.string("action.undo.unavailable.noRecoverableItem"))
+    }
+
+    private var hasFileOrganizerRecoveryItem: Bool {
+        snapshot.recoveryItems.contains { item in
+            if case .fileOrganizer = item.payload { return true }
+            return false
+        }
+    }
+
     func restoreRecoveryItem(_ itemID: UUID) async {
         guard restoringRecoveryItemID == nil else {
             return
         }
 
-        await restoreRecoveryItemCore(itemID)
+        // 台账详情面板的「恢复」——结果归属 .ledger。
+        await restoreRecoveryItemCore(itemID, source: .ledger)
     }
 
     /// Core restore that reports per-call success (review fix #6): the undo path
@@ -750,16 +1155,17 @@ final class AtlasAppModel: ObservableObject {
     /// to clear `smartCleanExecutionCompleted`. Existing callers (apps restore,
     /// ledger) still use `restoreRecoveryItem` which ignores the result.
     @discardableResult
-    private func restoreRecoveryItemReportingSuccess(_ itemID: UUID) async -> Bool {
+    func restoreRecoveryItemReportingSuccess(_ itemID: UUID) async -> Bool {
         guard restoringRecoveryItemID == nil else {
             return false
         }
-        await restoreRecoveryItemCore(itemID)
+        // Smart Clean 回执的「撤销」——结果归属 .smartClean。
+        await restoreRecoveryItemCore(itemID, source: .smartClean)
         return lastRestoreDidSucceed
     }
 
     /// Shared restore body; sets `lastRestoreDidSucceed` so callers can branch.
-    private func restoreRecoveryItemCore(_ itemID: UUID) async {
+    private func restoreRecoveryItemCore(_ itemID: UUID, source restoreSource: AtlasActionSource = .ledger) async {
         lastRestoreDidSucceed = false
 
         let restoredItem = snapshot.recoveryItems.first(where: { $0.id == itemID })
@@ -791,17 +1197,55 @@ final class AtlasAppModel: ObservableObject {
 
         do {
             let output = try await workspaceController.restoreItems(itemIDs: [itemID])
+            // 契约一 §1.2(4)：磁盘还原（restoreMappings 非空）与仅状态还原必须
+            // 映射到**不同的 recovery 载荷**，而不是仅文案不同。判据与 worker 侧
+            // 一致（AtlasScaffoldWorkerService 的 `restoreMappings 非空` 分支）。
+            let restoreScope: AtlasActionRestoreScope =
+                (restoredItem?.restoreMappings?.isEmpty == false) ? .onDisk : .atlasOnly
             withAnimation(.snappy(duration: 0.24)) {
                 snapshot = output.snapshot
-                latestScanSummary = output.summary
-                smartCleanExecutionIssue = nil
+                // P0-1：结果写进**发起恢复的那个 source 的槽位**，不再落到
+                // latestScanSummary（那是 Smart Clean 的状态行 —— 台账失败此前
+                // 只在智能清理页可见，台账屏零呈现）。
+                recordExecution(
+                    restoreSource,
+                    kind: .succeeded,
+                    message: output.summary,
+                    recovery: AtlasActionRecovery(
+                        scope: restoreScope,
+                        itemCount: 1,
+                        retentionDays: settings.recoveryRetentionDays
+                    )
+                )
+                // `TS-01`：这里原先是**无条件** `clearExecution(.smartClean)`，
+                // 现已**整条删除**。追溯其语义来源（HEAD 的
+                // `smartCleanExecutionIssue = nil`）：旧模型里那是**不带 source
+                // 标识**的单一 `String?`，`= nil` 的真实意图是「本次恢复的结果
+                // 覆盖掉本屏上一条结果」—— 先清旧值、再写新值。
+                //
+                // 新模型下这一步既是多余的、又是有害的：
+                // · **多余**：`recordExecution(restoreSource, …)` 内部是
+                //   `entry.execution = AtlasActionOutcome(...)`（赋值，非追加），
+                //   对本 source 已经完成了覆盖。
+                // · **有害**：它固定写死 `.smartClean`，成了**跨 source 误伤** ——
+                //   从台账恢复一条记录，会把 Smart Clean 自己那条执行结果一并抹掉
+                //   （`smartCleanExecutionIssue` 是它的消费点，Smart Clean 屏上的
+                //   错误横幅会无声消失）。`I-1` 只钉了写入方向，清除方向无人守。
+                //
+                // 两个错误版本已排除，留档以免回退：
+                // ① `clearExecution(restoreSource)` —— 会立刻清掉上一行刚写入的
+                //    成功记录（`.smartClean` 来源的恢复永远看不到自己的结果）；
+                // ② `if restoreSource != .smartClean { clearExecution(.smartClean) }`
+                //    —— 从台账恢复仍会误伤，只是把 bug 收窄了一点。
                 if shouldRefreshAppsAfterRestore {
                     currentAppPreview = nil
                     currentPreviewedAppID = nil
-                    latestAppsSummary = output.summary
+                    recordExecution(.apps, kind: .succeeded, message: output.summary)
                 }
             }
             lastRestoreDidSucceed = true
+            // `P1-16` 补偿：这一项是被**恢复**的，不是被清理的 —— 从「见过」集合剔除。
+            forgetSeenRecoveryItem(itemID)
             if shouldRefreshAppsAfterRestore {
                 await reloadAppsInventory(
                     navigateToApps: false,
@@ -825,10 +1269,22 @@ final class AtlasAppModel: ObservableObject {
                 settings = persistedState.settings
             }
             syncAppearance()
-            latestScanSummary = error.localizedDescription
+            // P0-1 的直接修复：失败写进**台账自己的槽位**，台账屏据它渲染。
+            recordExecution(restoreSource, kind: .failed, message: error.localizedDescription)
         }
 
         restoringRecoveryItemID = nil
+    }
+
+    /// `P2-12`：排除项此前**没有任何写回调** —— 视图只能只读渲染。
+    func addExcludedPath(_ path: String) async {
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !settings.excludedPaths.contains(trimmed) else { return }
+        await updateSettings { $0.excludedPaths.append(trimmed) }
+    }
+
+    func removeExcludedPath(_ path: String) async {
+        await updateSettings { $0.excludedPaths.removeAll { $0 == path } }
     }
 
     func setRecoveryRetentionDays(_ days: Int) async {
@@ -1074,14 +1530,37 @@ final class AtlasAppModel: ObservableObject {
 
     // MARK: - File Organizer
 
+    /// 契约三 §3.2(3) / `I-5`（降级形式）：系统级授权前的 app 内作用域说明。
+    ///
+    /// 规格 §7.1 把 `I-5` 拆成两半：可自动化的那一半要求「凡是能发起扫描的调用
+    /// 路径，必然先写入 preamble 状态」；不可自动化的那一半（真实时序：TCC 弹窗
+    /// 出现时 app 内已渲染说明）列为 `macos-gui-acceptance` 的人工验收项。
+    ///
+    /// 视图在 `false` 时渲染 `fileorganizer.scan.preamble.*`；本函数一进入就置位，
+    /// 因此作用域说明**必然先于**触发 TCC 的那次调用出现在屏幕上。
+    @Published private(set) var fileOrganizerScanPreambleShown = false
+
     func runFileOrganizerScan(folderPaths: [String]) async {
+        fileOrganizerScanPreambleShown = true
         guard !isFileOrganizerScanning else { return }
 
         isFileOrganizerScanning = true
         fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.scanning")
+        // `P2-8`（契约三 §3.2(6)）：与 SmartClean 的权限分支对齐。此前 FO **没有任何
+        // 权限分支**，权限受限会直接落到 catch 并被渲染成
+        // `fileorganizer.status.executionFailed`（「文件整理未能完成」）—— 用户不知道
+        // 该去「权限」页授权，只会反复重试或以为 App 坏了。现为 `.advisory`，
+        // 走 `AtlasCallout(tone: .warning)` 的非错误渲染路径。
+        if !fileOrganizerRequiredPermissionsReady {
+            recordPlan(
+                .fileOrganizer,
+                kind: .advisory,
+                message: AtlasL10n.string("model.scan.limited.permissions")
+            )
+        }
         fileOrganizerProgress = 0
         scannedFolders = folderPaths
-        fileOrganizerExecutionIssue = nil
+        clearExecution(.fileOrganizer)
         fileOrganizerExecutionCompleted = false
         fileOrganizerMovedCount = 0
         fileOrganizerExecutionReceipt = nil
@@ -1120,12 +1599,22 @@ final class AtlasAppModel: ObservableObject {
                 fileOrganizerProgress = output.progressFraction
                 isFileOrganizerPlanFresh = false
                 fileOrganizerHasPreviewResults = false
-                fileOrganizerPlanIssue = nil
+                clearPlan(.fileOrganizer)
             }
         } catch {
             fileOrganizerScanSummary = error.localizedDescription
             fileOrganizerProgress = 0
-            fileOrganizerPlanIssue = error.localizedDescription
+            // `P2-8`：权限受限**不是**「文件整理未能完成」。未授权时保持 `.advisory`
+            // （非错误态），不得渲染成执行失败。
+            if fileOrganizerRequiredPermissionsReady {
+                recordPlan(.fileOrganizer, kind: .failed, message: error.localizedDescription)
+            } else {
+                recordPlan(
+                    .fileOrganizer,
+                    kind: .advisory,
+                    message: AtlasL10n.string("model.scan.limited.permissions")
+                )
+            }
         }
 
         // Pipeline trigger restored (audit P0 #7 + P1 #19): the Calm Ledger
@@ -1183,7 +1672,7 @@ final class AtlasAppModel: ObservableObject {
     }
 
     func refreshFileOrganizerPreview(entryIDs: [UUID]) async {
-        fileOrganizerExecutionIssue = nil
+        clearExecution(.fileOrganizer)
         do {
             let output = try await workspaceController.fileOrganizerPreviewPlan(entryIDs: entryIDs)
             withAnimation(.snappy(duration: 0.24)) {
@@ -1192,8 +1681,8 @@ final class AtlasAppModel: ObservableObject {
                 fileOrganizerScanSummary = output.summary
                 isFileOrganizerPlanFresh = true
                 fileOrganizerHasPreviewResults = false
-                fileOrganizerPlanIssue = nil
-                fileOrganizerExecutionIssue = nil
+                clearPlan(.fileOrganizer)
+                clearExecution(.fileOrganizer)
             }
             // Calm Ledger §2.3: every executable plan is ledger-addressable.
             // Assign № + receipt on the plan's first fresh appearance — WITHOUT
@@ -1212,7 +1701,7 @@ final class AtlasAppModel: ObservableObject {
             }
         } catch {
             fileOrganizerScanSummary = error.localizedDescription
-            fileOrganizerPlanIssue = error.localizedDescription
+            recordPlan(.fileOrganizer, kind: .failed, message: error.localizedDescription)
         }
     }
 
@@ -1260,7 +1749,27 @@ final class AtlasAppModel: ObservableObject {
         guard let recoveryItem = snapshot.recoveryItems.first(where: { item in
             if case .fileOrganizer = item.payload { return true }
             return false
-        }) else { return }
+        }) else {
+            // 契约一 §1.2(2)（`CT-04` 的落点）：**「条件不满足」≠「控件不适用」**。
+            // 撤销对文件整理**是可恢复动作**，只是本次没有对应恢复项 —— 按规格
+            // 「凡动作可恢复但本次无可恢复项，**一律落 `.unavailable(reason)`**，
+            // 不得隐藏」，这是**默认态**。
+            //
+            // 此前这里是**裸 `return`**：用户点了「撤销」，画面毫无变化，
+            // 也无从知道为什么 —— 正是审计 `P0-2` 说的「无门控渲染」的孪生缺陷
+            // （控件在，点了不动）。现写入本 source 的结果槽，由文件整理屏
+            // 按 kind 分流渲染（`FileOrganizerStageViews.swift:63-83` 的
+            // 非 `.failed` 分支走 `AtlasCallout`）。
+            //
+            // 写 **plan 槽**而非 execution 槽：这不是一次执行的结果（压根没执行），
+            // 而是「这个动作现在不可用」的前置条件陈述。
+            recordPlan(
+                .fileOrganizer,
+                kind: .unavailable(reason: AtlasL10n.string("action.undo.unavailable.noRecoverableItem")),
+                message: AtlasL10n.string("action.undo.unavailable.noRecoverableItem")
+            )
+            return
+        }
 
         restoringRecoveryItemID = recoveryItem.id
         do {
@@ -1297,7 +1806,7 @@ final class AtlasAppModel: ObservableObject {
                     fileOrganizerScanSummary = AtlasL10n.string("model.fileorganizer.ready")
                 }
             } else {
-                fileOrganizerExecutionIssue = error.localizedDescription
+                recordExecution(.fileOrganizer, kind: .failed, message: error.localizedDescription)
             }
         }
         restoringRecoveryItemID = nil
@@ -1307,7 +1816,7 @@ final class AtlasAppModel: ObservableObject {
         guard !isFileOrganizerExecuting, !currentFileOrganizerPlan.items.isEmpty else { return }
 
         isFileOrganizerExecuting = true
-        fileOrganizerExecutionIssue = nil
+        clearExecution(.fileOrganizer)
 
         do {
             let output = try await workspaceController.fileOrganizerExecutePlan(planID: currentFileOrganizerPlan.id)
@@ -1324,12 +1833,12 @@ final class AtlasAppModel: ObservableObject {
                 fileOrganizerProgress = output.progressFraction
                 isFileOrganizerPlanFresh = false
                 fileOrganizerHasPreviewResults = false
-                fileOrganizerPlanIssue = nil
+                clearPlan(.fileOrganizer)
                 let foStored = workflowState(for: .fileOrganizer)
                 if allFailed {
                     fileOrganizerExecutionCompleted = false
                     let reason = AtlasL10n.string("fileorganizer.status.executionFailed")
-                    fileOrganizerExecutionIssue = reason
+                    recordExecution(.fileOrganizer, kind: .failed, message: reason)
                     fileOrganizerScanSummary = reason
                     fileOrganizerExecutionReceipt = FileOrganizerExecutionReceipt(
                         planNumber: foStored.planNumber,
@@ -1340,7 +1849,7 @@ final class AtlasAppModel: ObservableObject {
                         failureReason: reason
                     )
                 } else {
-                    fileOrganizerExecutionIssue = nil
+                    clearExecution(.fileOrganizer)
                     fileOrganizerExecutionCompleted = true
                     fileOrganizerScanSummary = AtlasL10n.string("fileorganizer.callout.executionComplete.detail", movedCount)
                     // Receipt (§1.6 fail-closed): every field from real
@@ -1359,7 +1868,7 @@ final class AtlasAppModel: ObservableObject {
             }
         } catch {
             fileOrganizerScanSummary = error.localizedDescription
-            fileOrganizerExecutionIssue = error.localizedDescription
+            recordExecution(.fileOrganizer, kind: .failed, message: error.localizedDescription)
             // Partial-completion receipt (spec §2.3 ④ error → 「查看回执」):
             // fail-closed §1.6 — on failure we cannot confirm how many files
             // moved before the error, so movedItemCount is 0 (never the stale

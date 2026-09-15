@@ -14,7 +14,10 @@ struct FileOrganizerScanStageView: View {
     let scanSummary: String
     let scanProgress: Double
     let hasCachedEntries: Bool
-    let planIssue: String?
+    let planOutcome: AtlasActionOutcome?
+    /// 契约三 §3.2(3)（`P1-3`）：系统级授权请求**之前**，app 内必须先渲染过
+    /// 一句作用域说明。首次扫描前为 true。
+    let showsScanPreamble: Bool
     let onStartScan: () -> Void
 
     var body: some View {
@@ -45,12 +48,49 @@ struct FileOrganizerScanStageView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AtlasSpacing.section)
             } else {
-                if let planIssue {
-                    AtlasErrorState(
-                        title: AtlasL10n.string("fileorganizer.status.executionFailed"),
-                        message: planIssue,
-                        layout: .inlineRow
+                // `P1-3`：放在最前 —— TCC 弹窗由系统进程弹出，单测观测不到时序，
+                // 所以这里用「首扫前必显」把它变成可读的屏幕事实。
+                if showsScanPreamble {
+                    AtlasCallout(
+                        title: AtlasL10n.string("fileorganizer.scan.preamble.title"),
+                        detail: AtlasL10n.string("fileorganizer.scan.preamble.detail"),
+                        tone: .neutral,
+                        systemImage: "lock.shield"
                     )
+                    .accessibilityIdentifier("fileorganizer.scan.preamble")
+                }
+
+                if let planOutcome {
+                    // 契约一：按 kind 分流。注意标题仍是 `executionFailed` ——
+                    // 那是 P2-8 的问题，属 Wave 2，本波不动。
+                    if planOutcome.isError {
+                        AtlasErrorState(
+                            title: AtlasL10n.string("fileorganizer.status.executionFailed"),
+                            message: planOutcome.message,
+                            layout: .inlineRow
+                        )
+                        .accessibilityIdentifier("fileorganizer.planOutcome.error")
+                    } else if let unavailableReason = planOutcome.unavailableReason {
+                        // `CT-04`：`.unavailable(reason)` 的消费点。规格 §1.2(2)：
+                        // 动作可恢复但本次无可恢复项 → **禁用控件 + 理由**，
+                        // 理由走 `AtlasCallout`（非错误态），与 `.advisory` 同形态
+                        // 但语义不同：这里陈述的是「现在不能做这件事，因为…」。
+                        AtlasCallout(
+                            title: AtlasL10n.string("fileorganizer.undo.unavailable.title"),
+                            detail: unavailableReason,
+                            tone: .warning,
+                            systemImage: "arrow.uturn.backward.circle"
+                        )
+                        .accessibilityIdentifier("fileorganizer.planOutcome.unavailable")
+                    } else {
+                        AtlasCallout(
+                            title: AtlasL10n.string("fileorganizer.scan.advisory.title"),
+                            detail: planOutcome.message,
+                            tone: .warning,
+                            systemImage: "exclamationmark.shield"
+                        )
+                        .accessibilityIdentifier("fileorganizer.planOutcome.advisory")
+                    }
                 } else if hasCachedEntries {
                     AtlasCallout(
                         title: AtlasL10n.string("fileorganizer.cached.title"),
@@ -166,6 +206,7 @@ struct FileOrganizerRulesStageView: View {
     }
 
     private var selectionControls: some View {
+        VStack(alignment: .leading, spacing: AtlasSpacing.xs) {
         HStack(spacing: AtlasSpacing.sm) {
             Text(AtlasL10n.string("fileorganizer.selection.count", selectedIDs.count, entries.count))
                 .font(AtlasTypography.caption)
@@ -185,6 +226,14 @@ struct FileOrganizerRulesStageView: View {
             }
             .buttonStyle(.atlasGhost)
             .disabled(selectedIDs.isEmpty || isReadOnly)
+        }
+        // `P2-7`：显式表达**选择模型**。此前界面只说「已选 N/M 项」，
+        // 没有任何一句说明未勾选的文件去哪 —— 而用户取消勾选的动机正是
+        // 「这个不想被整理」，需要确认「不勾的会留在原地」。
+        Text(AtlasL10n.string("fileorganizer.selection.unchecked.hint"))
+            .font(AtlasTypography.caption)
+            .foregroundStyle(AtlasColor.textSecondary)
+            .accessibilityIdentifier("fileorganizer.selection.uncheckedHint")
         }
     }
 
@@ -348,7 +397,7 @@ struct FileOrganizerPreviewStageView: View {
     let searchQuery: String
     let selectedIDs: Set<UUID>
     let conflictingIDs: Set<UUID>
-    let planIssue: String?
+    let planOutcome: AtlasActionOutcome?
     let isReadOnly: Bool
 
     private var entryNameLookup: [UUID: String] {
@@ -401,13 +450,14 @@ struct FileOrganizerPreviewStageView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AtlasSpacing.lg) {
-            if let planIssue {
+            if let planOutcome {
                 AtlasCallout(
-                    title: planIssue,
+                    title: planOutcome.message,
                     detail: "",
                     tone: .warning,
                     systemImage: "exclamationmark.triangle"
                 )
+                .accessibilityIdentifier("fileorganizer.planOutcome.rules")
             }
 
             let planConflicts = plan.items.filter { conflictingIDs.contains($0.id) }
@@ -543,9 +593,11 @@ struct FileOrganizerExecuteStageView: View {
 /// the ledger's restore action — 双入口一份真相).
 struct FileOrganizerReceiptView: View {
     let receipt: FileOrganizerExecutionReceipt
-    /// Undo entry that outlives the 8s toast (spec §2.3: 超时后仍可还原);
-    /// nil hides the button (fail-closed).
+    /// Undo entry that outlives the 8s toast (spec §2.3: 超时后仍可还原).
     var onUndo: (() -> Void)?
+    /// 契约一 §1.2(2) 的三态（`P0-2`）。**必需参数**：无可恢复项时必须
+    /// 渲染禁用控件 + 理由，不得静默隐藏、也不得无门控渲染。
+    let undoAvailability: AtlasUndoAvailability
     let onNavigateToLedger: () -> Void
 
     var body: some View {
@@ -583,11 +635,20 @@ struct FileOrganizerReceiptView: View {
                         .buttonStyle(.atlasGhost)
                         .accessibilityIdentifier("fileorganizer.receipt.viewInLedger")
 
-                    if let onUndo {
-                        Button(AtlasL10n.string("fileorganizer.undo.action"), action: onUndo)
+                    if undoAvailability.isPresent {
+                        Button(AtlasL10n.string("fileorganizer.undo.action")) { onUndo?() }
                             .buttonStyle(.atlasGhost)
+                            .disabled(!undoAvailability.isEnabled)
                             .accessibilityIdentifier("fileorganizer.receipt.undo")
                     }
+                }
+
+                if let undoExplanation = undoAvailability.explanation {
+                    Text(undoExplanation)
+                        .font(AtlasTypography.bodySmall)
+                        .foregroundStyle(AtlasColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("fileorganizer.receipt.undo.reason")
                 }
             }
         }

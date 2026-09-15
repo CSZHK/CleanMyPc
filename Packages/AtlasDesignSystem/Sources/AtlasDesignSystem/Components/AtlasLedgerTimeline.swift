@@ -8,7 +8,13 @@ public enum AtlasLedgerEntryStatus: Equatable, Sendable {
     case inProgress
     case recoverable(daysLeft: Int)
     case verified
+    /// 任务运行失败/取消后的**终态**（zh「已结束」/ en `Archived`）。
     case archived
+    /// 恢复项已过保留窗口、**不可恢复**（zh「已过期」/ en `Expired`）。
+    ///
+    /// `P1-15` / 规格 §4.1：此前与 `.archived` **共用一个词** —— 用户读「已归档」
+    /// ＝「已安全保存」，而它实为不可恢复的终态。拆开后一词一义。
+    case expired
     case superseded
 }
 
@@ -93,6 +99,13 @@ public struct AtlasLedgerTimeline: View {
             return BadgePresentation(
                 symbol: "archivebox",
                 text: AtlasL10n.string("ds.ledger.status.archived", language: language),
+                tone: nil
+            )
+        case .expired:
+            // 不可恢复的终态 —— 不给「已完成」的绿色调，避免读成「已安全保存」。
+            return BadgePresentation(
+                symbol: "clock.badge.xmark",
+                text: AtlasL10n.string("ds.ledger.status.expired", language: language),
                 tone: nil
             )
         case .superseded:

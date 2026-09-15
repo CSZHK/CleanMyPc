@@ -6,6 +6,9 @@ import SwiftUI
 /// data rows; running rows carry their ledger № prefix when the owning
 /// workflow has an assigned plan.
 struct TaskCenterView: View {
+    /// 任务中心可见条数上限（`P2-14`：截断必须说明，见 `taskcenter.more`）。
+    static let visibleTaskRunLimit = 5
+
     let taskRuns: [TaskRun]
     let summary: String
     /// Resolves the ledger № prefix for a run (nil ⇒ no prefix). Injected so
@@ -26,14 +29,18 @@ struct TaskCenterView: View {
 
             Divider()
 
-            AtlasCallout(
-                title: taskRuns.isEmpty ? AtlasL10n.string("taskcenter.callout.empty.title") : AtlasL10n.string("taskcenter.callout.active.title"),
-                detail: taskRuns.isEmpty
-                    ? AtlasL10n.string("taskcenter.callout.empty.detail")
-                    : AtlasL10n.string("taskcenter.callout.active.detail"),
-                tone: taskRuns.isEmpty ? .neutral : .success,
-                systemImage: taskRuns.isEmpty ? "clock.badge.questionmark" : "clock.arrow.circlepath"
-            )
+            // `P2-15`：空态**互斥渲染**。此前同一条件下渲染两个互相矛盾的标题
+            // （callout「当前没有**匹配**的任务活动」＋ empty「**还没有**任务」），
+            // 用户无法判断自己是没搜到还是没跑过 —— 而这里根本没有搜索框。
+            // 空态只留 `AtlasEmptyState` 一处说法。
+            if !taskRuns.isEmpty {
+                AtlasCallout(
+                    title: AtlasL10n.string("taskcenter.callout.active.title"),
+                    detail: AtlasL10n.string("taskcenter.callout.active.detail"),
+                    tone: .success,
+                    systemImage: "clock.arrow.circlepath"
+                )
+            }
 
             if taskRuns.isEmpty {
                 AtlasEmptyState(
@@ -44,12 +51,22 @@ struct TaskCenterView: View {
                 )
             } else {
                 VStack(alignment: .leading, spacing: AtlasSpacing.sm) {
-                    ForEach(taskRuns.prefix(5)) { taskRun in
+                    ForEach(taskRuns.prefix(Self.visibleTaskRunLimit)) { taskRun in
                         TaskCenterRow(
                             taskRun: taskRun,
                             planNumber: planNumber(taskRun),
                             footnote: timelineFootnote(for: taskRun)
                         )
+                    }
+
+                    // `P2-14`：列表被截断时必须同屏说明。此前固定只渲染 5 条且
+                    // **从不说明被截断** —— 用户看到正好 5 条会以为这就是全部
+                    // （实测同一时刻状态文件里 `taskRuns = 147`）。
+                    if taskRuns.count > Self.visibleTaskRunLimit {
+                        Text(AtlasL10n.string("taskcenter.more", taskRuns.count - Self.visibleTaskRunLimit))
+                            .font(AtlasTypography.caption)
+                            .foregroundStyle(AtlasColor.textSecondary)
+                            .accessibilityIdentifier("taskcenter.more")
                     }
                 }
             }

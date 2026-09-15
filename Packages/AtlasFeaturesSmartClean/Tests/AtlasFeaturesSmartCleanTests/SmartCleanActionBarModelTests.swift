@@ -40,10 +40,20 @@ final class SmartCleanActionBarModelTests: XCTestCase {
         let readOnly = SmartCleanActionBarModel.resolve(Self.inputs(effectiveStage: 0, isReadOnly: true))
         XCTAssertEqual(readOnly.intent, .returnToCurrent)
 
-        // ③ error → view receipt, disabled until a receipt exists.
+        // ③ error WITHOUT a receipt → 契约一 §1.2(3)（`P1-11`）：**不得渲染一个
+        // 点了不动的控件**。此前的断言钉的是缺陷本身（置灰的「查看回执」）。
         let errorNoReceipt = SmartCleanActionBarModel.resolve(Self.inputs(effectiveStage: SmartCleanStage.execute))
-        XCTAssertEqual(errorNoReceipt.intent, .viewReceipt)
-        XCTAssertFalse(errorNoReceipt.isEnabled)
+        XCTAssertEqual(errorNoReceipt.intent, .rescan)
+        XCTAssertTrue(errorNoReceipt.isEnabled, "failure path must not render a dead control (P1-11)")
+        XCTAssertEqual(errorNoReceipt.promise, AtlasL10n.string("action.receipt.missing.title"))
+        XCTAssertNotNil(errorNoReceipt.metricText, "minimum usable facts must be present")
+
+        // ③ error WITH a receipt → the partial receipt stays reachable.
+        let errorWithReceipt = SmartCleanActionBarModel.resolve(
+            Self.inputs(effectiveStage: SmartCleanStage.execute, hasReceipt: true)
+        )
+        XCTAssertEqual(errorWithReceipt.intent, .viewReceipt)
+        XCTAssertTrue(errorWithReceipt.isEnabled)
 
         // ④ → new scan via the rescan confirmation path; freed metric is real-valued.
         let receipt = SmartCleanActionBarModel.resolve(Self.inputs(

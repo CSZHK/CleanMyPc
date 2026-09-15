@@ -79,7 +79,9 @@ final class LedgerModelTests: XCTestCase {
             expiresAt: Date().addingTimeInterval(-86400) // already expired
         )
         let entry = LedgerEntryMapping.entry(for: item, retentionDays: 7)
-        XCTAssertEqual(entry.status, .archived)
+        // `P1-15`：过期的恢复项是**不可恢复的终态**，不再与「任务失败/取消」共用 `.archived`
+        // （旧断言钉的是缺陷本身：用户读「已归档」＝「已安全保存」）。
+        XCTAssertEqual(entry.status, .expired)
     }
 
     func testEntryMappingRecoveryItemNoExpiryVerified() {

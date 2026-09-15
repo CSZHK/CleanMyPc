@@ -53,7 +53,13 @@ final class OverviewRecommendationTests: XCTestCase {
         ))
         XCTAssertEqual(out?.id, OverviewRecommendation.permissionID)
         XCTAssertEqual(out?.primaryTarget, .authorizePermissions)
-        XCTAssertFalse(out?.isSnoozeable ?? true, "permission banner is never snoozeable")
+        // 契约三 §3.2(1)（`P1-1`）：该横幅**可推迟**。此前断言的是
+        // 「never snoozeable」—— 那正是与 COPY_GUIDELINES 对 Limited Mode
+        // 的定义相反的那条产品承诺，本波推翻它。
+        XCTAssertTrue(out?.isSnoozeable ?? false, "permission banner must be snoozeable (P1-1)")
+        XCTAssertEqual(out?.secondaryTarget, .snooze)
+        // `I-6`：横幅必须能一句话说明后果/现在不做会怎样。
+        XCTAssertFalse(out?.rationale.isEmpty ?? true, "banner must state the consequence (I-6)")
     }
 
     func testRow1DoesNotFireWhenAllGranted() {

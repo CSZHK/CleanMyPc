@@ -21,13 +21,12 @@ public enum AtlasLanguage: String, CaseIterable, Codable, Hashable, Sendable, Id
         Locale(identifier: rawValue)
     }
 
+    /// `P2-5`：走 `AtlasL10n`（同文件的 `AtlasTheme.displayName` 一直是这么做的），
+    /// 启用此前**全仓零引用**的 `language.zhHans` / `language.en`。
+    /// 此前硬编码：界面语言为 English 时，设置行仍显示中文「简体中文」，
+    /// 英文用户读到的是「汉化没做完」，也无法确认当前生效的是哪种语言。
     public var displayName: String {
-        switch self {
-        case .zhHans:
-            return "简体中文"
-        case .en:
-            return "English"
-        }
+        AtlasL10n.string("language.\(self == .zhHans ? "zhHans" : "en")")
     }
 }
 

@@ -22,6 +22,15 @@ public struct AppsFeatureView: View {
     private let currentPreviewedAppID: UUID?
     private let restoreRefreshStatus: AtlasAppPostRestoreRefreshStatus?
     private let summary: String
+    /// 契约一（规格 §1.2(1)）：Apps 屏**只订阅自己 source 的结果**。
+    ///
+    /// `F-07`：`restoreRecoveryItemCore` 把 apps 恢复的摘要写进了
+    /// `.apps` 的执行槽（`AtlasAppModel.swift:1134`），但全仓**零读取点** ——
+    /// 原先可见的 `latestAppsSummary` 摘要就此变成不可见。本参数把它接回渲染。
+    /// `.succeeded` 不渲染（避免与 `summary` 状态行重复），`.failed` 走
+    /// `AtlasErrorState`、`.advisory`/`.unavailable` 走非错误态 —— 与规格 §1.2(1)
+    /// 「保留既有渲染形态」一致。
+    private let outcome: AtlasActionOutcome?
     private let isRunning: Bool
     private let activePreviewAppID: UUID?
     private let activeUninstallAppID: UUID?
@@ -44,6 +53,7 @@ public struct AppsFeatureView: View {
         currentPreviewedAppID: UUID? = nil,
         restoreRefreshStatus: AtlasAppPostRestoreRefreshStatus? = nil,
         summary: String = AtlasL10n.string("model.apps.ready"),
+        outcome: AtlasActionOutcome? = nil,
         isRunning: Bool = false,
         activePreviewAppID: UUID? = nil,
         activeUninstallAppID: UUID? = nil,
@@ -59,6 +69,7 @@ public struct AppsFeatureView: View {
         self.currentPreviewedAppID = currentPreviewedAppID
         self.restoreRefreshStatus = restoreRefreshStatus
         self.summary = summary
+        self.outcome = outcome
         self.isRunning = isRunning
         self.activePreviewAppID = activePreviewAppID
         self.activeUninstallAppID = activeUninstallAppID
@@ -71,9 +82,13 @@ public struct AppsFeatureView: View {
         // carry its own retention field; mirroring the legacy detail copy.
         self.retentionDays = 14
         // Seed from the model-persisted selection so it survives route switches
-        // (round-14 §7 red line — mirrors the Ledger pattern); fall back to the
-        // first app when nil.
-        _selectedAppID = State(initialValue: initialSelectedAppID ?? Self.sortedApps(apps).first?.id)
+        // (round-14 §7 red line — mirrors the Ledger pattern).
+        //
+        // `P2-10`：**不再回退到第一个应用**。此前 `?? Self.sortedApps(apps).first?.id`
+        // 让用户一进屏就看到 Xcode 被高亮选中、右侧证据面板铺满它的足迹，而列表
+        // 副标题写的是「**选择一个**应用」—— 用户从没选过。对不懂技术的用户，
+        // 「已经被选中」天然带推荐含义（像 Atlas 在建议卸载它）。
+        _selectedAppID = State(initialValue: initialSelectedAppID)
     }
 
     public var body: some View {
@@ -113,8 +128,57 @@ public struct AppsFeatureView: View {
             }
             Button(AtlasL10n.string("confirm.cancel"), role: .cancel) {}
         } message: {
-            if let app = selectedApp {
-                Text(AtlasL10n.string("apps.confirm.uninstall.message", app.name))
+            AtlasDestructiveConfirmationMessage(uninstallConfirmation)
+        }
+    }
+
+    /// 契约二 §2.2(1) 四问（`P0-3`）：这是全产品唯一真正删掉应用包的最终确认，
+    /// 此前正文对「能不能找回、多久内、从哪儿找」**只字未提**。
+    private var uninstallConfirmation: AtlasDestructiveConfirmation {
+        let items = previewPlan?.items ?? []
+        let total = items.count
+        let recoverable = items.filter(\.recoverable).count
+        let facts = AtlasDestructiveFacts(
+            object: AtlasL10n.string("confirm.destructive.object.app", selectedApp?.name ?? ""),
+            destination: AtlasL10n.string("confirm.destructive.destination.recoveryArea", retentionDays),
+            recovery: recoverable > 0
+                ? AtlasL10n.string("confirm.destructive.recovery", retentionDays)
+                : AtlasL10n.string("confirm.destructive.recovery.none")
+        )
+        return .recoverable(
+            facts,
+            recoverableCount: AtlasL10n.string("confirm.destructive.recoverableCount", recoverable, total)
+        )
+    }
+
+    // MARK: - 契约一 §1.2(1)：本 source 的结果就地呈现
+
+    /// `F-07` 的落点：把 `.apps` source 的执行结果接回渲染。
+    ///
+    /// **只渲染非 `.succeeded`**：`.succeeded` 的摘要已由 `refreshApps` 之后的
+    /// `summary` 状态行承载（`latestAppsSummary = output.summary`），再渲染一遍
+    /// 就是同一句话出现两次。真正会丢的是**失败**：恢复**失败**时
+    /// `restoreRecoveryItemCore` 只把错误写进本槽，而 `reloadAppsInventory`
+    /// 根本不会被调用（见 `AtlasAppModel.swift` 的 catch 分支），
+    /// 于是 `summary` 仍停在上一轮的乐观值 —— 用户看到「一切正常」。
+    @ViewBuilder
+    private var actionOutcomeBanner: some View {
+        if let outcome, !outcome.isSuccess {
+            if outcome.isError {
+                AtlasErrorState(
+                    title: AtlasL10n.string("apps.outcome.failed.title"),
+                    message: outcome.message,
+                    layout: .inlineRow
+                )
+                .accessibilityIdentifier("apps.outcome.failed")
+            } else {
+                AtlasCallout(
+                    title: AtlasL10n.string("apps.outcome.advisory.title"),
+                    detail: outcome.message,
+                    tone: .warning,
+                    systemImage: "exclamationmark.triangle"
+                )
+                .accessibilityIdentifier("apps.outcome.advisory")
             }
         }
     }
@@ -131,6 +195,8 @@ public struct AppsFeatureView: View {
                     .font(AtlasTypography.body)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                actionOutcomeBanner
 
                 LazyVGrid(columns: inventoryMetricColumns, spacing: AtlasSpacing.lg) {
                     // Round-21: inventory totals are SCREEN-LEVEL aggregates, so they
@@ -348,7 +414,10 @@ public struct AppsFeatureView: View {
     }
 
     private func syncSelection() {
-        if selectedApp == nil { selectedAppID = sortedApps.first?.id }
+        // `P2-10`：此处**不再**自动选中第一个应用（同一个缺陷的第二处写入点）。
+        // 没有选中项就让它空着 —— 右侧面板如实显示空态，与列表副标题
+        // 「选择一个应用」一致。原来那行 `if selectedApp == nil { … .first?.id }`
+        // 已删除；取代它的"列表为空时清空"是空操作，一并去掉。
     }
 
     private static func sortedApps(_ apps: [AppFootprint]) -> [AppFootprint] {

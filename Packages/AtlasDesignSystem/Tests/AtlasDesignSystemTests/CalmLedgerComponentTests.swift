@@ -213,8 +213,13 @@ final class CalmLedgerComponentTests: XCTestCase {
         XCTAssertEqual(verified.symbol, "checkmark") // ✓
         XCTAssertEqual(verified.tone, .success)
 
-        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .archived, language: .zhHans).text, "已归档")
+        // `P1-15`：`.archived` 的 zh 由「已归档」改为「已结束」（任务失败/取消的终态）；
+        // 「已过期」拆到独立的 `.expired`，见下。
+        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .archived, language: .zhHans).text, "已结束")
         XCTAssertNil(AtlasLedgerTimeline.badge(for: .archived, language: .zhHans).tone, "archived renders muted")
+        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .expired, language: .zhHans).text, "已过期")
+        XCTAssertEqual(AtlasLedgerTimeline.badge(for: .expired, language: .en).text, "Expired")
+        XCTAssertNil(AtlasLedgerTimeline.badge(for: .expired, language: .zhHans).tone, "expired renders muted")
         XCTAssertEqual(AtlasLedgerTimeline.badge(for: .superseded, language: .en).text, "Superseded")
         XCTAssertNil(AtlasLedgerTimeline.badge(for: .superseded, language: .en).tone)
         XCTAssertEqual(AtlasLedgerTimeline.badge(for: .inProgress, language: .zhHans).text, "进行中")
