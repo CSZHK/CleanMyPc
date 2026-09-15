@@ -6,6 +6,73 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-09-15
+
+The「plain language」release — the UI stops speaking in documentary metaphors.
+Ledger becomes History, receipts become IDs (or Results, where the stage bar
+means the panel), footprint becomes storage, evidence becomes "not removed".
+Every screen subtitle is rewritten for non-technical Mac users, and a machine
+gate now enforces the copy rules inside acceptance. Also ships the UX-friction
+remediation follow-up and the landing-site video hero.
+
+### Added
+
+- **Copy gate** (`scripts/atlas/copy-gate.sh`) — 8 blocking dimensions over both
+  `Localizable.strings` (banned terms, subtitle width, spec-sentence idioms,
+  zh/en term pairing, placeholder symmetry, key parity, Swift string literals,
+  parse integrity) plus 2 report-only dimensions. Wired into
+  `full-acceptance.sh` as step [4/12] so CI enforces it. A missing copy source
+  exits 2 / `NOT_RUN` and is never counted as a pass. Every new rule is
+  mutation-tested.
+- **Bilingual copy guidelines** — `Docs/COPY_GUIDELINES.md` finally carries
+  zh-side tone rules; Tone / Product Voice / Good Patterns had been
+  English-only, which is the structural reason the Chinese copy drifted into
+  spec-speak. Adds the single-register rule that replaces the old
+  "documentary tone is confined to the Ledger surface".
+- **Landing site: promo video in hero** — poster + click-to-play, with a
+  dedicated video section on both language pages.
+- **Landing site: free tool page** — "Mac reclaimable space estimator", plus
+  cookieless GA4 analytics and a PRIVACY.md (fixes a footer dead link).
+
+### Changed
+
+- **Terminology retired (contract 4 reopened)** — 台账 / `Ledger` → 历史记录 /
+  `History` · 回执 → 编号 (`ID`) for identifiers, 结果 (`Results`) for stage and
+  panel names · 足迹 / `Footprint` → 占用 / `App Storage` · 证据 / `Evidence` →
+  未删除项 / `Not removed` (and 分类依据 for the File Organizer classification
+  panel) · 发现项 → 清理项 · `№` → `#` · 入账 → 已记录 · 作废 → 已失效 ·
+  主流程 → 主要功能 · 保留窗口 → 保留期. Kept as-is: 恢复点 / `Restore point`,
+  复核 / `Review`, 受限模式 / `Limited mode`, 残留 / leftovers.
+- **17 screen subtitles rewritten** — several were design-spec sentences:
+  `permissions.screen.subtitle` read "先解释为什么需要访问…", an acceptance
+  clause whose subject was the developer, not the user.
+- **Date formatting follows the in-app language** — `AtlasFormatters` built its
+  formatter standalone and read `Locale.current`, so an English UI on a Chinese
+  system rendered 「4分钟前」 and 「2026年9月15日」. Affects 10 call sites.
+- **Calm Ledger design language v4** — the documentary-metaphor layer is retired;
+  colours, typography, spacing and layout are unchanged.
+- **README screenshots regenerated** — the committed ones still showed `Ledger`
+  and Chinese dates.
+
+### Fixed
+
+- **`№` removed from 5 hardcoded Swift literals** (`TaskCenterView`,
+  `OverviewLedgerFeed`, `LedgerDetailView`, `AtlasLedgerTimeline`,
+  `LedgerExportBuilder`) — the copy gate scanned only `.strings`, so it reported
+  PASS while `№` still rendered.
+- **Self-fulfilling test guard** — `testExportBuilderRendersFooterAndEntries`
+  passed its expected title in as a literal and then asserted the output
+  contained it, so it stayed green across the rename. It now goes through the
+  production entry point and asserts the product string.
+- **Two name/behaviour mismatches** — the export panel promised "currently
+  visible" entries while the code exported everything; an uninstall-plan step
+  titled "Archive N leftover items" archives nothing.
+- **UX-friction remediation follow-up** — four guards that could not fail
+  (mutation-tested) are repaired, and `full-acceptance.sh` no longer treats
+  "UI automation skipped" as success; zero-coverage paths emit machine-readable
+  sentinels and are judged failure by default.
+
+
 ## [2.0.0] - 2026-06-26
 
 The「Calm Ledger · 平静台账」full frontend redesign — trust becomes structural
