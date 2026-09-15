@@ -72,6 +72,13 @@ jobs:
           echo "ATLAS_VERSION=${GITHUB_REF_NAME#V}" >> "$GITHUB_ENV"
           echo "ATLAS_BUILD_NUMBER=${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
 
+      # README 媒体门禁 —— 发版是「版本更新」真正落地的那一刻，也正是截图最容易
+      # 脱节的一刻。纯 Python + 标准库，无需 GUI，macos runner 上直接跑。
+      # 第 5 维（漂移指纹）在这里最有意义：它回答「代码改了，README 的截图跟着重导了吗」。
+      # NOT_RUN（exit 2）同样判失败 —— 见 scripts/atlas/readme-media-gate.sh 的退出码语义。
+      - name: Verify README media assets are in sync with this release
+        run: ./scripts/atlas/readme-media-gate.sh
+
       - name: Select native packaging mode
         id: mode
         env:

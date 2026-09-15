@@ -36,11 +36,11 @@ Atlas for Mac 是一款原生 macOS 应用，回答你的 Mac 已经在问的三
 
 | Overview | Smart Clean |
 | --- | --- |
-| ![Overview — 一眼看清机器状态](Docs/Media/README/atlas-overview.png) | ![Smart Clean — 有解释、可安全的清理](Docs/Media/README/atlas-smart-clean.png) |
+| ![Overview — 一眼看清机器状态](Docs/Media/README/atlas-overview-zh-Hans.png) | ![Smart Clean — 有解释、可安全的清理](Docs/Media/README/atlas-smart-clean-zh-Hans.png) |
 
 | Apps | 历史记录 |
 | --- | --- |
-| ![Apps — 完整卸载，无残留](Docs/Media/README/atlas-apps.png) | ![历史记录 — 每个操作都可恢复](Docs/Media/README/atlas-ledger.png) |
+| ![Apps — 完整卸载，无残留](Docs/Media/README/atlas-apps-zh-Hans.png) | ![历史记录 — 每个操作都可恢复](Docs/Media/README/atlas-ledger-zh-Hans.png) |
 
 ## 安装
 
@@ -112,7 +112,8 @@ open Atlas.xcodeproj
 ```bash
 swift test --package-path Packages
 swift test --package-path Apps
-./scripts/atlas/export-readme-assets.sh   # 导出图标与截图到 Docs/Media/README/
+./scripts/atlas/export-readme-assets.sh   # 重导双语截图、封面与 manifest.json
+./scripts/atlas/readme-media-gate.sh      # 对上述资产做六维机检（CI 里也会跑）
 ```
 
 ## 仓库结构

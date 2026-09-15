@@ -36,11 +36,11 @@ It recommends before it executes, prefers recovery over permanent deletion, and 
 
 | Overview | Smart Clean |
 | --- | --- |
-| ![Overview — read what's going on at a glance](Docs/Media/README/atlas-overview.png) | ![Smart Clean — explained, safe cleanup](Docs/Media/README/atlas-smart-clean.png) |
+| ![Overview — read what's going on at a glance](Docs/Media/README/atlas-overview-en.png) | ![Smart Clean — explained, safe cleanup](Docs/Media/README/atlas-smart-clean-en.png) |
 
 | Apps | History |
 | --- | --- |
-| ![Apps — full uninstall, no leftovers](Docs/Media/README/atlas-apps.png) | ![History — every action recoverable](Docs/Media/README/atlas-ledger.png) |
+| ![Apps — full uninstall, no leftovers](Docs/Media/README/atlas-apps-en.png) | ![History — every action recoverable](Docs/Media/README/atlas-ledger-en.png) |
 
 ## Install
 
@@ -114,7 +114,8 @@ The local signing step gives local and prerelease builds a stable development si
 ```bash
 swift test --package-path Packages
 swift test --package-path Apps
-./scripts/atlas/export-readme-assets.sh   # exports icon + screenshots to Docs/Media/README/
+./scripts/atlas/export-readme-assets.sh   # re-renders bilingual screenshots, the cover and manifest.json
+./scripts/atlas/readme-media-gate.sh      # six-dimension gate over those assets (also runs in CI)
 ```
 
 ## Repository layout

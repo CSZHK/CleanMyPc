@@ -11,6 +11,12 @@ on:
       - 'Testing/**'
       - 'scripts/atlas/**'
       - 'Docs/Execution/MVP-Acceptance-Matrix.md'
+      # README 媒体资产 —— 第 [5/13] 步（readme-media-gate.sh）就审这些。
+      # 不列进来的话，一次「只改了截图/README 引用」的推送根本不会触发本 workflow，
+      # 而那正是门禁最该跑的场景。
+      - 'Docs/Media/README/**'
+      - 'README.md'
+      - 'README.zh-CN.md'
       - '.github/workflows/atlas-acceptance.yml'
 
 jobs:
@@ -21,7 +27,7 @@ jobs:
 
       # —— 为什么必须显式设 ATLAS_ALLOW_UI_SKIP ——
       #
-      # 第 [10/12] 步（Native UI automation）需要 Accessibility 授权，而 GitHub 托管的
+      # 第 [11/13] 步（Native UI automation）需要 Accessibility 授权，而 GitHub 托管的
       # runner 没有授权会话 ⇒ `ui-automation-preflight.sh` 必失败 ⇒ 脚本走跳过路径。
       # `full-acceptance.sh` 对零 UI 覆盖的**默认**判定是失败，故不设此变量 CI 必红。
       #

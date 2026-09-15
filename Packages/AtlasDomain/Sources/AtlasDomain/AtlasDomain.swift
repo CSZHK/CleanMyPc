@@ -1370,7 +1370,11 @@ public enum AtlasScaffoldFixtures {
         UUID(uuidString: value) ?? UUID()
     }
 
-    private static let now = Date()
+    /// 「现在」。走 `AtlasRenderClock` 而**不是**直接 `Date()` —— 导出 README 截图时
+    /// 会把它钉死到固定瞬间，否则截图里烘焙的墙钟时间每次重导都不同。
+    /// 这是两处时间依赖中的**第一处**（绝对时间），第二处是 `AtlasFormatters.relativeDate`
+    /// 的参考点；两处必须同源，详见 `AtlasRenderClock`。
+    private static var now: Date { AtlasRenderClock.now }
 
     public static var findings: [Finding] {
         findings(language: AtlasL10n.currentLanguage)

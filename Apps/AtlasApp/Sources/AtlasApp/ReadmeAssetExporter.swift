@@ -203,7 +203,30 @@ private struct AtlasReadmeAssetExporter {
     // 1200pt workspace ceiling. A giant 2880pt canvas left ~830pt of empty window-background
     // on each side.
     private let screenshotSize = CGSize(width: 1440, height: 900)
-    private let screenshotLanguage: AtlasLanguage = .en
+
+    /// 导出渲染的固定时刻（2025-10-09 08:53:20 UTC）。
+    ///
+    /// 一个常数管两件事，它们必须一致才有意义：
+    ///   1. `AtlasRenderClock` 的钉死值 —— 决定截图里所有时间戳；
+    ///   2. 回执编号的 `scanDate` —— 与截图上的日期对得上，否则画面自相矛盾。
+    ///
+    /// 改这个值 = 让所有截图上的日期整体平移一次，**不是**无副作用的改动。
+    private static let renderInstant = Date(timeIntervalSince1970: 1_760_000_000)
+
+    /// 截图覆盖的路由与文件名主干。
+    ///
+    /// ⚠️ 增删本表**必须**同步三处，否则门禁报红（这是设计意图，不是麻烦）：
+    ///   1. `README.md` / `README.zh-CN.md` 的 Screens 网格
+    ///   2. `scripts/atlas/readme_media_gate.py` 的 `EXPECTED_SCREENSHOTS`
+    ///
+    /// 门禁那份是**故意不与这里同源**的独立载体：若两边同源，导出器把某个路由
+    /// 弄丢时门禁会跟着一起忘掉，等于自证。分开写，漏一个就会响。
+    private static let screenshotRoutes: [(route: AtlasRoute, stem: String)] = [
+        (.overview, "overview"),
+        (.smartClean, "smart-clean"),
+        (.apps, "apps"),
+        (.ledger, "ledger"),
+    ]
 
     init(outputDirectory: URL) {
         self.outputDirectory = outputDirectory
@@ -211,78 +234,154 @@ private struct AtlasReadmeAssetExporter {
 
     func exportAll() async throws -> Int {
         try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
-        AtlasL10n.setCurrentLanguage(screenshotLanguage)
 
-        let state = AtlasScaffoldWorkspace.state(language: screenshotLanguage)
-        let canExecuteSmartCleanPlan = state.currentPlan.items.contains(where: { $0.kind != .inspectPermission && $0.kind != .reviewEvidence })
+        var exportedFileNames: [String] = []
+
+        // 逐语言导出。README.md 引 `-en`，README.zh-CN.md 引 `-zh-Hans` ——
+        // 此前两份 README 共用同一批英文图，中文读者看到的是英文界面。
+        //
+        // 语言是**进程级全局状态**（`AtlasL10n.setCurrentLanguage`），所以必须在
+        // 构造视图之前设置，且同一语言的「构造 → 渲染」之间不得插入另一种语言：
+        // 视图 body 是在 `cacheDisplay` 时才求值的。
+        //
+        // 退出前还原 —— 借了进程级状态就要还。当前导出模式下窗口标题写死英文、
+        // 导出完即 `NSApp.terminate`，所以**暂无用户可见影响**；但「改了全局态不还原」
+        // 这个模式一旦被挪到别的入口就会咬人。质量审查要求补上，故补齐。
+        let previousLanguage = AtlasL10n.currentLanguage
+        defer { AtlasL10n.setCurrentLanguage(previousLanguage) }
+
+        // 把「现在」钉死，让产物**可复现**。
+        //
+        // 不钉的话，截图里会烘焙渲染瞬间的墙钟时间 —— 实测重导 9 张里 4 张会变
+        // （`atlas-overview-*` / `atlas-ledger-*`），差异就是「Sep 15, 2026 at
+        // 6:39 PM」→「9:21 PM」。而漂移守卫会在每次文案改动后要求重导，于是
+        // 每次改动都往 git 历史里塞约 4 MB 新 blob。
+        //
+        // 必须钉 `AtlasRenderClock` 而**不是**改 fixture —— fixture 被
+        // `AtlasScaffoldWorkerService` 与 `AtlasWorkspaceRepository` 共用，
+        // 全局改它会改变 app 行为。时钟是导出专用的注入点，产品路径零影响。
+        AtlasRenderClock.setFixedInstant(Self.renderInstant)
+        defer { AtlasRenderClock.setFixedInstant(nil) }
+
+        for language in AtlasLanguage.allCases {
+            AtlasL10n.setCurrentLanguage(language)
+            let state = AtlasScaffoldWorkspace.state(language: language)
+            let canExecuteSmartCleanPlan = Self.canExecuteSmartCleanPlan(in: state)
+
+            for (route, stem) in Self.screenshotRoutes {
+                let fileName = "atlas-\(stem)-\(language.rawValue).png"
+                try renderView(
+                    screenshotView(for: route, state: state, canExecuteSmartCleanPlan: canExecuteSmartCleanPlan),
+                    fileName: fileName,
+                    language: language
+                )
+                exportedFileNames.append(fileName)
+            }
+        }
+
+        try exportAppIcon()
+        exportedFileNames.append("atlas-icon.png")
+
+        try verifyWrittenAssets(exportedFileNames)
+
+        return exportedFileNames.count
+    }
+
+    private static func canExecuteSmartCleanPlan(in state: AtlasWorkspaceState) -> Bool {
+        state.currentPlan.items.contains(where: { $0.kind != .inspectPermission && $0.kind != .reviewEvidence })
             && state.currentPlan.items
                 .filter { $0.kind != .inspectPermission && $0.kind != .reviewEvidence }
                 .allSatisfy { !($0.targetPaths ?? []).isEmpty }
+    }
 
-        try exportAppIcon()
-        try renderView(
-            AtlasScreenshotShell(activeRoute: .overview) {
-                OverviewFeatureView(snapshot: state.snapshot, isRefreshingHealthSnapshot: false)
-            },
-            fileName: "atlas-overview.png"
-        )
-        try renderView(
-            AtlasScreenshotShell(activeRoute: .smartClean) {
-                SmartCleanFeatureView(
-                    findings: state.snapshot.findings,
-                    plan: state.currentPlan,
-                    scanSummary: AtlasL10n.string("model.scan.ready"),
-                    scanProgress: 1,
-                    isScanning: false,
-                    isExecutingPlan: false,
-                    isCurrentPlanFresh: true,
-                    canExecutePlan: canExecuteSmartCleanPlan,
-                    planOutcome: nil,
-                    state: SmartCleanWorkflowState(
-                        currentStage: SmartCleanStage.review,
-                        displayedStage: SmartCleanStage.review,
-                        planNumber: state.snapshot.taskRuns.count + 1,
-                        receiptCode: AtlasLedgerReceipt.code(
-                            findings: state.snapshot.findings,
-                            scanDate: Date(timeIntervalSince1970: 1_760_000_000)
-                        ),
-                        selectedIDs: Set(state.snapshot.findings.map(\.id.uuidString))
+    private func screenshotView(
+        for route: AtlasRoute,
+        state: AtlasWorkspaceState,
+        canExecuteSmartCleanPlan: Bool
+    ) -> AnyView {
+        switch route {
+        case .overview:
+            return AnyView(
+                AtlasScreenshotShell(activeRoute: .overview) {
+                    OverviewFeatureView(snapshot: state.snapshot, isRefreshingHealthSnapshot: false)
+                }
+            )
+        case .smartClean:
+            return AnyView(
+                AtlasScreenshotShell(activeRoute: .smartClean) {
+                    SmartCleanFeatureView(
+                        findings: state.snapshot.findings,
+                        plan: state.currentPlan,
+                        scanSummary: AtlasL10n.string("model.scan.ready"),
+                        scanProgress: 1,
+                        isScanning: false,
+                        isExecutingPlan: false,
+                        isCurrentPlanFresh: true,
+                        canExecutePlan: canExecuteSmartCleanPlan,
+                        planOutcome: nil,
+                        state: SmartCleanWorkflowState(
+                            currentStage: SmartCleanStage.review,
+                            displayedStage: SmartCleanStage.review,
+                            planNumber: state.snapshot.taskRuns.count + 1,
+                            receiptCode: AtlasLedgerReceipt.code(
+                                findings: state.snapshot.findings,
+                                scanDate: Self.renderInstant
+                            ),
+                            selectedIDs: Set(state.snapshot.findings.map(\.id.uuidString))
+                        )
                     )
-                )
-            },
-            fileName: "atlas-smart-clean.png"
-        )
-        try renderView(
-            AtlasScreenshotShell(activeRoute: .apps) {
-                AppsFeatureView(
-                    apps: state.snapshot.apps,
-                    previewPlan: nil,
-                    currentPreviewedAppID: nil,
-                    restoreRefreshStatus: nil,
-                    summary: AtlasL10n.string("model.apps.ready"),
-                    isRunning: false,
-                    activePreviewAppID: nil,
-                    activeUninstallAppID: nil,
-                    onRefreshApps: {},
-                    onPreviewAppUninstall: { _ in },
-                    onExecuteAppUninstall: { _ in },
-                    onRescanLeftovers: { _ in }
-                )
-            },
-            fileName: "atlas-apps.png"
-        )
-        try renderView(
-            AtlasScreenshotShell(activeRoute: .ledger) {
-                LedgerFeatureView(
-                    taskRuns: state.snapshot.taskRuns,
-                    recoveryItems: state.snapshot.recoveryItems,
-                    restoringItemID: nil
-                )
-            },
-            fileName: "atlas-ledger.png"
-        )
+                }
+            )
+        case .apps:
+            return AnyView(
+                AtlasScreenshotShell(activeRoute: .apps) {
+                    AppsFeatureView(
+                        apps: state.snapshot.apps,
+                        previewPlan: nil,
+                        currentPreviewedAppID: nil,
+                        restoreRefreshStatus: nil,
+                        summary: AtlasL10n.string("model.apps.ready"),
+                        isRunning: false,
+                        activePreviewAppID: nil,
+                        activeUninstallAppID: nil,
+                        onRefreshApps: {},
+                        onPreviewAppUninstall: { _ in },
+                        onExecuteAppUninstall: { _ in },
+                        onRescanLeftovers: { _ in }
+                    )
+                }
+            )
+        case .ledger:
+            return AnyView(
+                AtlasScreenshotShell(activeRoute: .ledger) {
+                    LedgerFeatureView(
+                        taskRuns: state.snapshot.taskRuns,
+                        recoveryItems: state.snapshot.recoveryItems,
+                        restoringItemID: nil
+                    )
+                }
+            )
+        default:
+            // 不出图的路由走到这里说明 `screenshotRoutes` 与 view 构造脱节了。
+            // 静默返回一张别的路由的图比崩溃更糟 —— 截图会「看起来正常」。
+            preconditionFailure("README 截图未定义的路由：\(route.rawValue)")
+        }
+    }
 
-        return 5
+    /// 逐条确认产物真的落盘且非空。
+    ///
+    /// **不是**断言 `exportedFileNames.count == 预期` —— 那个数由同一段代码算出来，
+    /// 永远成立，属于自证断言（本仓 `I-8` 同型）。真正的独立预期在门禁的 Python
+    /// 常量表里；这里只负责「写盘这一步没失败」。
+    private func verifyWrittenAssets(_ fileNames: [String]) throws {
+        for fileName in fileNames {
+            let url = outputDirectory.appendingPathComponent(fileName)
+            let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+            let size = (attributes?[.size] as? NSNumber)?.intValue ?? 0
+            guard size > 0 else {
+                throw AtlasReadmeAssetExporterError.emptyAsset(fileName)
+            }
+        }
     }
 
     private func exportAppIcon() throws {
@@ -291,9 +390,9 @@ private struct AtlasReadmeAssetExporter {
         try writePNG(iconImage, to: outputDirectory.appendingPathComponent("atlas-icon.png"))
     }
 
-    private func renderView<Content: View>(_ view: Content, fileName: String) throws {
+    private func renderView<Content: View>(_ view: Content, fileName: String, language: AtlasLanguage) throws {
         let content = view
-            .environment(\.locale, screenshotLanguage.locale)
+            .environment(\.locale, language.locale)
             .environment(\.colorScheme, .light)
             .frame(width: screenshotSize.width, height: screenshotSize.height)
 
@@ -369,6 +468,7 @@ private extension AtlasRoute {
 private enum AtlasReadmeAssetExporterError: LocalizedError {
     case renderFailed(String)
     case pngEncodingFailed(String)
+    case emptyAsset(String)
 
     var errorDescription: String? {
         switch self {
@@ -376,6 +476,8 @@ private enum AtlasReadmeAssetExporterError: LocalizedError {
             return "Failed to render README screenshot \(name)."
         case let .pngEncodingFailed(name):
             return "Failed to encode PNG asset \(name)."
+        case let .emptyAsset(name):
+            return "README asset was written empty (0 bytes): \(name)."
         }
     }
 }

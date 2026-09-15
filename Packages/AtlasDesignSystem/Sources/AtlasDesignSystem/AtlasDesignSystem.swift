@@ -87,7 +87,10 @@ public enum AtlasFormatters {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
         formatter.locale = appLocale
-        return formatter.localizedString(for: date, relativeTo: Date())
+        // 参考点走 `AtlasRenderClock`，不是写死的 `Date()` —— 导出 README 截图时会
+        // 把它钉死，否则「4 分钟前」这类相对时间会随真实时间漂（今天「11 个月前」，
+        // 几个月后「1 年前」），截图永远不可复现。见 `AtlasRenderClock`。
+        return formatter.localizedString(for: date, relativeTo: AtlasRenderClock.now)
     }
 
     public static func shortDate(_ date: Date) -> String {

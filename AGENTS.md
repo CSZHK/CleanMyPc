@@ -19,7 +19,15 @@ xcodegen generate && open Atlas.xcodeproj                     # 生成 Xcode 工
 
 **测试边界（易踩）**：`./scripts/test.sh` 只跑遗留 Mole 的 shell/Go 套件（shellcheck + bats + go test + 安装测试），**不含任何 Swift 覆盖**。Swift 改动只能靠 `swift test` 验证，不要拿 `test.sh` 当代替。
 
-**文案门禁**：改 `Localizable.strings` 后跑 `./scripts/atlas/copy-gate.sh`（已接入 `full-acceptance.sh` 第 [4/12] 步）。判据源是 `Docs/COPY_GUIDELINES.md`，**不是**建议。十条规则里八条阻断（C1 术语禁用表 / C2 副标题超宽 / C3 副标题规格句式 / C4 术语映射不一致 / C6 占位符对称 / C7 键集合 parity / C9 Swift 字面量残留 / C10 解析完整性），两条只报告（C5 孤儿键归 `ATL-272` / C8 长句）——清单以 `copy_gate.py` 的 `BLOCKING` / `REPORTED` 常量为准。**退出码 2 = 文案源缺失，不是通过。**
+**README 媒体门禁**：README 截图有六维机检（存在性 / 尺寸 / 像素健康 / 引用完整性 / 漂移指纹 / 零孤儿），接在**三处**：`full-acceptance.sh` 第 [5/13] 步 · `atlas-acceptance.yml`（`paths:` 含媒体目录）· **`release.yml` 的 `native` job**（紧随版本号推导，在打包前 fail fast —— 发版正是截图最容易脱节的一刻）。判据源是 `Docs/design/2026-09-15-readme-media-lifecycle.md`。**报红的解药永远是一条命令**：`./scripts/atlas/export-readme-assets.sh`（本机跑，同时重渲 8 张双语截图、图标与封面 `fig01-cover.png`，并重建 `manifest.json`）。
+
+第 5 维「漂移指纹」覆盖（**以下非穷举，完整清单见 `scripts/atlas/readme-media-fingerprint-scope.txt`**）：4 个 feature view 源 + **`Apps/AtlasApp/Sources/AtlasApp/**/*.swift` 整个目录**（含真正被渲染的 `ReadmeAssetExporter.swift` —— 早先只点名 `AppShellView.swift`，结果改画布尺寸截图会变而门禁全绿，被对抗审查证伪）+ 设计系统 + **两份 `Localizable.strings`** —— 所以**改任何一条文案都会报红，直到重导截图**。这是设计要求（把 `REQ-copy-plain-language` 当时手工补做的动作变成强制项），不是缺陷。**退出码 2 = 清单/README 缺失，不是通过。**
+
+**残留局限（未闭合）**：本维能发现「真实 `AppShellView` 变了」，但**发现不了「导出器里那份手抄副本已与原版不一致」** —— 副本不变，重导产出的图也不变。根治要复用真实 shell（决断 D3 否掉了）。
+
+守卫本身的变异自检：`./scripts/atlas/readme-media-gate-selftest.sh` —— 15 条变异逐维验红。它在**临时副本**上做变异（`--root` 指过去），真实工作树一次都不碰，因此可以任意并发。改门禁规则后**必须**重跑。
+
+**文案门禁**：改 `Localizable.strings` 后跑 `./scripts/atlas/copy-gate.sh`（已接入 `full-acceptance.sh` 第 [4/13] 步）。判据源是 `Docs/COPY_GUIDELINES.md`，**不是**建议。十条规则里八条阻断（C1 术语禁用表 / C2 副标题超宽 / C3 副标题规格句式 / C4 术语映射不一致 / C6 占位符对称 / C7 键集合 parity / C9 Swift 字面量残留 / C10 解析完整性），两条只报告（C5 孤儿键归 `ATL-272` / C8 长句）——清单以 `copy_gate.py` 的 `BLOCKING` / `REPORTED` 常量为准。**退出码 2 = 文案源缺失，不是通过。**
 
 **UI 门禁（易踩）**：`./scripts/atlas/run-ui-automation.sh` 在 AX 未授权时**仍** `exit 0`（退出码本身看不出跳过），但现在会同时发出**机器可读哨兵** `ATLAS_UI_GATE=NOT_RUN`；`full-acceptance.sh` 只认哨兵、**不认那句人类可读英文**（匹配文案的话，改一个词就会静默退回假绿）。
 
@@ -33,7 +41,7 @@ xcodegen generate && open Atlas.xcodeproj                     # 生成 Xcode 工
 
 失败时 log 分别留存在 `${TMPDIR}/atlas-ui-automation-{NOT-RUN,BLOCKED,ZERO-TESTS}.log`。裁定原文见 `Docs/design/2026-09-14-ux-friction-remediation.md` §9；加固过程见 `changes/CHG-2026-09-ux-friction-review-remediation/`。
 
-> ⚠️ **CI 影响（易踩，已裁定）**：`.github/workflows/atlas-acceptance.yml` 直接跑 `full-acceptance.sh`，而 GitHub 托管 runner 没有 Accessibility 授权 ⇒ 必然走跳过路径 ⇒ 第 [10/12] 步失败 ⇒ **job 红**。
+> ⚠️ **CI 影响（易踩，已裁定）**：`.github/workflows/atlas-acceptance.yml` 直接跑 `full-acceptance.sh`，而 GitHub 托管 runner 没有 Accessibility 授权 ⇒ 必然走跳过路径 ⇒ 第 [11/13] 步失败 ⇒ **job 红**。
 >
 > **裁定（2026-09-15）**：该 workflow 的 acceptance 步骤已设 `env: ATLAS_ALLOW_UI_SKIP: "1"`，CI 因此在「本机无 AX」这一条上放行。
 >
