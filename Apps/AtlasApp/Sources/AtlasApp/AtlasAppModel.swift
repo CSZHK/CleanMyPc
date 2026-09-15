@@ -363,14 +363,22 @@ final class AtlasAppModel: ObservableObject {
     /// 因而对 worker 的任何次快照重载都免疫。
     private static func uiTestFixtureTaskRuns() -> [TaskRun] {
         let now = Date()
-        return (0..<7).map { index in
-            TaskRun(
+        // 显式标注闭包签名 + 把重复的时间偏移提出来。**这不是风格偏好**：
+        // CI（`macos-latest`，构建目标 `macos14.0`）上原写法会触发
+        // `error: the compiler is unable to type-check this expression in reasonable time`
+        // —— 而本地（Swift 6.2.4 / `macosx15.0`）清缓存重建 10s 即过。
+        // 即：这是一道**按 toolchain 而定的编译器性能悬崖**，只能照编译器给的建议
+        // （"breaking up the expression into distinct sub-expressions"）拆开。
+        // 语义与改前逐字等价：`-600*(index+1)` 不变，`finishedAt` = `startedAt + 30`。
+        return (0..<7).map { (index: Int) -> TaskRun in
+            let startedAt = now.addingTimeInterval(TimeInterval(-600 * (index + 1)))
+            return TaskRun(
                 id: UUID(),
                 kind: .scan,
                 status: .completed,
                 summary: "UI test fixture run \(index)",
-                startedAt: now.addingTimeInterval(TimeInterval(-600 * (index + 1))),
-                finishedAt: now.addingTimeInterval(TimeInterval(-600 * (index + 1) + 30))
+                startedAt: startedAt,
+                finishedAt: startedAt.addingTimeInterval(30)
             )
         }
     }

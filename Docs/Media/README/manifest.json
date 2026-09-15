@@ -96,7 +96,7 @@
       "Apps/AtlasApp/Sources/AtlasApp/AppShellView.swift": "c28542c499419332fd1ea680390945a763590ba9e74791645d7e6261ce3da9ed",
       "Apps/AtlasApp/Sources/AtlasApp/AtlasApp.swift": "f304c29cd313d5368b5523673c8890c63f3b4197763f1e62f95ed32ecfa51a0c",
       "Apps/AtlasApp/Sources/AtlasApp/AtlasAppCommands.swift": "9758f57d06cd16c4349a78e03044f3e6992a0f4a51d46a89f7a50603d038a1d1",
-      "Apps/AtlasApp/Sources/AtlasApp/AtlasAppModel.swift": "25975566f2ba4cd91dfaebf5853a499454afe33f9e3f74cdde0121641f858602",
+      "Apps/AtlasApp/Sources/AtlasApp/AtlasAppModel.swift": "d8df83fe92689f503f527082d80a6f8b0fc3a4fdaf91c5c03f84481b68c0cef0",
       "Apps/AtlasApp/Sources/AtlasApp/AtlasSnapshotFilter.swift": "c9639498654a58463deb51cd0a4102b911fa928f39555605fb68fc236cd3a243",
       "Apps/AtlasApp/Sources/AtlasApp/AtlasWorkflowViewState.swift": "81489d1478a0909842cfcbac258a7b418805d933a7b098242f98cef0521f7b63",
       "Apps/AtlasApp/Sources/AtlasApp/ReadmeAssetExporter.swift": "1979faa87b01c2b81b1452bed24e1cbfec7d2edc0350b866b25c0fefbe3e3175",
@@ -240,6 +240,6 @@
       "Packages/AtlasFeaturesSmartClean/Sources/AtlasFeaturesSmartClean/SmartCleanStageViews.swift",
       "Packages/AtlasFeaturesSmartClean/Sources/AtlasFeaturesSmartClean/SmartCleanSupportViews.swift"
     ],
-    "value": "a449782d9a07799b4613dc47b37637a8262d7a0606e1307089e7926f1ba0cd67"
+    "value": "0facbf12b393192ba86bc78b63673cc9de61969c495719bd9364a36414ef8b46"
   }
 }
