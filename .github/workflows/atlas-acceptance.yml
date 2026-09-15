@@ -21,7 +21,7 @@ jobs:
 
       # —— 为什么必须显式设 ATLAS_ALLOW_UI_SKIP ——
       #
-      # 第 [9/11] 步（原生 UI 自动化）需要 Accessibility 授权，而 GitHub 托管的
+      # 第 [10/12] 步（Native UI automation）需要 Accessibility 授权，而 GitHub 托管的
       # runner 没有授权会话 ⇒ `ui-automation-preflight.sh` 必失败 ⇒ 脚本走跳过路径。
       # `full-acceptance.sh` 对零 UI 覆盖的**默认**判定是失败，故不设此变量 CI 必红。
       #
