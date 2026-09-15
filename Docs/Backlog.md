@@ -416,8 +416,16 @@ Carry-forward items that are **product polish**, not process lessons — process
 `Agent 教训台账` in `.claude/skills/iteration-governance/SKILL.md`. Entries here exist so that
 "recorded" means "scheduled with an owner", not "written into a timeline and forgotten".
 
-- `ATL-271` Make Ledger export honor the active filter, or stop claiming it exports the current view — `Mac App Agent`
-- `ATL-272` Reclaim or explicitly retain the 6 orphaned `history.*` keys left by the ledger rename — `Docs Agent`
+- ~~`ATL-271` Make Ledger export honor the active filter, or stop claiming it exports the current view~~ — **`Closed` 2026-09-15** by `REQ-copy-plain-language`: took the second branch of the "or" — `ledger.export.panel.detail` / `ledger.export.empty` no longer claim to export "currently visible" entries, because `LedgerFeatureView.saveReport()` passes the full `taskRuns` / `recoveryItems` sets. — `Mac App Agent`
+- `ATL-272` Reclaim or explicitly retain the orphaned keys left by the ledger rename — `Docs Agent`
+  > **Corrected 2026-09-15**: the count was recorded as **6** (`history.*` only). The copy gate's C5 dimension measured **310** unreferenced keys across the whole file (26% of 1166) — including entire dead surfaces (`apps.detail.*`, `apps.list.*`, `smartclean.status.*`). Re-scope before working it.
+- `ATL-273` `apps.inventory.title`「应用清单」claims a checklist; the list is actually sorted by storage descending, so there is no column to reconcile against — `UX Agent`
+- `ATL-274` 「待复核」carries three meanings at once (risk filter chip `risk.review`, risk section name, workflow stage name); the filtered count and the section count need not be equal, so users reasonably read them as the same set — `UX Agent`
+- `ATL-275` Two different quantities on the Smart Clean screen both render as 「清理项」 with no unit hint: `smartclean.summary.findingCount` counts scan findings (can be hundreds), while `smartclean.stage.metric.selected` / `receipt.items.value` count plan steps. Users will see the two numbers disagree and suspect a defect — `UX Agent`
+- `ATL-276` `fileorganizer.destination.title`「整理目标」renders above the path *value*, while the terminology baseline ruled that the settings section is 「整理目标」 and the path value is 「目标位置」 — the two names are effectively swapped. 「原始位置 / 目标位置」 adds a third near-synonym set — `UX Agent`
+- `ATL-277` Both READMEs (`README.md` / `README.zh-CN.md`) reference the same unsuffixed screenshots, but `ReadmeAssetExporter.swift:206` hardcodes `screenshotLanguage: AtlasLanguage = .en` — so the Chinese README ships English screenshots — `Docs Agent` + `Mac App Agent`
+
+Source for `ATL-273`..`ATL-277`: the adversarial copy review run during `REQ-copy-plain-language` (2026-09-15). Each was traced back to source and confirmed, then deliberately left out of that REQ's scope. They are **pre-existing**, not regressions from it.
 
 ## Definition of Ready
 
