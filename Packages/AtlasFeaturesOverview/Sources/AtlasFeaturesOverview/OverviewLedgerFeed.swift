@@ -91,7 +91,7 @@ public struct OverviewLedgerFeed: View {
             onSelectEntry?(entry.id)
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: AtlasSpacing.sm) {
-                Text("№\(entry.number)")
+                Text("#\(entry.number)")
                     .font(AtlasTypography.ledgerNumber)
                     .foregroundStyle(AtlasColor.brand)
                     .monospacedDigit()

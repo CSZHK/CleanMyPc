@@ -258,27 +258,31 @@ final class LedgerModelTests: XCTestCase {
     // MARK: - Export builder (pure function)
 
     func testExportBuilderRendersFooterAndEntries() {
-        let entry = LedgerExportBuilder.ExportEntry(
-            id: "test-1",
-            displayNumber: 7,
-            kind: "智能清理扫描",
-            status: "已完成",
+        // **走生产入口 `renderReport`**，而不是 `render(Input(title: <测试自造的串>))`。
+        //
+        // 原用例把 `title: "维护台账报告"` 当字面量传给 Input，再断言输出含该串 ——
+        // 那是**断言自己的输入**：产品文案从「台账」改成「历史记录」后它依然全绿。
+        // 2026-09-15 终审实测发现，与仓库曾查出的 `I-8`（「断言自己算 n 再造期望串，
+        // 被测视图未读」）同型。改为断言标题等于**产品文案键的实际取值**。
+        let run = TaskRun(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000D1")!,
+            kind: .scan,
+            status: .completed,
             summary: "Cleaned 1.2 GB",
             startedAt: Date(),
-            finishedAt: Date(),
-            recoveryBytes: nil
+            finishedAt: Date()
         )
-        let input = LedgerExportBuilder.Input(
-            title: "维护台账报告",
-            generatedAt: Date(),
+        let markdown = LedgerExportController.renderReport(
+            taskRuns: [run],
+            recoveryItems: [],
             retentionDays: 7,
-            entries: [entry],
-            summary: LedgerExportBuilder.ExportSummary(taskRunCount: 1, recoveryItemCount: 0, totalRecoveryBytes: 0, activeTaskCount: 0)
+            planNumber: { _ in 7 }
         )
-        let markdown = LedgerExportBuilder.render(input)
 
-        XCTAssertTrue(markdown.contains("# 维护台账报告"), "report title heading")
-        XCTAssertTrue(markdown.contains("№7"), "entry display number")
+        XCTAssertTrue(
+            markdown.contains("# " + AtlasL10n.string("ledger.export.report.title")),
+            "报告标题必须来自产品文案键，而非测试自造串")
+        XCTAssertTrue(markdown.contains("#7"), "entry display number")
         XCTAssertTrue(markdown.contains("Cleaned 1.2 GB"), "entry summary as blockquote")
         XCTAssertTrue(markdown.contains("本报告由 Atlas 在本机生成"), "mandated footer disclaimer (zh)")
     }
@@ -292,7 +296,7 @@ final class LedgerModelTests: XCTestCase {
             summary: LedgerExportBuilder.ExportSummary(taskRunCount: 0, recoveryItemCount: 0, totalRecoveryBytes: 0, activeTaskCount: 0)
         )
         let markdown = LedgerExportBuilder.render(input)
-        XCTAssertTrue(markdown.contains("当前没有可见的台账条目"), "empty entries placeholder")
+        XCTAssertTrue(markdown.contains(AtlasL10n.string("ledger.export.empty")), "empty entries placeholder")
         XCTAssertTrue(markdown.contains("本报告由 Atlas"), "footer still present on empty report")
     }
 

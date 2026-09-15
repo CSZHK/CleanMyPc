@@ -113,8 +113,8 @@ public enum LedgerExportBuilder {
         } else {
             for entry in input.entries {
                 // Round-21: recovery-item entries have no ledger № (displayNumber
-                // nil) — render their heading without a "№N · " prefix.
-                let numberPrefix = entry.displayNumber.map { "№\($0) · " } ?? ""
+                // nil) — render their heading without a "#N · " prefix.
+                let numberPrefix = entry.displayNumber.map { "#\($0) · " } ?? ""
                 lines.append("### \(numberPrefix)\(entry.kind)")
                 lines.append("")
                 lines.append("- \(AtlasL10n.string("ledger.export.entry.status", entry.status))")

@@ -151,9 +151,9 @@ public struct AtlasLedgerTimeline: View {
                     HStack(alignment: .firstTextBaseline, spacing: AtlasSpacing.sm) {
                         // № is a monotonic plan counter (spec §1.6). Recovery
                         // items are not plan-numbered (number == 0) — suppress the
-                        // glyph so they don't render a misleading "№0" (round-4).
+                        // glyph so they don't render a misleading "#0" (round-4).
                         if entry.number > 0 {
-                            Text("№\(entry.number)")
+                            Text("#\(entry.number)")
                                 .font(AtlasTypography.ledgerNumber)
                                 .foregroundStyle(AtlasColor.brand)
                         }

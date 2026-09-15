@@ -3,8 +3,12 @@ import AtlasDomain
 import SwiftUI
 
 public struct SettingsFeatureView: View {
-    /// `P2-1`：体系词键（四个保留词 + 补解释）。
-    static let glossaryTermKeys = ["leftover", "footprint", "ledger", "evidence"]
+    /// `P2-1`：体系词键（保留词 + 补解释）。
+    ///
+    /// **`REQ-copy-plain-language` 已收缩**：原 4 词为「残留 / 足迹 / 台账 / 证据」。
+    /// 术语退役后「足迹→占用」「台账→历史记录」已是不言自明的白话，
+    /// **术语表不该解释不需要解释的词**，故移除，改为「残留 / 未删除项 / 恢复点」。
+    static let glossaryTermKeys = ["leftover", "evidence", "restorepoint"]
 
     @State private var selectedPanel: SettingsPanel = .general
     @State private var presentedDocument: SettingsDocument?

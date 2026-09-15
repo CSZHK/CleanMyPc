@@ -113,7 +113,7 @@ private struct TaskCenterRow: View {
             VStack(alignment: .leading, spacing: AtlasSpacing.xxs) {
                 HStack(spacing: AtlasSpacing.xs) {
                     if let planNumber {
-                        Text("№\(planNumber)")
+                        Text("#\(planNumber)")
                             .font(AtlasTypography.ledgerNumber)
                             .foregroundStyle(AtlasColor.brand)
                             .accessibilityLabel(AtlasL10n.string("taskcenter.planNumber.a11y", planNumber))

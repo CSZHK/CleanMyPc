@@ -91,7 +91,7 @@ public struct LedgerDetailView: View {
             // file-backed recovery) — never for state-only records, never with
             // invented bytes/days.
             if item.hasPhysicalRestorePath {
-                AtlasStampBadge(title: AtlasL10n.string("ledger.stamp.title"), subtitle: AtlasL10n.string("ledger.stamp.subtitle", AtlasFormatters.byteCount(item.bytes), retentionDays), numberText: "№", style: .watermark)
+                AtlasStampBadge(title: AtlasL10n.string("ledger.stamp.title"), subtitle: AtlasL10n.string("ledger.stamp.subtitle", AtlasFormatters.byteCount(item.bytes), retentionDays), numberText: "#", style: .watermark)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     .padding([.trailing, .bottom], AtlasSpacing.lg)
             }
