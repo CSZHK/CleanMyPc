@@ -19,6 +19,8 @@ xcodegen generate && open Atlas.xcodeproj                     # 生成 Xcode 工
 
 **测试边界（易踩）**：`./scripts/test.sh` 只跑遗留 Mole 的 shell/Go 套件（shellcheck + bats + go test + 安装测试），**不含任何 Swift 覆盖**。Swift 改动只能靠 `swift test` 验证，不要拿 `test.sh` 当代替。
 
+**文案门禁**：改 `Localizable.strings` 后跑 `./scripts/atlas/copy-gate.sh`（已接入 `full-acceptance.sh` 第 [4/12] 步）。判据源是 `Docs/COPY_GUIDELINES.md`，**不是**建议。八条规则里六条阻断（术语禁用表 / 副标题宽度与句式 / zh-en 术语成对 / 占位符 / 键集合），两条只报告（孤儿键归 `ATL-272` / 长句）。**退出码 2 = 文案源缺失，不是通过。**
+
 **UI 门禁（易踩）**：`./scripts/atlas/run-ui-automation.sh` 在 AX 未授权时**仍** `exit 0`（退出码本身看不出跳过），但现在会同时发出**机器可读哨兵** `ATLAS_UI_GATE=NOT_RUN`；`full-acceptance.sh` 只认哨兵、**不认那句人类可读英文**（匹配文案的话，改一个词就会静默退回假绿）。
 
 零 UI 覆盖有**三条**路径，一律先于「是否通过」判定，默认**全部判失败**：
