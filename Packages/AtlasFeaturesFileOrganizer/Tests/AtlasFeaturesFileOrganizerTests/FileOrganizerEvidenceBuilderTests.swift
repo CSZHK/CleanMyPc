@@ -8,6 +8,25 @@ import XCTest
 /// rule attribution, no conflict row without a real filesystem mark.
 final class FileOrganizerEvidenceBuilderTests: XCTestCase {
 
+    /// 显式钉死语言，**不要**依赖「上一个测试文件留下的」进程级全局态。
+    ///
+    /// 为什么必须写这一行：这些用例断言的是**本地化后的标签文本**（形如
+    /// `contains("Destination") || contains("目标")`），而 `AtlasL10n.currentLanguage`
+    /// 是进程级全局态 —— 不设它就等于让断言取决于 SwiftPM 的测试执行顺序。
+    ///
+    /// 实证：本文件自 CI 建立以来一直在 `:242` / `:244` 失败（2026-08-26 起连续 3 周多），
+    /// 而本地 613 条全过 —— 差别只是本地恰好由前面的文件留下 `.zhHans`。CI 上落到 `.en`，
+    /// 而 `fileorganizer.evidence.destination` 的 en 现值是 `Move target`，
+    /// 既不含 `Destination` 也不含 `目标`，于是红。
+    ///
+    /// ⚠️ **这里修的是「不确定性」，不是「文案对不对」**：钉死 `.zhHans` 后本文件只覆盖
+    /// 中文侧，en 侧 `Move target` 与已签字裁定「`Destination` 保留」的冲突**未被裁决**，
+    /// 另记 `Docs/Backlog.md` 的 `ATL-283`。别把这里的绿读成「文案没问题」。
+    override func setUp() {
+        super.setUp()
+        AtlasL10n.setCurrentLanguage(.zhHans)
+    }
+
     // MARK: - Fixtures
 
     private func entry(
