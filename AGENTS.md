@@ -52,6 +52,14 @@ xcodegen generate && open Atlas.xcodeproj                     # 生成 Xcode 工
 >
 > **关键区分**（别把它当万能开关）：该变量**只**豁免两条**环境限制**路径（AX 未授权 / atlas 与 repro 双 timeout）。它**不**豁免「`xcodebuild` 收集到 0 个用例」——那是配置缺陷，**CI 里照样红**。即：CI 接受「这台 runner 没有 AX」，不接受「UI 用例根本没跑起来」。
 >
+> 🔴 **反证（2026-09-15，勿删）**：上面那句「必然走跳过路径」**是推断，不是观测**，且已被证伪。
+> `atlas-acceptance.yml` 自建立起**从未成功过**（20+ 次全红，全部卡在第 [1/13] 步），所以第 [11/13] 步的行为**从来没有人见过**。
+> 修好 [1/13]/[2/13] 后的首次成功运行（`#34984224153`，Xcode 26.6 / `macos-latest`）显示：
+> `AtlasAppUITests` **真的跑了并通过** —— `Executed 11 tests, with 0 failures` · `** TEST SUCCEEDED **`。
+> 即：**该 runner 有 Accessibility 授权**，`ATLAS_ALLOW_UI_SKIP=1` 自设立起一直是空转的。
+> 裁定本身（保留该豁免作防御）可以不动，但**理由需要重核**；另注意 `run-ui-automation.sh:24` 的
+> `xcodegen: command not found` 是无害的——`Atlas.xcodeproj` 已入库，测试直接用现成工程跑通了。
+>
 > **本地与发版候选机不要设它** —— 那里有 AX 授权，UI 层断言应当真实执行。
 
 另两点：`swift test` **跑不到 XCUITest**（需 `xcodebuild test`，该脚本已封装 `-only-testing:AtlasAppUITests`）；各包内的 `*FeatureViewTests` 只断言 view 的初始属性，**无渲染断言能力**——能对渲染结果下断言的只有 `Apps/AtlasAppUITests`。
