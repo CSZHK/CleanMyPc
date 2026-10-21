@@ -97,6 +97,9 @@
 | `Limited Mode` | 受限模式 | Atlas works with partial permissions and asks for more access only when a specific workflow needs it. |
 | `Full Disk Access` / `Accessibility` / `Notifications` | 完全磁盘访问 / 辅助功能 / 通知 | macOS system permission names — do not translate. |
 | `Destination` | 目标位置 | where File Organizer moves files (the path value; the settings section itself is 「整理目标」). |
+| `Containers` | 容器 | macOS system folder that keeps one app's data isolated; names match system paths so they can be cross-checked. |
+| `Group Containers` | 群组容器 | system folder where apps from the same developer share data. |
+| `Saved State` | 保存状态 | system files an app uses to remember its last windows and positions. |
 
 ### 拆词与量词规则（勿回退）
 
@@ -116,6 +119,12 @@
 - **残留** — 卸载或清理后仍留在磁盘上的配置文件、缓存和启动项。
 - **未删除项** — Atlas 扫到、但本次不会移除的文件。列出来不等于会移除。
 - **恢复点** — 执行前自动建立的可恢复位置；保留期内可还原。
+
+2026-10 二轮新增（卸载明细里的 macOS 系统目录词；裁定为保持系统名，否则与真实路径对不上）：
+
+- **容器** — macOS 给应用隔离数据用的系统目录，名字与系统路径一致，方便对照排查。
+- **群组容器** — 同一开发者的多个应用共享数据的系统目录。
+- **保存状态** — 应用用来记住上次窗口和页面位置的系统文件。
 
 ## 8. Consistency Rules
 

@@ -8,8 +8,6 @@
 "route.smartclean.subtitle" = "Scan and check a cleanup plan.";
 "route.apps.title" = "Apps";
 "route.apps.subtitle" = "See app storage, leftovers, and uninstall plans.";
-"route.history.title" = "History";
-"route.history.subtitle" = "Track runs, outcomes, and recovery entry points.";
 "route.ledger.title" = "History";
 "route.ledger.subtitle" = "Results of each run, and where to restore from.";
 "route.permissions.title" = "Permissions";
@@ -94,9 +92,9 @@
 "fixture.storage.movies.age" = "Large media files from the last 6 months";
 "fixture.storage.installers.title" = "Unused installers";
 "fixture.storage.installers.age" = "Mostly disk images older than 30 days";
-"application.error.workerRejected" = "Worker rejected request (%@): %@";
-"application.error.executionUnavailable" = "Atlas could not run this action with the real worker path: %@";
-"application.error.helperUnavailable" = "Atlas could not complete this action because the privileged helper is unavailable: %@";
+"application.error.workerRejected" = "This action was not handled (%@): %@";
+"application.error.executionUnavailable" = "Atlas could not run this action right now: %@";
+"application.error.helperUnavailable" = "Atlas could not complete this action because a required system component is unavailable: %@";
 "application.error.restoreExpired" = "Atlas can no longer restore this item because its recovery retention period has expired: %@";
 "application.error.restoreConflict" = "Atlas could not restore this item because its original destination already exists: %@";
 "xpc.error.encodingFailed" = "Could not encode the background worker request: %@";
@@ -132,8 +130,8 @@
 "infrastructure.execute.summary.clean.none" = "No selected Smart Clean items were moved on disk.";
 "infrastructure.execute.summary.clean.stale.one" = "1 selected Smart Clean item was already gone on disk and was cleared from the current scan.";
 "infrastructure.execute.summary.clean.stale.other" = "%d selected Smart Clean items were already gone on disk and were cleared from the current scan.";
-"infrastructure.execute.summary.clean.review.one" = "1 selected item will not be handled this time.";
-"infrastructure.execute.summary.clean.review.other" = "%d selected items will not be handled this time.";
+"infrastructure.execute.summary.clean.review.one" = "1 review-only item was not handled this time.";
+"infrastructure.execute.summary.clean.review.other" = "%d review-only items were not handled this time.";
 "infrastructure.execute.summary.clean.failed.one" = "1 selected Smart Clean item could not be moved and remains in the current scan.";
 "infrastructure.execute.summary.clean.failed.other" = "%d selected Smart Clean items could not be moved and remain in the current scan.";
 "infrastructure.restore.summary.one" = "Re-added 1 item in Atlas.";
@@ -141,8 +139,8 @@
 "infrastructure.restore.summary.none" = "No recovery items were restored.";
 "infrastructure.restore.summary.disk.one" = "Restored 1 recovery item to its original on-disk path.";
 "infrastructure.restore.summary.disk.other" = "Restored %d recovery items to their original on-disk paths.";
-"infrastructure.restore.summary.state.one" = "Re-added 1 recovery item to Atlas only because no on-disk restore path was available.";
-"infrastructure.restore.summary.state.other" = "Re-added %d recovery items to Atlas only because no on-disk restore paths were available.";
+"infrastructure.restore.summary.state.one" = "Restored 1 item in Atlas. No on-disk restore path was available, so no files were moved.";
+"infrastructure.restore.summary.state.other" = "Restored %d items in Atlas. No on-disk restore path was available, so no files were moved.";
 "infrastructure.apps.loaded.one" = "Loaded 1 app.";
 "infrastructure.apps.loaded.other" = "Loaded %d apps.";
 "infrastructure.apps.preview.summary" = "Generated an uninstall plan for %@.";
@@ -248,24 +246,24 @@
 "overview.metric.reclaimable.title" = "Reclaimable Space";
 "overview.metric.reclaimable.detail" = "Estimated from the current cleanup plan. After a plan runs, this recalculates from the remaining items.";
 "overview.metric.findings.title" = "Items Ready";
-"overview.metric.findings.detail" = "Grouped into Safe, Review, and Advanced lanes before you execute anything.";
+"overview.metric.findings.detail" = "Sorted into Safe, Needs Review, and Advanced before anything runs.";
 "overview.metric.permissions.title" = "Permissions Ready";
 "overview.metric.permissions.ready" = "Atlas has the access it needs for the current workflows.";
 "overview.metric.permissions.limited" = "A permission required for the current workflows is still missing, so Atlas remains in limited mode.";
 "overview.snapshot.title" = "System Snapshot";
-"overview.snapshot.subtitle" = "High-signal health data and the safest next optimizations.";
+"overview.snapshot.subtitle" = "Key health info and what to handle first.";
 "overview.snapshot.loading.title" = "Refreshing system snapshot";
 "overview.snapshot.loading.detail" = "Atlas is collecting the latest health information before updating the recommendations.";
 "overview.snapshot.memory.title" = "Memory Used";
-"overview.snapshot.memory.detail" = "A quick signal for memory pressure and long-lived background load.";
+"overview.snapshot.memory.detail" = "An early signal when memory is running tight.";
 "overview.snapshot.disk.title" = "Disk Used";
 "overview.snapshot.disk.detail" = "%@/%@ GB on the current system volume.";
 "overview.snapshot.uptime.title" = "Uptime";
-"overview.snapshot.uptime.detail" = "Useful for spotting stale caches, long sessions, and restart candidates.";
+"overview.snapshot.uptime.detail" = "A hint that it may be time to restart.";
 "overview.snapshot.callout.warning.title" = "Storage pressure is worth addressing soon";
 "overview.snapshot.callout.warning.detail" = "Start with the Safe lane in Smart Clean to reclaim space without widening risk.";
 "overview.snapshot.callout.ok.title" = "Your system looks stable enough for a safe cleanup pass";
-"overview.snapshot.callout.ok.detail" = "Review the recommended maintenance items below, then open Smart Clean when you want a deeper plan.";
+"overview.snapshot.callout.ok.detail" = "Check the suggestions below, then open Smart Clean when you are ready.";
 "overview.snapshot.empty.title" = "System snapshot unavailable";
 "overview.snapshot.empty.detail" = "Atlas can still show persisted items and recovery data while it waits for the next health refresh.";
 "overview.actions.title" = "Recommended Actions";
@@ -335,7 +333,7 @@
 "overview.recommend.scan.stale.rationale" = "Scan results are older than 7 days — rescan to reflect the current state.";
 "overview.recommend.scan.stale.rationale.receipt" = "%@";
 
-"overview.recommend.disk.headline" = "Disk space is tight — deep scan recommended";
+"overview.recommend.disk.headline" = "Disk space is tight — a cleanup pass recommended";
 "overview.recommend.disk.rationale" = "Disk usage is at %d%% — prioritize clearing large caches and leftovers.";
 "overview.recommend.disk.primary" = "Go to Smart Clean";
 
@@ -347,7 +345,7 @@
 "smartclean.screen.subtitle" = "Scan for cleanable items, check the plan, then run it.";
 "smartclean.controls.title" = "Scan & Plan";
 "smartclean.controls.subtitle" = "Scan, update the plan, then run it.";
-"smartclean.loading.scan" = "Smart Clean is scanning";
+"smartclean.loading.scan" = "Scanning for cleanable items";
 "smartclean.loading.execute" = "Running the reviewed cleanup plan";
 "smartclean.action.runScan" = "Run Scan";
 "smartclean.action.runScan.hint" = "Starts a new Smart Clean scan and rebuilds the current cleanup plan.";
@@ -355,12 +353,6 @@
 "smartclean.action.refreshPreview.hint" = "Regenerates the cleanup plan from what was found, without running anything.";
 "smartclean.action.execute" = "Run Plan";
 "smartclean.action.execute.hint" = "Runs the reviewed cleanup plan and keeps recoverable work visible in History.";
-"smartclean.primary.scan.title" = "Start with a fresh scan";
-"smartclean.primary.scan.detail" = "Scan first when you do not yet have a current plan to review.";
-"smartclean.primary.refresh.title" = "Refresh the current plan";
-"smartclean.primary.refresh.detail" = "Update the plan before you trust it, especially after a rescan or a validation change.";
-"smartclean.primary.execute.title" = "Run the reviewed plan";
-"smartclean.primary.execute.detail" = "The current plan is ready, so execution becomes the single primary action.";
 "smartclean.metric.previewSize.title" = "Estimated Space";
 "smartclean.metric.previewSize.detail" = "Estimated space the current cleanup plan can free. After a plan runs, this value recalculates from the remaining items.";
 "smartclean.metric.actions.title" = "Selected Actions";
@@ -387,8 +379,8 @@
 "smartclean.preview.empty.detail" = "Run a scan or update the plan to turn what was found into concrete cleanup steps.";
 "smartclean.empty.title" = "No matching items";
 "smartclean.empty.detail" = "Clear the current search or run another scan to repopulate the Smart Clean lanes.";
-"smartclean.status.scanning" = "Scanning for reclaimable clutter";
-"smartclean.status.executing" = "Applying the reviewed cleanup plan";
+"smartclean.status.scanning" = "Scanning for cleanable items";
+"smartclean.status.executing" = "Running the reviewed cleanup plan";
 "smartclean.status.empty" = "Run a fresh scan to generate a cleanup plan";
 "smartclean.status.cached" = "This plan has not been revalidated yet";
 "smartclean.status.revalidationFailed" = "Could not update the current plan";
@@ -406,9 +398,9 @@
 "smartclean.support.helper" = "This target is system-protected, so it needs your confirmation before cleanup.";
 "smartclean.support.inspectPermission" = "Requires extra attention before Atlas can safely proceed.";
 "smartclean.support.reviewOnly" = "Atlas can show this step, but it will not be handled this time.";
-"smartclean.section.safe" = "High-confidence cleanup candidates that should stay easy to recover.";
+"smartclean.section.safe" = "Mostly safe to clean, and usually recoverable.";
 "smartclean.section.review" = "Worth a quick review before you remove them.";
-"smartclean.section.advanced" = "Potentially sensitive items that deserve an informed decision.";
+"smartclean.section.advanced" = "These can affect how your Mac runs — check before removing.";
 "smartclean.expectation.safe" = "Usually recoverable";
 "smartclean.expectation.review" = "Review before removal";
 "smartclean.expectation.advanced" = "Inspect carefully";
@@ -434,7 +426,7 @@
 "apps.outcome.failed.title" = "The app action did not complete";
 "apps.outcome.advisory.title" = "The app action needs attention";
 "apps.metric.listed.title" = "Apps Listed";
-"apps.metric.listed.detail" = "Installed apps Atlas can inspect and turn into uninstall plans.";
+"apps.metric.listed.detail" = "Apps Atlas can inspect.";
 "apps.metric.footprint.title" = "Total App Storage";
 "apps.metric.footprint.detail" = "Combined size across the current app inventory.";
 "apps.metric.leftovers.title" = "Leftover Files";
@@ -471,7 +463,7 @@
 "apps.uninstall.running" = "Uninstalling…";
 "apps.uninstall.hint" = "Runs the reviewed uninstall plan for this app and tracks recoverable items when supported.";
 "apps.list.title" = "Installed App Storage";
-"apps.list.subtitle" = "See app storage, bundle ID, leftover count, and uninstall actions.";
+"apps.list.subtitle" = "See storage, leftover files, and uninstall actions.";
 "apps.list.empty.title" = "No matching apps";
 "apps.list.empty.detail" = "Try another search term or refresh the app list to inspect the latest uninstall candidates.";
 "apps.list.row.footnote" = "%@ • %d leftover files";
@@ -489,7 +481,7 @@
 "apps.detail.path" = "App location";
 "apps.detail.callout.preview.title" = "Build the uninstall plan first";
 "apps.detail.callout.preview.detail" = "Atlas keeps uninstall confidence high by showing the exact steps before anything is removed.";
-"apps.detail.callout.ready.title" = "This app is ready for reviewed uninstall";
+"apps.detail.callout.ready.title" = "Uninstall plan ready — review it, then run it.";
 "apps.detail.callout.ready.detail" = "The plan below shows what Atlas will remove now and what stays untouched.";
 "apps.restore.refresh.card.title" = "Post-restore storage state";
 "apps.restore.refresh.card.subtitle" = "Refreshes the app list after a restore, then updates leftover counts.";
@@ -508,12 +500,12 @@
 "apps.restore.divergence.rescan" = "Re-scan leftovers";
 
 // Calm Ledger M3 Batch L1 — Apps evidence panel + action bar (spec §3 Apps row)
-"apps.evidence.why.idle" = "Storage and leftovers for %@. Preview the uninstall plan first, then review recoverable steps.";
-"apps.evidence.why.ready" = "Uninstall plan ready for %@. Below are the 10 categories of storage and leftovers — check them before running.";
-"apps.evidence.bundlePath" = "App path";
+"apps.evidence.why.idle" = "Storage and leftovers for %@. Review the uninstall plan first, then check recoverable steps.";
+"apps.evidence.why.ready" = "Uninstall plan ready for %@. Below is the storage and leftover detail — check it before running.";
+"apps.evidence.bundlePath" = "App location";
 "apps.evidence.bundleBytes" = "App storage";
 "apps.evidence.leftoverItems" = "Leftover items";
-"apps.evidence.residualEstimate" = "Residual estimate";
+"apps.evidence.residualEstimate" = "Estimated leftovers";
 "apps.evidence.residual.reclaimable" = "Move to recovery: %@";
 "apps.evidence.residual.withReview" = "Recoverable %@ · Review-only %@";
 "apps.evidence.recovery" = "%d recoverable · bundle moves to the recovery area, purged after %d days";
@@ -632,8 +624,8 @@
 "permissions.metric.required.detail" = "The core permissions that decide whether Atlas can leave limited mode.";
 "permissions.metric.later.title" = "Can be granted later";
 "permissions.metric.later.detail" = "These can stay off without putting Atlas into limited mode until a related workflow asks for them.";
-"permissions.metric.tracked.title" = "Tracked Permissions";
-"permissions.metric.tracked.detail" = "The minimum set Atlas surfaces for the current workflows.";
+"permissions.metric.tracked.title" = "Total Permissions";
+"permissions.metric.tracked.detail" = "Everything this version of Atlas checks.";
 "permissions.refresh" = "Check Permission Status";
 "permissions.refresh.hint" = "Checks the current permission snapshot without opening System Settings.";
 "permissions.requiredSection.title" = "Required Now";
@@ -660,10 +652,8 @@
 
 "settings.screen.title" = "Settings";
 "settings.screen.subtitle" = "Language, retention, notifications, exclusions, and legal info.";
-"settings.callout.title" = "Atlas stores state locally and keeps destructive work auditable";
+"settings.callout.title" = "Data stays on this Mac, and important changes keep a record.";
 "settings.callout.detail" = "Recovery retention, notifications, exclusions, acknowledgements, and notices are all visible here so users can understand how the product behaves before they rely on it.";
-"settings.panel.title" = "Preference Center";
-"settings.panel.subtitle" = "General, recovery, and trust.";
 "settings.panel.general" = "General";
 "settings.panel.recovery" = "Recovery";
 "settings.panel.trust" = "Trust";
@@ -681,11 +671,11 @@
 "settings.theme.hint" = "Switch between system, light, and dark appearance.";
 "settings.retention.title" = "Recovery retention";
 "settings.retention.value" = "%d days";
-"settings.retention.detail" = "Recoverable cleanup stays available until this window expires.";
+"settings.retention.detail" = "Recoverable results stay available for this long.";
 "settings.retention.adjust" = "Adjust retention";
 "settings.retention.hint" = "Changes how many days recoverable items remain available.";
 "settings.recoveryPanel.title" = "Recovery behavior";
-"settings.recoveryPanel.subtitle" = "How long recoverable results stay available, and which paths to skip.";
+"settings.recoveryPanel.subtitle" = "How long recoveries are kept, and which locations are not scanned.";
 "settings.notifications.title" = "Task notifications";
 "settings.notifications.detail" = "Helpful when scans, plan updates, or cleanup take long enough to leave the foreground.";
 "settings.notifications.toggle" = "Enable task notifications";
@@ -696,7 +686,7 @@
 "settings.exclusions.title" = "Rules & Exclusions";
 "settings.exclusions.subtitle" = "These paths stay out of scan results and cleanup plans.";
 "settings.exclusions.empty.title" = "No exclusions configured";
-"settings.exclusions.empty.detail" = "Atlas will scan the default coverage set until you add exclusions in a later iteration.";
+"settings.exclusions.empty.detail" = "No exclusions yet — Atlas scans the default coverage.";
 "settings.exclusions.row.subtitle" = "Excluded from cleanup recommendations and plans.";
 "settings.trust.title" = "Trust";
 "settings.trust.subtitle" = "How Atlas handles cleanup and restore.";
@@ -704,8 +694,8 @@
 "settings.trust.ack.subtitle" = "Explains where the product comes from.";
 "settings.trust.notices.title" = "Third-party notices";
 "settings.trust.notices.subtitle" = "Visible in-app alongside the acknowledgement material.";
-"settings.trust.destructive.title" = "Destructive actions";
-"settings.trust.destructive.subtitle" = "Atlas makes destructive actions recoverable and checkable.";
+"settings.trust.destructive.title" = "System-changing actions";
+"settings.trust.destructive.subtitle" = "A restore point is saved first, and every change is recorded.";
 "settings.trust.destructive.badge" = "Recovery-first";
 "settings.trust.documents.title" = "Reference Documents";
 "settings.trust.documents.subtitle" = "Open these only when you need the full text.";
@@ -916,11 +906,11 @@
 "fileorganizer.action.preview" = "Preview Plan";
 "fileorganizer.action.execute" = "Execute Organization";
 "fileorganizer.action.execute.hint" = "Move files to categorized subdirectories based on the plan.";
-"fileorganizer.action.dryRun" = "Dry Run";
+"fileorganizer.action.dryRun" = "Preview";
 "fileorganizer.action.dryRun.hint" = "Simulate the organization without actually moving files.";
-"fileorganizer.dryRun.success.one" = "Dry run complete: %1$@ file can be safely moved (%2$@)";
-"fileorganizer.dryRun.success.other" = "Dry run complete: %1$@ files can be safely moved (%2$@)";
-"fileorganizer.dryRun.error" = "Dry run failed: %@";
+"fileorganizer.dryRun.success.one" = "Preview complete: %1$@ file can be safely moved (%2$@)";
+"fileorganizer.dryRun.success.other" = "Preview complete: %1$@ files can be safely moved (%2$@)";
+"fileorganizer.dryRun.error" = "Preview failed: %@";
 "fileorganizer.action.editRules" = "Edit Rules";
 
 "fileorganizer.metric.totalFiles.title" = "Total Files";
@@ -976,7 +966,7 @@
 
 "fileorganizer.error.scanFailed" = "File organizer scan failed: %@";
 "fileorganizer.error.noEntries" = "No file organizer entries available to execute.";
-"fileorganizer.error.stalePlan" = "The requested file organizer plan is no longer current. Please preview again.";
+"fileorganizer.error.stalePlan" = "The file organizer plan is out of date. Please preview again.";
 
 "fileorganizer.selection.count" = "%d of %d selected";
 "fileorganizer.action.selectAll" = "Select All";
@@ -992,7 +982,7 @@
 "fileorganizer.conflict.callout.detail" = "Conflicting files will be renamed automatically (e.g. filename (1).png). Deselect entries to skip them.";
 
 "fileorganizer.ruleeditor.title" = "Classification Rules";
-"fileorganizer.ruleeditor.subtitle" = "Customize file classification rules by extension or name pattern.";
+"fileorganizer.ruleeditor.subtitle" = "Custom classification rules: by file type or name.";
 "fileorganizer.ruleeditor.rules.title" = "Rules";
 "fileorganizer.ruleeditor.empty" = "No custom rules yet. Tap the button below to add one.";
 "fileorganizer.ruleeditor.untitled" = "Untitled Rule";
@@ -1077,7 +1067,7 @@
 "fileorganizer.entry.selected.a11y" = "Selected";
 "fileorganizer.entry.unselected.a11y" = "Not selected";
 "fileorganizer.evidence.empty.title" = "Select a file to see the classification reason";
-"fileorganizer.evidence.empty.detail" = "Select a file in the list to see its classification rule-hit chain and move target.";
+"fileorganizer.evidence.empty.detail" = "Select a file to see why it was classified this way and where it will move.";
 "fileorganizer.evidence.source" = "Source path";
 "fileorganizer.evidence.size" = "File size";
 "fileorganizer.evidence.category" = "Category";
@@ -1096,7 +1086,7 @@
 "storage.empty.detail" = "No space-hogging items have been detected yet.";
 
 // Apps — building preview
-"apps.detail.callout.building.title" = "Building Preview";
+"apps.detail.callout.building.title" = "Building the uninstall plan";
 "apps.detail.callout.building.detail" = "Analyzing app files, please wait…";
 
 // About — social accessibility
@@ -1108,7 +1098,6 @@
 "sidebar.smartclean.dynamic" = "%d items, %@";
 "sidebar.fileorganizer.dynamic" = "%d files found";
 "sidebar.apps.dynamic" = "%d apps";
-"sidebar.history.dynamic" = "%d items";
 "sidebar.ledger.dynamic" = "%d items";
 "sidebar.permissions.ready" = "✓ All granted";
 "sidebar.permissions.partial" = "%d/%d granted";
@@ -1338,3 +1327,9 @@
 "glossary.evidence.definition" = "Files Atlas found but will not remove in this run. Listing them does not remove them.";
 "glossary.restorepoint.term" = "Restore point";
 "glossary.restorepoint.definition" = "A recoverable position created before a run. You can restore to the original path while the retention period is open.";
+"glossary.containers.term" = "Containers";
+"glossary.containers.definition" = "System folders macOS gives each app to keep its data isolated. Names match system paths, so you can cross-check them.";
+"glossary.groupcontainers.term" = "Group Containers";
+"glossary.groupcontainers.definition" = "System folders where apps from the same developer share data.";
+"glossary.savedstate.term" = "Saved State";
+"glossary.savedstate.definition" = "System files an app uses to remember its last windows and positions.";

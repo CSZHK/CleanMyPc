@@ -50,6 +50,7 @@
 | **残留** / `Leftover files` | 「残留」是日常汉语（残留物、农药残留），且 `apps.metric.leftovers.detail` 有就地解释 |
 | **清理计划 / 卸载计划 / 扫描 / 计划** | T-01..T-05，本就是白话 |
 | **完全磁盘访问 / 辅助功能 / 通知** | macOS 系统权限名，不译（T-16..T-18） |
+| **容器 / 群组容器 / 保存状态** / `Containers` / `Group Containers` / `Saved State` | macOS 系统目录名（卸载明细的证据类别），白话化改名后会与系统真实路径对不上。2026-10-21 裁定：保持系统词，定义补进产品内术语表与 COPY_GUIDELINES §7 |
 
 ---
 

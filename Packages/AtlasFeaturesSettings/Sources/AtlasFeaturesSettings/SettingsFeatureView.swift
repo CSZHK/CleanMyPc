@@ -5,10 +5,12 @@ import SwiftUI
 public struct SettingsFeatureView: View {
     /// `P2-1`：体系词键（保留词 + 补解释）。
     ///
-    /// **`REQ-copy-plain-language` 已收缩**：原 4 词为「残留 / 足迹 / 台账 / 证据」。
-    /// 术语退役后「足迹→占用」「台账→历史记录」已是不言自明的白话，
-    /// **术语表不该解释不需要解释的词**，故移除，改为「残留 / 未删除项 / 恢复点」。
-    static let glossaryTermKeys = ["leftover", "evidence", "restorepoint"]
+    /// **`REQ-copy-plain-language` 已收缩**：原 4 词为「残留 / 足迹 / 台账 / 证据」，
+    /// 退役后保留「残留 / 未删除项 / 恢复点」三个产品词。
+    /// **`CHG-2026-10-copy-plain-language-round2` 裁定 4 新增**三个 macOS 系统目录词
+    /// （卸载明细的证据类别）：白话化改名会与系统真实路径对不上，故保持系统词、
+    /// 在此就地解释。定义取自 `terminology-baseline.md` §1-B，不得自造。
+    static let glossaryTermKeys = ["leftover", "evidence", "restorepoint", "containers", "groupcontainers", "savedstate"]
 
     @State private var selectedPanel: SettingsPanel = .general
     @State private var presentedDocument: SettingsDocument?
@@ -53,10 +55,10 @@ public struct SettingsFeatureView: View {
             subtitle: AtlasL10n.string("settings.screen.subtitle"),
             useScrollView: false
         ) {
-            AtlasInfoCard(
-                title: AtlasL10n.string("settings.panel.title"),
-                subtitle: AtlasL10n.string("settings.panel.subtitle")
-            ) {
+            // CHG-2026-10-copy-plain-language-round2 裁定 3：删「偏好中心」标题层，
+            // 通用/恢复/信任 三组直接平铺。title 传空串即不渲染头部（AtlasInfoCard.body
+            // 以 !title.isEmpty 守卫），设计系统 API 零改动。
+            AtlasInfoCard(title: "") {
                 VStack(alignment: .leading, spacing: AtlasSpacing.xl) {
                     // Tab bar — pinned at top, not inside ScrollView
                     ScrollView(.horizontal, showsIndicators: false) {

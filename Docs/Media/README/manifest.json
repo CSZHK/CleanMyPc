@@ -36,7 +36,7 @@
       "file": "atlas-apps-en.png",
       "height": 1800,
       "language": "en",
-      "sha256": "f5bf9f4a08cb8192d76e94cefc925e63b4e2b2d44e6c32b1b77677a8e520c969",
+      "sha256": "bb7822606ae40eeeed9d612097838b7bef5f0281a28e03c201a7a76b113992d6",
       "source": "exported",
       "width": 2880
     },
@@ -44,7 +44,7 @@
       "file": "atlas-apps-zh-Hans.png",
       "height": 1800,
       "language": "zh-Hans",
-      "sha256": "6543bf20350287154af834f1a2a7954aedfebe0cf86dd637f90855ebbbbcb88d",
+      "sha256": "ce43ee580f309161da9c7350366bd5a1e00d70bb4f498a5155d5229453f9d87f",
       "source": "exported",
       "width": 2880
     },
@@ -139,8 +139,8 @@
       "Packages/AtlasDomain/Sources/AtlasDomain/AtlasLocalization.swift": "3e6058dbc328fb26e27497c155a7ab289863eff4d5e2e3b71a26fa7b72cad730",
       "Packages/AtlasDomain/Sources/AtlasDomain/AtlasRenderClock.swift": "2a16d24f12f8054a2839f2c2d885860508ef27c33f6fd2528cd733e15bc65699",
       "Packages/AtlasDomain/Sources/AtlasDomain/AtlasStorageCategory.swift": "fa6437a6adc71cd27b6b97dc5f89afeb4a6fab27e9a03d620afffb804da0d381",
-      "Packages/AtlasDomain/Sources/AtlasDomain/Resources/en.lproj/Localizable.strings": "ba21092a386a4ae04638cce423a1a15c359fce2cc1da30718b360bd687aed945",
-      "Packages/AtlasDomain/Sources/AtlasDomain/Resources/zh-Hans.lproj/Localizable.strings": "6b76c073191acf05a7734bfa5bf8dd631f7f5880ad63b1c97d61f42a29b98b4f",
+      "Packages/AtlasDomain/Sources/AtlasDomain/Resources/en.lproj/Localizable.strings": "7665c4009ca9952613ac4808acdd5336b3f5c050e95e261757713ab5a47f4cfe",
+      "Packages/AtlasDomain/Sources/AtlasDomain/Resources/zh-Hans.lproj/Localizable.strings": "156ebbc4d5094bc37f778cc15d5b5fb41bd39af083388fdf17fe7d8f21e090fc",
       "Packages/AtlasFeaturesApps/Sources/AtlasFeaturesApps/AppsActionBar.swift": "434be4b180a29afccbe28d520389c640cb83a54d3bdf8c3eddabd2edd781abf7",
       "Packages/AtlasFeaturesApps/Sources/AtlasFeaturesApps/AppsEvidencePanelBuilder.swift": "815a1292d4a281bbb7b5d6d691f7b95d0821152f8b95b202c3fda58b42980e7c",
       "Packages/AtlasFeaturesApps/Sources/AtlasFeaturesApps/AppsFeatureView.swift": "54910d668f23a4ed331a0cd50a50f31f277c744d6ff11d418e15306f0c5c4860",
@@ -240,6 +240,6 @@
       "Packages/AtlasFeaturesSmartClean/Sources/AtlasFeaturesSmartClean/SmartCleanStageViews.swift",
       "Packages/AtlasFeaturesSmartClean/Sources/AtlasFeaturesSmartClean/SmartCleanSupportViews.swift"
     ],
-    "value": "0facbf12b393192ba86bc78b63673cc9de61969c495719bd9364a36414ef8b46"
+    "value": "91dfe331c9634d217cbe45e466eca7a033bae554bda31d1e8bfd1df9d90df226"
   }
 }
