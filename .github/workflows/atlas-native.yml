@@ -29,6 +29,11 @@ jobs:
 
       - name: Upload native app and installer artifacts
         uses: actions/upload-artifact@v4
+        env:
+          # upload-artifact@v4 在 macOS runner 上传 dist/native/* 大二进制时，
+          # node24 默认 ~2GB 堆顶必 OOM（4 次全败同点：0657b81 与 9-15 三次同因）。
+          # macOS runner 物理内存 12GB+，约束只是默认堆顶。
+          NODE_OPTIONS: --max-old-space-size=4096
         with:
           name: atlas-native-app
           path: dist/native/*

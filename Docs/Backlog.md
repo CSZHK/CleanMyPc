@@ -438,6 +438,13 @@ Carry-forward items that are **product polish**, not process lessons — process
 
 Source for `ATL-285`..`ATL-286`: the post-push CI investigation on 2026-09-15 (the acceptance workflow had been red for weeks at step [1/13], which meant the new README media gate never actually executed in CI).
 
+- `ATL-287` **Four workflows have been red since 2026-09-15, and their `paths:` filters mean a docs-only push to main never exercises them** — so the content push `0657b81` (2026-10-21) was the first full trigger in five weeks and surfaced all four at once. Same disease as `ATL-286`: a five-week-red gate reads as protection it does not provide. Each of the four needs an individual verdict — **fix or retire**:
+  - `check.yml` — Format job fails (or cancels) → dependent Check skipped. Same shape on the parent commits: `34996200285` (`3716c48`, Format=failure) and `34985883441` (`29b587b`).
+  - `test.yml` (Validation) — both macOS matrix legs **pass**; `Unit & Integration Tests` and `Security Checks` end `cancelled` (e.g. run `39640445879`). Cancellation cause undiagnosed.
+  - `codeql.yml` — red on every run since 09-15 (7+ consecutive).
+  - `update-contributors.yml` — red on every run since 09-15.
+  Context from the same investigation: **Atlas Acceptance passed** on `0657b81` (copy gate + media gate + real `AtlasAppUITests`), and `atlas-native.yml` had its own deterministic defect — `upload-artifact@v4` Node heap OOM at the upload step (4/4 runs failed identically, incl. all three 09-15 runs), fixed in the same commit that adds this entry via `NODE_OPTIONS=--max-old-space-size=4096` on the upload step — `QA Agent`
+
 Source for `ATL-283`..`ATL-284`: same investigation.
 
 Source for `ATL-273`..`ATL-277`: the adversarial copy review run during `REQ-copy-plain-language` (2026-09-15). Each was traced back to source and confirmed, then deliberately left out of that REQ's scope. They are **pre-existing**, not regressions from it.
