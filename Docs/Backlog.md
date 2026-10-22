@@ -443,7 +443,7 @@ Source for `ATL-285`..`ATL-286`: the post-push CI investigation on 2026-09-15 (t
   - `test.yml` (Validation) — both macOS matrix legs **pass**; `Unit & Integration Tests` and `Security Checks` end `cancelled` (e.g. run `39640445879`). Cancellation cause undiagnosed.
   - `codeql.yml` — red on every run since 09-15 (7+ consecutive).
   - `update-contributors.yml` — red on every run since 09-15.
-  Context from the same investigation: **Atlas Acceptance passed** on `0657b81` (copy gate + media gate + real `AtlasAppUITests`), and `atlas-native.yml` had its own deterministic defect — `upload-artifact@v4` Node heap OOM at the upload step (4/4 runs failed identically, incl. all three 09-15 runs), fixed in the same commit that adds this entry via `NODE_OPTIONS=--max-old-space-size=4096` on the upload step — `QA Agent`
+  Context from the same investigation: **Atlas Acceptance passed** on `0657b81` (copy gate + media gate + real `AtlasAppUITests`), and `atlas-native.yml` had its own deterministic defect — **closed 2026-10-22**, two layers: `upload-artifact@v4`'s glob `dist/native/*` followed the `dmg-root/Applications → /Applications` symlink and enumerated the runner's entire Applications tree (5.85M files incl. `Python 3.11/Icon\r`), which both OOMed node24's default heap (all 4 prior runs died identically) and then failed the NTFS-safe character check. Fixed by narrowing the upload glob to the deliverables (`*.app/*.dmg/*.pkg/*.zip/*.sha256`, `11b6cda`) + `NODE_OPTIONS=--max-old-space-size=4096` as belt-and-suspenders (`c7face4`); verified green with a 35 MB artifact in a 227-second run (`39715197040`) — first success in the workflow's history — `QA Agent`
 
 Source for `ATL-283`..`ATL-284`: same investigation.
 
