@@ -30,10 +30,17 @@ jobs:
       - name: Upload native app and installer artifacts
         uses: actions/upload-artifact@v4
         env:
-          # upload-artifact@v4 在 macOS runner 上传 dist/native/* 大二进制时，
-          # node24 默认 ~2GB 堆顶必 OOM（4 次全败同点：0657b81 与 9-15 三次同因）。
-          # macOS runner 物理内存 12GB+，约束只是默认堆顶。
+          # 保险带：upload-artifact@v4 的 node24 默认 ~2GB 堆顶偏紧。
           NODE_OPTIONS: --max-old-space-size=4096
         with:
           name: atlas-native-app
-          path: dist/native/*
+          # 只传真正的交付物，不能裸写 dist/native/*：
+          # dmg-root/（DMG 暂存树）里的 Applications 是指向 /Applications 的符号链接，
+          # v4 会顺着链接把 runner 的整个 /Applications（含 Python 3.11 的 "Icon\r"）
+          # 卷进产物——585 万文件既撑爆 node 堆（0657b81 三次 OOM 同因）又含非法字符。
+          path: |
+            dist/native/*.app
+            dist/native/*.dmg
+            dist/native/*.pkg
+            dist/native/*.zip
+            dist/native/*.sha256
