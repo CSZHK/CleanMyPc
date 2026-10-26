@@ -39,7 +39,7 @@
 #     ./scripts/atlas/readme-media-gate-selftest.sh
 #
 # 退出码：0 = 全部变异都被抓住；1 = 有变异没被抓住（门禁有洞）。
-set -uo pipefail   # 故意不加 -e：这里的常态就是「命令要失败」
+set -uo pipefail # 故意不加 -e：这里的常态就是「命令要失败」
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
@@ -52,7 +52,7 @@ failures=0
 mutation_count=15
 
 echo "搭建隔离副本（只复制门禁要读的部分）..."
-python3 - "$ROOT_DIR" "$STAGE" <<'PY' || { echo "✗ 隔离副本搭建失败" >&2; exit 1; }
+python3 - "$ROOT_DIR" "$STAGE" << 'PY' || {
 import os, shutil, sys
 
 sys.path.insert(0, os.path.join(sys.argv[1], "scripts", "atlas"))
@@ -85,6 +85,9 @@ shutil.copy2(fp.scope_file_path(root), scope_target)
 
 print(f"  复制 {len(sources)} 个源文件 + 媒体目录 + 2 份 README")
 PY
+    echo "✗ 隔离副本搭建失败" >&2
+    exit 1
+}
 
 GATE=(python3 scripts/atlas/readme_media_gate.py --root "$STAGE")
 MEDIA="$STAGE/Docs/Media/README"
@@ -123,7 +126,7 @@ expect_red() {
         return
     fi
 
-    if ! grep -q "\[$dimension\]" <<<"$output"; then
+    if ! grep -q "\[$dimension\]" <<< "$output"; then
         printf '  ✗ %-44s 变红了，但不在 [%s] 维度\n' "$label" "$dimension"
         printf '%s\n' "$output" | sed 's/^/      /'
         failures=$((failures + 1))
@@ -153,7 +156,7 @@ expect_green() {
 # 造一张指定尺寸的 PNG：`solid` 时整张同色（模拟渲染失败），否则逐像素变化。
 make_png() {
     local path="$1" width="$2" height="$3" solid="${4:-0}"
-    python3 - "$path" "$width" "$height" "$solid" <<'PY'
+    python3 - "$path" "$width" "$height" "$solid" << 'PY'
 import struct, sys, zlib
 
 path, width, height, solid = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4] == "1"
@@ -241,7 +244,7 @@ cp -p "$ORIGINALS/README.md" "$README_EN"
 # 抓了出来。原因：剥离注释后 dim 4 已无引用可查，真正报出来的是 dim 6 的
 # 「产出但未展示」。这正是「断言要红在对的维度」那条规矩的又一次收益。
 echo "[8/$mutation_count] 维 6 orphans · 引用被注释掉（GitHub 上不可见）"
-python3 - "$README_EN" <<'PY'
+python3 - "$README_EN" << 'PY'
 import re, sys
 path = sys.argv[1]
 content = open(path, encoding="utf-8").read()
@@ -256,7 +259,7 @@ cp -p "$ORIGINALS/README.md" "$README_EN"
 # 这条来自质量审查的 P0 证伪：首版只认 ``` 围栏，`~~~` 是 GitHub 上等价的合法围栏
 # —— 把全部引用藏进 `~~~` 块，六维曾**全绿**而 README 上一张图都看不见。
 echo "[9/$mutation_count] 维 6 orphans · 引用藏进 ~~~ 围栏（GitHub 合法的另一种围栏）"
-python3 - "$README_EN" <<'PY'
+python3 - "$README_EN" << 'PY'
 import re, sys
 path = sys.argv[1]
 content = open(path, encoding="utf-8").read()
@@ -269,7 +272,7 @@ expect_red "README.md 全部引用藏进 ~~~ 围栏" "orphans"
 cp -p "$ORIGINALS/README.md" "$README_EN"
 
 echo "[10/$mutation_count] 维 4 references · README 不是合法 UTF-8"
-python3 - "$README_EN" <<'PY'
+python3 - "$README_EN" << 'PY'
 import sys
 path = sys.argv[1]
 data = open(path, "rb").read()
@@ -294,7 +297,7 @@ cp -p "$ORIGINALS/ReadmeAssetExporter.swift" "$EXPORTER"
 # 复现」新增的文件，它影响渲染；而范围当时是逐文件点名的，**立刻漏了它**。
 # 本变异改的正是这个新文件 —— 若有人把范围改回点名式，它会变绿。
 echo "[13/$mutation_count] 维 5 drift · 改 AtlasDomain 里**新增**的文件（守「范围取整目录」）"
-python3 - "$ATLAS_RENDER_CLOCK" <<'PY'
+python3 - "$ATLAS_RENDER_CLOCK" << 'PY'
 import sys
 path = sys.argv[1]
 with open(path, "a", encoding="utf-8") as handle:
@@ -322,7 +325,7 @@ trap - EXIT INT TERM
 
 # 对**真实仓库**做一次只读复核：自检不该改变任何东西。
 REAL_GATE=(python3 scripts/atlas/readme_media_gate.py)
-if "${REAL_GATE[@]}" >/dev/null 2>&1; then
+if "${REAL_GATE[@]}" > /dev/null 2>&1; then
     echo "  ✓ 真实工作树                                       → PASS"
 else
     printf '  ✗ %-44s 真实工作树未通过（自检不该改它，或仓库本就有红）\n' "真实工作树"

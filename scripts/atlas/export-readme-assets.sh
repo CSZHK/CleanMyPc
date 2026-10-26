@@ -28,7 +28,7 @@ mkdir -p "$OUTPUT_DIR"
 
 # 同一个 debug 二进制的两个实例会互相打架（后一个抢渲染上下文），
 # 所以先请走路上的那个。`-x` 是精确进程名匹配，不会误伤别的 swift 进程。
-if pgrep -x AtlasApp >/dev/null 2>&1; then
+if pgrep -x AtlasApp > /dev/null 2>&1; then
     echo "发现正在运行的 AtlasApp，先结束它（两个实例会抢渲染上下文）..."
     pkill -x AtlasApp || true
     sleep 1

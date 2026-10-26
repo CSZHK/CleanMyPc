@@ -20,7 +20,7 @@ run_ui_acceptance() {
     #     用例被改名 / `-only-testing` 目标写错时，`xcodebuild` 收集到 0 个用例却返回 0。
     if grep -q 'ATLAS_UI_GATE=ZERO_TESTS' "$atlas_log"; then
         local zero_log="${TMPDIR:-/tmp}/atlas-ui-automation-ZERO-TESTS.log"
-        cp "$atlas_log" "$zero_log" 2>/dev/null || true
+        cp "$atlas_log" "$zero_log" 2> /dev/null || true
         echo "✗ UI automation executed ZERO tests — no UI-layer assertion ran. This is not a pass." >&2
         echo "  This is a configuration defect (target membership / -only-testing), not an environment limit," >&2
         echo "  so ATLAS_ALLOW_UI_SKIP does NOT apply. Log preserved at: $zero_log" >&2
@@ -36,7 +36,7 @@ run_ui_acceptance() {
             return 0
         fi
         local kept_log="${TMPDIR:-/tmp}/atlas-ui-automation-NOT-RUN.log"
-        cp "$atlas_log" "$kept_log" 2>/dev/null || true
+        cp "$atlas_log" "$kept_log" 2> /dev/null || true
         echo "✗ UI automation SKIPPED (NOT RUN) — no UI-layer assertion executed. This is not a pass." >&2
         echo "  Cause: Accessibility permission is not granted to this process." >&2
         echo "  Log preserved at: $kept_log" >&2
@@ -70,7 +70,7 @@ run_ui_acceptance() {
             return 0
         fi
         local blocked_log="${TMPDIR:-/tmp}/atlas-ui-automation-BLOCKED.log"
-        cp "$atlas_log" "$blocked_log" 2>/dev/null || true
+        cp "$atlas_log" "$blocked_log" 2> /dev/null || true
         echo "✗ UI automation BLOCKED by the macOS automation environment — no UI-layer assertion ran." >&2
         echo "  Both Atlas and the standalone repro timed out enabling automation mode," >&2
         echo "  so this is an environment condition, not an Atlas defect — but it is still zero UI coverage." >&2
