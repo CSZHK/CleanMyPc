@@ -6,7 +6,8 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  # 2026-10-26 裁定：Format 不再自动 commit+push 到 main，降为只读。
+  contents: read
 
 jobs:
   format:
@@ -18,7 +19,6 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
         with:
           ref: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref) || github.ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache Homebrew
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
@@ -41,26 +41,26 @@ jobs:
           go-version-file: go.mod
 
       - name: Install goimports
-        run: go install golang.org/x/tools/cmd/goimports@latest
+        # @latest 会漂移：v0.50.0 要求 go>=1.26，而 runner 按 go.mod 锁 1.25
+        # （GOTOOLCHAIN=local），2026-09-15 起 Format 必炸、quality 从未跑过。
+        # 钉 v0.50.0 前最后一档；若 CI 仍拒装则降到 v0.36.0（确定兼容 go 1.25）。
+        run: go install golang.org/x/tools/cmd/goimports@v0.49.0
 
       - name: Format all code
         run: |
           export PATH=$(go env GOPATH)/bin:$PATH
           ./scripts/check.sh --format
 
-      - name: Commit formatting changes
-        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+      - name: Fail on formatting drift
+        # 2026-10-26 裁定：bot 自动 commit+push 到 main 会绕过人审，改为漂移即红，
+        # 由人本地跑 ./scripts/check.sh --format 后提交。
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if [[ -n $(git status --porcelain) ]]; then
-            git add .
-            git commit -m "chore: auto format code"
-            git push
-            echo "✓ Formatting changes committed"
-          else
-            echo "✓ No formatting changes needed"
+            git status --short
+            echo "✗ Formatting drift detected — run ./scripts/check.sh --format locally, then commit the result."
+            exit 1
           fi
+          echo "✓ No formatting drift"
 
   quality:
     name: Check

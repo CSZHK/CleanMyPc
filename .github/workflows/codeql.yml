@@ -15,7 +15,10 @@ permissions:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: ubuntu-latest
+    # go 代码 darwin-only（//go:build darwin，macOS 工具的设计意图）：
+    # 在 ubuntu 上 make build 必炸（GOOS=linux 已本地复现 undefined types），
+    # go leg 随平台走 macOS，actions leg 留 ubuntu（2026-10-26 裁定）。
+    runs-on: ${{ matrix.language == 'go' && 'macos-latest' || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:

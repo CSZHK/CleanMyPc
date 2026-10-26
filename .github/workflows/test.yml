@@ -80,9 +80,11 @@ jobs:
       - name: Check for secrets
         run: |
           echo "Checking for hardcoded secrets..."
+          # scripts/atlas 签名脚本豁免（2026-10-26）：其中是 ${VAR:-本地开发默认值}
+          # 形式的占位（已核实非真机密），Mole 时代的豁免单不认识 Atlas 新增脚本。
           matches=$(grep -r "password\|secret\|api_key" --include="*.sh" . \
             | grep -v "# \|test" \
-            | grep -v -E "lib/core/sudo\.sh|lib/core/app_protection\.sh|lib/clean/user\.sh|lib/clean/brew\.sh|bin/optimize\.sh|lib/clean/apps\.sh|lib/uninstall/batch\.sh" || true)
+            | grep -v -E "lib/core/sudo\.sh|lib/core/app_protection\.sh|lib/clean/user\.sh|lib/clean/brew\.sh|bin/optimize\.sh|lib/clean/apps\.sh|lib/uninstall/batch\.sh|scripts/atlas/signing-common\.sh|scripts/atlas/ensure-local-signing-identity\.sh" || true)
           if [[ -n "$matches" ]]; then
             echo "$matches"
             echo "✗ Potential secrets found"
