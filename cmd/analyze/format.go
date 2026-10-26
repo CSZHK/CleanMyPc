@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 )
@@ -54,7 +55,7 @@ func truncateMiddle(s string, maxWidth int) string {
 
 	tailWidth := 0
 	tailIdx := len(runes)
-	for i := len(runes) - 1; i >= 0; i-- {
+	for i := range slices.Backward(runes) {
 		w := runeWidth(runes[i])
 		if tailWidth+w > targetTailWidth {
 			break

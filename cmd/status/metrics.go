@@ -255,9 +255,7 @@ func (c *Collector) Collect() (MetricsSnapshot, error) {
 
 	// Helper to launch concurrent collection.
 	collect := func(fn func() error) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			defer func() {
 				if r := recover(); r != nil {
 					errMu.Lock()
@@ -279,7 +277,7 @@ func (c *Collector) Collect() (MetricsSnapshot, error) {
 				}
 				errMu.Unlock()
 			}
-		}()
+		})
 	}
 
 	// Launch independent collection tasks.

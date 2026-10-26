@@ -111,7 +111,7 @@ func getInterfaceIPs() map[string]string {
 		for _, addr := range iface.Addrs {
 			// IPv4 only.
 			if strings.Contains(addr.Addr, ".") && !strings.HasPrefix(addr.Addr, "127.") {
-				ip := strings.Split(addr.Addr, "/")[0]
+				ip, _, _ := strings.Cut(addr.Addr, "/")
 				result[iface.Name] = ip
 				break
 			}
